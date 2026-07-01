@@ -53,7 +53,7 @@ export interface Reciter {
   avatarColor: string  // used as a fallback avatar background
 }
 
-export type Orientation = 'landscape' | 'portrait' | 'square'
+export type Orientation = 'landscape' | 'portrait'
 export type FontStyle = 'uthmani' | 'naskh'
 
 /**
@@ -93,7 +93,7 @@ export interface VideoSettings {
 }
 
 export interface ExportOptions {
-  platform: 'reel' | 'shorts' | 'youtube' | 'square'
+  platform: 'reel' | 'shorts' | 'youtube'
   quality: '720p' | '1080p'
   filename: string
 }
@@ -101,9 +101,10 @@ export interface ExportOptions {
 /**
  * Auto-fit font sizes for each orientation. Used when `autoFitFonts` is on,
  * and also applied as sensible defaults whenever the user changes orientation.
+ * These are "design-space" sizes at a reference preview width of ~400px; the
+ * preview itself scales them proportionally via CSS container queries.
  */
 export const AUTO_FONT_SIZES: Record<Orientation, { arabic: number; translation: number }> = {
-  portrait: { arabic: 56, translation: 22 },
-  landscape: { arabic: 44, translation: 18 },
-  square: { arabic: 52, translation: 20 },
+  portrait: { arabic: 40, translation: 16 },
+  landscape: { arabic: 36, translation: 15 },
 }

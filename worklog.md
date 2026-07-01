@@ -197,3 +197,43 @@ Stage Summary:
   1. **Overlay options** — 6 preset shapes (Solid, Bottom Fade, Top Fade, Vignette, Spotlight, None) with visual swatches; default is Bottom Fade (the most common style for captioned Quran videos)
   2. **Auto-responsive fonts** — when "Auto-fit fonts" is on (default), switching the layout auto-applies sensible font sizes for that orientation; the user can turn it off to fine-tune manually. The preview also uses orientation-aware CSS clamp() so text reflows smoothly.
   3. **No card border** — removed `showBorder`, `borderColor`, `border_radius` entirely from settings, controls, preview, and export. Text now floats directly on the background image.
+
+---
+Task ID: 4
+Agent: main (super-z)
+Task: Fix portrait mode so the preview feels like an actual reel (fonts were too big, preview didn't fill the space) and remove the square layout option entirely.
+
+Work Log:
+- Root cause analysis: the portrait preview was capped at `min(100%, 72vh)` maxWidth which prevented it from filling the available vertical space; font sizes used `vw` (viewport width) units which don't scale with the actual preview frame — so on a narrow portrait preview, a 56px Arabic font was huge relative to the frame.
+- Removed square mode everywhere:
+  - `types.ts`: `Orientation` is now `'landscape' | 'portrait'` (removed 'square'); `ExportOptions.platform` is now `'reel' | 'shorts' | 'youtube'` (removed 'square'); `AUTO_FONT_SIZES` only has portrait + landscape entries
+  - `CustomizationPanel.tsx`: layout grid is now 2 columns (Portrait, Landscape) instead of 3
+  - `ExportModal.tsx`: removed the "Square Post" platform preset; `RES` map only has portrait + landscape
+  - `VideoPreview.tsx`: removed `square` from the `ASPECT` map
+- Reduced default portrait font sizes from 56/22 → 40/16 (Arabic/translation); landscape from 44/18 → 36/15. These are "design-space" reference sizes that the preview scales proportionally.
+- Rewrote the preview frame sizing in `VideoPreview.tsx`:
+  - Portrait: `height: 100%; width: auto; maxWidth: 100%` — fills the available vertical space, width is derived from the 9:16 aspect ratio. This makes the preview look like an actual phone/reel screen.
+  - Landscape: `width: 100%; maxHeight: 100%; height: auto` — fills the available width, height is derived from 16:9.
+  - Removed the old `maxWidth: 'min(100%, 72vh)'` cap that was squishing the portrait preview.
+- Added CSS container queries so ALL text inside the preview scales with the ACTUAL preview frame width, not the browser viewport:
+  - Set `containerType: 'inline-size'` on the preview frame div
+  - Arabic font size: `8cqw` (portrait) / `5cqw` (landscape) — multiplied by the user's slider value relative to the reference size
+  - Translation font size: `3cqw` (portrait) / `1.9cqw` (landscape) — same multiplier approach
+  - Header (surah name, ayat indicator): `5cqw` / `4.2cqw` / `2cqw` / `1.8cqw`
+  - Transliteration: `2.4cqw`, max-width `80cqw`
+  - Watermark: `2cqw` with `2.5cqw` / `3.5cqw` positioning
+  - Center content padding: `8cqw` horizontal; max-width `90cqw`
+  - This means a 400px-wide portrait preview gets 32px Arabic text; a 500px-wide one gets 40px — everything scales smoothly with the frame.
+- Verified end-to-end with Agent Browser:
+  - Layout section now shows only Portrait + Landscape (no Square)
+  - Loaded Al-Fatihah 1–3 in portrait → preview fills the vertical space like a reel
+  - VLM confirmed: "tall and narrow (9:16), filling most vertical space like a phone/reel screen... Arabic text is sized appropriately, not too big or overflowing... feels like an Instagram Reel/YouTube Shorts preview"
+  - Switched to landscape → fonts auto-adjusted to 36/15, VLM confirmed "fills the available width as a 16:9 widescreen video, text is appropriately sized"
+  - Switched back to portrait → fonts restored to 40/16
+  - Export modal now shows only 3 platform presets (Instagram Reel, YouTube Shorts, YouTube) — Square Post removed
+- ESLint passes clean (0 errors, 0 warnings)
+
+Stage Summary:
+- Two user complaints addressed:
+  1. **Portrait feels like a reel now** — the preview fills the available vertical height (instead of being capped at 72vh), and all text scales with the actual preview frame width via CSS container queries. A narrow portrait preview gets proportionally smaller text, so nothing overflows or looks oversized. Default Arabic font reduced from 56→40px.
+  2. **Square mode removed** — from the Orientation type, the layout picker, the export platform presets, and all internal maps. Only Portrait and Landscape remain.

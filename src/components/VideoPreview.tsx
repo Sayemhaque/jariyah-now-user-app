@@ -21,7 +21,6 @@ import { Slider } from '@/components/ui/slider'
 const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
   landscape: { w: 1280, h: 720, ratio: '16 / 9' },
   portrait: { w: 720, h: 1280, ratio: '9 / 16' },
-  square: { w: 1080, h: 1080, ratio: '1 / 1' },
 }
 
 interface ActiveWord {
@@ -245,39 +244,44 @@ export function VideoPreview() {
       ? activeWord.wordIndex
       : -1
 
-  // Font sizes auto-scale to the preview frame's width based on orientation.
-  // We translate the user's "design-space" font size (24–72 for Arabic,
-  // 14–32 for translation) into a viewport-relative CSS clamp that adapts to
-  // the actual rendered preview width.
-  //   portrait  → frame is tall and narrow → bigger relative size
-  //   square    → medium
-  //   landscape → frame is wide and short → slightly smaller relative size
-  const orientationFontScale: Record<string, { ar: string; tr: string }> = {
-    portrait: { ar: '5.2vw', tr: '1.7vw' },
-    square: { ar: '4.2vw', tr: '1.5vw' },
-    landscape: { ar: '3.4vw', tr: '1.3vw' },
+  // Font sizes scale with the ACTUAL preview frame width using CSS container
+  // query units (cqw = 1% of the container's inline size). This way, the text
+  // is always proportional to the preview, not the browser viewport — so a
+  // narrow portrait reel gets smaller text and a wide landscape preview gets
+  // larger text, automatically.
+  //
+  // The user's font-size slider acts as a multiplier on top of the base
+  // percentage. Reference sizes: portrait Arabic=40 at 8cqw, landscape
+  // Arabic=36 at 5cqw. So multiplier = sliderValue / referenceValue.
+  const orientationFontBase: Record<string, { ar: number; tr: number; arRef: number; trRef: number }> = {
+    portrait: { ar: 8.0, tr: 3.0, arRef: 40, trRef: 16 },
+    landscape: { ar: 5.0, tr: 1.9, arRef: 36, trRef: 15 },
   }
-  const fontScale = orientationFontScale[settings.orientation]!
-  const arabicFontSizeCss = `clamp(18px, ${fontScale.ar}, ${settings.arabicFontSize}px)`
-  const translationFontSizeCss = `clamp(10px, ${fontScale.tr}, ${settings.translationFontSize}px)`
+  const fb = orientationFontBase[settings.orientation]!
+  const arCqw = (fb.ar * settings.arabicFontSize / fb.arRef).toFixed(2)
+  const trCqw = (fb.tr * settings.translationFontSize / fb.trRef).toFixed(2)
+  const arabicFontSizeCss = `${arCqw}cqw`
+  const translationFontSizeCss = `${trCqw}cqw`
 
   return (
     <div className="flex flex-col h-full">
       {/* Hidden audio element drives playback + word timing */}
       <audio ref={audioRef} preload="auto" crossOrigin="anonymous" />
 
-      {/* Preview frame */}
+      {/* Preview frame — sized so portrait fills the available height (reel-like)
+          and landscape fills the available width. The frame is also a CSS
+          container so cqw units inside it scale with its actual width. */}
       <div className="flex-1 min-h-0 grid place-items-center p-3 sm:p-6">
         <div
-          className="qv-smooth relative w-full max-h-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10"
+          className="qv-smooth relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10"
           style={{
             aspectRatio: aspect.ratio,
-            maxWidth:
-              settings.orientation === 'landscape'
-                ? '100%'
-                : settings.orientation === 'square'
-                ? 'min(100%, 72vh)'
-                : 'min(100%, 72vh)',
+            // Portrait: fill the height, derive width from aspect-ratio.
+            // Landscape: fill the width, cap height so it never overflows.
+            ...(settings.orientation === 'portrait'
+              ? { height: '100%', width: 'auto', maxWidth: '100%' }
+              : { width: '100%', maxHeight: '100%', height: 'auto' }),
+            containerType: 'inline-size',
             backgroundImage: `url(${settings.backgroundImage})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -301,22 +305,37 @@ export function VideoPreview() {
             }}
           />
 
-          {/* Top header bar — surah name + ayat indicator */}
+          {/* Top header bar — surah name + ayat indicator (scales with frame) */}
           {surah && current && (
-            <div className="absolute top-0 inset-x-0 px-5 sm:px-6 pt-4 sm:pt-5 flex items-start justify-between text-white">
+            <div
+              className="absolute top-0 inset-x-0 flex items-start justify-between text-white"
+              style={{ padding: '4cqw 5cqw' }}
+            >
               <div className="flex flex-col">
-                <span className="font-arabic-uthmani text-xl sm:text-2xl leading-tight drop-shadow-lg">
+                <span
+                  className="font-arabic-uthmani leading-tight drop-shadow-lg"
+                  style={{ fontSize: '5cqw' }}
+                >
                   {surah.arabicName}
                 </span>
-                <span className="text-[10px] sm:text-xs uppercase tracking-[0.12em] opacity-75 mt-0.5">
+                <span
+                  className="uppercase tracking-[0.12em] opacity-75 mt-0.5"
+                  style={{ fontSize: '2cqw' }}
+                >
                   {surah.name} · {surah.revelationType}
                 </span>
               </div>
               <div className="flex flex-col items-end">
-                <span className="font-arabic-uthmani text-lg sm:text-xl leading-tight drop-shadow-lg">
+                <span
+                  className="font-arabic-uthmani leading-tight drop-shadow-lg"
+                  style={{ fontSize: '4.2cqw' }}
+                >
                   {surah.number}:{current.ayatNumber}
                 </span>
-                <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] opacity-65 mt-0.5">
+                <span
+                  className="uppercase tracking-[0.18em] opacity-65 mt-0.5"
+                  style={{ fontSize: '1.8cqw' }}
+                >
                   Ayat {currentIndex + 1} of {ayatList.length}
                 </span>
               </div>
@@ -324,10 +343,14 @@ export function VideoPreview() {
           )}
 
           {/* Center content — Arabic + transliteration + translation grouped
-              tightly into one visual block. No card border (per spec). */}
+              tightly into one visual block. No card border (per spec).
+              Padding scales with the frame so it stays proportional. */}
           {current ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center px-6 sm:px-10">
-              <div className="qv-smooth relative flex flex-col items-center max-w-[88%]">
+            <div
+              className="absolute inset-0 flex flex-col items-center justify-center"
+              style={{ padding: '0 8cqw' }}
+            >
+              <div className="qv-smooth relative flex flex-col items-center" style={{ maxWidth: '90cqw' }}>
                 {/* Arabic — word-by-word highlight */}
                 <div
                   dir="rtl"
@@ -371,16 +394,16 @@ export function VideoPreview() {
                   settings.showTransliteration &&
                   current.words.length > 0 && (
                     <div
-                      className="my-2 h-px w-12 opacity-40"
-                      style={{ backgroundColor: settings.fontColor }}
+                      className="my-2 h-px opacity-40"
+                      style={{ backgroundColor: settings.fontColor, width: '12cqw' }}
                     />
                   )}
 
-                {/* Transliteration — sits right under Arabic */}
+                {/* Transliteration — sits right under Arabic (scales with frame) */}
                 {settings.showTransliteration && current.words.length > 0 && (
                   <div
-                    className="qv-smooth text-center italic text-white/70 max-w-md leading-snug"
-                    style={{ fontSize: 'clamp(10px, 1.3vw, 13px)' }}
+                    className="qv-smooth text-center italic text-white/70 leading-snug"
+                    style={{ fontSize: '2.4cqw', maxWidth: '80cqw' }}
                   >
                     {current.words
                       .map((w) => w.transliteration || '')
@@ -390,13 +413,14 @@ export function VideoPreview() {
                 )}
 
                 {/* Translation — sits right under Arabic (or transliteration).
-                    Tight 0.6rem gap. */}
+                    Tight gap, scales with frame. */}
                 {settings.showTranslation && (
                   <p
-                    className="qv-smooth text-white/85 mx-auto max-w-xl leading-snug drop-shadow text-center"
+                    className="qv-smooth text-white/85 mx-auto leading-snug drop-shadow text-center"
                     style={{
                       fontSize: translationFontSizeCss,
-                      marginTop: '0.6rem',
+                      marginTop: '1.5cqw',
+                      maxWidth: '85cqw',
                     }}
                   >
                     {current.translation}
@@ -435,8 +459,15 @@ export function VideoPreview() {
             </div>
           )}
 
-          {/* Watermark — stripped in the final export */}
-          <div className="absolute bottom-2.5 right-3.5 text-[10px] tracking-[0.2em] text-white/35 font-mono uppercase">
+          {/* Watermark — stripped in the final export (scales with frame) */}
+          <div
+            className="absolute tracking-[0.2em] text-white/35 font-mono uppercase"
+            style={{
+              bottom: '2.5cqw',
+              right: '3.5cqw',
+              fontSize: '2cqw',
+            }}
+          >
             QuranVid
           </div>
         </div>

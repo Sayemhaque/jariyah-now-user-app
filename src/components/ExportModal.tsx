@@ -28,13 +28,11 @@ const PLATFORM_PRESETS: {
   { key: 'reel', label: 'Instagram Reel', hint: '1080×1920 · portrait', orientation: 'portrait' },
   { key: 'shorts', label: 'YouTube Shorts', hint: '1080×1920 · portrait', orientation: 'portrait' },
   { key: 'youtube', label: 'YouTube', hint: '1920×1080 · landscape', orientation: 'landscape' },
-  { key: 'square', label: 'Square Post', hint: '1080×1080 · square', orientation: 'square' },
 ]
 
 const RES: Record<Orientation, { w: number; h: number }> = {
   landscape: { w: 1280, h: 720 },
   portrait: { w: 720, h: 1280 },
-  square: { w: 1080, h: 1080 },
 }
 
 type RenderStatus = 'idle' | 'rendering' | 'done' | 'error'

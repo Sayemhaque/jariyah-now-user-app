@@ -156,8 +156,8 @@ export function CustomizationPanel() {
     <div className="space-y-1">
       {/* Layout */}
       <SectionTitle>Layout</SectionTitle>
-      <div className="grid grid-cols-3 gap-2">
-        {(['portrait', 'square', 'landscape'] as Orientation[]).map((o) => (
+      <div className="grid grid-cols-2 gap-2">
+        {(['portrait', 'landscape'] as Orientation[]).map((o) => (
           <button
             key={o}
             onClick={() => setOrientation(o)}
@@ -176,7 +176,6 @@ export function CustomizationPanel() {
                   : 'border-foreground/40',
                 o === 'portrait' && 'h-7 w-4',
                 o === 'landscape' && 'h-4 w-7',
-                o === 'square' && 'h-5 w-5',
               )}
             />
             <span className="capitalize font-medium">{o}</span>
