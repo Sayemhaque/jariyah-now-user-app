@@ -257,11 +257,10 @@ export function VideoPreview() {
   // larger text, automatically.
   //
   // The user's font-size slider acts as a multiplier on top of the base
-  // percentage. Reference sizes: portrait Arabic=40 at 8cqw, landscape
-  // Arabic=36 at 5cqw. So multiplier = sliderValue / referenceValue.
+  // percentage. Reference sizes match AUTO_FONT_SIZES.
   const orientationFontBase: Record<string, { ar: number; tr: number; arRef: number; trRef: number }> = {
-    portrait: { ar: 8.0, tr: 3.0, arRef: 40, trRef: 16 },
-    landscape: { ar: 5.0, tr: 1.9, arRef: 36, trRef: 15 },
+    portrait: { ar: 7.0, tr: 2.8, arRef: 30, trRef: 14 },
+    landscape: { ar: 4.5, tr: 1.8, arRef: 34, trRef: 15 },
   }
   const fb = orientationFontBase[settings.orientation]!
   const arCqw = (fb.ar * settings.arabicFontSize / fb.arRef).toFixed(2)

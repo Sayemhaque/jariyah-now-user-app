@@ -109,6 +109,6 @@ export interface ExportOptions {
  * preview itself scales them proportionally via CSS container queries.
  */
 export const AUTO_FONT_SIZES: Record<Orientation, { arabic: number; translation: number }> = {
-  portrait: { arabic: 40, translation: 16 },
-  landscape: { arabic: 36, translation: 15 },
+  portrait: { arabic: 30, translation: 14 },
+  landscape: { arabic: 34, translation: 15 },
 }

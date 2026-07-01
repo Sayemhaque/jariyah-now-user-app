@@ -759,9 +759,16 @@ function drawFrame({
     settings.fontStyle === 'uthmani'
       ? '"Amiri Quran", "Amiri", serif'
       : '"Scheherazade New", "Scheherazade", serif'
-  const arabicFontSize = settings.arabicFontSize * (H / 720)
-  const transFontSize = settings.translationFontSize * (H / 720)
-  const translitFontSize = Math.max(11, H * 0.018)
+
+  // Scale font by the SHORTER dimension (min of W, H) so text never
+  // overflows on narrow portrait frames. Previously we scaled by H alone,
+  // which made Arabic text enormous on portrait (H=1280 → 1.78x scale).
+  // Using min(W,H) keeps the text proportional to the smaller dimension.
+  const minDim = Math.min(W, H)
+  const fontScale = minDim / 720
+  const arabicFontSize = settings.arabicFontSize * fontScale
+  const transFontSize = settings.translationFontSize * fontScale
+  const translitFontSize = Math.max(11, minDim * 0.018)
 
   const activeIdx = getActiveWordIndex(slide.words, intoMs)
 
@@ -774,7 +781,7 @@ function drawFrame({
     ? slide.words.map((w) => w.text)
     : slide.arabicText.split(/\s+/)
   const spaceW = ctx.measureText(' ').width
-  const innerMaxW = W * 0.74 // text area inside the card
+  const innerMaxW = W * 0.84 // text area — wider so words don't wrap excessively
   const lines: string[][] = []
   let line: string[] = []
   let lineW = 0
@@ -791,7 +798,7 @@ function drawFrame({
   }
   if (line.length) lines.push(line)
 
-  const arabicLineH = arabicFontSize * 1.65
+  const arabicLineH = arabicFontSize * 1.8 // generous line height to prevent overlap
   const arabicTotalH = lines.length * arabicLineH
 
   // Transliteration (one-line approximation)
