@@ -130,6 +130,7 @@ export function getSurahFromCache(number: number): Surah | undefined {
 export async function fetchAyatText(
   surah: number,
   ayat: number,
+  translationEdition: string = 'en.pickthall',
 ): Promise<{ arabic: string; translation: string } | null> {
   const ref = `${surah}:${ayat}`
   try {
@@ -138,7 +139,7 @@ export async function fetchAyatText(
         `${ALQURAN_BASE}/ayah/${ref}/quran-uthmani`,
         { cache: 'force-cache', next: { revalidate: 604_800 } }, // 7 days
       ),
-      fetchWithTimeout(`${ALQURAN_BASE}/ayah/${ref}/en.asad`, {
+      fetchWithTimeout(`${ALQURAN_BASE}/ayah/${ref}/${translationEdition}`, {
         cache: 'force-cache',
         next: { revalidate: 604_800 },
       }),
@@ -153,6 +154,7 @@ export async function fetchAyatText(
   } catch (err) {
     logger.warn('fetchAyatText failed', {
       ref,
+      translationEdition,
       error: err instanceof Error ? err.message : String(err),
     })
     return null
@@ -247,9 +249,10 @@ export async function fetchAyatData(
   audioKey: string,
   surahName: string,
   surahNameArabic: string,
+  translationEdition: string = 'en.pickthall',
 ): Promise<AyatData | null> {
   const [textData, words] = await Promise.all([
-    fetchAyatText(surah, ayat),
+    fetchAyatText(surah, ayat, translationEdition),
     fetchWordTimings(surah, ayat, recitationId),
   ])
   if (!textData) return null

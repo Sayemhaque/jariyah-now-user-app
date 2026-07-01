@@ -308,3 +308,77 @@ Stage Summary:
   5. **Testing**: 90 unit tests across 6 files covering validation, highlight calc, schemas, jobStore, rateLimit, overlay — all the spec's required edge cases
   6. **Project hygiene**: README.md (setup, scripts, env vars, architecture, API ref), .env.example, .github/workflows/ci.yml (lint→typecheck→test→build), .gitignore updated
   7. **Definition of done**: every feature handles happy path + bad input + external API down + has tests + is readable by a stranger
+
+---
+Task ID: 7
+Agent: main (super-z)
+Task: Phase 1 — Legal blockers (translation copyright, LICENSE/NOTICES, legal routes, footer, README correction)
+
+Work Log:
+- Created `src/lib/translations.ts` with 4 translation editions:
+  - Pickthall (public domain, 1930) — new default
+  - Saheeh International (permissive, non-commercial with attribution)
+  - Clear Quran / Dr. Mustafa Khattab (permissive, non-commercial with attribution)
+  - Muhammad Asad (copyrighted, personal-use-only, with a warning badge in the UI)
+  - Each carries full metadata: fullName, rightsHolder, license, licenseNote
+  - `videoAttributionLine()` helper returns the attribution string (empty for public-domain editions)
+- Added `translationKey` to the Zustand store + `setTranslation()` action
+  - Changing translation invalidates the ayat cache (the translation text differs per edition)
+  - Cache key now includes the translation edition: `surah:ayat:translationKey`
+- Updated `quranApi.fetchAyatText()` and `fetchAyatData()` to accept a `translationEdition` parameter (default `en.pickthall`)
+- Created `src/components/TranslationSelector.tsx`:
+  - Dropdown with all 4 editions showing label + rightsHolder
+  - Warning badge (⚠) for personal-use-only editions with a tooltip explaining the restriction
+  - Inline license summary card showing the selected edition's full name, license badge (Public domain / Non-commercial / Personal use), and license note
+- Added the TranslationSelector to the sidebar (after ReciterSelector) in page.tsx
+- Wired the translation attribution into the video preview:
+  - `VideoPreview.tsx` computes `attributionLine` from the selected translation
+  - Renders it at the bottom-left of the preview frame (2.4cqw, white/55 opacity) — empty for public-domain editions
+  - Mirrored in the Canvas export `drawFrame` (ExportModal.tsx): draws the attribution at the bottom-left with truncation if it would overflow
+  - Passed through `RenderArgs.attributionLine` → `DrawArgs.attributionLine`
+- Created `LICENSE` (MIT) at the repo root with a note clarifying it covers the source code only, not the third-party data
+- Created `NOTICES` at the repo root crediting:
+  - Arabic Quran text: alquran.cloud + Tanzil.net + King Fahd Quran Complex
+  - All 4 translation editions with their rights holders and license summaries
+  - All 5 reciters by name with their audio CDN paths
+  - Word-timing data: quran.com API
+  - Surah metadata: alquran.cloud
+  - Background images: AI-generated, CC0
+  - Fonts: Inter, Amiri, Scheherazade (all SIL OFL)
+  - Software dependencies with their licenses
+- Created `src/components/LegalPage.tsx` — shared layout for legal/info pages with a "Back to builder" link + a `SiteFooter` component (attribution + legal links)
+- Created `src/app/terms/page.tsx` — draft Terms of Service covering: what the service does, no accounts, acceptable use, rate limits, content licensing (with the full translation-license breakdown including the Asad warning), no warranty, limitation of liability, changes, contact
+- Created `src/app/privacy/page.tsx` — draft Privacy Policy covering: short version, data we DON'T collect, data we temporarily process (IP for rate limiting, request metadata, cached Quran data), cookies, third-party services, data retention, user rights, children's privacy, security, changes, contact
+- Created `src/app/about/page.tsx` — About page with: data sources (alquran.cloud, quran.com, verses.quran.com, Tanzil.net), all 5 reciter credits, all 4 translation editions with license notes, background images, fonts, open source, feedback
+- Updated `src/app/page.tsx`:
+  - Header now has About / Terms / Privacy links (About visible on all sizes; Terms/Privacy on sm+)
+  - Replaced the hidden-on-mobile "Data: alquran.cloud · quran.com" link with a full sidebar footer at the bottom of the controls panel that includes attribution (alquran.cloud + quran.com + verses.quran.com) + About/Terms/Privacy links — visible on all screen sizes
+- Updated `README.md`:
+  - Replaced the inaccurate "public Quran data" license section with a proper "Licensing & attribution" section
+  - Added a quick-summary table of every component + its source + its license
+  - Added a "What this means for users" section explaining the Asad restriction, Pickthall safety, reciter credit, custom background responsibility
+  - Linked to the /about, /terms, /privacy routes + the NOTICES + LICENSE files
+- Added 16 unit tests in `src/lib/translations.test.ts`:
+  - TRANSLATION_EDITIONS: at least 3 editions, unique keys, all required fields, warn flag only on personal-use-only
+  - DEFAULT_TRANSLATION_KEY: is en.pickthall, refers to a public-domain edition, is NOT en.asad
+  - getTranslationEdition: returns matching edition, falls back to pickthall for unknown/empty keys
+  - videoAttributionLine: empty for public-domain, non-empty for permissive/copyrighted, includes full name + rights holder, prefixed with "Translation: "
+- Verified end-to-end with Agent Browser:
+  - Page loads cleanly, no console errors
+  - Translation selector visible in the sidebar, defaulting to "Pickthall — Marmaduke Pickthall (1930)"
+  - Header has About / Terms / Privacy links
+  - Sidebar footer shows attribution + legal links
+  - /about, /terms, /privacy routes all render with full content
+  - Selected Al-Fatihah with Pickthall → no attribution in DOM (correct for public domain)
+  - Switched to Saheeh International → attribution line "Translation: The Qur'an: Arabic Text with English Translation — Saheeh International" appears at the bottom-left of the preview (verified via VLM on upscaled crop)
+  - All 4 translation editions visible in the dropdown (Pickthall, Saheeh International, Clear Quran, Muhammad Asad with warning badge)
+- ESLint passes clean (0 errors, 0 warnings)
+- All 106 tests pass (16 new translation tests + 90 existing)
+
+Stage Summary:
+- Phase 1 (Legal blockers) complete. The single biggest legal exposure — using the copyrighted Muhammad Asad translation as the default — is fixed. The app now defaults to Pickthall (public domain) and lets users choose from 4 editions with clear license labels + warnings.
+- LICENSE (MIT) and NOTICES files added at the repo root, crediting every data source, reciter, and translation copyright holder.
+- Three legal routes created (/terms, /privacy, /about) with draft content covering: content licensing (including the Asad restriction), privacy (IP logging disclosure, no accounts, no analytics, custom backgrounds stay local), and full data-source attribution.
+- Site footer with attribution + legal links added to both the legal pages (via LegalPage wrapper) and the main builder (sidebar footer + header links), visible on all screen sizes.
+- README corrected: no longer falsely calls the data "public"; now has a proper licensing table + user guidance.
+- The exported video now carries an attribution line at the bottom-left when the selected translation requires it (Pickthall = none, Saheeh/Clear Quran/Asad = attribution shown).

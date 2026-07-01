@@ -12,6 +12,7 @@ import { RECITERS, DEFAULT_RECITER_ID } from './reciters'
 import { fetchSurahs, fetchAyatData, getAudioDurationMs } from './quranApi'
 import { validateAyatRange } from './validation'
 import { AUTO_FONT_SIZES } from './types'
+import { DEFAULT_TRANSLATION_KEY } from './translations'
 
 interface BuilderState {
   // data
@@ -22,9 +23,11 @@ interface BuilderState {
   fromAyat: number
   toAyat: number
   reciterId: string
+  /** alquran.cloud edition key (e.g. en.pickthall). See lib/translations.ts. */
+  translationKey: string
   settings: VideoSettings
 
-  // fetched ayat data — keyed by "surah:ayat"
+  // fetched ayat data — keyed by "surah:ayat:translationKey"
   ayatCache: Record<string, AyatData>
   ayatList: AyatData[]
   loadingAyats: boolean
@@ -36,6 +39,7 @@ interface BuilderState {
   setFromAyat: (n: number) => void
   setToAyat: (n: number) => void
   setReciter: (id: string) => void
+  setTranslation: (key: string) => void
   updateSettings: (patch: Partial<VideoSettings>) => void
   /** Convenience: change orientation (and auto-fit fonts when enabled). */
   setOrientation: (o: Orientation) => void
@@ -74,6 +78,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   fromAyat: 1,
   toAyat: 3,
   reciterId: DEFAULT_RECITER_ID,
+  translationKey: DEFAULT_TRANSLATION_KEY,
   settings: DEFAULT_SETTINGS,
 
   ayatCache: {},
@@ -110,6 +115,11 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   setReciter: (id) => {
     // changing reciter invalidates cached word timings + audio urls
     set({ reciterId: id, ayatList: [], ayatCache: {} })
+  },
+  setTranslation: (key) => {
+    // changing translation invalidates the cache (the translation text differs
+    // per edition) but keeps the reciter (audio + word timings are unaffected)
+    set({ translationKey: key, ayatList: [] })
   },
 
   updateSettings: (patch) =>
@@ -187,12 +197,16 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       return
     }
     const reciter = state.getReciter()
+    const translationKey = state.translationKey
     set({ loadingAyats: true, ayatError: null, ayatList: [] })
 
     try {
       const list: AyatData[] = []
       for (let ayat = state.fromAyat; ayat <= state.toAyat; ayat++) {
-        const key = `${surah.number}:${ayat}`
+        // Cache key includes the translation edition so switching editions
+        // re-fetches the translation text while still benefiting from the
+        // cache for repeated loads of the same edition.
+        const key = `${surah.number}:${ayat}:${translationKey}`
         let data = state.ayatCache[key]
         if (!data) {
           data = await fetchAyatData(
@@ -202,6 +216,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
             reciter.audioKey,
             surah.name,
             surah.arabicName,
+            translationKey,
           )
           if (data) {
             // resolve audio duration (best effort)

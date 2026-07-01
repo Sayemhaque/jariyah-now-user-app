@@ -6,6 +6,7 @@ import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { paintOverlayOnCanvas } from '@/lib/overlay'
 import { getActiveWordIndex } from '@/lib/highlight'
+import { videoAttributionLine } from '@/lib/translations'
 import type { AyatSlide, ExportOptions, Orientation } from '@/lib/types'
 import {
   Dialog,
@@ -48,6 +49,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const surahs = useBuilderStore((s) => s.surahs)
   const selectedSurahNumber = useBuilderStore((s) => s.selectedSurahNumber)
   const reciterId = useBuilderStore((s) => s.reciterId)
+  const translationKey = useBuilderStore((s) => s.translationKey)
   const settings = useBuilderStore((s) => s.settings)
   const fromAyat = useBuilderStore((s) => s.fromAyat)
   const toAyat = useBuilderStore((s) => s.toAyat)
@@ -171,6 +173,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         settings,
         orientation: settings.orientation,
         quality,
+        attributionLine: videoAttributionLine(translationKey),
         onProgress: (p) => {
           setProgress(p)
           // best-effort progress sync to the server
@@ -406,6 +409,8 @@ interface RenderArgs {
   settings: ReturnType<typeof useBuilderStore.getState>['settings']
   orientation: Orientation
   quality: ExportOptions['quality']
+  /** Attribution line for the translation edition (empty for public-domain). */
+  attributionLine: string
   onProgress: (p: number) => void
 }
 
@@ -415,6 +420,7 @@ async function renderVideoToWebm({
   settings,
   orientation,
   quality,
+  attributionLine,
   onProgress,
 }: RenderArgs): Promise<string> {
   const base = RES[orientation]
@@ -531,6 +537,7 @@ async function renderVideoToWebm({
         bgImg,
         ayatIndex: idx,
         total: slides.length,
+        attributionLine,
       })
 
       onProgress(Math.min(1, elapsedSec / totalSec))
@@ -602,6 +609,8 @@ interface DrawArgs {
   bgImg: HTMLImageElement | null
   ayatIndex: number
   total: number
+  /** Attribution line for the translation edition (empty for public-domain). */
+  attributionLine: string
 }
 
 function drawFrame({
@@ -614,6 +623,7 @@ function drawFrame({
   bgImg,
   ayatIndex,
   total,
+  attributionLine,
 }: DrawArgs) {
   // ---- Background (cover-fit) -----------------------------------------
   if (bgImg) {
@@ -820,7 +830,24 @@ function drawFrame({
     ctx.shadowBlur = 0
   }
 
-  // ---- Watermark ------------------------------------------------------
+  // ---- Translation attribution (bottom-left) -------------------------
+  // Only drawn for editions that require attribution (permissive / personal).
+  // Empty for public-domain editions like Pickthall.
+  if (attributionLine) {
+    ctx.font = `${Math.round(H * 0.016)}px Inter, sans-serif`
+    ctx.fillStyle = 'rgba(255,255,255,0.45)'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'bottom'
+    // Truncate if it would overflow the left half of the frame.
+    const maxW = W * 0.55
+    let text = attributionLine
+    while (ctx.measureText(text).width > maxW && text.length > 10) {
+      text = text.slice(0, -2) + '…'
+    }
+    ctx.fillText(text, W * 0.03, H * 0.985)
+  }
+
+  // ---- Watermark (bottom-right) --------------------------------------
   ctx.font = `${Math.round(H * 0.012)}px monospace`
   ctx.fillStyle = 'rgba(255,255,255,0.35)'
   ctx.textAlign = 'right'

@@ -15,6 +15,7 @@ import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { overlayCssBackground } from '@/lib/overlay'
 import { getActiveWordIndex } from '@/lib/highlight'
+import { videoAttributionLine } from '@/lib/translations'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -36,6 +37,7 @@ export function VideoPreview() {
   const surahs = useBuilderStore((s) => s.surahs)
   const selectedSurahNumber = useBuilderStore((s) => s.selectedSurahNumber)
   const reciterId = useBuilderStore((s) => s.reciterId)
+  const translationKey = useBuilderStore((s) => s.translationKey)
   const settings = useBuilderStore((s) => s.settings)
   const fromAyat = useBuilderStore((s) => s.fromAyat)
   const toAyat = useBuilderStore((s) => s.toAyat)
@@ -60,6 +62,15 @@ export function VideoPreview() {
   const [muted, setMuted] = useState(false)
 
   const current = ayatList[currentIndex]
+
+  // Attribution line for the selected translation edition. Empty for
+  // public-domain editions (no attribution needed). For permissive/personal
+  // editions, shown at the bottom-left of the preview + export.
+  const attributionLine = useMemo(
+    () => videoAttributionLine(translationKey),
+    [translationKey],
+  )
+
   const aspect = ASPECT[settings.orientation]
 
   // Total duration estimate based on known audio durations.
@@ -454,7 +465,23 @@ export function VideoPreview() {
             </div>
           )}
 
-          {/* Watermark — stripped in the final export (scales with frame) */}
+          {/* Translation attribution — bottom-left, only for editions that
+              require attribution (permissive / personal-use-only). Empty for
+              public-domain editions like Pickthall. */}
+          {attributionLine && (
+            <div
+              className="absolute text-white/55 font-sans leading-tight max-w-[55%]"
+              style={{
+                bottom: '2.5cqw',
+                left: '3.5cqw',
+                fontSize: '2.4cqw',
+              }}
+            >
+              {attributionLine}
+            </div>
+          )}
+
+          {/* Watermark — bottom-right (scales with frame) */}
           <div
             className="absolute tracking-[0.2em] text-white/35 font-mono uppercase"
             style={{

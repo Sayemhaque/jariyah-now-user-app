@@ -1,0 +1,202 @@
+NOTICES — Third-Party Data Sources and Attributions
+=====================================================
+
+QuranVid fetches Quran text, translations, reciter audio, and word-timing
+data from the following third-party sources at runtime. This file credits
+each source and summarizes its licensing terms. The application code itself
+is MIT-licensed (see LICENSE); this file covers the DATA only.
+
+If you redistribute a video produced by QuranVid, you are responsible for
+complying with the license of every data source embedded in that video.
+
+─────────────────────────────────────────────────────────────────────────
+1. ARABIC QURAN TEXT (Uthmani script)
+─────────────────────────────────────────────────────────────────────────
+
+Source:         alquran.cloud — https://alquran.cloud
+Upstream:       Tanzil.net — https://tanzil.net
+Text standard:  King Fahd Quran Complex (Madinah Mushaf)
+
+License:        The Arabic text of the Quran is the unaltered word of God
+                and is not subject to copyright. The specific Uthmani
+                typography is provided by Tanzil.net under their terms
+                (https://tanzil.net/tos) which permit free use with
+                attribution.
+
+Attribution:    "Quran text from Tanzil.net, served by alquran.cloud"
+
+─────────────────────────────────────────────────────────────────────────
+2. ENGLISH TRANSLATIONS
+─────────────────────────────────────────────────────────────────────────
+
+QuranVid offers multiple translation editions. The user picks one in the
+sidebar; the selected edition's attribution appears in the exported video
+when required by its license.
+
+2a. Pickthall (DEFAULT — public domain)
+    Edition key:    en.pickthall
+    Full name:      "The Meaning of the Glorious Qur'an"
+    Translator:     Marmaduke Muhammad Pickthall
+    First published:1930
+    License:        Public domain (copyright has expired).
+    Attribution:    Not legally required, but credited on the About page.
+
+2b. Saheeh International
+    Edition key:    en.sahih
+    Full name:      "The Qur'an: Arabic Text with English Translation"
+    Publisher:      Saheeh International, Jeddah
+    License:        Permitted for non-commercial use with attribution.
+    Attribution:    Required — shown in the exported video.
+
+2c. Clear Quran (Dr. Mustafa Khattab)
+    Edition key:    en.clearquran
+    Full name:      "The Clear Quran"
+    Translator:     Dr. Mustafa Khattab
+    Publisher:      Furqan Institute of Islamic Studies
+    License:        Permitted for non-commercial use with attribution to
+                    the Furqan Institute.
+    Attribution:    Required — shown in the exported video.
+
+2d. Muhammad Asad — PERSONAL USE ONLY
+    Edition key:    en.asad
+    Full name:      "The Message of the Qur'an"
+    Translator:     Muhammad Asad (Leopold Weiss)
+    Rights holder:  Dar al-Andalus Ltd. (the Asad estate)
+    License:        COPYRIGHTED. Personal reading only. A separate license
+                    from Dar al-Andalus is required for ANY public
+                    distribution, including in videos.
+    Attribution:    QuranVid shows a warning badge in the UI when this
+                    edition is selected. Users are advised to pick a
+                    different edition if they plan to publish their video.
+                    The attribution line IS shown in the exported video,
+                    but attribution alone does NOT satisfy the license —
+                    a separate written license from Dar al-Andalus is
+                    required.
+
+─────────────────────────────────────────────────────────────────────────
+3. RECITER AUDIO
+─────────────────────────────────────────────────────────────────────────
+
+Audio is streamed at runtime from the Quran.com / QuranFoundation CDN at
+https://verses.quran.com. QuranVid does not host or redistribute the audio
+files; it links to the CDN.
+
+3a. Mishary Rashid Alafasy
+    Style:      Murattal
+    CDN path:   Alafasy/mp3
+    License:    Generally permits non-commercial use with attribution.
+    Attribution:"Recited by Mishary Alafasy" — users are encouraged to
+                include this in any video description when publishing.
+
+3b. Abdul Basit (Mujawwad)
+    Style:      Mujawwad
+    CDN path:   AbdulBasit/Mujawwad/mp3
+    License:    Rights belong to the reciter's estate. Non-commercial use
+                with attribution is widely accepted; commercial use
+                requires permission.
+    Attribution:"Recited by Abdul Basit"
+
+3c. Mohamed Siddiq Al-Minshawi (Mujawwad)
+    Style:      Mujawwad
+    CDN path:   Minshawi/Mujawwad/mp3
+    License:    Rights belong to the reciter's estate. Non-commercial use
+                with attribution is widely accepted.
+    Attribution:"Recited by Al-Minshawi"
+
+3d. Mahmoud Khalil Al-Husary
+    Style:      Murattal
+    CDN path:   Husary/mp3
+    License:    Rights belong to the reciter's estate. Non-commercial use
+                with attribution is widely accepted.
+    Attribution:"Recited by Al-Husary"
+
+3e. Abdul Rahman As-Sudais
+    Style:      Murattal
+    CDN path:   Sudais/mp3
+    License:    Rights belong to the reciter and the Saudi Broadcasting
+                Authority. Non-commercial use with attribution is widely
+                accepted.
+    Attribution:"Recited by Abdul Rahman As-Sudais"
+
+─────────────────────────────────────────────────────────────────────────
+4. WORD-LEVEL TIMING DATA
+─────────────────────────────────────────────────────────────────────────
+
+Source:         quran.com API v4 — https://api.quran.com
+Provided by:    Quran.com / QuranFoundation
+Used for:       Synchronizing word-by-word highlighting with the reciter
+                audio.
+
+License:        quran.com's API is free for non-commercial use with
+                attribution. See https://quran.com/api for their terms.
+                QuranVid proxies these requests through /api/timings to
+                avoid browser CORS issues; the proxy is rate-limited.
+
+Attribution:    "Word timing data from quran.com"
+
+─────────────────────────────────────────────────────────────────────────
+5. SURAH METADATA (names, ayah counts, revelation type)
+─────────────────────────────────────────────────────────────────────────
+
+Source:         alquran.cloud — https://alquran.cloud
+Bundled:        A static fallback of all 114 surahs is bundled in
+                src/lib/surahs-fallback.ts so the UI works even if the
+                live API is unreachable.
+
+License:        Surah metadata (names, ayah counts) is factual data not
+                subject to copyright. The specific English transliterations
+                are from alquran.cloud.
+
+─────────────────────────────────────────────────────────────────────────
+6. BACKGROUND IMAGES
+─────────────────────────────────────────────────────────────────────────
+
+The 7 preset background images in /public/backgrounds/ were AI-generated
+using the z-ai image generation service and are released into the public
+domain (CC0). No attribution is required for the preset backgrounds.
+
+Users who upload their own custom background image are solely responsible
+for ensuring they have the rights to use that image in their video.
+
+─────────────────────────────────────────────────────────────────────────
+7. FONTS
+─────────────────────────────────────────────────────────────────────────
+
+7a. Inter (UI text)
+    Source:     Google Fonts — https://fonts.google.com/specimen/Inter
+    License:    SIL Open Font License 1.1
+    Copyright:  Rasmus Andersson
+
+7b. Amiri (Arabic, Uthmani style)
+    Source:     Google Fonts — https://fonts.google.com/specimen/Amiri
+    License:    SIL Open Font License 1.1
+    Copyright:  Sebastian Kosch
+
+7c. Scheherazade New (Arabic, Naskh style)
+    Source:     Google Fonts — https://fonts.google.com/specimen/Scheherazade+New
+    License:    SIL Open Font License 1.1
+    Copyright:  SIL International
+
+─────────────────────────────────────────────────────────────────────────
+8. SOFTWARE DEPENDENCIES
+─────────────────────────────────────────────────────────────────────────
+
+The full list of npm dependencies and their licenses is in package.json.
+Key dependencies and their licenses:
+
+- Next.js (MIT)               — https://nextjs.org
+- React (MIT)                 — https://react.dev
+- Tailwind CSS (MIT)          — https://tailwindcss.com
+- shadcn/ui (MIT)             — https://ui.shadcn.com
+- Zustand (MIT)               — https://github.com/pmndrs/zustand
+- Zod (MIT)                   — https://zod.dev
+- Vitest (MIT)                — https://vitest.dev
+- react-colorful (MIT)        — https://github.com/omgovich/react-colorful
+- lucide-react (ISC)          — https://lucide.dev
+
+─────────────────────────────────────────────────────────────────────────
+
+For questions about this NOTICES file, contact the project maintainers.
+For questions about licensing a specific translation or reciter's audio
+for commercial use, contact the rights holder directly — QuranVid does
+not sublicense any of the third-party content it fetches.

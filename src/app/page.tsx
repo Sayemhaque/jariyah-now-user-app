@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import {
   Film,
   Loader2,
@@ -14,6 +15,7 @@ import { validateAyatRange } from '@/lib/validation'
 import { SurahSelector } from '@/components/SurahSelector'
 import { AyatRangePicker } from '@/components/AyatRangePicker'
 import { ReciterSelector } from '@/components/ReciterSelector'
+import { TranslationSelector } from '@/components/TranslationSelector'
 import { CustomizationPanel } from '@/components/CustomizationPanel'
 import { VideoPreview } from '@/components/VideoPreview'
 import { ExportModal } from '@/components/ExportModal'
@@ -78,15 +80,25 @@ export default function Home() {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <a
-              href="https://alquran.cloud"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden md:inline text-[11px] text-muted-foreground hover:text-foreground transition"
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/about"
+              className="text-[11px] text-muted-foreground hover:text-foreground transition px-2 py-1"
             >
-              Data: alquran.cloud · quran.com
-            </a>
+              About
+            </Link>
+            <Link
+              href="/terms"
+              className="hidden sm:inline text-[11px] text-muted-foreground hover:text-foreground transition px-1 py-1"
+            >
+              Terms
+            </Link>
+            <Link
+              href="/privacy"
+              className="hidden sm:inline text-[11px] text-muted-foreground hover:text-foreground transition px-1 py-1"
+            >
+              Privacy
+            </Link>
             <Button
               onClick={() => setExportOpen(true)}
               disabled={!canExport}
@@ -117,6 +129,7 @@ export default function Home() {
                 <SurahSelector />
                 <AyatRangePicker />
                 <ReciterSelector />
+                <TranslationSelector />
               </div>
 
               <Button
@@ -163,9 +176,66 @@ export default function Home() {
                 <span className="text-foreground font-medium">How it works.</span>{' '}
                 Click <em>Load ayats</em> after changing the surah, range, or
                 reciter. The preview will play the recitation with each word
-                highlighted in real time. When you're happy, hit{' '}
+                highlighted in real time. When you&apos;re happy, hit{' '}
                 <span className="text-primary font-medium">Export video</span>.
               </div>
+            </div>
+
+            {/* Sidebar footer — attribution + legal links (visible on all
+                screen sizes, mirrors the site footer on legal pages) */}
+            <div className="pt-2 pb-1 border-t border-border text-[11px] text-muted-foreground space-y-2">
+              <p className="leading-relaxed">
+                Quran text from{' '}
+                <a
+                  href="https://alquran.cloud"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary/80 hover:text-primary underline underline-offset-2"
+                >
+                  alquran.cloud
+                </a>
+                {', '}
+                <a
+                  href="https://quran.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary/80 hover:text-primary underline underline-offset-2"
+                >
+                  quran.com
+                </a>
+                . Audio from{' '}
+                <a
+                  href="https://verses.quran.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary/80 hover:text-primary underline underline-offset-2"
+                >
+                  verses.quran.com
+                </a>
+                .
+              </p>
+              <nav className="flex items-center gap-3">
+                <Link
+                  href="/about"
+                  className="hover:text-foreground transition"
+                >
+                  About
+                </Link>
+                <span className="opacity-40">·</span>
+                <Link
+                  href="/terms"
+                  className="hover:text-foreground transition"
+                >
+                  Terms
+                </Link>
+                <span className="opacity-40">·</span>
+                <Link
+                  href="/privacy"
+                  className="hover:text-foreground transition"
+                >
+                  Privacy
+                </Link>
+              </nav>
             </div>
           </div>
         </aside>

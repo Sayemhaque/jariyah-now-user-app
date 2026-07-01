@@ -201,8 +201,47 @@ Poll a job's state. Always fresh (`Cache-Control: no-store`).
 **400** — missing jobId
 **404** — unknown jobId
 
-## License
+## Licensing & attribution
 
-This project uses public Quran data from [alquran.cloud](https://alquran.cloud)
-and [quran.com](https://quran.com). Reciter audio is hosted on the
-[verses.quran.com](https://verses.quran.com) CDN.
+The QuranVid **source code** is MIT-licensed — see `LICENSE`.
+
+The **data** the app fetches at runtime (Quran text, translations, reciter
+audio, word timings) is NOT covered by the MIT license. Each data source has
+its own license — see `NOTICES` at the repo root for the full attribution
+and licensing details.
+
+### Quick summary
+
+| Component | Source | License |
+|---|---|---|
+| Source code | this repo | MIT |
+| Arabic Quran text | alquran.cloud / Tanzil.net | Not subject to copyright (word of God) |
+| Pickthall translation (default) | alquran.cloud | Public domain (1930) |
+| Saheeh International translation | alquran.cloud | Non-commercial use with attribution |
+| Clear Quran (Dr. Khattab) | alquran.cloud | Non-commercial use with attribution |
+| Muhammad Asad translation | alquran.cloud | **Copyrighted — personal use only.** A separate license from Dar al-Andalus is required for any public distribution, including in videos. |
+| Reciter audio | verses.quran.com | Non-commercial use with attribution; commercial use requires permission |
+| Word-timing data | quran.com API | Non-commercial use with attribution |
+| Preset background images | AI-generated (this repo) | Public domain (CC0) |
+| Fonts (Inter, Amiri, Scheherazade) | Google Fonts | SIL Open Font License 1.1 |
+
+### What this means for users
+
+- **Videos you export are your responsibility.** QuranVid automatically adds
+  an attribution line to the bottom-left of the exported video when the
+  selected translation requires it. Attribution alone does not satisfy the
+  Muhammad Asad license — if you select that edition, you must obtain a
+  separate written license from Dar al-Andalus before distributing the video.
+- **Pickthall (the default) is safe** for any use, commercial or otherwise.
+- **Credit the reciter** by name in any video description when publishing.
+- **Custom background images** are your responsibility — ensure you have the
+  rights to use any image you upload.
+
+### Legal pages
+
+- [`/about`](/about) — data sources, reciter credits, translation editions
+- [`/terms`](/terms) — Terms of Service (draft — review with a lawyer before launch)
+- [`/privacy`](/privacy) — Privacy Policy (draft — review with a lawyer before launch)
+- `NOTICES` — full third-party attributions (repo root)
+- `LICENSE` — MIT license for the source code (repo root)
+
