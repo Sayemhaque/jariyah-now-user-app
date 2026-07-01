@@ -4,7 +4,9 @@ import { useRef } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { Upload, Sparkles } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
+import { validateBackgroundImage } from '@/lib/uploadValidation'
 import type { FontStyle, Orientation, OverlayStyle } from '@/lib/types'
+import { toast } from 'sonner'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
@@ -139,6 +141,14 @@ export function CustomizationPanel() {
 
   const onUpload = (file?: File) => {
     if (!file) return
+    // Validate before reading — reject SVG (XSS / canvas-taint risk) and
+    // files over 5MB (memory bloat). Shows a toast so the user knows why
+    // their upload didn't take.
+    const validation = validateBackgroundImage(file)
+    if (!validation.ok) {
+      toast.error(validation.error)
+      return
+    }
     const reader = new FileReader()
     reader.onload = () => {
       const dataUrl = String(reader.result || '')

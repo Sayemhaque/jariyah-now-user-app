@@ -36,6 +36,11 @@ const envSchema = z.object({
   // Max renders per IP per window. Defaults to 3/hour per the spec.
   RENDER_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(3),
   RENDER_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(3_600_000),
+  // /api/timings is polled per-ayat, so it needs a higher limit than renders.
+  // Defaults to 60/min/IP — enough for a user loading a 10-ayat range a few
+  // times, but caps abuse of the proxy to quran.com.
+  TIMINGS_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
+  TIMINGS_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
 
   // --- External fetch timeout (ms) ---
   // Applied to every call to alquran.cloud / quran.com / the audio CDN so a
@@ -47,6 +52,10 @@ const envSchema = z.object({
   // serverless instances. Otherwise it falls back to an in-memory Map.
   UPSTASH_REDIS_REST_URL: z.string().url().optional(),
   UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
+
+  // --- Sentry (optional — error tracking in production) ---
+  // When set, the app forwards uncaught errors to Sentry. Leave unset in dev.
+  SENTRY_DSN: z.string().url().optional(),
 
   // --- Object storage for rendered videos (optional in dev) ---
   // In production, rendered MP4s go to S3/R2 — never local disk, since

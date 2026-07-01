@@ -511,3 +511,65 @@ Stage Summary:
   2. Honest export format — platform presets now say "convert to MP4" / "WebM ok", the summary shows "Format: WebM (VP9/Opus)", and a "Heads up" note explains the ffmpeg one-liner for Instagram. Users won't be surprised when IG rejects the .webm file.
   3. Redis rate limiter — installed @upstash/redis + @upstash/ratelimit; the rate limiter now uses Redis (sliding-window) when configured, with graceful degradation to in-memory if Redis is unreachable. Production multi-instance deployments get correct shared limits.
   4. crypto.randomUUID() + ownership tokens — job IDs are now unpredictable v4 UUIDs (not the old predictable timestamp+Math.random format). Every job carries a 256-bit owner token; PUT and GET-status require it via the `x-owner-token` header. This closes the "anyone with a jobId can overwrite another user's job" and "jobId enumeration" vulnerabilities from the audit.
+
+---
+Task ID: 10
+Agent: main (super-z)
+Task: Phase 4 — Upload safety + ops (image validation, health endpoint, timings rate limit, Sentry)
+
+Work Log:
+- Created `src/lib/uploadValidation.ts` — pure validation helper for background image uploads:
+  - `validateBackgroundImage({type, size, name})` returns {ok, error?}
+  - Accepts: image/jpeg, image/png, image/webp, image/gif, image/avif
+  - Rejects: image/svg+xml (with a specific message — XSS + canvas-taint risk), all other MIME types, empty MIME, files > 5MB
+  - `MAX_BACKGROUND_IMAGE_BYTES = 5 * 1024 * 1024` (named constant, no magic number)
+  - Extracted as a pure function for unit-testability
+- Updated `src/components/CustomizationPanel.tsx`:
+  - `onUpload()` now calls `validateBackgroundImage(file)` before `readAsDataURL`
+  - On rejection, shows a `toast.error(validation.error)` with the specific reason (SVG warning, unsupported type, oversized)
+  - Added imports for the validator + sonner toast
+- Created `src/app/api/health/route.ts` — real health check:
+  - `checkDb()` — runs `db.$queryRaw\`SELECT 1\`` to force a Prisma connection
+  - `checkUpstream(name, url, expectedSubstring)` — fetches with a 3s timeout, verifies HTTP 200 + a substring in the body (confirms it's the real API, not a captive portal)
+  - Checks 3 dependencies in parallel: DB, alquran.cloud /surah (looks for "englishName"), quran.com /chapters (looks for "chapters")
+  - Returns `{status: 'ok'|'degraded'|'down', checks: {db, alquran, qurancom}, ts}` with 200 or 503
+  - `Cache-Control: no-store` so the result is always fresh
+  - Structured logging when degraded
+- Updated `src/app/api/route.ts` — replaced the "Hello, world!" placeholder with a real service-info response (name, version, endpoint list, docs link)
+- Added `TIMINGS_RATE_LIMIT_MAX` (60) + `TIMINGS_RATE_LIMIT_WINDOW_MS` (60000) to the env schema
+- Updated `src/app/api/timings/route.ts`:
+  - Added rate limiting (60/min/IP) via `consumeRateLimit()` with the `timings:` key prefix
+  - Returns 429 + `Retry-After` header when the limit is hit
+  - Structured logging on rate-limit events
+  - This closes the "open proxy to quran.com" vulnerability from the audit — an attacker can no longer enumerate the entire verse set (114 surahs × ~286 ayats × 5 reciters ≈ 163k requests) through our proxy
+- Installed `@sentry/nextjs`
+- Added `SENTRY_DSN` (optional, URL) to the env schema + `.env.example`
+- Created `src/lib/sentry.ts` — thin wrapper around Sentry:
+  - `captureException(err, context?)` — forwards to Sentry when SENTRY_DSN is set
+  - When SENTRY_DSN is unset (dev), falls through to the structured logger so errors still show up in the terminal
+  - Dynamic import of @sentry/nextjs so the bundle doesn't pull in the SDK when Sentry isn't configured
+  - If the Sentry import itself fails, falls back to the logger (never silently swallows an error)
+- Updated `src/app/error.tsx`:
+  - Replaced the `console.error('[error-boundary]', error)` placeholder with `captureException(error, { digest: error.digest })`
+  - The digest is included so we can correlate the user-visible ref with the Sentry event
+- Updated `.env.example` with the new env vars (TIMINGS_RATE_LIMIT_*, SENTRY_DSN)
+- Added 16 unit tests in `src/lib/uploadValidation.test.ts`:
+  - Accepts: JPEG/PNG/WebP/GIF/AVIF under the size limit, boundary case (exactly 5MB), case-insensitive MIME
+  - Rejects SVG with specific message, rejects text/plain / empty MIME / application/pdf / video/mp4
+  - Rejects 1-byte-over-limit, 500MB, includes actual file size in the error message
+  - Confirms MAX_BACKGROUND_IMAGE_BYTES is 5MB
+- Verified end-to-end with curl + Agent Browser:
+  - /api/health returns `status: ok` with all 3 checks passing (db ✓, alquran ✓ 146ms, qurancom ✓ 47ms)
+  - /api/timings rate limit: requests 1-60 succeed, request #61 gets 429 with Retry-After header ✅
+  - /api root returns service info (name, version, endpoints, docs)
+  - SVG upload rejected (no custom bg set after attempting to upload test.svg)
+  - Normal flow still works: loaded Al-Fatihah, pressed Play, audio + seek bar advancing
+- ESLint passes clean (0 errors, 0 warnings)
+- All 180 tests pass (16 new upload validation + 164 existing)
+
+Stage Summary:
+- Phase 4 (Upload safety + ops) complete. Four improvements shipped:
+  1. Upload validation — SVG rejected (XSS/canvas-taint risk), files > 5MB rejected, unsupported MIME types rejected, all with clear toast messages. Closes the "no MIME validation / no size limit" vulnerability from the audit.
+  2. Real /api/health — pings DB + alquran.cloud + quran.com in parallel with 3s timeouts, returns 200/503 with per-check status + latency. Suitable for uptime monitors + load balancers.
+  3. /api/timings rate-limited (60/min/IP) — no longer an open proxy to quran.com. Verified request #61 gets 429.
+  4. Sentry wired up — error.tsx now calls captureException() which forwards to Sentry when SENTRY_DSN is set, falls back to the structured logger in dev. Replaced the "Hello, world!" /api root with real service info.

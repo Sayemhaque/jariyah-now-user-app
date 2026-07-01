@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { env } from '@/lib/env'
 import { fetchWithTimeout, isFetchAbort } from '@/lib/fetchWithTimeout'
+import { consumeRateLimit, getClientIp } from '@/lib/rateLimit'
 import { logger } from '@/lib/logger'
 import { timingsQuerySchema } from '@/lib/schemas'
 
@@ -9,12 +10,38 @@ import { timingsQuerySchema } from '@/lib/schemas'
  * api.quran.com directly because of CORS, so we re-issue the request
  * server-side and pass the JSON back unchanged.
  *
+ * Rate-limited (60/min/IP by default) so it can't be abused as an open
+ * proxy to enumerate quran.com's entire verse set.
+ *
  * Query params (validated with zod):
  *   surah        — surah number (1-114)
  *   ayat         — ayat number within the surah
  *   recitationId — Quran.com recitation id (1, 2, 5, 6, 7 are common)
  */
 export async function GET(req: NextRequest) {
+  // --- Rate limit (60/min/IP) -----------------------------------------
+  // /api/timings is polled per-ayat, so it needs a higher limit than renders.
+  // Still capped so an attacker can't use us as an open proxy to hammer
+  // quran.com with novel surah:ayat:recitationId combinations.
+  const ip = getClientIp(req)
+  const rl = await consumeRateLimit(
+    `timings:${ip}`,
+    env.TIMINGS_RATE_LIMIT_MAX,
+    env.TIMINGS_RATE_LIMIT_WINDOW_MS,
+  )
+  if (!rl.ok) {
+    logger.warn('timings rate limited', { ip, remaining: rl.remaining })
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Try again in a moment.' },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil((rl.resetMs - Date.now()) / 1000)),
+        },
+      },
+    )
+  }
+
   // --- Validate input -------------------------------------------------
   const parsedQuery = timingsQuerySchema.safeParse({
     surah: Number(req.nextUrl.searchParams.get('surah')),
