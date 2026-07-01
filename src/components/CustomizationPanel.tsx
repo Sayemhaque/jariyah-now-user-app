@@ -1,0 +1,368 @@
+'use client'
+
+import { useRef } from 'react'
+import { HexColorPicker } from 'react-colorful'
+import { Upload, Image as ImageIcon, Palette } from 'lucide-react'
+import { useBuilderStore } from '@/lib/store'
+import type { FontStyle, Orientation, VideoSettings } from '@/lib/types'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
+import { Button } from '@/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
+
+interface Preset {
+  key: string
+  label: string
+  url: string
+  swatch: string
+}
+
+// 6 nature presets served from /public/backgrounds. Each preset is a CSS
+// gradient (data-URI-safe) so we don't depend on external image hosting in
+// the sandbox. The VideoPreview canvas can draw these directly.
+const BG_PRESETS: Preset[] = [
+  {
+    key: 'mountain',
+    label: 'Mountain Dawn',
+    url: '/backgrounds/mountain.svg',
+    swatch: 'linear-gradient(135deg,#0f2027,#2c5364 60%,#80b9a8)',
+  },
+  {
+    key: 'desert',
+    label: 'Desert Dusk',
+    url: '/backgrounds/desert.svg',
+    swatch: 'linear-gradient(135deg,#3a1c1c,#d76d77 50%,#ffaf7b)',
+  },
+  {
+    key: 'ocean',
+    label: 'Deep Ocean',
+    url: '/backgrounds/ocean.svg',
+    swatch: 'linear-gradient(135deg,#0b486b,#f56217 130%)',
+  },
+  {
+    key: 'forest',
+    label: 'Misty Forest',
+    url: '/backgrounds/forest.svg',
+    swatch: 'linear-gradient(135deg,#134e5e,#71b280)',
+  },
+  {
+    key: 'night',
+    label: 'Starlit Night',
+    url: '/backgrounds/night.svg',
+    swatch: 'linear-gradient(135deg,#0f0c29,#302b63 50%,#24243e)',
+  },
+  {
+    key: 'mosque',
+    label: 'Mosque Gold',
+    url: '/backgrounds/mosque.svg',
+    swatch: 'linear-gradient(135deg,#1f1c2c,#928dab 130%)',
+  },
+]
+
+function ColorField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (v: string) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <Label className="text-xs text-muted-foreground">{label}</Label>
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] font-mono text-foreground/70 uppercase">
+          {value}
+        </span>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="h-7 w-9 rounded-md border border-border"
+              style={{ backgroundColor: value }}
+              aria-label={`Pick ${label}`}
+            />
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-2 bg-popover border-border">
+            <HexColorPicker color={value} onChange={onChange} />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  )
+}
+
+function SectionTitle({ children }: { children: React.ReactNode }) {
+  return (
+    <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-5 first:mt-0">
+      {children}
+    </h3>
+  )
+}
+
+export function CustomizationPanel() {
+  const settings = useBuilderStore((s) => s.settings)
+  const update = useBuilderStore((s) => s.updateSettings)
+  const fileRef = useRef<HTMLInputElement>(null)
+
+  const onUpload = (file?: File) => {
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const dataUrl = String(reader.result || '')
+      update({
+        backgroundImage: dataUrl,
+        backgroundPreset: 'custom',
+      })
+    }
+    reader.readAsDataURL(file)
+  }
+
+  return (
+    <div className="space-y-1">
+      {/* Layout */}
+      <SectionTitle>Layout</SectionTitle>
+      <div className="grid grid-cols-3 gap-2">
+        {(['portrait', 'square', 'landscape'] as Orientation[]).map((o) => (
+          <button
+            key={o}
+            onClick={() => update({ orientation: o })}
+            className={cn(
+              'flex flex-col items-center gap-1.5 rounded-lg border border-border bg-card/40 px-2 py-3 text-xs transition',
+              settings.orientation === o
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'hover:border-foreground/30',
+            )}
+          >
+            <div
+              className={cn(
+                'border-2 rounded-sm',
+                settings.orientation === o
+                  ? 'border-primary'
+                  : 'border-foreground/40',
+                o === 'portrait' && 'h-7 w-4',
+                o === 'landscape' && 'h-4 w-7',
+                o === 'square' && 'h-5 w-5',
+              )}
+            />
+            <span className="capitalize">{o}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Background */}
+      <SectionTitle>Background</SectionTitle>
+      <div className="grid grid-cols-3 gap-2">
+        {BG_PRESETS.map((p) => (
+          <button
+            key={p.key}
+            onClick={() =>
+              update({ backgroundImage: p.url, backgroundPreset: p.key })
+            }
+            className={cn(
+              'group relative aspect-video rounded-lg border border-border overflow-hidden transition',
+              settings.backgroundPreset === p.key
+                ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                : 'hover:border-foreground/30',
+            )}
+            style={{ background: p.swatch }}
+            title={p.label}
+          >
+            <span className="absolute inset-x-0 bottom-0 bg-black/40 text-white text-[10px] py-0.5 px-1 text-center">
+              {p.label}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div className="flex items-center gap-2 mt-2">
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => onUpload(e.target.files?.[0])}
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full bg-card/40"
+          onClick={() => fileRef.current?.click()}
+        >
+          <Upload className="h-3.5 w-3.5 mr-1.5" />
+          Upload custom background
+        </Button>
+      </div>
+
+      {/* Overlay */}
+      <SectionTitle>Overlay</SectionTitle>
+      <div className="space-y-3 rounded-lg border border-border bg-card/30 p-3">
+        <ColorField
+          label="Color"
+          value={settings.overlayColor}
+          onChange={(v) => update({ overlayColor: v })}
+        />
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">Opacity</Label>
+            <span className="text-[11px] font-mono text-foreground/70">
+              {settings.overlayOpacity}%
+            </span>
+          </div>
+          <Slider
+            value={[settings.overlayOpacity]}
+            min={0}
+            max={80}
+            step={1}
+            onValueChange={(v) => update({ overlayOpacity: v[0]! })}
+          />
+        </div>
+      </div>
+
+      {/* Typography */}
+      <SectionTitle>Typography</SectionTitle>
+      <div className="space-y-3 rounded-lg border border-border bg-card/30 p-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs text-muted-foreground">Font style</Label>
+          <Select
+            value={settings.fontStyle}
+            onValueChange={(v: FontStyle) => update({ fontStyle: v })}
+          >
+            <SelectTrigger className="h-8 w-[150px] bg-background/60">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="uthmani">
+                <span className="font-arabic-uthmani">Uthmani (Amiri)</span>
+              </SelectItem>
+              <SelectItem value="naskh">
+                <span className="font-arabic-naskh">Naskh (Scheherazade)</span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">
+              Arabic font size
+            </Label>
+            <span className="text-[11px] font-mono text-foreground/70">
+              {settings.arabicFontSize}px
+            </span>
+          </div>
+          <Slider
+            value={[settings.arabicFontSize]}
+            min={24}
+            max={72}
+            step={1}
+            onValueChange={(v) => update({ arabicFontSize: v[0]! })}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <Label className="text-xs text-muted-foreground">
+              Translation font size
+            </Label>
+            <span className="text-[11px] font-mono text-foreground/70">
+              {settings.translationFontSize}px
+            </span>
+          </div>
+          <Slider
+            value={[settings.translationFontSize]}
+            min={14}
+            max={32}
+            step={1}
+            onValueChange={(v) => update({ translationFontSize: v[0]! })}
+          />
+        </div>
+
+        <ColorField
+          label="Font color"
+          value={settings.fontColor}
+          onChange={(v) => update({ fontColor: v })}
+        />
+        <ColorField
+          label="Highlight color"
+          value={settings.highlightColor}
+          onChange={(v) => update({ highlightColor: v })}
+        />
+      </div>
+
+      {/* Text card */}
+      <SectionTitle>Text Card</SectionTitle>
+      <div className="space-y-3 rounded-lg border border-border bg-card/30 p-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm">Show text card border</Label>
+          <Switch
+            checked={settings.showBorder}
+            onCheckedChange={(v) => update({ showBorder: v })}
+          />
+        </div>
+        {settings.showBorder && (
+          <>
+            <ColorField
+              label="Border color"
+              value={settings.borderColor}
+              onChange={(v) => update({ borderColor: v })}
+            />
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">
+                  Corner radius
+                </Label>
+                <span className="text-[11px] font-mono text-foreground/70">
+                  {settings.border_radius}px
+                </span>
+              </div>
+              <Slider
+                value={[settings.border_radius]}
+                min={0}
+                max={48}
+                step={1}
+                onValueChange={(v) => update({ border_radius: v[0]! })}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Translation & transliteration */}
+      <SectionTitle>Captions</SectionTitle>
+      <div className="space-y-3 rounded-lg border border-border bg-card/30 p-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm">Show translation</Label>
+          <Switch
+            checked={settings.showTranslation}
+            onCheckedChange={(v) => update({ showTranslation: v })}
+          />
+        </div>
+        <div className="flex items-center justify-between">
+          <Label className="text-sm">Show transliteration</Label>
+          <Switch
+            checked={settings.showTransliteration}
+            onCheckedChange={(v) => update({ showTransliteration: v })}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export { BG_PRESETS }
