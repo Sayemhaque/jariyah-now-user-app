@@ -11,6 +11,7 @@ import {
   checkExportCapabilities,
   pickSupportedMimeType,
 } from '@/lib/exportCapabilities'
+import { InstagramIcon, YouTubeIcon, YouTubeShortsIcon } from '@/components/PlatformIcons'
 import type { AyatSlide, ExportOptions, Orientation } from '@/lib/types'
 import {
   Dialog,
@@ -30,10 +31,12 @@ const PLATFORM_PRESETS: {
   label: string
   hint: string
   orientation: Orientation
+  icon: React.ComponentType<{ className?: string }>
+  color: string
 }[] = [
-  { key: 'reel', label: 'Instagram Reel', hint: '1080×1920 · portrait · convert to MP4', orientation: 'portrait' },
-  { key: 'shorts', label: 'YouTube Shorts', hint: '1080×1920 · portrait · WebM ok', orientation: 'portrait' },
-  { key: 'youtube', label: 'YouTube', hint: '1920×1080 · landscape · WebM ok', orientation: 'landscape' },
+  { key: 'reel', label: 'Instagram Reel', hint: '1080×1920 · portrait · convert to MP4', orientation: 'portrait', icon: InstagramIcon, color: '#e1306c' },
+  { key: 'shorts', label: 'YouTube Shorts', hint: '1080×1920 · portrait · WebM ok', orientation: 'portrait', icon: YouTubeShortsIcon, color: '#ff0000' },
+  { key: 'youtube', label: 'YouTube', hint: '1920×1080 · landscape · WebM ok', orientation: 'landscape', icon: YouTubeIcon, color: '#ff0000' },
 ]
 
 const RES: Record<Orientation, { w: number; h: number }> = {
@@ -263,23 +266,34 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
               <div className="space-y-2">
                 <Label className="qv-section-title !mb-0">Platform</Label>
                 <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
-                  {PLATFORM_PRESETS.map((p) => (
-                    <button
-                      key={p.key}
-                      onClick={() => setPlatform(p.key)}
-                      className={cn(
-                        'flex items-center justify-between gap-2 rounded-xl border p-2.5 sm:p-3 text-left transition',
-                        platform === p.key
-                          ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
-                          : 'border-border bg-card hover:border-foreground/30',
-                      )}
-                    >
-                      <span className="text-xs sm:text-sm font-medium">{p.label}</span>
-                      <span className="text-[9px] sm:text-[10px] text-muted-foreground tabular-nums text-right">
-                        {p.hint}
-                      </span>
-                    </button>
-                  ))}
+                  {PLATFORM_PRESETS.map((p) => {
+                    const Icon = p.icon
+                    return (
+                      <button
+                        key={p.key}
+                        onClick={() => setPlatform(p.key)}
+                        className={cn(
+                          'flex items-center gap-2.5 rounded-xl border p-2.5 sm:p-3 text-left transition',
+                          platform === p.key
+                            ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
+                            : 'border-border bg-card hover:border-foreground/30',
+                        )}
+                      >
+                        <div
+                          className="grid place-items-center h-8 w-8 rounded-lg shrink-0"
+                          style={{ backgroundColor: `${p.color}15`, color: p.color }}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs sm:text-sm font-medium leading-tight">{p.label}</div>
+                          <div className="text-[9px] sm:text-[10px] text-muted-foreground tabular-nums leading-tight mt-0.5">
+                            {p.hint}
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 
