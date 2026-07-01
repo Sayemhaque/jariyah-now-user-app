@@ -25,7 +25,7 @@ export function LegalPage({
           size="sm"
           className="mb-6 -ml-2 text-muted-foreground hover:text-foreground"
         >
-          <Link href="/">
+          <Link href="/app">
             <ArrowLeft className="h-4 w-4 mr-1.5" />
             Back to builder
           </Link>

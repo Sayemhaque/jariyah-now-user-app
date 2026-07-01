@@ -50,7 +50,7 @@ export default function LandingPage() {
               গোপনীয়তা
             </Link>
             <Link
-              href="/"
+              href="/app"
               className="qv-btn-primary inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold"
             >
               অ্যাপ খুলুন
@@ -88,7 +88,7 @@ export default function LandingPage() {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
-                href="/"
+                href="/app"
                 className="qv-btn-primary inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-base font-semibold"
               >
                 <Film className="h-5 w-5" />
@@ -162,7 +162,6 @@ export default function LandingPage() {
                   </div>
                 </div>
                 {/* Screenshot */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/landing/app-desktop.png"
                   alt="QuranVid অ্যাপ — ডেস্কটপ ভিউ"
@@ -175,7 +174,6 @@ export default function LandingPage() {
             <div className="hidden lg:block w-[200px] shrink-0">
               <div className="rounded-[2rem] border-[6px] border-foreground/80 bg-foreground/80 p-1 shadow-2xl">
                 <div className="rounded-[1.5rem] overflow-hidden bg-background">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src="/landing/app-mobile.png"
                     alt="QuranVid অ্যাপ — মোবাইল ভিউ"
@@ -328,7 +326,7 @@ export default function LandingPage() {
             </p>
 
             <Link
-              href="/"
+              href="/app"
               className="qv-btn-primary inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl text-lg font-semibold"
             >
               <Film className="h-6 w-6" />
@@ -357,7 +355,7 @@ export default function LandingPage() {
 
             <nav className="flex items-center gap-5 text-sm">
               <Link
-                href="/"
+                href="/app"
                 className="text-muted-foreground hover:text-foreground transition font-medium"
               >
                 অ্যাপ
