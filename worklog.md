@@ -573,3 +573,64 @@ Stage Summary:
   2. Real /api/health — pings DB + alquran.cloud + quran.com in parallel with 3s timeouts, returns 200/503 with per-check status + latency. Suitable for uptime monitors + load balancers.
   3. /api/timings rate-limited (60/min/IP) — no longer an open proxy to quran.com. Verified request #61 gets 429.
   4. Sentry wired up — error.tsx now calls captureException() which forwards to Sentry when SENTRY_DSN is set, falls back to the structured logger in dev. Replaced the "Hello, world!" /api root with real service info.
+
+---
+Task ID: 11
+Agent: main (super-z)
+Task: Phase 5 + 6 — Polish/a11y/perf + reciter attribution
+
+Work Log:
+
+**Phase 5 — Polish + a11y + perf:**
+
+5.1 Accessibility:
+- Added `aria-label` to all 4 icon-only transport buttons in VideoPreview (Previous ayat, Play/Pause, Next ayat, Mute/Unmute) — `title` alone isn't reliably read by screen readers
+- Added `lang="ar"` to Arabic content: surah name in the header, word-by-word text container, reciter Arabic name in both the dropdown + inline preview card, surah Arabic name in the SurahSelector dropdown
+- Bumped watermark opacity from `text-white/35` to `text-white/50` for WCAG AA contrast
+- Marked the watermark `aria-hidden="true"` so screen readers skip it
+
+5.2 Performance:
+- Lazy-mounted ExportModal with `next/dynamic({ ssr: false })` — the MediaRecorder + Canvas code is no longer in the main page chunk; it loads only when the user first opens the export modal
+- Switched the 7 background preset thumbnails from raw `<img>` to `next/image` with `fill` + `sizes` for responsive loading + automatic optimization
+- Initialized the Zustand store with `SURAHS_FALLBACK` instead of `[]` — the surah dropdown is immediately populated on first render with no loading spinner. `loadSurahs()` still fetches the live list from alquran.cloud and updates if richer, but the UI is already interactive before that resolves
+
+5.3 next.config.ts hygiene:
+- Set `typescript.ignoreBuildErrors: false` — production builds now fail on type errors instead of silently shipping broken code
+- Set `reactStrictMode: true` — enables additional runtime checks in dev
+- Fixed 3 type errors that surfaced: Window cast for webkitAudioContext (used `as unknown as` instead of direct cast), store.ts `data` typed as `AyatData | null` with `!` assertion in the closure (TypeScript can't narrow `let` in closures)
+- Updated tsconfig.json to exclude `examples/`, `skills/`, `mini-services/` from typechecking (pre-existing scaffold code, not ours)
+- Verified `tsc --noEmit` passes clean
+
+5.4 CI pipeline:
+- Verified `.github/workflows/ci.yml` is correct: lint → typecheck → test → build, failing fast on the cheapest check first. DATABASE_URL placeholder is set for the env validator
+
+5.5 sitemap + robots.txt:
+- Created `src/app/sitemap.ts` — Next.js metadata route that generates `/sitemap.xml` at build time, listing the 4 public pages (/, /about, /terms, /privacy) with changeFrequency + priority
+- Updated `public/robots.txt` — every user-agent now has `Disallow: /api/` (API routes shouldn't be indexed) + a `Sitemap:` directive pointing to `/sitemap.xml`
+
+**Phase 6 — Reciter attribution:**
+- Updated VideoPreview: the bottom-left attribution block now shows BOTH the translation attribution (when required) AND a "Recited by {reciter.name}" line (always shown). They're stacked vertically so both are visible
+- Updated ExportModal drawFrame: the Canvas export draws the same two-line attribution block — reciter credit at the bottom, translation attribution above it. Both use the same font size, opacity, and truncation logic
+- Wired `reciterName` through the RenderArgs → renderVideoToWebm → drawFrame chain
+- Verified via DOM inspection: "Recited by Mishary Alafasy" is present in the preview frame at the correct position
+- This makes every exported video self-attributing — viewers know both the translation source and the reciter
+
+**Verification:**
+- ESLint passes clean (0 errors, 0 warnings)
+- TypeScript typecheck passes clean (0 errors)
+- All 180 tests pass
+- App loads cleanly, no console errors
+- Surah dropdown immediately populated (SSR fallback, no loading spinner)
+- Transport buttons have aria-labels (verified via DOM: "Previous ayat", "Play", "Next ayat", "Mute")
+- 5 elements with lang="ar" (surah name, word text, 2x reciter name, surah selector)
+- Reciter attribution "Recited by Mishary Alafasy" visible in the preview frame (verified via DOM)
+- Watermark at /50 opacity + aria-hidden
+
+Stage Summary:
+- Phases 5 + 6 complete. All polish, accessibility, performance, and attribution items shipped:
+  1. **Accessibility** — aria-labels on all icon-only buttons, lang="ar" on all Arabic content, watermark contrast bumped to /50 + aria-hidden
+  2. **Performance** — ExportModal lazy-mounted (MediaRecorder code out of main chunk), background thumbnails use next/image, surah list SSR'd from bundled fallback (no loading spinner)
+  3. **Config hygiene** — ignoreBuildErrors=false + reactStrictMode=true, 3 type errors fixed, tsc passes clean
+  4. **CI** — workflow verified (lint → typecheck → test → build)
+  5. **SEO** — sitemap.ts + robots.txt updated to disallow /api/*
+  6. **Reciter attribution** — "Recited by {name}" now appears in both the preview and the exported video, alongside the translation attribution, making every video self-attributing

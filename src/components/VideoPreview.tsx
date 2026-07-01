@@ -319,6 +319,7 @@ export function VideoPreview() {
             >
               <div className="flex flex-col">
                 <span
+                  lang="ar"
                   className="font-arabic-uthmani leading-tight drop-shadow-lg"
                   style={{ fontSize: '5cqw' }}
                 >
@@ -360,6 +361,7 @@ export function VideoPreview() {
                 {/* Arabic — word-by-word highlight */}
                 <div
                   dir="rtl"
+                  lang="ar"
                   className={cn(
                     'qv-smooth text-center leading-[1.75] drop-shadow-lg',
                     settings.fontStyle === 'uthmani'
@@ -465,25 +467,29 @@ export function VideoPreview() {
             </div>
           )}
 
-          {/* Translation attribution — bottom-left, only for editions that
-              require attribution (permissive / personal-use-only). Empty for
-              public-domain editions like Pickthall. */}
-          {attributionLine && (
+          {/* Attribution block — bottom-left. Shows the translation attribution
+              line (when the edition requires it) + the reciter credit (always).
+              Stacked vertically so both are visible. */}
+          {(attributionLine || ayatList.length > 0) && (
             <div
-              className="absolute text-white/55 font-sans leading-tight max-w-[55%]"
+              className="absolute text-white/55 font-sans leading-tight max-w-[55%] space-y-0.5"
               style={{
                 bottom: '2.5cqw',
                 left: '3.5cqw',
                 fontSize: '2.4cqw',
               }}
             >
-              {attributionLine}
+              {attributionLine && <div>{attributionLine}</div>}
+              {ayatList.length > 0 && (
+                <div>Recited by {reciter.name}</div>
+              )}
             </div>
           )}
 
-          {/* Watermark — bottom-right (scales with frame) */}
+          {/* Watermark — decorative, aria-hidden for screen readers */}
           <div
-            className="absolute tracking-[0.2em] text-white/35 font-mono uppercase"
+            aria-hidden="true"
+            className="absolute tracking-[0.2em] text-white/50 font-mono uppercase"
             style={{
               bottom: '2.5cqw',
               right: '3.5cqw',
@@ -505,6 +511,7 @@ export function VideoPreview() {
             disabled={!ayatList.length}
             onClick={() => playAyat(Math.max(0, currentIndex - 1))}
             title="Previous ayat"
+            aria-label="Previous ayat"
           >
             <SkipBack className="h-4 w-4" />
           </Button>
@@ -514,6 +521,7 @@ export function VideoPreview() {
             disabled={!ayatList.length}
             onClick={togglePlay}
             title={isPlaying ? 'Pause' : 'Play'}
+            aria-label={isPlaying ? 'Pause' : 'Play'}
           >
             {isPlaying ? (
               <Pause className="h-4 w-4" />
@@ -528,6 +536,7 @@ export function VideoPreview() {
             disabled={!ayatList.length || currentIndex >= ayatList.length - 1}
             onClick={() => playAyat(Math.min(ayatList.length - 1, currentIndex + 1))}
             title="Next ayat"
+            aria-label="Next ayat"
           >
             <SkipForward className="h-4 w-4" />
           </Button>
@@ -559,6 +568,7 @@ export function VideoPreview() {
               className="h-9 w-9 rounded-lg hover:bg-secondary/60"
               onClick={() => setMuted((m) => !m)}
               title={muted ? 'Unmute' : 'Mute'}
+              aria-label={muted ? 'Unmute' : 'Mute'}
             >
               {muted || volume === 0 ? (
                 <VolumeX className="h-4 w-4" />

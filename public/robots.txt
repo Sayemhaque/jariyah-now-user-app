@@ -1,14 +1,26 @@
+# robots.txt — allows crawling of public pages, blocks /api/* routes.
+# The /api/* routes are for the application's internal use (timings proxy,
+# render job management, health check) and should not be indexed.
+
 User-agent: Googlebot
 Allow: /
+Disallow: /api/
 
 User-agent: Bingbot
 Allow: /
+Disallow: /api/
 
 User-agent: Twitterbot
 Allow: /
+Disallow: /api/
 
 User-agent: facebookexternalhit
 Allow: /
+Disallow: /api/
 
 User-agent: *
 Allow: /
+Disallow: /api/
+
+# Sitemap
+Sitemap: /sitemap.xml

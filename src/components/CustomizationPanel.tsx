@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { Upload, Sparkles } from 'lucide-react'
+import Image from 'next/image'
 import { useBuilderStore } from '@/lib/store'
 import { validateBackgroundImage } from '@/lib/uploadValidation'
 import type { FontStyle, Orientation, OverlayStyle } from '@/lib/types'
@@ -209,11 +210,12 @@ export function CustomizationPanel() {
                 : 'border-border hover:border-foreground/40',
             )}
           >
-            <img
+            <Image
               src={p.url}
               alt={p.label}
-              className="absolute inset-0 h-full w-full object-cover"
-              loading="lazy"
+              fill
+              sizes="(max-width: 768px) 30vw, 120px"
+              className="object-cover"
             />
             <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[10px] font-medium py-1 px-1.5 text-center">
               {p.label}

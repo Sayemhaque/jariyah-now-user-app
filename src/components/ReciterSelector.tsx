@@ -49,7 +49,7 @@ export function ReciterSelector() {
                     {r.style}
                   </span>
                 </div>
-                <span className="font-arabic-uthmani text-lg text-foreground/80 shrink-0">
+                <span lang="ar" className="font-arabic-uthmani text-lg text-foreground/80 shrink-0">
                   {r.arabicName}
                 </span>
               </div>
@@ -80,7 +80,7 @@ export function ReciterSelector() {
           <div className="text-[11px] text-muted-foreground flex items-center gap-2">
             <span>{selected.style}</span>
             <span className="opacity-50">·</span>
-            <span className="font-arabic-uthmani text-base">
+            <span lang="ar" className="font-arabic-uthmani text-base">
               {selected.arabicName}
             </span>
           </div>

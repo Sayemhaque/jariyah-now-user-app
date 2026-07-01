@@ -57,9 +57,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   output: "standalone",
   typescript: {
-    ignoreBuildErrors: true,
+    // Enforce type safety in production builds. If there are type errors,
+    // the build fails rather than silently shipping broken code.
+    ignoreBuildErrors: false,
   },
-  reactStrictMode: false,
+  reactStrictMode: true,
   allowedDevOrigins: [
     "*.space-z.ai",
     "*.chatglm.cn",

@@ -13,6 +13,7 @@ import { fetchSurahs, fetchAyatData, getAudioDurationMs } from './quranApi'
 import { validateAyatRange } from './validation'
 import { AUTO_FONT_SIZES } from './types'
 import { DEFAULT_TRANSLATION_KEY } from './translations'
+import { SURAHS_FALLBACK } from './surahs-fallback'
 
 interface BuilderState {
   // data
@@ -71,7 +72,12 @@ const DEFAULT_SETTINGS: VideoSettings = {
 }
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
-  surahs: [],
+  // Initialize with the bundled fallback so the dropdown is immediately
+  // populated on first render — no loading spinner. loadSurahs() will
+  // try to fetch the live list from alquran.cloud and update if it's
+  // richer (e.g. slightly different Arabic names), but the UI is already
+  // interactive before that resolves.
+  surahs: SURAHS_FALLBACK,
   surahsLoading: false,
   surahsError: null,
   selectedSurahNumber: null,
@@ -207,7 +213,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
         // re-fetches the translation text while still benefiting from the
         // cache for repeated loads of the same edition.
         const key = `${surah.number}:${ayat}:${translationKey}`
-        let data = state.ayatCache[key]
+        let data: AyatData | null = state.ayatCache[key] ?? null
         if (!data) {
           data = await fetchAyatData(
             surah.number,
@@ -222,6 +228,8 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
             // resolve audio duration (best effort)
             const dur = await getAudioDurationMs(data.audioUrl)
             data.audioDurationMs = dur
+            // `data!` is needed because TypeScript can't narrow `let` inside
+            // the set() closure — even though we just checked `if (data)`.
             set((s) => ({
               ayatCache: { ...s.ayatCache, [key]: data! },
             }))

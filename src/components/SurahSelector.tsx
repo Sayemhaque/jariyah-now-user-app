@@ -101,7 +101,7 @@ export function SurahSelector() {
                       </span>
                     </div>
                   </div>
-                  <span className="font-arabic-uthmani text-lg text-foreground/80 shrink-0">
+                  <span lang="ar" className="font-arabic-uthmani text-lg text-foreground/80 shrink-0">
                     {s.arabicName}
                   </span>
                 </SelectItem>

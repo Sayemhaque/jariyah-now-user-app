@@ -199,6 +199,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         orientation: settings.orientation,
         quality,
         attributionLine: videoAttributionLine(translationKey),
+        reciterName: reciter.name,
         onProgress: (p) => {
           setProgress(p)
           sendUpdate({ progress: p, status: 'rendering' })
@@ -450,6 +451,8 @@ interface RenderArgs {
   quality: ExportOptions['quality']
   /** Attribution line for the translation edition (empty for public-domain). */
   attributionLine: string
+  /** Reciter name for the "Recited by" credit (always shown). */
+  reciterName: string
   onProgress: (p: number) => void
 }
 
@@ -460,6 +463,7 @@ async function renderVideoToWebm({
   orientation,
   quality,
   attributionLine,
+  reciterName,
   onProgress,
 }: RenderArgs): Promise<string> {
   const base = RES[orientation]
@@ -481,8 +485,10 @@ async function renderVideoToWebm({
   // on a browser with neither variant, but we guard defensively anyway —
   // throwing a clear error is better than a non-null-assertion crash.
   type AudioContextCtor = typeof AudioContext
-  const win = window as Window &
-    (Record<string, unknown> & { webkitAudioContext?: AudioContextCtor })
+  const win = window as unknown as {
+    AudioContext?: AudioContextCtor
+    webkitAudioContext?: AudioContextCtor
+  }
   const AudioCtx = win.AudioContext ?? win.webkitAudioContext
   if (!AudioCtx) {
     throw new Error(
@@ -584,6 +590,7 @@ async function renderVideoToWebm({
         ayatIndex: idx,
         total: slides.length,
         attributionLine,
+        reciterName,
       })
 
       onProgress(Math.min(1, elapsedSec / totalSec))
@@ -642,6 +649,8 @@ interface DrawArgs {
   total: number
   /** Attribution line for the translation edition (empty for public-domain). */
   attributionLine: string
+  /** Reciter name for the "Recited by" credit (always shown). */
+  reciterName: string
 }
 
 function drawFrame({
@@ -655,6 +664,7 @@ function drawFrame({
   ayatIndex,
   total,
   attributionLine,
+  reciterName,
 }: DrawArgs) {
   // ---- Background (cover-fit) -----------------------------------------
   if (bgImg) {
@@ -861,21 +871,34 @@ function drawFrame({
     ctx.shadowBlur = 0
   }
 
-  // ---- Translation attribution (bottom-left) -------------------------
-  // Only drawn for editions that require attribution (permissive / personal).
-  // Empty for public-domain editions like Pickthall.
-  if (attributionLine) {
-    ctx.font = `${Math.round(H * 0.016)}px Inter, sans-serif`
-    ctx.fillStyle = 'rgba(255,255,255,0.45)'
-    ctx.textAlign = 'left'
-    ctx.textBaseline = 'bottom'
-    // Truncate if it would overflow the left half of the frame.
-    const maxW = W * 0.55
-    let text = attributionLine
-    while (ctx.measureText(text).width > maxW && text.length > 10) {
-      text = text.slice(0, -2) + '…'
+  // ---- Attribution block (bottom-left) --------------------------------
+  // Shows the translation attribution (when required) + the reciter credit
+  // (always). Stacked vertically so both are visible.
+  const attrFontSize = Math.round(H * 0.016)
+  const attrLineH = attrFontSize * 1.35
+  const attrBottom = H * 0.985
+  const maxAttrW = W * 0.55
+
+  // Helper: truncate text to fit within maxAttrW
+  function truncateAttr(text: string): string {
+    let t = text
+    while (ctx.measureText(t).width > maxAttrW && t.length > 10) {
+      t = t.slice(0, -2) + '…'
     }
-    ctx.fillText(text, W * 0.03, H * 0.985)
+    return t
+  }
+
+  ctx.font = `${attrFontSize}px Inter, sans-serif`
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'
+  ctx.textAlign = 'left'
+  ctx.textBaseline = 'bottom'
+
+  // Draw reciter credit first (lower), then translation attribution (above it)
+  if (reciterName) {
+    ctx.fillText(`Recited by ${reciterName}`, W * 0.03, attrBottom)
+  }
+  if (attributionLine) {
+    ctx.fillText(truncateAttr(attributionLine), W * 0.03, attrBottom - attrLineH)
   }
 
   // ---- Watermark (bottom-right) --------------------------------------

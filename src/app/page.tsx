@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import {
   Film,
@@ -18,9 +19,15 @@ import { ReciterSelector } from '@/components/ReciterSelector'
 import { TranslationSelector } from '@/components/TranslationSelector'
 import { CustomizationPanel } from '@/components/CustomizationPanel'
 import { VideoPreview } from '@/components/VideoPreview'
-import { ExportModal } from '@/components/ExportModal'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
+
+// Lazy-mount the ExportModal so the MediaRecorder + Canvas code isn't in the
+// main page chunk. The modal only loads when the user first opens it.
+const ExportModal = dynamic(
+  () => import('@/components/ExportModal').then((m) => m.ExportModal),
+  { ssr: false },
+)
 
 export default function Home() {
   const loadSurahs = useBuilderStore((s) => s.loadSurahs)
