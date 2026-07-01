@@ -14,6 +14,7 @@ import {
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { overlayCssBackground } from '@/lib/overlay'
+import { getActiveWordIndex } from '@/lib/highlight'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -100,21 +101,9 @@ export function VideoPreview() {
       if (audio && c) {
         const tMs = audio.currentTime * 1000
         setCurrentTimeMs(tMs)
-        let foundIdx = -1
-        for (let i = 0; i < c.words.length; i++) {
-          const w = c.words[i]!
-          const end =
-            w.endMs ||
-            (i + 1 < c.words.length ? c.words[i + 1]!.startMs : tMs + 1)
-          if (tMs >= w.startMs && tMs < end) {
-            foundIdx = i
-            break
-          }
-        }
+        const foundIdx = getActiveWordIndex(c.words, tMs)
         if (foundIdx >= 0) {
           setActiveWord({ ayatIndex: ci, wordIndex: foundIdx })
-        } else if (tMs > 0 && c.words.length) {
-          setActiveWord({ ayatIndex: ci, wordIndex: c.words.length - 1 })
         }
       }
       rafRef.current = requestAnimationFrame(tick)

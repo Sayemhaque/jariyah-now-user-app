@@ -5,6 +5,7 @@ import { Download, Loader2, Film, X, CheckCircle2, AlertCircle } from 'lucide-re
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { paintOverlayOnCanvas } from '@/lib/overlay'
+import { getActiveWordIndex } from '@/lib/highlight'
 import type { AyatSlide, ExportOptions, Orientation } from '@/lib/types'
 import {
   Dialog,
@@ -148,16 +149,17 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         }),
       })
       if (!r.ok) {
-        const j = await r.json().catch(() => ({}))
-        throw new Error(j.error || `Render API returned ${r.status}`)
+        const errBody = (await r.json().catch(() => ({}))) as { error?: string }
+        throw new Error(errBody.error || `Render API returned ${r.status}`)
       }
-      const j = await r.json()
-      jobId = j.jobId
+      const okBody = (await r.json()) as { jobId: string }
+      jobId = okBody.jobId
       jobIdRef.current = jobId
-    } catch (e: any) {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to start render job'
       setStatus('error')
-      setErrorMsg(e?.message || 'Failed to start render job')
-      toast.error(e?.message || 'Failed to start render job')
+      setErrorMsg(msg)
+      toast.error(msg)
       return
     }
 
@@ -193,15 +195,16 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         }).catch(() => {})
       }
       toast.success('Video rendered successfully!')
-    } catch (e: any) {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Render failed'
       setStatus('error')
-      setErrorMsg(e?.message || 'Render failed')
-      toast.error(e?.message || 'Render failed')
+      setErrorMsg(msg)
+      toast.error(msg)
       if (jobId) {
         fetch('/api/render', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobId, status: 'error', error: String(e?.message || e) }),
+          body: JSON.stringify({ jobId, status: 'error', error: msg }),
         }).catch(() => {})
       }
     }
@@ -388,6 +391,15 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 // Client-side canvas + MediaRecorder video renderer
 // ---------------------------------------------------------------------
 
+// Named constants — no magic numbers scattered through the render code.
+const RENDER_FPS = 30
+const RENDER_VIDEO_BITRATE = 6_000_000 // 6 Mbps — high quality for 720p/1080p
+const RENDER_AUDIO_LEAD_MS = 100 // schedule audio 100ms ahead to avoid first-frame glitches
+const RENDER_QUALITY_SCALE: Record<ExportOptions['quality'], number> = {
+  '720p': 1,
+  '1080p': 1.5,
+}
+
 interface RenderArgs {
   canvas: HTMLCanvasElement
   slides: AyatSlide[]
@@ -406,20 +418,26 @@ async function renderVideoToWebm({
   onProgress,
 }: RenderArgs): Promise<string> {
   const base = RES[orientation]
-  const scale = quality === '1080p' ? 1.5 : 1
+  const scale = RENDER_QUALITY_SCALE[quality]
   const W = Math.round(base.w * scale)
   const H = Math.round(base.h * scale)
   canvas.width = W
   canvas.height = H
   const ctx = canvas.getContext('2d')!
+  if (!ctx) throw new Error('Canvas 2D context unavailable')
 
   // Load the background image once
   const bgImg = await loadImage(settings.backgroundImage).catch(() => null)
 
   // Pre-load all ayat audio as AudioBuffers via Web Audio API so we can
   // schedule them precisely on a single MediaRecorder timeline.
-  const AudioCtx: typeof AudioContext =
-    (window as any).AudioContext || (window as any).webkitAudioContext
+  // Safari < 14 ships AudioContext as webkitAudioContext. Cast through a
+  // minimal interface so we don't lose type-safety on the standard path.
+  type AudioContextCtor = typeof AudioContext
+  const win = window as Window &
+    (Record<string, unknown> & { webkitAudioContext?: AudioContextCtor })
+  const AudioCtx: AudioContextCtor =
+    win.AudioContext ?? win.webkitAudioContext!
   const audioCtx = new AudioCtx()
   const buffers: AudioBuffer[] = []
   for (const s of slides) {
@@ -435,8 +453,7 @@ async function renderVideoToWebm({
   }
 
   // Set up MediaRecorder on a canvas.captureStream() track.
-  const fps = 30
-  const stream = canvas.captureStream(fps)
+  const stream = canvas.captureStream(RENDER_FPS)
   // Create a MediaStreamDestination to mix the audio into the recording.
   const dest = audioCtx.createMediaStreamDestination()
   for (const tr of dest.stream.getAudioTracks()) {
@@ -445,7 +462,12 @@ async function renderVideoToWebm({
 
   // Pick a supported mime type. WebM/VP9 first, then VP8, then default.
   const mime = pickMime()
-  const recorder = new MediaRecorder(stream, mime ? { mimeType: mime, videoBitsPerSecond: 6_000_000 } : undefined)
+  const recorder = new MediaRecorder(
+    stream,
+    mime
+      ? { mimeType: mime, videoBitsPerSecond: RENDER_VIDEO_BITRATE }
+      : undefined,
+  )
 
   const chunks: BlobPart[] = []
   recorder.ondataavailable = (e) => {
@@ -456,9 +478,12 @@ async function renderVideoToWebm({
     recorder.onstop = () => resolve()
   })
 
-  // Schedule all audio buffers back-to-back starting at t=0
+  // Schedule all audio buffers back-to-back, starting a little ahead of "now"
+  // so the first sample doesn't get clipped by the recorder's startup latency.
   const sources: AudioBufferSourceNode[] = []
-  let t0 = audioCtx.currentTime + 0.1
+  const leadSec = RENDER_AUDIO_LEAD_MS / 1000
+  const startTime = audioCtx.currentTime + leadSec
+  let t0 = startTime
   const startTimes: number[] = [] // audioCtx-time at which each ayat begins
   buffers.forEach((b) => {
     const src = audioCtx.createBufferSource()
@@ -469,7 +494,7 @@ async function renderVideoToWebm({
     sources.push(src)
     t0 += b.duration
   })
-  const totalSec = t0 - (audioCtx.currentTime + 0.1)
+  const totalSec = t0 - startTime
 
   recorder.start()
 
@@ -655,20 +680,7 @@ function drawFrame({
   const transFontSize = settings.translationFontSize * (H / 720)
   const translitFontSize = Math.max(11, H * 0.018)
 
-  let activeIdx = -1
-  for (let i = 0; i < slide.words.length; i++) {
-    const w = slide.words[i]!
-    const end =
-      w.endMs ||
-      (i + 1 < slide.words.length ? slide.words[i + 1]!.startMs : intoMs + 1)
-    if (intoMs >= w.startMs && intoMs < end) {
-      activeIdx = i
-      break
-    }
-  }
-  if (activeIdx < 0 && intoMs > 0 && slide.words.length) {
-    activeIdx = slide.words.length - 1
-  }
+  const activeIdx = getActiveWordIndex(slide.words, intoMs)
 
   // Layout Arabic words centered, RTL, with line-wrapping.
   ctx.font = `${arabicFontSize}px ${arabicFontFamily}`

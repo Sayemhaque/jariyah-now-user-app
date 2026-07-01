@@ -16,10 +16,15 @@ interface RgbaColor {
 
 export function hexToRgb(hex: string): RgbaColor {
   const h = hex.replace('#', '')
+  // Only parse well-formed 6-digit hex strings. Anything else returns black
+  // — this is a defensive helper, not a user-facing parser.
+  if (!/^[0-9a-fA-F]{6}$/.test(h)) {
+    return { r: 0, g: 0, b: 0 }
+  }
   return {
-    r: parseInt(h.slice(0, 2), 16) || 0,
-    g: parseInt(h.slice(2, 4), 16) || 0,
-    b: parseInt(h.slice(4, 6), 16) || 0,
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16),
   }
 }
 

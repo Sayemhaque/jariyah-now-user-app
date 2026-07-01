@@ -1,110 +1,109 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MAX_AYATS_PER_VIDEO } from '@/lib/validation'
+import type { z } from 'zod'
+import { env } from '@/lib/env'
+import { logger } from '@/lib/logger'
+import {
+  renderBodySchema,
+  renderUpdateBodySchema,
+  type RenderBody,
+} from '@/lib/schemas'
+import {
+  consumeRateLimit,
+  getClientIp,
+} from '@/lib/rateLimit'
+import {
+  createRenderJob,
+  getRenderJob,
+  updateRenderJob,
+  computeDedupeHash,
+  type RenderJob,
+} from '@/lib/jobStore'
+import { fetchWithTimeout } from '@/lib/fetchWithTimeout'
 
 /**
  * POST /api/render
  *
- * Spec contract:
- *   Body: { slides, reciterKey, settings, orientation }
- *   → Verifies ayat MP3s exist
- *   → Triggers Remotion renderMedia()
- *   → Returns { jobId }
+ * Validates the render payload, rate-limits by IP, HEAD-checks each ayat MP3
+ * on the Quran.com CDN so we can fail fast if the reciter's audio is missing,
+ * then creates a job record and returns its ID.
  *
- * Implementation note: this sandbox cannot run Remotion's headless Chrome
- * renderer reliably, so the actual MP4 is produced client-side in the
- * ExportModal using <canvas> + MediaRecorder. This endpoint exists to:
- *   1. validate the request payload (same max-10 guard as the client)
- *   2. HEAD-check each ayat MP3 so we can fail fast if a reciter's audio
- *      is missing on the Quran.com CDN
- *   3. create a job record with a deterministic id
- *
- * The client polls /api/render-status?jobId=... which mirrors progress
- * the client itself reports back via PUT (so progress survives a tab refocus).
+ * The actual MP4 rendering happens client-side (Canvas + MediaRecorder) in
+ * this sandbox build — see ExportModal.tsx. In production this route would
+ * enqueue a Remotion render job on a queue (Inngest / Trigger.dev / a worker
+ * process) and return 202 immediately. The job-store + status-polling API
+ * surface is identical either way, so swapping in a real queue later requires
+ * no client-side changes.
  */
-
-interface JobRecord {
-  id: string
-  status: 'rendering' | 'done' | 'error'
-  progress: number
-  downloadUrl?: string
-  error?: string
-  createdAt: number
-}
-
-// in-memory job store + rate limiter (suitable for an MVP, persists for the
-// life of the dev server process)
-const jobs = new Map<string, JobRecord>()
-const rateBuckets = new Map<string, number[]>() // ip -> array of start timestamps
-
-const RATE_LIMIT_MAX = 3
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hour
-
-function getClientIp(req: NextRequest): string {
-  const fwd = req.headers.get('x-forwarded-for')
-  if (fwd) return fwd.split(',')[0]!.trim()
-  return req.headers.get('x-real-ip') ?? 'unknown'
-}
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now()
-  const arr = (rateBuckets.get(ip) ?? []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS)
-  if (arr.length >= RATE_LIMIT_MAX) {
-    rateBuckets.set(ip, arr)
-    return true
-  }
-  arr.push(now)
-  rateBuckets.set(ip, arr)
-  return false
-}
-
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
-  if (rateLimited(ip)) {
+  const requestId = req.headers.get('x-request-id') ?? `req_${Date.now().toString(36)}`
+
+  // --- Rate limit -----------------------------------------------------
+  const rl = await consumeRateLimit(ip)
+  if (!rl.ok) {
+    logger.warn('render rate limited', { ip, requestId, remaining: rl.remaining })
     return NextResponse.json(
       {
-        error: `Rate limit exceeded: max ${RATE_LIMIT_MAX} renders per hour per IP.`,
+        error: `Rate limit exceeded: max ${env.RENDER_RATE_LIMIT_MAX} renders per hour per IP.`,
+        retryAfterMs: rl.resetMs - Date.now(),
       },
-      { status: 429 },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.ceil((rl.resetMs - Date.now()) / 1000)) },
+      },
     )
   }
 
-  let body: any
+  // --- Parse + validate body ------------------------------------------
+  let body: RenderBody
   try {
-    body = await req.json()
+    const json = await req.json()
+    const parsed = renderBodySchema.safeParse(json)
+    if (!parsed.success) {
+      return NextResponse.json(
+        {
+          error: 'Invalid request body',
+          details: parsed.error.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
+        },
+        { status: 400 },
+      )
+    }
+    body = parsed.data
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const slides = Array.isArray(body?.slides) ? body.slides : []
-  if (!slides.length) {
-    return NextResponse.json({ error: 'No slides provided' }, { status: 400 })
-  }
-  if (slides.length > MAX_AYATS_PER_VIDEO) {
-    return NextResponse.json(
-      { error: `Too many slides: max ${MAX_AYATS_PER_VIDEO} ayats per video` },
-      { status: 400 },
-    )
-  }
-  const reciterKey = typeof body?.reciterKey === 'string' ? body.reciterKey : ''
-  if (!reciterKey) {
-    return NextResponse.json({ error: 'Missing reciterKey' }, { status: 400 })
-  }
+  // --- Idempotency: dedupe by payload hash ----------------------------
+  const dedupeHash = computeDedupeHash({
+    slides: body.slides,
+    reciterKey: body.reciterKey,
+    orientation: body.orientation,
+    settings: body.settings as Record<string, unknown>,
+  })
 
-  // HEAD-check each ayat MP3 so we can fail fast if the Quran.com CDN
-  // is missing audio for the chosen reciter.
-  const checked: { url: string; ok: boolean; status?: number }[] = []
-  for (const s of slides) {
-    const url: string = s?.audioUrl
-    if (!url) continue
-    try {
-      const r = await fetch(url, { method: 'HEAD' })
-      checked.push({ url, ok: r.ok, status: r.status })
-    } catch (e: any) {
-      checked.push({ url, ok: false })
-    }
-  }
-  const missing = checked.filter((c) => !c.ok)
-  if (missing.length === slides.length) {
+  // --- HEAD-check each ayat MP3 on the CDN ----------------------------
+  // Fail fast if the reciter's audio is missing — saves the client from
+  // starting a render that will immediately fail when decodeAudioData bombs.
+  const audioChecks = await Promise.all(
+    body.slides.map(async (s) => {
+      try {
+        const r = await fetchWithTimeout(s.audioUrl, { method: 'HEAD' })
+        return { url: s.audioUrl, ok: r.ok, status: r.status }
+      } catch {
+        return { url: s.audioUrl, ok: false }
+      }
+    }),
+  )
+  const allMissing = audioChecks.every((c) => !c.ok)
+  if (allMissing) {
+    logger.warn('all ayat audio missing on CDN', {
+      ip,
+      requestId,
+      reciterKey: body.reciterKey,
+    })
     return NextResponse.json(
       {
         error:
@@ -114,48 +113,62 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Create a job. The client will drive the actual canvas recording and PUT
-  // progress updates to /api/render-status.
-  const jobId = `job_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
-  jobs.set(jobId, {
-    id: jobId,
-    status: 'rendering',
-    progress: 0,
-    createdAt: Date.now(),
+  // --- Create job (idempotent) ----------------------------------------
+  const job = createRenderJob(dedupeHash)
+
+  logger.info('render job created', {
+    jobId: job.id,
+    ip,
+    requestId,
+    reciterKey: body.reciterKey,
+    slideCount: body.slides.length,
+    audioOk: audioChecks.filter((c) => c.ok).length,
   })
 
-  return NextResponse.json({
-    jobId,
-    audioCheck: checked,
-    note:
-      'Rendering happens client-side via Canvas + MediaRecorder. PUT progress to /api/render-status to update the job.',
-  })
+  return NextResponse.json(
+    {
+      jobId: job.id,
+      audioCheck: audioChecks,
+      note:
+        'Rendering happens client-side via Canvas + MediaRecorder. PUT progress to /api/render to update the job.',
+    },
+    { status: 202 }, // Accepted — the work hasn't finished, but the job exists
+  )
 }
 
+/**
+ * PUT /api/render
+ *
+ * Allows the client to update an existing job's progress + final state.
+ * The client-side renderer is the source of truth for progress; this route
+ * just stores what it reports so a tab refocus / re-poll can recover state.
+ */
 export async function PUT(req: NextRequest) {
-  // Allow the client to update an existing job's progress / final URL.
-  let body: any
+  let body: z.infer<typeof renderUpdateBodySchema>
   try {
-    body = await req.json()
+    const json = await req.json()
+    const parsed = renderUpdateBodySchema.safeParse(json)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid body', details: parsed.error.issues },
+        { status: 400 },
+      )
+    }
+    body = parsed.data
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
-  const jobId: string = body?.jobId
-  if (!jobId || !jobs.has(jobId)) {
+
+  const existing = getRenderJob(body.jobId)
+  if (!existing) {
     return NextResponse.json({ error: 'Unknown jobId' }, { status: 404 })
   }
-  const job = jobs.get(jobId)!
-  if (typeof body?.progress === 'number') {
-    job.progress = Math.max(0, Math.min(1, body.progress))
-  }
-  if (body?.status === 'done' || body?.status === 'error' || body?.status === 'rendering') {
-    job.status = body.status
-  }
-  if (typeof body?.downloadUrl === 'string') job.downloadUrl = body.downloadUrl
-  if (typeof body?.error === 'string') job.error = body.error
-  jobs.set(jobId, job)
-  return NextResponse.json(job)
-}
 
-// expose for the status route
-export { jobs }
+  const updated = updateRenderJob(body.jobId, {
+    status: body.status,
+    progress: body.progress,
+    downloadUrl: body.downloadUrl,
+    error: body.error,
+  })
+  return NextResponse.json(updated satisfies RenderJob)
+}

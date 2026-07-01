@@ -87,8 +87,11 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     try {
       const surahs = await fetchSurahs()
       set({ surahs, surahsLoading: false })
-    } catch (e: any) {
-      set({ surahsLoading: false, surahsError: e?.message ?? 'Failed to load surahs' })
+    } catch (err) {
+      set({
+        surahsLoading: false,
+        surahsError: err instanceof Error ? err.message : 'Failed to load surahs',
+      })
     }
   },
 
@@ -219,10 +222,11 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
         return
       }
       set({ ayatList: list, loadingAyats: false })
-    } catch (e: any) {
+    } catch (err) {
       set({
         loadingAyats: false,
-        ayatError: e?.message ?? 'Failed to load ayat data',
+        ayatError:
+          err instanceof Error ? err.message : 'Failed to load ayat data',
       })
     }
   },

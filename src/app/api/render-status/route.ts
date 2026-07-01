@@ -1,23 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { jobs } from '../render/route'
+import { renderStatusQuerySchema } from '@/lib/schemas'
+import { getRenderJob } from '@/lib/jobStore'
 
 /**
  * GET /api/render-status?jobId=xxx
  *   → Returns { status: 'rendering' | 'done' | 'error', progress, downloadUrl }
+ *
+ * Always fresh — no caching. The client polls this on a short interval while
+ * a render is in flight, so a cached response would defeat the purpose.
  */
 export async function GET(req: NextRequest) {
-  const jobId = new URL(req.url).searchParams.get('jobId')
-  if (!jobId) {
-    return NextResponse.json({ error: 'Missing jobId' }, { status: 400 })
+  const parsed = renderStatusQuerySchema.safeParse({
+    jobId: req.nextUrl.searchParams.get('jobId'),
+  })
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? 'Invalid query' },
+      { status: 400 },
+    )
   }
-  const job = jobs.get(jobId)
+
+  const job = getRenderJob(parsed.data.jobId)
   if (!job) {
     return NextResponse.json({ error: 'Unknown jobId' }, { status: 404 })
   }
-  return NextResponse.json({
-    status: job.status,
-    progress: job.progress,
-    downloadUrl: job.downloadUrl,
-    error: job.error,
-  })
+
+  return NextResponse.json(
+    {
+      status: job.status,
+      progress: job.progress,
+      downloadUrl: job.downloadUrl,
+      error: job.error,
+    },
+    // `no-store` is critical: progress changes every poll, and any
+    // intermediate cache would make the bar look frozen.
+    { headers: { 'Cache-Control': 'no-store' } },
+  )
 }

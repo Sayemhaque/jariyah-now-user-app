@@ -52,3 +52,14 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Test artifacts
+/coverage/
+*.lcov
+vitest-results.json
+
+# Upload directory (user-pasted images during dev)
+/upload/
+
+# Scripts directory (dev-only scratch space)
+/scripts/

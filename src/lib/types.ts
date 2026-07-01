@@ -26,6 +26,10 @@ export interface AyatData {
   words: WordTiming[]
   audioUrl: string
   audioDurationMs: number
+  // Surah display info — denormalized onto each ayat so the slide renderer
+  // has everything it needs without a separate lookup.
+  surahName: string
+  surahNameArabic: string
 }
 
 export interface AyatSlide {
