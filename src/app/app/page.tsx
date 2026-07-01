@@ -12,6 +12,8 @@ import {
   BookOpenText,
   Menu,
   X,
+  Eye,
+  Settings,
 } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { validateAyatRange } from '@/lib/validation'
@@ -30,6 +32,8 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { toast } from 'sonner'
+
+type MobileTab = 'preview' | 'settings'
 
 // Lazy-mount the ExportModal so the MediaRecorder + Canvas code isn't in the
 // main page chunk. The modal only loads when the user first opens it.
@@ -59,6 +63,7 @@ export default function Home() {
 
   const [exportOpen, setExportOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileTab, setMobileTab] = useState<MobileTab>('settings')
 
   useEffect(() => {
     loadSurahs()
@@ -178,15 +183,49 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main two-panel layout — responsive */}
+      {/* Mobile tab bar — Preview / Settings */}
+      <div className="lg:hidden flex border-b border-border bg-card shrink-0">
+        <button
+          onClick={() => setMobileTab('preview')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${
+            mobileTab === 'preview'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-muted-foreground'
+          }`}
+        >
+          <Eye className="h-4 w-4" />
+          Preview
+        </button>
+        <button
+          onClick={() => setMobileTab('settings')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${
+            mobileTab === 'settings'
+              ? 'text-primary border-b-2 border-primary'
+              : 'text-muted-foreground'
+          }`}
+        >
+          <Settings className="h-4 w-4" />
+          Settings
+        </button>
+      </div>
+
+      {/* Main layout — tabs on mobile, side-by-side on desktop */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-0 min-h-0">
-        {/* Preview pane — 60% on desktop, full width on mobile */}
-        <section className="relative bg-muted/30 min-h-[50vh] sm:min-h-[55vh] lg:min-h-0 lg:max-h-[calc(100vh-3.5rem)] flex flex-col">
+        {/* Preview pane — always visible on desktop, tab-gated on mobile */}
+        <section
+          className={`relative bg-muted/30 lg:min-h-0 lg:max-h-[calc(100vh-3.5rem)] flex flex-col ${
+            mobileTab === 'preview' ? 'flex-1 min-h-0' : 'hidden lg:flex'
+          }`}
+        >
           <VideoPreview />
         </section>
 
-        {/* Controls sidebar — 40% on desktop, below preview on mobile */}
-        <aside className="border-t lg:border-t-0 lg:border-l border-border bg-card lg:max-h-[calc(100vh-3.5rem)] lg:overflow-y-auto scrollbar-thin">
+        {/* Controls sidebar — always visible on desktop, tab-gated on mobile */}
+        <aside
+          className={`border-t lg:border-t-0 lg:border-l border-border bg-card lg:max-h-[calc(100vh-3.5rem)] lg:overflow-y-auto scrollbar-thin ${
+            mobileTab === 'settings' ? 'flex-1 overflow-y-auto scrollbar-thin' : 'hidden lg:block'
+          }`}
+        >
           <div className="p-4 sm:p-5 space-y-6">
             {/* Selection section */}
             <section className="space-y-4">
@@ -221,6 +260,19 @@ export default function Home() {
                   </>
                 )}
               </Button>
+
+              {/* Quick "View preview" button after loading — switches to preview tab on mobile */}
+              {ayatList.length > 0 && (
+                <Button
+                  onClick={() => setMobileTab('preview')}
+                  variant="outline"
+                  className="w-full lg:hidden"
+                  size="sm"
+                >
+                  <Eye className="h-4 w-4 mr-1.5" />
+                  View preview
+                </Button>
+              )}
             </section>
 
             <Divider />
