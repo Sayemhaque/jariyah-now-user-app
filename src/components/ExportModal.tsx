@@ -224,10 +224,10 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl bg-card border-border shadow-xl sm:rounded-2xl p-0 sm:p-6 max-sm:h-[100dvh] max-sm:w-screen max-sm:max-w-none max-sm:rounded-none flex flex-col overflow-hidden">
+      <DialogContent className="!max-w-6xl w-[95vw] h-[90vh] bg-card border-border shadow-xl sm:rounded-2xl p-0 max-sm:h-[100dvh] max-sm:w-screen max-sm:max-w-none max-sm:rounded-none flex flex-col overflow-hidden gap-0">
         {/* Header — full width */}
-        <div className="px-5 sm:px-0 pt-5 sm:pt-0 shrink-0">
-          <DialogHeader className="mb-4">
+        <div className="px-6 pt-6 shrink-0">
+          <DialogHeader className="mb-2">
             <DialogTitle className="flex items-center gap-2 text-lg">
               <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/15 text-primary shrink-0">
                 <Film className="h-4 w-4" />
@@ -244,7 +244,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
         {/* Browser support warning — full width */}
         {!capabilities.ok && (
-          <div className="mx-5 sm:mx-0 mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-3 text-sm text-amber-600 dark:text-amber-400">
+          <div className="mx-6 mb-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-3 text-sm text-amber-600 dark:text-amber-400">
             <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
             <div className="space-y-1">
               <p className="font-medium">Browser not supported</p>
@@ -254,8 +254,8 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         )}
 
         {/* Two-column body on desktop, single column on mobile */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 px-5 sm:px-0 pb-5">
+        <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
 
             {/* ─── LEFT: Settings ─── */}
             <div className="space-y-4">
@@ -441,7 +441,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         </div>
 
         {/* Sticky footer */}
-        <div className="border-t border-border bg-card px-5 sm:px-0 py-3 sm:pt-4 flex gap-2 shrink-0">
+        <div className="border-t border-border bg-card px-6 py-3 flex gap-2 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
             <X className="h-4 w-4 mr-1.5" />
             Close
