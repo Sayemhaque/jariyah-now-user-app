@@ -3,7 +3,6 @@
 import { Check, Mic2 } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS } from '@/lib/reciters'
-import { cn } from '@/lib/utils'
 import {
   Select,
   SelectContent,
@@ -25,7 +24,7 @@ export function ReciterSelector() {
       </label>
 
       <Select value={reciterId} onValueChange={setReciter}>
-        <SelectTrigger className="w-full bg-card/60">
+        <SelectTrigger className="w-full bg-card/60 h-11">
           <SelectValue placeholder="Choose a reciter" />
         </SelectTrigger>
         <SelectContent className="bg-popover">
@@ -33,7 +32,7 @@ export function ReciterSelector() {
             <SelectItem key={r.id} value={r.id} className="py-2.5">
               <div className="flex items-center gap-3 w-full">
                 <div
-                  className="grid place-items-center h-9 w-9 rounded-full text-sm font-bold text-white shrink-0"
+                  className="grid place-items-center h-9 w-9 rounded-full text-xs font-bold text-white shrink-0 ring-2 ring-white/10"
                   style={{ backgroundColor: r.avatarColor }}
                 >
                   {r.name
@@ -59,10 +58,10 @@ export function ReciterSelector() {
         </SelectContent>
       </Select>
 
-      {/* Inline preview of the selected reciter with avatar */}
-      <div className="flex items-center gap-3 rounded-lg border border-border bg-card/40 px-3 py-2.5">
+      {/* Inline preview of the selected reciter */}
+      <div className="flex items-center gap-3 rounded-xl border border-border bg-card/40 px-3 py-2.5">
         <div
-          className="grid place-items-center h-10 w-10 rounded-full text-sm font-bold text-white shrink-0"
+          className="grid place-items-center h-10 w-10 rounded-full text-sm font-bold text-white shrink-0 ring-2 ring-white/10"
           style={{ backgroundColor: selected.avatarColor }}
         >
           {selected.name
@@ -75,11 +74,15 @@ export function ReciterSelector() {
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium truncate">{selected.name}</span>
             {reciterId === selected.id && (
-              <Check className="h-3.5 w-3.5 text-primary" />
+              <Check className="h-3.5 w-3.5 text-primary shrink-0" />
             )}
           </div>
-          <div className="text-[11px] text-muted-foreground">
-            {selected.style} · {selected.arabicName}
+          <div className="text-[11px] text-muted-foreground flex items-center gap-2">
+            <span>{selected.style}</span>
+            <span className="opacity-50">·</span>
+            <span className="font-arabic-uthmani text-base">
+              {selected.arabicName}
+            </span>
           </div>
         </div>
       </div>

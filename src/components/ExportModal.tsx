@@ -212,13 +212,15 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-card border-border">
+      <DialogContent className="max-w-2xl bg-card border-border shadow-2xl">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Film className="h-5 w-5 text-primary" />
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/15 text-primary">
+              <Film className="h-4 w-4" />
+            </div>
             Export video
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-[13px]">
             Pick a platform preset, choose quality, then render. The video is
             produced right in your browser via Canvas + MediaRecorder.
           </DialogDescription>
@@ -228,24 +230,22 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
         <div className="space-y-5">
           {/* Platform presets */}
-          <div className="space-y-2">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Platform
-            </Label>
+          <div className="space-y-2.5">
+            <Label className="qv-section-title !mb-0">Platform</Label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {PLATFORM_PRESETS.map((p) => (
                 <button
                   key={p.key}
                   onClick={() => setPlatform(p.key)}
                   className={cn(
-                    'flex flex-col items-start gap-0.5 rounded-lg border border-border bg-background/40 p-3 text-left transition',
+                    'flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition',
                     platform === p.key
-                      ? 'border-primary bg-primary/10'
-                      : 'hover:border-foreground/30',
+                      ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
+                      : 'border-border bg-card/40 hover:border-foreground/30 hover:bg-card/70',
                   )}
                 >
                   <span className="text-sm font-medium">{p.label}</span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
                     {p.hint}
                   </span>
                 </button>
@@ -254,45 +254,53 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           </div>
 
           {/* Quality */}
-          <div className="space-y-2">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-              Quality
-            </Label>
+          <div className="space-y-2.5">
+            <Label className="qv-section-title !mb-0">Quality</Label>
             <div className="grid grid-cols-2 gap-2">
               {(['720p', '1080p'] as const).map((q) => (
                 <button
                   key={q}
                   onClick={() => setQuality(q)}
                   className={cn(
-                    'rounded-lg border border-border bg-background/40 p-3 text-sm transition',
+                    'rounded-xl border p-3 text-sm font-medium transition',
                     quality === q
-                      ? 'border-primary bg-primary/10'
-                      : 'hover:border-foreground/30',
+                      ? 'border-primary bg-primary/10 text-primary shadow-sm shadow-primary/20'
+                      : 'border-border bg-card/40 hover:border-foreground/30 hover:bg-card/70',
                   )}
                 >
                   {q}
+                  {q === '1080p' && (
+                    <span className="ml-2 text-[10px] uppercase tracking-wider opacity-70">
+                      HD
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Summary */}
-          <div className="rounded-lg border border-border bg-background/40 p-3 space-y-1.5 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Filename</span>
-              <span className="font-mono text-xs">{filename}</span>
+          <div className="qv-card rounded-xl p-3.5 space-y-2 text-[13px]">
+            <div className="flex justify-between items-center gap-3">
+              <span className="text-muted-foreground text-xs">Filename</span>
+              <span className="font-mono text-xs text-foreground/85 truncate max-w-[60%]">
+                {filename}
+              </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Estimated duration</span>
-              <span className="font-mono">{estimatedDuration}</span>
+            <div className="h-px bg-border" />
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground text-xs">
+                Estimated duration
+              </span>
+              <span className="font-mono tabular-nums">{estimatedDuration}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Ayats</span>
-              <span>{slides.length}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground text-xs">Ayats</span>
+              <span className="tabular-nums">{slides.length}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Resolution</span>
-              <span className="font-mono">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground text-xs">Resolution</span>
+              <span className="font-mono tabular-nums">
                 {RES[settings.orientation].w * (quality === '1080p' ? 1.5 : 1)} ×{' '}
                 {RES[settings.orientation].h * (quality === '1080p' ? 1.5 : 1)}
               </span>
@@ -301,19 +309,22 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
           {/* Progress */}
           {status === 'rendering' && (
-            <div className="space-y-2">
+            <div className="space-y-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  Rendering… do not close this tab
+                  <span className="font-medium">Rendering…</span>
+                  <span className="text-xs text-muted-foreground">
+                    do not close this tab
+                  </span>
                 </span>
-                <span className="font-mono">
+                <span className="font-mono tabular-nums">
                   {Math.round(progress * 100)}%
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-background overflow-hidden">
+              <div className="h-1.5 rounded-full bg-background overflow-hidden">
                 <div
-                  className="h-full bg-primary transition-all"
+                  className="h-full bg-primary transition-all duration-200 ease-out"
                   style={{ width: `${progress * 100}%` }}
                 />
               </div>
@@ -321,7 +332,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           )}
 
           {status === 'done' && downloadUrl && (
-            <div className="rounded-lg border border-primary/30 bg-primary/10 p-3 space-y-2">
+            <div className="rounded-xl border border-primary/30 bg-primary/10 p-3.5 space-y-3">
               <div className="flex items-center gap-2 text-sm text-primary">
                 <CheckCircle2 className="h-5 w-5" />
                 <span className="font-medium">Video ready!</span>
@@ -329,12 +340,12 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
               <video
                 src={downloadUrl}
                 controls
-                className="w-full rounded-md max-h-64 bg-black"
+                className="w-full rounded-lg max-h-64 bg-black ring-1 ring-white/5"
               />
               <a
                 href={downloadUrl}
                 download={filename}
-                className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-md bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition"
+                className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-lg qv-btn-primary text-primary-foreground text-sm font-medium transition"
               >
                 <Download className="h-4 w-4" />
                 Download {filename}
@@ -343,11 +354,11 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           )}
 
           {status === 'error' && (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 flex items-start gap-2 text-sm text-destructive">
+            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 flex items-start gap-3 text-sm text-destructive">
               <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
               <div>
                 <p className="font-medium">Render failed</p>
-                <p className="text-xs mt-0.5">{errorMsg}</p>
+                <p className="text-xs mt-0.5 leading-relaxed">{errorMsg}</p>
               </div>
             </div>
           )}
@@ -362,6 +373,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
             <Button
               onClick={startRender}
               disabled={!slides.length}
+              className="qv-btn-primary border border-primary/30"
             >
               <Film className="h-4 w-4 mr-1.5" />
               {status === 'done' ? 'Render again' : 'Render video'}
@@ -579,9 +591,8 @@ function drawFrame({
   ayatIndex,
   total,
 }: DrawArgs) {
-  // Background
+  // ---- Background (cover-fit) -----------------------------------------
   if (bgImg) {
-    // cover-fit
     const ratio = Math.max(W / bgImg.width, H / bgImg.height)
     const dw = bgImg.width * ratio
     const dh = bgImg.height * ratio
@@ -591,61 +602,67 @@ function drawFrame({
     ctx.fillRect(0, 0, W, H)
   }
 
-  // Overlay
+  // ---- User overlay ----------------------------------------------------
   ctx.fillStyle = hexWithAlpha(settings.overlayColor, settings.overlayOpacity / 100)
   ctx.fillRect(0, 0, W, H)
 
-  // Top header
-  ctx.fillStyle = '#ffffff'
+  // ---- Refined top + bottom gradient for legibility -------------------
+  const grad = ctx.createLinearGradient(0, 0, 0, H)
+  grad.addColorStop(0, 'rgba(0,0,0,0.30)')
+  grad.addColorStop(0.22, 'rgba(0,0,0,0)')
+  grad.addColorStop(0.70, 'rgba(0,0,0,0)')
+  grad.addColorStop(1, 'rgba(0,0,0,0.38)')
+  ctx.fillStyle = grad
+  ctx.fillRect(0, 0, W, H)
+
+  // ---- Top header: Arabic surah name + English + ayat indicator -------
   ctx.textBaseline = 'top'
-  // Arabic surah name
-  ctx.font = `${Math.round(H * 0.03)}px var(--font-amiri), "Amiri Quran", serif`
+  ctx.fillStyle = '#ffffff'
+  ctx.font = `${Math.round(H * 0.030)}px "Amiri Quran", "Amiri", serif`
   ctx.textAlign = 'left'
-  ctx.fillText(slide.surahNameArabic, W * 0.04, H * 0.04)
-  // English surah name
-  ctx.font = `${Math.round(H * 0.018)}px Inter, sans-serif`
-  ctx.fillStyle = 'rgba(255,255,255,0.8)'
-  ctx.fillText(slide.surahName.toUpperCase(), W * 0.04, H * 0.04 + H * 0.045)
-  // Ayat indicator
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'
+  ctx.shadowBlur = H * 0.008
+  ctx.fillText(slide.surahNameArabic, W * 0.045, H * 0.045)
+  ctx.shadowBlur = 0
+  ctx.font = `${Math.round(H * 0.017)}px Inter, sans-serif`
+  ctx.fillStyle = 'rgba(255,255,255,0.75)'
+  ctx.fillText(
+    slide.surahName.toUpperCase(),
+    W * 0.045,
+    H * 0.045 + H * 0.045,
+  )
+
   ctx.textAlign = 'right'
   ctx.fillStyle = '#ffffff'
-  ctx.font = `${Math.round(H * 0.028)}px var(--font-amiri), "Amiri Quran", serif`
-  ctx.fillText(`${slide.surahNumber}:${slide.ayatNumber}`, W * 0.96, H * 0.04)
-  ctx.fillStyle = 'rgba(255,255,255,0.7)'
-  ctx.font = `${Math.round(H * 0.014)}px Inter, sans-serif`
-  ctx.fillText(`AYAT ${ayatIndex + 1} OF ${total}`.toUpperCase(), W * 0.96, H * 0.04 + H * 0.045)
+  ctx.font = `${Math.round(H * 0.026)}px "Amiri Quran", "Amiri", serif`
+  ctx.shadowColor = 'rgba(0,0,0,0.6)'
+  ctx.shadowBlur = H * 0.008
+  ctx.fillText(`${slide.surahNumber}:${slide.ayatNumber}`, W * 0.955, H * 0.045)
+  ctx.shadowBlur = 0
+  ctx.fillStyle = 'rgba(255,255,255,0.65)'
+  ctx.font = `${Math.round(H * 0.013)}px Inter, sans-serif`
+  ctx.fillText(
+    `AYAT ${ayatIndex + 1} OF ${total}`.toUpperCase(),
+    W * 0.955,
+    H * 0.045 + H * 0.045,
+  )
 
-  // Text card border
-  if (settings.showBorder) {
-    ctx.strokeStyle = settings.borderColor
-    ctx.lineWidth = Math.max(2, H * 0.003)
-    const r = settings.border_radius * (H / 720)
-    const mx = W * 0.07
-    const my = H * 0.16
-    const mw = W - mx * 2
-    const mh = H - my * 2
-    roundedRect(ctx, mx, my, mw, mh, r)
-    ctx.stroke()
-    // subtle inner fill
-    ctx.fillStyle = 'rgba(0,0,0,0.18)'
-    roundedRect(ctx, mx, my, mw, mh, r)
-    ctx.fill()
-  }
-
-  // Arabic word-by-word
+  // ---- Center content card --------------------------------------------
+  // Find the currently-active word first so we can size the card to fit.
   const arabicFontFamily =
     settings.fontStyle === 'uthmani'
-      ? 'var(--font-amiri), "Amiri Quran", serif'
-      : 'var(--font-scheherazade), "Scheherazade New", serif'
-  ctx.font = `${settings.arabicFontSize * (H / 720)}px ${arabicFontFamily}`
-  ctx.textAlign = 'center'
-  ctx.textBaseline = 'middle'
+      ? '"Amiri Quran", "Amiri", serif'
+      : '"Scheherazade New", "Scheherazade", serif'
+  const arabicFontSize = settings.arabicFontSize * (H / 720)
+  const transFontSize = settings.translationFontSize * (H / 720)
+  const translitFontSize = Math.max(11, H * 0.018)
 
-  // Find the currently-active word
   let activeIdx = -1
   for (let i = 0; i < slide.words.length; i++) {
     const w = slide.words[i]!
-    const end = w.endMs || (i + 1 < slide.words.length ? slide.words[i + 1]!.startMs : intoMs + 1)
+    const end =
+      w.endMs ||
+      (i + 1 < slide.words.length ? slide.words[i + 1]!.startMs : intoMs + 1)
     if (intoMs >= w.startMs && intoMs < end) {
       activeIdx = i
       break
@@ -655,20 +672,23 @@ function drawFrame({
     activeIdx = slide.words.length - 1
   }
 
-  // Layout words centered, RTL. We measure each word and lay them out
-  // right-to-left across one or more lines as needed.
-  const words = slide.words.length
+  // Layout Arabic words centered, RTL, with line-wrapping.
+  ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+
+  const wordsArr = slide.words.length
     ? slide.words.map((w) => w.text)
     : slide.arabicText.split(/\s+/)
   const spaceW = ctx.measureText(' ').width
-  const maxW = W * 0.8
+  const innerMaxW = W * 0.74 // text area inside the card
   const lines: string[][] = []
   let line: string[] = []
   let lineW = 0
-  for (let i = 0; i < words.length; i++) {
-    const w = words[i]!
+  for (let i = 0; i < wordsArr.length; i++) {
+    const w = wordsArr[i]!
     const ww = ctx.measureText(w).width
-    if (lineW + ww > maxW && line.length) {
+    if (lineW + ww > innerMaxW && line.length) {
       lines.push(line)
       line = []
       lineW = 0
@@ -678,16 +698,80 @@ function drawFrame({
   }
   if (line.length) lines.push(line)
 
-  // Compute word index ranges per line so we know which word to highlight
-  const lineHeight = settings.arabicFontSize * (H / 720) * 1.6
-  const totalH = lines.length * lineHeight
-  let y = H / 2 - totalH / 2 + lineHeight / 2
+  const arabicLineH = arabicFontSize * 1.65
+  const arabicTotalH = lines.length * arabicLineH
+
+  // Transliteration (one-line approximation)
+  const translit = settings.showTransliteration ? slide.transliteration : ''
+  const translitH = translit ? translitFontSize * 1.45 : 0
+
+  // Translation wrapped
+  let transLines: string[] = []
+  if (settings.showTranslation) {
+    ctx.font = `${transFontSize}px Inter, sans-serif`
+    transLines = wrapLines(ctx, slide.translation, innerMaxW)
+  }
+  const transLineH = transFontSize * 1.4
+  const transTotalH = transLines.length * transLineH
+
+  // Small divider (only when both translit and translation are shown)
+  const dividerGap =
+    translit && transLines.length ? Math.round(H * 0.012) + 1 : 0
+  const arabicToTransGap = transLines.length
+    ? Math.round(H * 0.014)
+    : 0
+  const arabicToTranslitGap = translit ? Math.round(H * 0.010) : 0
+
+  const cardPadX = Math.round(W * 0.05)
+  const cardPadY = Math.round(H * 0.04)
+  const cardW = innerMaxW + cardPadX * 2
+  const cardContentH =
+    arabicTotalH +
+    arabicToTranslitGap +
+    translitH +
+    dividerGap +
+    arabicToTransGap +
+    transTotalH
+  const cardH = cardContentH + cardPadY * 2
+  const cardX = (W - cardW) / 2
+  const cardY = (H - cardH) / 2
+
+  // Draw the card (optional border + subtle fill + backdrop blur simulation)
+  if (settings.showBorder) {
+    const r = settings.border_radius * (H / 720)
+    // fill
+    ctx.fillStyle = 'rgba(0,0,0,0.22)'
+    roundedRect(ctx, cardX, cardY, cardW, cardH, r)
+    ctx.fill()
+    // border
+    ctx.strokeStyle = settings.borderColor
+    ctx.lineWidth = Math.max(1.5, H * 0.0025)
+    roundedRect(ctx, cardX, cardY, cardW, cardH, r)
+    ctx.stroke()
+  } else {
+    // even without a border, a very subtle scrim helps legibility
+    ctx.fillStyle = 'rgba(0,0,0,0.10)'
+    roundedRect(
+      ctx,
+      cardX,
+      cardY,
+      cardW,
+      cardH,
+      settings.border_radius * (H / 720),
+    )
+    ctx.fill()
+  }
+
+  // Draw Arabic word-by-word
+  ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  let y = cardY + cardPadY + arabicLineH / 2
   let wordCounter = 0
   for (const ln of lines) {
-    // Measure the whole line to center it
     const widths = ln.map((w) => ctx.measureText(w).width)
     const sum = widths.reduce((a, b) => a + b, 0) + spaceW * (ln.length - 1)
-    let x = W / 2 + sum / 2 // start at the right edge (RTL)
+    let x = W / 2 + sum / 2 // RTL: start at right edge
     for (let i = 0; i < ln.length; i++) {
       const w = ln[i]!
       const ww = widths[i]!
@@ -696,9 +780,9 @@ function drawFrame({
       ctx.fillStyle = isHi ? settings.highlightColor : settings.fontColor
       if (isHi) {
         ctx.shadowColor = settings.highlightColor
-        ctx.shadowBlur = H * 0.025
+        ctx.shadowBlur = H * 0.028
       } else {
-        ctx.shadowColor = 'rgba(0,0,0,0.6)'
+        ctx.shadowColor = 'rgba(0,0,0,0.7)'
         ctx.shadowBlur = H * 0.008
       }
       ctx.fillText(w, x, y)
@@ -706,39 +790,75 @@ function drawFrame({
       x -= spaceW
       wordCounter++
     }
-    y += lineHeight
+    y += arabicLineH
   }
 
   // Transliteration
-  if (settings.showTransliteration && slide.transliteration) {
-    ctx.font = `italic ${Math.round(H * 0.02)}px Inter, sans-serif`
-    ctx.fillStyle = 'rgba(255,255,255,0.75)'
+  if (translit) {
+    y += arabicToTranslitGap - arabicLineH + translitFontSize * 0.7
+    ctx.font = `italic ${translitFontSize}px Inter, sans-serif`
+    ctx.fillStyle = 'rgba(255,255,255,0.72)'
     ctx.textAlign = 'center'
-    wrapText(ctx, slide.transliteration, W / 2, y + H * 0.02, W * 0.8, H * 0.03)
+    ctx.textBaseline = 'middle'
+    ctx.fillText(translit, W / 2, y)
+    y += translitFontSize * 0.75
   }
 
-  // Translation at the bottom
-  if (settings.showTranslation) {
-    ctx.font = `${settings.translationFontSize * (H / 720)}px Inter, sans-serif`
+  // Divider
+  if (dividerGap) {
+    y += Math.round(H * 0.010)
+    ctx.strokeStyle = hexWithAlpha(settings.fontColor, 0.4)
+    ctx.lineWidth = 1
+    ctx.beginPath()
+    ctx.moveTo(W / 2 - W * 0.03, y)
+    ctx.lineTo(W / 2 + W * 0.03, y)
+    ctx.stroke()
+    y += Math.round(H * 0.010)
+  }
+
+  // Translation
+  if (transLines.length) {
+    if (!dividerGap) y += arabicToTransGap - (translit ? 0 : arabicLineH)
+    else y += 0
+    ctx.font = `${transFontSize}px Inter, sans-serif`
     ctx.fillStyle = 'rgba(255,255,255,0.88)'
     ctx.textAlign = 'center'
-    ctx.textBaseline = 'bottom'
-    wrapTextBottom(
-      ctx,
-      slide.translation,
-      W / 2,
-      H * 0.93,
-      W * 0.84,
-      settings.translationFontSize * (H / 720) * 1.35,
-    )
+    ctx.textBaseline = 'middle'
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'
+    ctx.shadowBlur = H * 0.005
+    for (let i = 0; i < transLines.length; i++) {
+      ctx.fillText(transLines[i]!, W / 2, y + i * transLineH)
+    }
+    ctx.shadowBlur = 0
   }
 
-  // Watermark (kept here intentionally — matches preview; user can crop if needed)
+  // ---- Watermark ------------------------------------------------------
   ctx.font = `${Math.round(H * 0.012)}px monospace`
   ctx.fillStyle = 'rgba(255,255,255,0.35)'
   ctx.textAlign = 'right'
   ctx.textBaseline = 'bottom'
   ctx.fillText('QuranVid', W * 0.97, H * 0.985)
+}
+
+function wrapLines(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxW: number,
+): string[] {
+  const words = text.split(/\s+/)
+  const lines: string[] = []
+  let line = ''
+  for (const w of words) {
+    const test = line ? line + ' ' + w : w
+    if (ctx.measureText(test).width > maxW && line) {
+      lines.push(line)
+      line = w
+    } else {
+      line = test
+    }
+  }
+  if (line) lines.push(line)
+  return lines
 }
 
 function hexWithAlpha(hex: string, alpha: number): string {
@@ -764,55 +884,6 @@ function roundedRect(
   ctx.arcTo(x, y + h, x, y, r)
   ctx.arcTo(x, y, x + w, y, r)
   ctx.closePath()
-}
-
-function wrapText(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  cx: number,
-  y: number,
-  maxW: number,
-  lh: number,
-) {
-  const words = text.split(/\s+/)
-  const lines: string[] = []
-  let line = ''
-  for (const w of words) {
-    const test = line ? line + ' ' + w : w
-    if (ctx.measureText(test).width > maxW && line) {
-      lines.push(line)
-      line = w
-    } else {
-      line = test
-    }
-  }
-  if (line) lines.push(line)
-  lines.forEach((ln, i) => ctx.fillText(ln, cx, y + i * lh))
-}
-
-function wrapTextBottom(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  cx: number,
-  bottomY: number,
-  maxW: number,
-  lh: number,
-) {
-  const words = text.split(/\s+/)
-  const lines: string[] = []
-  let line = ''
-  for (const w of words) {
-    const test = line ? line + ' ' + w : w
-    if (ctx.measureText(test).width > maxW && line) {
-      lines.push(line)
-      line = w
-    } else {
-      line = test
-    }
-  }
-  if (line) lines.push(line)
-  const startY = bottomY - (lines.length - 1) * lh
-  lines.forEach((ln, i) => ctx.fillText(ln, cx, startY + i * lh))
 }
 
 function formatMs(ms: number): string {

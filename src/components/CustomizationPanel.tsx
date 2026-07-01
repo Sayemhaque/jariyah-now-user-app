@@ -2,11 +2,10 @@
 
 import { useRef } from 'react'
 import { HexColorPicker } from 'react-colorful'
-import { Upload, Image as ImageIcon, Palette } from 'lucide-react'
+import { Upload } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import type { FontStyle, Orientation, VideoSettings } from '@/lib/types'
 import { Label } from '@/components/ui/label'
-import { Input } from '@/components/ui/input'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
@@ -28,49 +27,17 @@ interface Preset {
   key: string
   label: string
   url: string
-  swatch: string
 }
 
-// 6 nature presets served from /public/backgrounds. Each preset is a CSS
-// gradient (data-URI-safe) so we don't depend on external image hosting in
-// the sandbox. The VideoPreview canvas can draw these directly.
+// 7 high-quality photographic backgrounds (AI-generated, stored in /public/backgrounds).
 const BG_PRESETS: Preset[] = [
-  {
-    key: 'mountain',
-    label: 'Mountain Dawn',
-    url: '/backgrounds/mountain.svg',
-    swatch: 'linear-gradient(135deg,#0f2027,#2c5364 60%,#80b9a8)',
-  },
-  {
-    key: 'desert',
-    label: 'Desert Dusk',
-    url: '/backgrounds/desert.svg',
-    swatch: 'linear-gradient(135deg,#3a1c1c,#d76d77 50%,#ffaf7b)',
-  },
-  {
-    key: 'ocean',
-    label: 'Deep Ocean',
-    url: '/backgrounds/ocean.svg',
-    swatch: 'linear-gradient(135deg,#0b486b,#f56217 130%)',
-  },
-  {
-    key: 'forest',
-    label: 'Misty Forest',
-    url: '/backgrounds/forest.svg',
-    swatch: 'linear-gradient(135deg,#134e5e,#71b280)',
-  },
-  {
-    key: 'night',
-    label: 'Starlit Night',
-    url: '/backgrounds/night.svg',
-    swatch: 'linear-gradient(135deg,#0f0c29,#302b63 50%,#24243e)',
-  },
-  {
-    key: 'mosque',
-    label: 'Mosque Gold',
-    url: '/backgrounds/mosque.svg',
-    swatch: 'linear-gradient(135deg,#1f1c2c,#928dab 130%)',
-  },
+  { key: 'mountain', label: 'Mountain Dawn', url: '/backgrounds/mountain.png' },
+  { key: 'desert', label: 'Desert Dusk', url: '/backgrounds/desert.png' },
+  { key: 'ocean', label: 'Deep Ocean', url: '/backgrounds/ocean.png' },
+  { key: 'forest', label: 'Misty Forest', url: '/backgrounds/forest.png' },
+  { key: 'night', label: 'Starlit Night', url: '/backgrounds/night.png' },
+  { key: 'mosque', label: 'Mosque Gold', url: '/backgrounds/mosque.png' },
+  { key: 'pattern', label: 'Arabesque', url: '/backgrounds/pattern.png' },
 ]
 
 function ColorField({
@@ -93,7 +60,7 @@ function ColorField({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="h-7 w-9 rounded-md border border-border"
+              className="h-7 w-9 rounded-md border border-border ring-1 ring-inset ring-white/5"
               style={{ backgroundColor: value }}
               aria-label={`Pick ${label}`}
             />
@@ -108,10 +75,12 @@ function ColorField({
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
+  return <h3 className="qv-section-title mb-2.5 mt-5 first:mt-0">{children}</h3>
+}
+
+function Card({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-5 first:mt-0">
-      {children}
-    </h3>
+    <div className="qv-card rounded-xl p-3.5 space-y-3">{children}</div>
   )
 }
 
@@ -143,10 +112,10 @@ export function CustomizationPanel() {
             key={o}
             onClick={() => update({ orientation: o })}
             className={cn(
-              'flex flex-col items-center gap-1.5 rounded-lg border border-border bg-card/40 px-2 py-3 text-xs transition',
+              'flex flex-col items-center gap-2 rounded-lg border px-2 py-3 text-xs transition',
               settings.orientation === o
                 ? 'border-primary bg-primary/10 text-primary'
-                : 'hover:border-foreground/30',
+                : 'border-border bg-card/40 hover:border-foreground/30 hover:bg-card/70',
             )}
           >
             <div
@@ -160,12 +129,12 @@ export function CustomizationPanel() {
                 o === 'square' && 'h-5 w-5',
               )}
             />
-            <span className="capitalize">{o}</span>
+            <span className="capitalize font-medium">{o}</span>
           </button>
         ))}
       </div>
 
-      {/* Background */}
+      {/* Background — real image thumbnails */}
       <SectionTitle>Background</SectionTitle>
       <div className="grid grid-cols-3 gap-2">
         {BG_PRESETS.map((p) => (
@@ -175,15 +144,19 @@ export function CustomizationPanel() {
               update({ backgroundImage: p.url, backgroundPreset: p.key })
             }
             className={cn(
-              'group relative aspect-video rounded-lg border border-border overflow-hidden transition',
+              'group relative aspect-video rounded-lg overflow-hidden border transition',
               settings.backgroundPreset === p.key
-                ? 'ring-2 ring-primary ring-offset-2 ring-offset-background'
-                : 'hover:border-foreground/30',
+                ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-transparent'
+                : 'border-border hover:border-foreground/40',
             )}
-            style={{ background: p.swatch }}
-            title={p.label}
           >
-            <span className="absolute inset-x-0 bottom-0 bg-black/40 text-white text-[10px] py-0.5 px-1 text-center">
+            <img
+              src={p.url}
+              alt={p.label}
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
+            />
+            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[10px] font-medium py-1 px-1.5 text-center">
               {p.label}
             </span>
           </button>
@@ -201,7 +174,7 @@ export function CustomizationPanel() {
         <Button
           variant="outline"
           size="sm"
-          className="w-full bg-card/40"
+          className="w-full bg-card/40 hover:bg-card/70"
           onClick={() => fileRef.current?.click()}
         >
           <Upload className="h-3.5 w-3.5 mr-1.5" />
@@ -211,7 +184,7 @@ export function CustomizationPanel() {
 
       {/* Overlay */}
       <SectionTitle>Overlay</SectionTitle>
-      <div className="space-y-3 rounded-lg border border-border bg-card/30 p-3">
+      <Card>
         <ColorField
           label="Color"
           value={settings.overlayColor}
@@ -220,7 +193,7 @@ export function CustomizationPanel() {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Opacity</Label>
-            <span className="text-[11px] font-mono text-foreground/70">
+            <span className="text-[11px] font-mono text-foreground/70 tabular-nums">
               {settings.overlayOpacity}%
             </span>
           </div>
@@ -232,18 +205,18 @@ export function CustomizationPanel() {
             onValueChange={(v) => update({ overlayOpacity: v[0]! })}
           />
         </div>
-      </div>
+      </Card>
 
       {/* Typography */}
       <SectionTitle>Typography</SectionTitle>
-      <div className="space-y-3 rounded-lg border border-border bg-card/30 p-3">
+      <Card>
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Font style</Label>
           <Select
             value={settings.fontStyle}
             onValueChange={(v: FontStyle) => update({ fontStyle: v })}
           >
-            <SelectTrigger className="h-8 w-[150px] bg-background/60">
+            <SelectTrigger className="h-8 w-[160px] bg-background/60">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -262,7 +235,7 @@ export function CustomizationPanel() {
             <Label className="text-xs text-muted-foreground">
               Arabic font size
             </Label>
-            <span className="text-[11px] font-mono text-foreground/70">
+            <span className="text-[11px] font-mono text-foreground/70 tabular-nums">
               {settings.arabicFontSize}px
             </span>
           </div>
@@ -280,7 +253,7 @@ export function CustomizationPanel() {
             <Label className="text-xs text-muted-foreground">
               Translation font size
             </Label>
-            <span className="text-[11px] font-mono text-foreground/70">
+            <span className="text-[11px] font-mono text-foreground/70 tabular-nums">
               {settings.translationFontSize}px
             </span>
           </div>
@@ -303,11 +276,11 @@ export function CustomizationPanel() {
           value={settings.highlightColor}
           onChange={(v) => update({ highlightColor: v })}
         />
-      </div>
+      </Card>
 
       {/* Text card */}
       <SectionTitle>Text Card</SectionTitle>
-      <div className="space-y-3 rounded-lg border border-border bg-card/30 p-3">
+      <Card>
         <div className="flex items-center justify-between">
           <Label className="text-sm">Show text card border</Label>
           <Switch
@@ -327,7 +300,7 @@ export function CustomizationPanel() {
                 <Label className="text-xs text-muted-foreground">
                   Corner radius
                 </Label>
-                <span className="text-[11px] font-mono text-foreground/70">
+                <span className="text-[11px] font-mono text-foreground/70 tabular-nums">
                   {settings.border_radius}px
                 </span>
               </div>
@@ -341,11 +314,11 @@ export function CustomizationPanel() {
             </div>
           </>
         )}
-      </div>
+      </Card>
 
-      {/* Translation & transliteration */}
+      {/* Captions */}
       <SectionTitle>Captions</SectionTitle>
-      <div className="space-y-3 rounded-lg border border-border bg-card/30 p-3">
+      <Card>
         <div className="flex items-center justify-between">
           <Label className="text-sm">Show translation</Label>
           <Switch
@@ -360,7 +333,7 @@ export function CustomizationPanel() {
             onCheckedChange={(v) => update({ showTransliteration: v })}
           />
         </div>
-      </div>
+      </Card>
     </div>
   )
 }

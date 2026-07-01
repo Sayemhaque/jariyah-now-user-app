@@ -255,15 +255,15 @@ export function VideoPreview() {
       {/* Preview frame */}
       <div className="flex-1 min-h-0 grid place-items-center p-3 sm:p-6">
         <div
-          className="qv-smooth relative w-full max-h-full overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10"
+          className="qv-smooth relative w-full max-h-full overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10"
           style={{
             aspectRatio: aspect.ratio,
             maxWidth:
               settings.orientation === 'landscape'
                 ? '100%'
                 : settings.orientation === 'square'
-                ? 'min(100%, 70vh)'
-                : 'min(100%, 70vh)',
+                ? 'min(100%, 72vh)'
+                : 'min(100%, 72vh)',
             backgroundImage: `url(${settings.backgroundImage})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -272,97 +272,145 @@ export function VideoPreview() {
           {/* Overlay */}
           <div className="absolute inset-0" style={overlayStyle} />
 
-          {/* Top — surah name + ayat number */}
+          {/* Subtle top + bottom gradient for legibility (doesn't replace the
+              user's overlay, just adds a refined vignette) */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.36) 100%)',
+            }}
+          />
+
+          {/* Top header bar — surah name + ayat indicator */}
           {surah && current && (
-            <div className="absolute top-0 inset-x-0 px-6 pt-5 flex items-center justify-between text-white">
+            <div className="absolute top-0 inset-x-0 px-5 sm:px-6 pt-4 sm:pt-5 flex items-start justify-between text-white">
               <div className="flex flex-col">
-                <span className="font-arabic-uthmani text-2xl leading-tight drop-shadow-lg">
+                <span className="font-arabic-uthmani text-xl sm:text-2xl leading-tight drop-shadow-lg">
                   {surah.arabicName}
                 </span>
-                <span className="text-xs uppercase tracking-wider opacity-80">
-                  {surah.name}
+                <span className="text-[10px] sm:text-xs uppercase tracking-[0.12em] opacity-75 mt-0.5">
+                  {surah.name} · {surah.revelationType}
                 </span>
               </div>
               <div className="flex flex-col items-end">
-                <span className="font-arabic-uthmani text-xl leading-tight drop-shadow-lg">
+                <span className="font-arabic-uthmani text-lg sm:text-xl leading-tight drop-shadow-lg">
                   {surah.number}:{current.ayatNumber}
                 </span>
-                <span className="text-[10px] uppercase tracking-widest opacity-70">
+                <span className="text-[9px] sm:text-[10px] uppercase tracking-[0.18em] opacity-65 mt-0.5">
                   Ayat {currentIndex + 1} of {ayatList.length}
                 </span>
               </div>
             </div>
           )}
 
-          {/* Center — Arabic text with word-by-word highlight */}
+          {/* Center content — Arabic + transliteration + translation grouped
+              tightly into one visual block. This is the fix for the "big gap"
+              complaint: instead of pinning Arabic to center-y and translation
+              to bottom, we stack them with a small gap inside one centered
+              flex column. */}
           {current ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center px-6">
-              {settings.showBorder && (
-                <div
-                  className="absolute inset-x-8 inset-y-20 rounded-lg pointer-events-none"
-                  style={{
-                    border: `2px solid ${settings.borderColor}`,
-                    borderRadius: `${settings.border_radius}px`,
-                    backgroundColor: 'rgba(0,0,0,0.18)',
-                  }}
-                />
-              )}
+            <div className="absolute inset-0 flex flex-col items-center justify-center px-6 sm:px-10">
+              {/* Optional text card border — now wraps ONLY the text block
+                  instead of the entire frame, which looks much cleaner. */}
               <div
-                dir="rtl"
                 className={cn(
-                  'qv-smooth relative text-center leading-relaxed drop-shadow-lg px-2',
-                  settings.fontStyle === 'uthmani'
-                    ? 'font-arabic-uthmani'
-                    : 'font-arabic-naskh',
+                  'qv-smooth relative flex flex-col items-center px-7 sm:px-10 py-6 sm:py-8 max-w-[88%]',
                 )}
-                style={{
-                  color: settings.fontColor,
-                  fontSize: `clamp(18px, 4.5vw, ${settings.arabicFontSize}px)`,
-                  lineHeight: 1.7,
-                }}
+                style={
+                  settings.showBorder
+                    ? {
+                        border: `1.5px solid ${settings.borderColor}`,
+                        borderRadius: `${settings.border_radius}px`,
+                        backgroundColor: 'rgba(0,0,0,0.22)',
+                        backdropFilter: 'blur(2px)',
+                        WebkitBackdropFilter: 'blur(2px)',
+                      }
+                    : undefined
+                }
               >
-                {current.words.length > 0
-                  ? current.words.map((w, i) => (
-                      <span
-                        key={i}
-                        className="qv-smooth inline-block mx-0.5"
-                        style={{
-                          color:
-                            i === highlightedWordIdx
-                              ? settings.highlightColor
-                              : settings.fontColor,
-                          textShadow:
-                            i === highlightedWordIdx
-                              ? `0 0 18px ${settings.highlightColor}88`
-                              : '0 1px 4px rgba(0,0,0,0.6)',
-                          transition: 'color 120ms ease',
-                        }}
-                      >
-                        {w.text}
-                      </span>
-                    ))
-                  : // No word timings — show the full ayat text as one block
-                    current.arabicText}
-              </div>
-
-              {/* Transliteration */}
-              {settings.showTransliteration && current.words.length > 0 && (
+                {/* Arabic — word-by-word highlight */}
                 <div
-                  className="qv-smooth mt-3 text-center italic text-white/70 max-w-md"
-                  style={{ fontSize: '13px' }}
+                  dir="rtl"
+                  className={cn(
+                    'qv-smooth text-center leading-[1.75] drop-shadow-lg',
+                    settings.fontStyle === 'uthmani'
+                      ? 'font-arabic-uthmani'
+                      : 'font-arabic-naskh',
+                  )}
+                  style={{
+                    color: settings.fontColor,
+                    fontSize: `clamp(20px, 4.5vw, ${settings.arabicFontSize}px)`,
+                  }}
                 >
-                  {current.words
-                    .map((w) => w.transliteration || '')
-                    .filter(Boolean)
-                    .join(' ')}
+                  {current.words.length > 0
+                    ? current.words.map((w, i) => (
+                        <span
+                          key={i}
+                          className="qv-smooth inline-block mx-[1px]"
+                          style={{
+                            color:
+                              i === highlightedWordIdx
+                                ? settings.highlightColor
+                                : settings.fontColor,
+                            textShadow:
+                              i === highlightedWordIdx
+                                ? `0 0 18px ${settings.highlightColor}88, 0 1px 4px rgba(0,0,0,0.7)`
+                                : '0 1px 4px rgba(0,0,0,0.7)',
+                            transition: 'color 120ms ease',
+                          }}
+                        >
+                          {w.text}
+                        </span>
+                      ))
+                    : current.arabicText}
                 </div>
-              )}
+
+                {/* Tiny divider between Arabic and translation — only when
+                    both are visible. Replaces the huge vertical gap with a
+                    deliberate, elegant separator. */}
+                {settings.showTranslation &&
+                  settings.showTransliteration &&
+                  current.words.length > 0 && (
+                    <div
+                      className="my-2 h-px w-12 opacity-40"
+                      style={{ backgroundColor: settings.fontColor }}
+                    />
+                  )}
+
+                {/* Transliteration — sits right under Arabic */}
+                {settings.showTransliteration && current.words.length > 0 && (
+                  <div
+                    className="qv-smooth text-center italic text-white/70 max-w-md leading-snug"
+                    style={{ fontSize: 'clamp(10px, 1.3vw, 13px)' }}
+                  >
+                    {current.words
+                      .map((w) => w.transliteration || '')
+                      .filter(Boolean)
+                      .join(' ')}
+                  </div>
+                )}
+
+                {/* Translation — sits right under Arabic (or transliteration).
+                    Tight 8–12px gap instead of being pinned to the bottom. */}
+                {settings.showTranslation && (
+                  <p
+                    className="qv-smooth text-white/85 mx-auto max-w-xl leading-snug drop-shadow text-center"
+                    style={{
+                      fontSize: `clamp(11px, 1.4vw, ${settings.translationFontSize}px)`,
+                      marginTop: '0.6rem',
+                    }}
+                  >
+                    {current.translation}
+                  </p>
+                )}
+              </div>
             </div>
           ) : (
             <div className="absolute inset-0 grid place-items-center text-center text-white/70 px-6">
               {loading ? (
                 <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   <span className="text-sm">Loading ayat data…</span>
                 </div>
               ) : ayatError ? (
@@ -370,44 +418,39 @@ export function VideoPreview() {
                   <p className="text-sm text-destructive">{ayatError}</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <Sparkles className="h-10 w-10 mx-auto text-primary/70" />
-                  <p className="text-sm max-w-xs">
-                    Pick a surah and ayat range, then click{' '}
-                    <span className="text-primary font-medium">Load ayats</span>{' '}
-                    to preview your video.
-                  </p>
+                <div className="space-y-4 max-w-sm">
+                  <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 ring-1 ring-primary/20 mx-auto">
+                    <Sparkles className="h-7 w-7 text-primary" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-medium text-white/90">
+                      Your recitation video will appear here
+                    </p>
+                    <p className="text-xs text-white/55 leading-relaxed">
+                      Pick a surah and ayat range, choose a reciter, then click{' '}
+                      <span className="text-primary font-medium">Load ayats</span>{' '}
+                      to preview with word-by-word highlighting.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Bottom — translation */}
-          {current && settings.showTranslation && (
-            <div className="absolute bottom-0 inset-x-0 px-6 pb-6 text-center">
-              <p
-                className="qv-smooth text-white/85 mx-auto max-w-2xl leading-snug drop-shadow"
-                style={{ fontSize: `clamp(11px, 1.5vw, ${settings.translationFontSize}px)` }}
-              >
-                {current.translation}
-              </p>
-            </div>
-          )}
-
           {/* Watermark — stripped in the final export */}
-          <div className="absolute bottom-2 right-3 text-[10px] tracking-widest text-white/40 font-mono">
+          <div className="absolute bottom-2.5 right-3.5 text-[10px] tracking-[0.2em] text-white/35 font-mono uppercase">
             QuranVid
           </div>
         </div>
       </div>
 
-      {/* Controls bar */}
-      <div className="border-t border-border bg-card/40 backdrop-blur px-4 py-3 space-y-2">
-        <div className="flex items-center gap-3">
+      {/* Controls bar — refined, professional transport */}
+      <div className="border-t border-border bg-card/60 qv-frosted px-4 sm:px-5 py-3 space-y-2.5">
+        <div className="flex items-center gap-2.5">
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9"
+            className="h-9 w-9 rounded-lg hover:bg-secondary/60"
             disabled={!ayatList.length}
             onClick={() => playAyat(Math.max(0, currentIndex - 1))}
             title="Previous ayat"
@@ -415,9 +458,8 @@ export function VideoPreview() {
             <SkipBack className="h-4 w-4" />
           </Button>
           <Button
-            variant="default"
             size="icon"
-            className="h-10 w-10 rounded-full"
+            className="h-11 w-11 rounded-full qv-btn-primary border border-primary/30"
             disabled={!ayatList.length}
             onClick={togglePlay}
             title={isPlaying ? 'Pause' : 'Play'}
@@ -431,7 +473,7 @@ export function VideoPreview() {
           <Button
             variant="ghost"
             size="icon"
-            className="h-9 w-9"
+            className="h-9 w-9 rounded-lg hover:bg-secondary/60"
             disabled={!ayatList.length || currentIndex >= ayatList.length - 1}
             onClick={() => playAyat(Math.min(ayatList.length - 1, currentIndex + 1))}
             title="Next ayat"
@@ -439,7 +481,7 @@ export function VideoPreview() {
             <SkipForward className="h-4 w-4" />
           </Button>
 
-          <div className="flex-1 flex items-center gap-2">
+          <div className="flex-1 flex items-center gap-3 mx-2">
             <Slider
               value={[
                 Math.min(
@@ -453,17 +495,17 @@ export function VideoPreview() {
               disabled={!ayatList.length}
               className="flex-1"
             />
-            <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap">
+            <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap tabular-nums">
               {formatMs((offsets[currentIndex] || 0) + currentTimeMs)} /{' '}
               {formatMs(totalMs)}
             </span>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9"
+              className="h-9 w-9 rounded-lg hover:bg-secondary/60"
               onClick={() => setMuted((m) => !m)}
               title={muted ? 'Unmute' : 'Mute'}
             >
@@ -486,13 +528,21 @@ export function VideoPreview() {
           </div>
         </div>
         {ayatList.length > 0 && (
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>
-              {surah?.name} · {fromAyat}–{toAyat} · {reciter.name}
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+            <span className="flex items-center gap-2">
+              <span className="font-medium text-foreground/80">{surah?.name}</span>
+              <span className="opacity-50">·</span>
+              <span className="tabular-nums">
+                Ayats {fromAyat}–{toAyat}
+              </span>
+              <span className="opacity-50">·</span>
+              <span>{reciter.name}</span>
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 text-primary/80">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary qv-pulse" />
-              live preview
+              <span className="uppercase tracking-[0.15em] text-[10px]">
+                Live preview
+              </span>
             </span>
           </div>
         )}

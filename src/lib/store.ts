@@ -43,10 +43,10 @@ interface BuilderState {
 }
 
 const DEFAULT_SETTINGS: VideoSettings = {
-  backgroundImage: '/backgrounds/mountain.svg',
-  backgroundPreset: 'mountain',
+  backgroundImage: '/backgrounds/mosque.png',
+  backgroundPreset: 'mosque',
   overlayColor: '#000000',
-  overlayOpacity: 50,
+  overlayOpacity: 45,
   fontColor: '#ffffff',
   highlightColor: '#F5A623',
   arabicFontSize: 48,
@@ -54,7 +54,7 @@ const DEFAULT_SETTINGS: VideoSettings = {
   fontStyle: 'uthmani',
   showBorder: true,
   borderColor: '#F5A623',
-  border_radius: 16,
+  border_radius: 18,
   showTranslation: true,
   showTransliteration: false,
   orientation: 'portrait',

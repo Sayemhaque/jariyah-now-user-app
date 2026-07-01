@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Search, BookOpen, Loader2 } from 'lucide-react'
+import { Search, BookOpen } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import {
   Select,
@@ -54,7 +54,7 @@ export function SurahSelector() {
         onValueChange={(v) => setSurah(Number(v))}
         disabled={loading && surahs.length === 0}
       >
-        <SelectTrigger className="w-full bg-card/60">
+        <SelectTrigger className="w-full bg-card/60 h-11">
           <SelectValue
             placeholder={
               loading && surahs.length === 0
@@ -66,18 +66,18 @@ export function SurahSelector() {
         <SelectContent className="max-h-96 bg-popover">
           <div className="p-2 sticky top-0 bg-popover z-10 border-b border-border">
             <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by name or number…"
-                className="pl-8 h-9 bg-background/60"
+                className="pl-9 h-9 bg-background/60"
                 onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
           </div>
           <SelectGroup>
-            <SelectLabel className="text-xs uppercase tracking-wide text-muted-foreground">
+            <SelectLabel className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground px-2 py-1.5">
               {filtered.length} surahs
             </SelectLabel>
             <div className="max-h-[260px] overflow-y-auto scrollbar-thin">
@@ -85,23 +85,23 @@ export function SurahSelector() {
                 <SelectItem
                   key={s.number}
                   value={String(s.number)}
-                  className="flex items-center justify-between gap-2 py-2"
+                  className="flex items-center justify-between gap-2 py-2.5"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="grid place-items-center h-7 w-7 rounded-md bg-primary/15 text-primary text-xs font-mono">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="grid place-items-center h-7 w-7 rounded-md bg-primary/15 text-primary text-[11px] font-mono font-semibold shrink-0">
                       {s.number}
                     </span>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium leading-tight">
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-medium leading-tight truncate">
                         {s.name}
                       </span>
-                      <span className="text-[11px] text-muted-foreground leading-tight">
+                      <span className="text-[11px] text-muted-foreground leading-tight truncate">
                         {s.englishName} · {s.numberOfAyahs} ayats ·{' '}
                         {s.revelationType}
                       </span>
                     </div>
                   </div>
-                  <span className="font-arabic-uthmani text-lg text-foreground/80">
+                  <span className="font-arabic-uthmani text-lg text-foreground/80 shrink-0">
                     {s.arabicName}
                   </span>
                 </SelectItem>
@@ -116,17 +116,20 @@ export function SurahSelector() {
         </SelectContent>
       </Select>
 
-      {error && (
-        <p className="text-xs text-destructive">{error}</p>
-      )}
+      {error && <p className="text-xs text-destructive">{error}</p>}
       {selectedSurah && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Badge variant="secondary" className="font-mono">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground pt-0.5">
+          <Badge
+            variant="secondary"
+            className="font-mono bg-primary/10 text-primary border-primary/20"
+          >
             {selectedSurah.number}
           </Badge>
-          <span>
-            {selectedSurah.numberOfAyahs} ayats · {selectedSurah.revelationType}
+          <span className="tabular-nums">
+            {selectedSurah.numberOfAyahs} ayats
           </span>
+          <span className="opacity-50">·</span>
+          <span>{selectedSurah.revelationType}</span>
         </div>
       )}
     </div>

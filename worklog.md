@@ -60,3 +60,75 @@ Stage Summary:
 - All validation rules (max 10 ayats, From < To, surah ayat count) fire with the correct inline error messages and disable the Load/Export buttons as needed
 - The export pipeline is implemented client-side via Canvas + MediaRecorder (Web Audio API mixes the reciter audio into the recording) — this avoids needing headless Chrome on the server, which is unreliable in a sandbox; the spec's API surface (POST /api/render, GET /api/render-status) is preserved for validation + rate limiting + job tracking
 - Remotion is intentionally NOT installed because its headless-Chrome renderer is unreliable in the sandbox; the Canvas+MediaRecorder approach produces a real, downloadable WebM/MP4 file with audio baked in
+
+---
+Task ID: 2
+Agent: main (super-z)
+Task: Polish the UI for a more professional look, fix the big gap between ayats and translation in the video preview, and replace the flat SVG backgrounds with nice photographic images.
+
+Work Log:
+- Generated 7 high-quality photographic backgrounds via z-ai image-generation CLI (1344×768 each):
+  - mountain.png — misty peaks at dawn
+  - desert.png — dunes at dusk
+  - ocean.png — calm ocean at twilight
+  - forest.png — misty forest at sunrise
+  - night.png — starlit night sky with milky way
+  - mosque.png — mosque silhouette at golden sunset (set as the new default)
+  - pattern.png — Islamic geometric arabesque in emerald + gold
+- Removed the old flat SVG backgrounds
+- Refined the global theme (globals.css):
+  - Cooler slate-950 base, slightly lifted cards, finer 7% borders
+  - Gold accent tuned (oklch 0.80 0.15 80) with a refined primary-button gradient (qv-btn-primary)
+  - Added `.qv-card` (subtle gradient + inset highlight + soft shadow) for grouped controls
+  - Added `.qv-section-title` (gold tick + uppercase tracking) for section headers
+  - Added `.qv-step` numbered pill for the sidebar's step indicators
+  - Added `.qv-frosted` (backdrop-blur + saturate) for the header
+  - Better focus rings, antialiased fonts, tabular-nums for all numeric displays
+- Rewrote VideoPreview layout to fix the big-gap complaint:
+  - Arabic, optional transliteration, and translation now live inside ONE centered card with tight 0.6rem spacing
+  - When both transliteration and translation are visible, a 12px gold divider sits between them instead of empty space
+  - The text-card border now wraps ONLY the text block (not the whole frame) — much cleaner
+  - Added a subtle top/bottom gradient vignette for legibility on top of the user's overlay
+  - Header bar refined: Arabic name + English name + revelation type on the left, ayat indicator on the right
+  - Empty-state replaced with a polished card containing a gold-tinted Sparkles icon + heading + helper text
+  - Transport bar refined: rounded-2xl frame, gold-gradient Play button, tabular-nums timecode, status line with "Live preview" pill
+- Polished all sidebar components for visual consistency:
+  - SurahSelector: search input has leading icon, surah items show numbered tile + name + meta + Arabic on the right
+  - AyatRangePicker: count badge is now a pill with a border, inputs are h-10 with tabular-nums
+  - ReciterSelector: avatar gets a ring-2 ring-white/10, selected state shows a checkmark, Arabic name inline with style
+  - CustomizationPanel: real image thumbnails for the 7 backgrounds (not flat gradients), grouped controls in qv-card containers, all sliders show tabular-nums values
+- Polished ExportModal:
+  - Header has a gold-tinted Film icon tile
+  - Platform preset buttons are now rounded-xl with shadow-sm when selected
+  - Quality buttons show an "HD" badge on 1080p
+  - Summary card uses qv-card with a divider between filename and the rest
+  - Progress card has a 1.5px gold-tinted border + softer background
+  - Download button uses qv-btn-primary gradient
+- Updated the Canvas export `drawFrame` to match the new tighter layout:
+  - Card is now sized to fit content (Arabic + transliteration + divider + translation) with proper padding
+  - Top/bottom gradient vignette applied for legibility
+  - Word highlighting uses H * 0.028 shadow blur for a stronger glow
+  - When both transliteration and translation are shown, a 6% wide divider line is drawn between them
+  - Removed unused wrapText/wrapTextBottom helpers; kept only the new wrapLines
+- Removed the Layout/Style/Captions tab split in the sidebar — now a single scrollable Customize panel with clear section titles. Simpler hierarchy, faster to scan.
+- Updated default settings: mosque.png background, 45% overlay opacity, 18px border radius
+- Verified end-to-end with Agent Browser:
+  - Page loads cleanly, no console errors
+  - Selected Al-Fatihah 1–3 → loaded successfully (3 timings API calls returned 200)
+  - Play button started audio, seek bar advanced, words highlighted gold
+  - Switched to Starlit Night background — preview updated live
+  - Opened Export modal — filename "quran-1-ayat-1-3-alafasy.webm", duration 0:16, resolution 720×1280
+  - All 7 background presets visible with real image thumbnails
+- VLM (glm-4.6v) visual verification confirmed:
+  - "sleek and professional, with a dark theme and clear, organized sections"
+  - "Arabic text and English translation appear close together... with minimal spacing"
+  - "a real photograph (a mosque silhouette against a sunset sky), not a flat color or gradient"
+  - Export modal: "professional and well-organized... platform preset buttons are clear and easy to pick from... summary is easy to scan"
+- ESLint passes clean (0 errors, 0 warnings)
+
+Stage Summary:
+- Three user complaints addressed:
+  1. UI professionalism — refined dark theme, gradient buttons, frosted header, qv-card surfaces, tabular-nums, better focus rings, polished empty state, refined export modal
+  2. Big gap between ayats and translation — Arabic + transliteration + translation are now grouped in one tight centered card with a small gold divider, both in the preview AND in the Canvas export
+  3. Nicer background images — 7 AI-generated photographic backgrounds (mountain, desert, ocean, forest, night, mosque, arabesque pattern) replace the flat SVG gradients; default is now mosque.png
+- All changes verified visually via VLM + functionally via Agent Browser
