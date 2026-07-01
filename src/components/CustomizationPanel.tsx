@@ -2,9 +2,9 @@
 
 import { useRef } from 'react'
 import { HexColorPicker } from 'react-colorful'
-import { Upload } from 'lucide-react'
+import { Upload, Sparkles } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
-import type { FontStyle, Orientation, VideoSettings } from '@/lib/types'
+import type { FontStyle, Orientation, OverlayStyle } from '@/lib/types'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
@@ -40,17 +40,64 @@ const BG_PRESETS: Preset[] = [
   { key: 'pattern', label: 'Arabesque', url: '/backgrounds/pattern.png' },
 ]
 
+// Overlay style presets — each one shapes the user's color + opacity
+// differently across the frame. The mini-swatch uses a real gradient so
+// the user can see the shape before applying it.
+const OVERLAY_PRESETS: {
+  key: OverlayStyle
+  label: string
+  swatch: string
+}[] = [
+  {
+    key: 'solid',
+    label: 'Solid',
+    swatch: 'linear-gradient(#000,#000)',
+  },
+  {
+    key: 'bottom-gradient',
+    label: 'Bottom Fade',
+    swatch:
+      'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 60%, #000 100%)',
+  },
+  {
+    key: 'top-gradient',
+    label: 'Top Fade',
+    swatch:
+      'linear-gradient(180deg, #000 0%, rgba(0,0,0,0.4) 40%, transparent 100%)',
+  },
+  {
+    key: 'vignette',
+    label: 'Vignette',
+    swatch:
+      'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)',
+  },
+  {
+    key: 'center-focus',
+    label: 'Spotlight',
+    swatch:
+      'radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, transparent 70%)',
+  },
+  {
+    key: 'none',
+    label: 'None',
+    swatch:
+      'repeating-linear-gradient(45deg, #1f2937 0 6px, #111827 6px 12px)',
+  },
+]
+
 function ColorField({
   label,
   value,
   onChange,
+  disabled,
 }: {
   label: string
   value: string
   onChange: (v: string) => void
+  disabled?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className={cn('flex items-center justify-between gap-3', disabled && 'opacity-50')}>
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <div className="flex items-center gap-2">
         <span className="text-[11px] font-mono text-foreground/70 uppercase">
@@ -60,7 +107,8 @@ function ColorField({
           <PopoverTrigger asChild>
             <button
               type="button"
-              className="h-7 w-9 rounded-md border border-border ring-1 ring-inset ring-white/5"
+              disabled={disabled}
+              className="h-7 w-9 rounded-md border border-border ring-1 ring-inset ring-white/5 disabled:cursor-not-allowed"
               style={{ backgroundColor: value }}
               aria-label={`Pick ${label}`}
             />
@@ -79,14 +127,14 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 function Card({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="qv-card rounded-xl p-3.5 space-y-3">{children}</div>
-  )
+  return <div className="qv-card rounded-xl p-3.5 space-y-3">{children}</div>
 }
 
 export function CustomizationPanel() {
   const settings = useBuilderStore((s) => s.settings)
   const update = useBuilderStore((s) => s.updateSettings)
+  const setOrientation = useBuilderStore((s) => s.setOrientation)
+  const setAutoFitFonts = useBuilderStore((s) => s.setAutoFitFonts)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const onUpload = (file?: File) => {
@@ -102,6 +150,8 @@ export function CustomizationPanel() {
     reader.readAsDataURL(file)
   }
 
+  const overlayDisabled = settings.overlayStyle === 'none'
+
   return (
     <div className="space-y-1">
       {/* Layout */}
@@ -110,7 +160,7 @@ export function CustomizationPanel() {
         {(['portrait', 'square', 'landscape'] as Orientation[]).map((o) => (
           <button
             key={o}
-            onClick={() => update({ orientation: o })}
+            onClick={() => setOrientation(o)}
             className={cn(
               'flex flex-col items-center gap-2 rounded-lg border px-2 py-3 text-xs transition',
               settings.orientation === o
@@ -182,19 +232,44 @@ export function CustomizationPanel() {
         </Button>
       </div>
 
-      {/* Overlay */}
+      {/* Overlay — preset shapes + color + opacity */}
       <SectionTitle>Overlay</SectionTitle>
       <Card>
+        <div className="grid grid-cols-3 gap-2">
+          {OVERLAY_PRESETS.map((p) => (
+            <button
+              key={p.key}
+              onClick={() => update({ overlayStyle: p.key })}
+              className={cn(
+                'flex flex-col items-center gap-1.5 rounded-lg border p-2 transition',
+                settings.overlayStyle === p.key
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border bg-card/40 hover:border-foreground/30 hover:bg-card/70',
+              )}
+              title={p.label}
+            >
+              <span
+                className="block h-8 w-full rounded-md ring-1 ring-inset ring-white/10"
+                style={{ background: p.swatch }}
+              />
+              <span className="text-[10px] font-medium leading-none">
+                {p.label}
+              </span>
+            </button>
+          ))}
+        </div>
+
         <ColorField
           label="Color"
           value={settings.overlayColor}
           onChange={(v) => update({ overlayColor: v })}
+          disabled={overlayDisabled}
         />
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Label className="text-xs text-muted-foreground">Opacity</Label>
             <span className="text-[11px] font-mono text-foreground/70 tabular-nums">
-              {settings.overlayOpacity}%
+              {overlayDisabled ? '—' : `${settings.overlayOpacity}%`}
             </span>
           </div>
           <Slider
@@ -202,6 +277,7 @@ export function CustomizationPanel() {
             min={0}
             max={80}
             step={1}
+            disabled={overlayDisabled}
             onValueChange={(v) => update({ overlayOpacity: v[0]! })}
           />
         </div>
@@ -210,6 +286,24 @@ export function CustomizationPanel() {
       {/* Typography */}
       <SectionTitle>Typography</SectionTitle>
       <Card>
+        {/* Auto-fit toggle — when on, font sizes auto-scale with orientation */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <Label className="text-sm font-medium">Auto-fit fonts</Label>
+          </div>
+          <Switch
+            checked={settings.autoFitFonts}
+            onCheckedChange={(v) => setAutoFitFonts(v)}
+          />
+        </div>
+        {settings.autoFitFonts && (
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Font sizes auto-scale to the selected layout. Turn off to fine-tune
+            manually.
+          </p>
+        )}
+
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Font style</Label>
           <Select
@@ -244,6 +338,10 @@ export function CustomizationPanel() {
             min={24}
             max={72}
             step={1}
+            // When auto-fit is on, the slider becomes a read-only indicator
+            // (the value follows the orientation). The user can still drag it,
+            // which will not stick — they need to turn off auto-fit first.
+            disabled={settings.autoFitFonts}
             onValueChange={(v) => update({ arabicFontSize: v[0]! })}
           />
         </div>
@@ -262,6 +360,7 @@ export function CustomizationPanel() {
             min={14}
             max={32}
             step={1}
+            disabled={settings.autoFitFonts}
             onValueChange={(v) => update({ translationFontSize: v[0]! })}
           />
         </div>
@@ -276,44 +375,6 @@ export function CustomizationPanel() {
           value={settings.highlightColor}
           onChange={(v) => update({ highlightColor: v })}
         />
-      </Card>
-
-      {/* Text card */}
-      <SectionTitle>Text Card</SectionTitle>
-      <Card>
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">Show text card border</Label>
-          <Switch
-            checked={settings.showBorder}
-            onCheckedChange={(v) => update({ showBorder: v })}
-          />
-        </div>
-        {settings.showBorder && (
-          <>
-            <ColorField
-              label="Border color"
-              value={settings.borderColor}
-              onChange={(v) => update({ borderColor: v })}
-            />
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <Label className="text-xs text-muted-foreground">
-                  Corner radius
-                </Label>
-                <span className="text-[11px] font-mono text-foreground/70 tabular-nums">
-                  {settings.border_radius}px
-                </span>
-              </div>
-              <Slider
-                value={[settings.border_radius]}
-                min={0}
-                max={48}
-                step={1}
-                onValueChange={(v) => update({ border_radius: v[0]! })}
-              />
-            </div>
-          </>
-        )}
       </Card>
 
       {/* Captions */}

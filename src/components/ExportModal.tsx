@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Download, Loader2, Film, X, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
+import { paintOverlayOnCanvas } from '@/lib/overlay'
 import type { AyatSlide, ExportOptions, Orientation } from '@/lib/types'
 import {
   Dialog,
@@ -602,16 +603,15 @@ function drawFrame({
     ctx.fillRect(0, 0, W, H)
   }
 
-  // ---- User overlay ----------------------------------------------------
-  ctx.fillStyle = hexWithAlpha(settings.overlayColor, settings.overlayOpacity / 100)
-  ctx.fillRect(0, 0, W, H)
+  // ---- User overlay (using the selected preset shape) -----------------
+  paintOverlayOnCanvas(ctx, W, H, settings)
 
-  // ---- Refined top + bottom gradient for legibility -------------------
+  // ---- Subtle top + bottom gradient for legibility (always on) --------
   const grad = ctx.createLinearGradient(0, 0, 0, H)
-  grad.addColorStop(0, 'rgba(0,0,0,0.30)')
-  grad.addColorStop(0.22, 'rgba(0,0,0,0)')
-  grad.addColorStop(0.70, 'rgba(0,0,0,0)')
-  grad.addColorStop(1, 'rgba(0,0,0,0.38)')
+  grad.addColorStop(0, 'rgba(0,0,0,0.22)')
+  grad.addColorStop(0.18, 'rgba(0,0,0,0)')
+  grad.addColorStop(0.78, 'rgba(0,0,0,0)')
+  grad.addColorStop(1, 'rgba(0,0,0,0.30)')
   ctx.fillStyle = grad
   ctx.fillRect(0, 0, W, H)
 
@@ -736,31 +736,9 @@ function drawFrame({
   const cardX = (W - cardW) / 2
   const cardY = (H - cardH) / 2
 
-  // Draw the card (optional border + subtle fill + backdrop blur simulation)
-  if (settings.showBorder) {
-    const r = settings.border_radius * (H / 720)
-    // fill
-    ctx.fillStyle = 'rgba(0,0,0,0.22)'
-    roundedRect(ctx, cardX, cardY, cardW, cardH, r)
-    ctx.fill()
-    // border
-    ctx.strokeStyle = settings.borderColor
-    ctx.lineWidth = Math.max(1.5, H * 0.0025)
-    roundedRect(ctx, cardX, cardY, cardW, cardH, r)
-    ctx.stroke()
-  } else {
-    // even without a border, a very subtle scrim helps legibility
-    ctx.fillStyle = 'rgba(0,0,0,0.10)'
-    roundedRect(
-      ctx,
-      cardX,
-      cardY,
-      cardW,
-      cardH,
-      settings.border_radius * (H / 720),
-    )
-    ctx.fill()
-  }
+  // No card border / scrim — text floats directly on the background per the
+  // spec ("do not need the card border"). The cardX/Y/W/H math is still used
+  // to position the text block centered vertically.
 
   // Draw Arabic word-by-word
   ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
@@ -867,23 +845,6 @@ function hexWithAlpha(hex: string, alpha: number): string {
   const g = parseInt(h.slice(2, 4), 16)
   const b = parseInt(h.slice(4, 6), 16)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
-}
-
-function roundedRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number,
-) {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.arcTo(x + w, y, x + w, y + h, r)
-  ctx.arcTo(x + w, y + h, x, y + h, r)
-  ctx.arcTo(x, y + h, x, y, r)
-  ctx.arcTo(x, y, x + w, y, r)
-  ctx.closePath()
 }
 
 function formatMs(ms: number): string {

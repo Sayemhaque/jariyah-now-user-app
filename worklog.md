@@ -132,3 +132,68 @@ Stage Summary:
   2. Big gap between ayats and translation — Arabic + transliteration + translation are now grouped in one tight centered card with a small gold divider, both in the preview AND in the Canvas export
   3. Nicer background images — 7 AI-generated photographic backgrounds (mountain, desert, ocean, forest, night, mosque, arabesque pattern) replace the flat SVG gradients; default is now mosque.png
 - All changes verified visually via VLM + functionally via Agent Browser
+
+---
+Task ID: 3
+Agent: main (super-z)
+Task: Add an overlay-style picker (gradient/vignette presets), make font sizes auto-responsive to the selected layout, and remove the card border entirely.
+
+Work Log:
+- Added 6 overlay style presets to `types.ts`:
+  - solid, bottom-gradient, top-gradient, vignette, center-focus (spotlight), none
+- Removed `showBorder`, `borderColor`, `border_radius` from `VideoSettings`
+- Added `autoFitFonts: boolean` and `AUTO_FONT_SIZES` map to types.ts:
+  - portrait  → arabic 56, translation 22
+  - landscape → arabic 44, translation 18
+  - square    → arabic 52, translation 20
+- Updated `store.ts`:
+  - New defaults: overlayStyle='bottom-gradient', overlayOpacity=55, autoFitFonts=true
+  - New `setOrientation(o)` action that auto-applies the auto font sizes when autoFitFonts is on
+  - New `setAutoFitFonts(on)` action that, when turning on, immediately applies the auto sizes for the current orientation
+  - Updated `updateSettings(patch)` so that any orientation change while autoFitFonts is on also re-applies the auto sizes
+- Created `lib/overlay.ts` with shared overlay helpers:
+  - `overlayCssBackground(s)` → CSS background expression for the React preview
+  - `paintOverlayOnCanvas(ctx, W, H, s)` → paints the same shape on a 2D canvas for the export pipeline
+  - Both handle all 6 preset shapes (solid / bottom-gradient / top-gradient / vignette / center-focus / none)
+  - Keeping the math in one place guarantees the preview and the exported video look the same
+- Updated `CustomizationPanel.tsx`:
+  - Added an Overlay preset picker (6 mini-swatches showing the gradient shape) above the color + opacity controls
+  - When "None" is selected, color + opacity are visually disabled
+  - Removed the entire Text Card section (border toggle, border color, corner radius)
+  - Added an "Auto-fit fonts" toggle at the top of the Typography section
+  - When auto-fit is on, the Arabic + translation font-size sliders are disabled and become read-only indicators
+- Updated `VideoPreview.tsx`:
+  - Replaced the flat overlay div with one that uses `overlayCssBackground(settings)`
+  - Removed the card border + scrim entirely — text now floats directly on the background
+  - Added orientation-aware CSS font scaling: each orientation uses a different vw scale so the preview text reflows nicely when the layout changes
+    * portrait: 5.2vw Arabic, 1.7vw translation
+    * square: 4.2vw Arabic, 1.5vw translation
+    * landscape: 3.4vw Arabic, 1.3vw translation
+- Updated `ExportModal.tsx` `drawFrame`:
+  - Replaced the flat overlay fill with `paintOverlayOnCanvas(ctx, W, H, settings)`
+  - Removed the card border + subtle scrim drawing — text now floats on the background, matching the preview
+  - Removed the now-unused `roundedRect` helper
+  - Kept `hexWithAlpha` (still used for the divider stroke between transliteration and translation)
+- Verified end-to-end with Agent Browser:
+  - Page loads cleanly, no console errors
+  - Overlay section shows 6 preset swatches: Solid, Bottom Fade, Top Fade, Vignette, Spotlight, None
+  - No "Text Card" section present (removed)
+  - Auto-fit toggle is ON by default
+  - Selected Al-Fatihah + ayats 1–3 → loaded successfully
+  - Default Bottom Fade overlay renders as a gradient (verified by VLM)
+  - Switched to Vignette → VLM confirmed "radial vignette, darker at edges, clear in middle"
+  - Switched to None → VLM confirmed "background image clearly visible with no darkening"
+  - Switched to Solid → overlay renders as a flat color (with the always-on legibility gradient on top)
+  - Auto-fit font behavior verified:
+    * Portrait → Arabic 56, Translation 22
+    * Switched to Landscape → Arabic auto-changed to 44, Translation to 18
+    * Switched to Square → Arabic auto-changed to 52, Translation to 20
+    * Switched back to Portrait → Arabic restored to 56, Translation to 22
+  - Export modal still works (all 4 platform presets + quality toggle + summary)
+- ESLint passes clean (0 errors, 0 warnings)
+
+Stage Summary:
+- Three user requests addressed:
+  1. **Overlay options** — 6 preset shapes (Solid, Bottom Fade, Top Fade, Vignette, Spotlight, None) with visual swatches; default is Bottom Fade (the most common style for captioned Quran videos)
+  2. **Auto-responsive fonts** — when "Auto-fit fonts" is on (default), switching the layout auto-applies sensible font sizes for that orientation; the user can turn it off to fine-tune manually. The preview also uses orientation-aware CSS clamp() so text reflows smoothly.
+  3. **No card border** — removed `showBorder`, `borderColor`, `border_radius` entirely from settings, controls, preview, and export. Text now floats directly on the background image.

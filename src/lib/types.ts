@@ -56,9 +56,28 @@ export interface Reciter {
 export type Orientation = 'landscape' | 'portrait' | 'square'
 export type FontStyle = 'uthmani' | 'naskh'
 
+/**
+ * Overlay style presets. Each one shapes the user's overlayColor/opacity
+ * differently across the frame.
+ *   solid           — flat color across the whole frame
+ *   bottom-gradient — transparent at top → solid at bottom (good for caption text)
+ *   top-gradient    — solid at top → transparent at bottom
+ *   vignette        — radial, darker at the edges, clear in the middle
+ *   center-focus    — radial, clear at the middle, darker at the edges (spotlight)
+ *   none            — no overlay at all
+ */
+export type OverlayStyle =
+  | 'solid'
+  | 'bottom-gradient'
+  | 'top-gradient'
+  | 'vignette'
+  | 'center-focus'
+  | 'none'
+
 export interface VideoSettings {
   backgroundImage: string      // URL or data URL
   backgroundPreset: string     // preset key or 'custom'
+  overlayStyle: OverlayStyle
   overlayColor: string         // hex
   overlayOpacity: number       // 0–80
   fontColor: string            // hex
@@ -66,16 +85,25 @@ export interface VideoSettings {
   arabicFontSize: number       // 24–72
   translationFontSize: number  // 14–32
   fontStyle: FontStyle
-  showBorder: boolean
-  borderColor: string
-  border_radius: number
   showTranslation: boolean
   showTransliteration: boolean
   orientation: Orientation
+  /** When true, arabic + translation font sizes auto-scale to the orientation. */
+  autoFitFonts: boolean
 }
 
 export interface ExportOptions {
   platform: 'reel' | 'shorts' | 'youtube' | 'square'
   quality: '720p' | '1080p'
   filename: string
+}
+
+/**
+ * Auto-fit font sizes for each orientation. Used when `autoFitFonts` is on,
+ * and also applied as sensible defaults whenever the user changes orientation.
+ */
+export const AUTO_FONT_SIZES: Record<Orientation, { arabic: number; translation: number }> = {
+  portrait: { arabic: 56, translation: 22 },
+  landscape: { arabic: 44, translation: 18 },
+  square: { arabic: 52, translation: 20 },
 }

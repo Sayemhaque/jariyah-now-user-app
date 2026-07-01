@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
+import { overlayCssBackground } from '@/lib/overlay'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -235,17 +236,30 @@ export function VideoPreview() {
     }
   }, [ayatList])
 
-  // Overlay color + opacity for the preview frame
-  const overlayStyle = {
-    backgroundColor: settings.overlayColor,
-    opacity: settings.overlayOpacity / 100,
-  }
+  // Build the overlay background expression from the user's chosen preset.
+  const overlayBg = overlayCssBackground(settings)
 
   // Find the word to highlight in the current ayat
   const highlightedWordIdx =
     activeWord && activeWord.ayatIndex === currentIndex
       ? activeWord.wordIndex
       : -1
+
+  // Font sizes auto-scale to the preview frame's width based on orientation.
+  // We translate the user's "design-space" font size (24–72 for Arabic,
+  // 14–32 for translation) into a viewport-relative CSS clamp that adapts to
+  // the actual rendered preview width.
+  //   portrait  → frame is tall and narrow → bigger relative size
+  //   square    → medium
+  //   landscape → frame is wide and short → slightly smaller relative size
+  const orientationFontScale: Record<string, { ar: string; tr: string }> = {
+    portrait: { ar: '5.2vw', tr: '1.7vw' },
+    square: { ar: '4.2vw', tr: '1.5vw' },
+    landscape: { ar: '3.4vw', tr: '1.3vw' },
+  }
+  const fontScale = orientationFontScale[settings.orientation]!
+  const arabicFontSizeCss = `clamp(18px, ${fontScale.ar}, ${settings.arabicFontSize}px)`
+  const translationFontSizeCss = `clamp(10px, ${fontScale.tr}, ${settings.translationFontSize}px)`
 
   return (
     <div className="flex flex-col h-full">
@@ -269,16 +283,21 @@ export function VideoPreview() {
             backgroundPosition: 'center',
           }}
         >
-          {/* Overlay */}
-          <div className="absolute inset-0" style={overlayStyle} />
+          {/* Overlay (rendered using the user's selected preset shape) */}
+          {overlayBg && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: overlayBg }}
+            />
+          )}
 
-          {/* Subtle top + bottom gradient for legibility (doesn't replace the
-              user's overlay, just adds a refined vignette) */}
+          {/* Subtle top + bottom gradient for legibility (always on, regardless
+              of overlay preset — guarantees the header + watermark stay readable) */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 70%, rgba(0,0,0,0.36) 100%)',
+                'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0) 18%, rgba(0,0,0,0) 78%, rgba(0,0,0,0.30) 100%)',
             }}
           />
 
@@ -305,30 +324,10 @@ export function VideoPreview() {
           )}
 
           {/* Center content — Arabic + transliteration + translation grouped
-              tightly into one visual block. This is the fix for the "big gap"
-              complaint: instead of pinning Arabic to center-y and translation
-              to bottom, we stack them with a small gap inside one centered
-              flex column. */}
+              tightly into one visual block. No card border (per spec). */}
           {current ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center px-6 sm:px-10">
-              {/* Optional text card border — now wraps ONLY the text block
-                  instead of the entire frame, which looks much cleaner. */}
-              <div
-                className={cn(
-                  'qv-smooth relative flex flex-col items-center px-7 sm:px-10 py-6 sm:py-8 max-w-[88%]',
-                )}
-                style={
-                  settings.showBorder
-                    ? {
-                        border: `1.5px solid ${settings.borderColor}`,
-                        borderRadius: `${settings.border_radius}px`,
-                        backgroundColor: 'rgba(0,0,0,0.22)',
-                        backdropFilter: 'blur(2px)',
-                        WebkitBackdropFilter: 'blur(2px)',
-                      }
-                    : undefined
-                }
-              >
+              <div className="qv-smooth relative flex flex-col items-center max-w-[88%]">
                 {/* Arabic — word-by-word highlight */}
                 <div
                   dir="rtl"
@@ -340,7 +339,7 @@ export function VideoPreview() {
                   )}
                   style={{
                     color: settings.fontColor,
-                    fontSize: `clamp(20px, 4.5vw, ${settings.arabicFontSize}px)`,
+                    fontSize: arabicFontSizeCss,
                   }}
                 >
                   {current.words.length > 0
@@ -367,8 +366,7 @@ export function VideoPreview() {
                 </div>
 
                 {/* Tiny divider between Arabic and translation — only when
-                    both are visible. Replaces the huge vertical gap with a
-                    deliberate, elegant separator. */}
+                    both are visible. */}
                 {settings.showTranslation &&
                   settings.showTransliteration &&
                   current.words.length > 0 && (
@@ -392,12 +390,12 @@ export function VideoPreview() {
                 )}
 
                 {/* Translation — sits right under Arabic (or transliteration).
-                    Tight 8–12px gap instead of being pinned to the bottom. */}
+                    Tight 0.6rem gap. */}
                 {settings.showTranslation && (
                   <p
                     className="qv-smooth text-white/85 mx-auto max-w-xl leading-snug drop-shadow text-center"
                     style={{
-                      fontSize: `clamp(11px, 1.4vw, ${settings.translationFontSize}px)`,
+                      fontSize: translationFontSizeCss,
                       marginTop: '0.6rem',
                     }}
                   >

@@ -6,10 +6,12 @@ import type {
   AyatData,
   VideoSettings,
   Reciter,
+  Orientation,
 } from './types'
 import { RECITERS, DEFAULT_RECITER_ID } from './reciters'
 import { fetchSurahs, fetchAyatData, getAudioDurationMs } from './quranApi'
 import { validateAyatRange } from './validation'
+import { AUTO_FONT_SIZES } from './types'
 
 interface BuilderState {
   // data
@@ -35,6 +37,11 @@ interface BuilderState {
   setToAyat: (n: number) => void
   setReciter: (id: string) => void
   updateSettings: (patch: Partial<VideoSettings>) => void
+  /** Convenience: change orientation (and auto-fit fonts when enabled). */
+  setOrientation: (o: Orientation) => void
+  /** Toggle the auto-fit flag. When turning on, immediately applies the
+   *  auto font sizes for the current orientation. */
+  setAutoFitFonts: (on: boolean) => void
   fetchRange: () => Promise<void>
   getReciter: () => Reciter
   getSelectedSurah: () => Surah | undefined
@@ -45,19 +52,18 @@ interface BuilderState {
 const DEFAULT_SETTINGS: VideoSettings = {
   backgroundImage: '/backgrounds/mosque.png',
   backgroundPreset: 'mosque',
+  overlayStyle: 'bottom-gradient',
   overlayColor: '#000000',
-  overlayOpacity: 45,
+  overlayOpacity: 55,
   fontColor: '#ffffff',
   highlightColor: '#F5A623',
-  arabicFontSize: 48,
-  translationFontSize: 20,
+  arabicFontSize: AUTO_FONT_SIZES.portrait.arabic,
+  translationFontSize: AUTO_FONT_SIZES.portrait.translation,
   fontStyle: 'uthmani',
-  showBorder: true,
-  borderColor: '#F5A623',
-  border_radius: 18,
   showTranslation: true,
   showTransliteration: false,
   orientation: 'portrait',
+  autoFitFonts: true,
 }
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
@@ -104,7 +110,45 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   },
 
   updateSettings: (patch) =>
-    set((state) => ({ settings: { ...state.settings, ...patch } })),
+    set((state) => {
+      // If the orientation is changing AND auto-fit is on, also apply the
+      // auto font sizes for the new orientation. This is what makes the
+      // fonts "auto responsive" when the user picks a different layout.
+      const next: VideoSettings = { ...state.settings, ...patch }
+      if (
+        patch.orientation &&
+        patch.orientation !== state.settings.orientation &&
+        state.settings.autoFitFonts
+      ) {
+        const auto = AUTO_FONT_SIZES[patch.orientation]
+        next.arabicFontSize = auto.arabic
+        next.translationFontSize = auto.translation
+      }
+      return { settings: next }
+    }),
+
+  setOrientation: (o) => {
+    const state = get()
+    const patch: Partial<VideoSettings> = { orientation: o }
+    if (state.settings.autoFitFonts) {
+      const auto = AUTO_FONT_SIZES[o]
+      patch.arabicFontSize = auto.arabic
+      patch.translationFontSize = auto.translation
+    }
+    set((s) => ({ settings: { ...s.settings, ...patch } }))
+  },
+
+  setAutoFitFonts: (on) => {
+    const state = get()
+    const patch: Partial<VideoSettings> = { autoFitFonts: on }
+    if (on) {
+      // Immediately apply the auto font sizes for the current orientation.
+      const auto = AUTO_FONT_SIZES[state.settings.orientation]
+      patch.arabicFontSize = auto.arabic
+      patch.translationFontSize = auto.translation
+    }
+    set((s) => ({ settings: { ...s.settings, ...patch } }))
+  },
 
   getReciter: () => {
     const id = get().reciterId
