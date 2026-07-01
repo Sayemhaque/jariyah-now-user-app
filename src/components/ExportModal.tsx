@@ -224,193 +224,185 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-card border-border shadow-xl sm:rounded-2xl max-sm:h-screen max-sm:w-screen max-sm:max-w-none max-sm:rounded-none sm:m-4">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/15 text-primary">
-              <Film className="h-4 w-4" />
-            </div>
-            Export video
-          </DialogTitle>
-          <DialogDescription className="text-[13px]">
-            Pick a platform preset, choose quality, then render. The video is
-            produced right in your browser via Canvas + MediaRecorder.
-          </DialogDescription>
-        </DialogHeader>
-
-        <canvas ref={canvasRef} className="hidden" />
-
-        {/* Browser-support warning — if the browser can't run the export
-            pipeline (no MediaRecorder / Canvas capture / AudioContext),
-            show a clear message and disable the Render button instead of
-            letting it crash mid-render with a generic error. */}
-        {!capabilities.ok && (
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-start gap-3 text-sm text-amber-600 dark:text-amber-400">
-            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-            <div className="space-y-1">
-              <p className="font-medium">Browser not supported</p>
-              <p className="text-xs leading-relaxed">{capabilities.reason}</p>
-            </div>
-          </div>
-        )}
-
-        <div className="space-y-5">
-          {/* Platform presets */}
-          <div className="space-y-2.5">
-            <Label className="qv-section-title !mb-0">Platform</Label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {PLATFORM_PRESETS.map((p) => (
-                <button
-                  key={p.key}
-                  onClick={() => setPlatform(p.key)}
-                  className={cn(
-                    'flex flex-col items-start gap-1 rounded-xl border p-3 text-left transition',
-                    platform === p.key
-                      ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
-                      : 'border-border bg-card/40 hover:border-foreground/30 hover:bg-card/70',
-                  )}
-                >
-                  <span className="text-sm font-medium">{p.label}</span>
-                  <span className="text-[10px] text-muted-foreground tabular-nums">
-                    {p.hint}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Quality */}
-          <div className="space-y-2.5">
-            <Label className="qv-section-title !mb-0">Quality</Label>
-            <div className="grid grid-cols-2 gap-2">
-              {(['720p', '1080p'] as const).map((q) => (
-                <button
-                  key={q}
-                  onClick={() => setQuality(q)}
-                  className={cn(
-                    'rounded-xl border p-3 text-sm font-medium transition',
-                    quality === q
-                      ? 'border-primary bg-primary/10 text-primary shadow-sm shadow-primary/20'
-                      : 'border-border bg-card/40 hover:border-foreground/30 hover:bg-card/70',
-                  )}
-                >
-                  {q}
-                  {q === '1080p' && (
-                    <span className="ml-2 text-[10px] uppercase tracking-wider opacity-70">
-                      HD
-                    </span>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Summary */}
-          <div className="qv-card rounded-xl p-3.5 space-y-2 text-[13px]">
-            <div className="flex justify-between items-center gap-3">
-              <span className="text-muted-foreground text-xs">Filename</span>
-              <span className="font-mono text-xs text-foreground/85 truncate max-w-[60%]">
-                {filename}
-              </span>
-            </div>
-            <div className="h-px bg-border" />
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-xs">
-                Estimated duration
-              </span>
-              <span className="font-mono tabular-nums">{estimatedDuration}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-xs">Ayats</span>
-              <span className="tabular-nums">{slides.length}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-xs">Resolution</span>
-              <span className="font-mono tabular-nums">
-                {RES[settings.orientation].w * (quality === '1080p' ? 1.5 : 1)} ×{' '}
-                {RES[settings.orientation].h * (quality === '1080p' ? 1.5 : 1)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-muted-foreground text-xs">Format</span>
-              <span className="font-mono tabular-nums">
-                WebM (VP9/Opus)
-              </span>
-            </div>
-          </div>
-
-          {/* Format note — honest about the WebM output and the Instagram
-              limitation, so users aren't surprised when IG rejects the file. */}
-          <div className="rounded-lg border border-border bg-background/40 px-3 py-2.5 text-[11px] text-muted-foreground leading-relaxed">
-            <span className="text-foreground/80 font-medium">Heads up:</span>{' '}
-            The export produces a <strong>WebM</strong> file. YouTube and
-            YouTube Shorts accept WebM directly. Instagram Reels requires
-            MP4 — convert with{' '}
-            <code className="bg-muted/40 px-1 py-0.5 rounded text-[10px]">
-              ffmpeg -i input.webm output.mp4
-            </code>{' '}
-            or an online converter before uploading.
-          </div>
-
-          {/* Progress */}
-          {status === 'rendering' && (
-            <div className="space-y-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  <span className="font-medium">Rendering…</span>
-                  <span className="text-xs text-muted-foreground">
-                    do not close this tab
-                  </span>
-                </span>
-                <span className="font-mono tabular-nums">
-                  {Math.round(progress * 100)}%
-                </span>
+      <DialogContent className="max-w-2xl bg-card border-border shadow-xl sm:rounded-2xl p-0 sm:p-6 max-sm:h-[100dvh] max-sm:w-screen max-sm:max-w-none max-sm:rounded-none flex flex-col overflow-hidden">
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin px-5 sm:px-0 pt-5 sm:pt-0">
+          <DialogHeader className="mb-4">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/15 text-primary shrink-0">
+                <Film className="h-4 w-4" />
               </div>
-              <div className="h-1.5 rounded-full bg-background overflow-hidden">
-                <div
-                  className="h-full bg-primary transition-all duration-200 ease-out"
-                  style={{ width: `${progress * 100}%` }}
-                />
-              </div>
-            </div>
-          )}
+              Export video
+            </DialogTitle>
+            <DialogDescription className="text-[13px]">
+              Pick a platform preset, choose quality, then render.
+            </DialogDescription>
+          </DialogHeader>
 
-          {status === 'done' && downloadUrl && (
-            <div className="rounded-xl border border-primary/30 bg-primary/10 p-3.5 space-y-3">
-              <div className="flex items-center gap-2 text-sm text-primary">
-                <CheckCircle2 className="h-5 w-5" />
-                <span className="font-medium">Video ready!</span>
-              </div>
-              <video
-                src={downloadUrl}
-                controls
-                className="w-full rounded-lg max-h-64 bg-black ring-1 ring-white/5"
-              />
-              <a
-                href={downloadUrl}
-                download={filename}
-                className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-lg qv-btn-primary text-primary-foreground text-sm font-medium transition"
-              >
-                <Download className="h-4 w-4" />
-                Download {filename}
-              </a>
-            </div>
-          )}
+          <canvas ref={canvasRef} className="hidden" />
 
-          {status === 'error' && (
-            <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 flex items-start gap-3 text-sm text-destructive">
+          {!capabilities.ok && (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-3 text-sm text-amber-600 dark:text-amber-400 mb-5">
               <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-              <div>
-                <p className="font-medium">Render failed</p>
-                <p className="text-xs mt-0.5 leading-relaxed">{errorMsg}</p>
+              <div className="space-y-1">
+                <p className="font-medium">Browser not supported</p>
+                <p className="text-xs leading-relaxed">{capabilities.reason}</p>
               </div>
             </div>
           )}
+
+          <div className="space-y-4 sm:space-y-5 pb-5">
+            {/* Platform — 2 cols mobile, 3 cols sm+ */}
+            <div className="space-y-2">
+              <Label className="qv-section-title !mb-0">Platform</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {PLATFORM_PRESETS.map((p) => (
+                  <button
+                    key={p.key}
+                    onClick={() => setPlatform(p.key)}
+                    className={cn(
+                      'flex flex-col items-start gap-1 rounded-xl border p-2.5 sm:p-3 text-left transition',
+                      platform === p.key
+                        ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
+                        : 'border-border bg-card hover:border-foreground/30',
+                    )}
+                  >
+                    <span className="text-xs sm:text-sm font-medium leading-tight">{p.label}</span>
+                    <span className="text-[9px] sm:text-[10px] text-muted-foreground tabular-nums leading-tight">
+                      {p.hint}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Quality — 2 cols */}
+            <div className="space-y-2">
+              <Label className="qv-section-title !mb-0">Quality</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {(['720p', '1080p'] as const).map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => setQuality(q)}
+                    className={cn(
+                      'rounded-xl border p-2.5 sm:p-3 text-sm font-medium transition',
+                      quality === q
+                        ? 'border-primary bg-primary/10 text-primary shadow-sm shadow-primary/20'
+                        : 'border-border bg-card hover:border-foreground/30',
+                    )}
+                  >
+                    {q}
+                    {q === '1080p' && (
+                      <span className="ml-2 text-[10px] uppercase tracking-wider opacity-70">
+                        HD
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Summary — 2-col grid on mobile */}
+            <div className="qv-card rounded-xl p-3 sm:p-3.5 text-[13px]">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                <div className="col-span-2 flex justify-between items-center gap-2 pb-2 border-b border-border">
+                  <span className="text-muted-foreground text-xs">Filename</span>
+                  <span className="font-mono text-[11px] text-foreground/85 truncate max-w-[60%]">
+                    {filename}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-xs">Duration</span>
+                  <span className="font-mono tabular-nums text-xs">{estimatedDuration}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-xs">Ayats</span>
+                  <span className="tabular-nums text-xs">{slides.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-xs">Resolution</span>
+                  <span className="font-mono tabular-nums text-xs">
+                    {RES[settings.orientation].w * (quality === '1080p' ? 1.5 : 1)} ×{' '}
+                    {RES[settings.orientation].h * (quality === '1080p' ? 1.5 : 1)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-xs">Format</span>
+                  <span className="font-mono tabular-nums text-xs">WebM</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Format note */}
+            <div className="rounded-lg border border-border bg-background/40 px-3 py-2.5 text-[11px] text-muted-foreground leading-relaxed">
+              <span className="text-foreground/80 font-medium">Heads up:</span>{' '}
+              WebM output. YouTube accepts it directly. Instagram needs MP4 —
+              convert with{' '}
+              <code className="bg-muted/40 px-1 py-0.5 rounded text-[10px]">
+                ffmpeg -i input.webm output.mp4
+              </code>
+              .
+            </div>
+
+            {/* Progress */}
+            {status === 'rendering' && (
+              <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
+                <div className="flex items-center justify-between text-sm flex-wrap gap-2">
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    <span className="font-medium">Rendering…</span>
+                  </span>
+                  <span className="font-mono text-xs">do not close tab</span>
+                  <span className="font-mono font-bold">{Math.round(progress * 100)}%</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-background overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-200 ease-out"
+                    style={{ width: `${progress * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Done */}
+            {status === 'done' && downloadUrl && (
+              <div className="rounded-xl border border-primary/30 bg-primary/10 p-3.5 space-y-3">
+                <div className="flex items-center gap-2 text-sm text-primary">
+                  <CheckCircle2 className="h-5 w-5" />
+                  <span className="font-medium">Video ready!</span>
+                </div>
+                <video
+                  src={downloadUrl}
+                  controls
+                  className="w-full rounded-lg max-h-48 sm:max-h-64 bg-black"
+                />
+                <a
+                  href={downloadUrl}
+                  download={filename}
+                  className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-lg qv-btn-primary text-sm font-medium"
+                >
+                  <Download className="h-4 w-4" />
+                  Download
+                </a>
+              </div>
+            )}
+
+            {/* Error */}
+            {status === 'error' && (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 flex items-start gap-3 text-sm text-destructive">
+                <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+                <div>
+                  <p className="font-medium">Render failed</p>
+                  <p className="text-xs mt-0.5 leading-relaxed">{errorMsg}</p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+        {/* Sticky footer */}
+        <div className="border-t border-border bg-card px-5 sm:px-0 py-3 sm:py-0 sm:pt-4 flex gap-2 shrink-0">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
             <X className="h-4 w-4 mr-1.5" />
             Close
           </Button>
@@ -418,13 +410,13 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
             <Button
               onClick={startRender}
               disabled={!slides.length || !capabilities.ok}
-              className="qv-btn-primary border border-primary/30"
+              className="qv-btn-primary flex-1"
             >
               <Film className="h-4 w-4 mr-1.5" />
               {status === 'done' ? 'Render again' : 'Render video'}
             </Button>
           )}
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   )
