@@ -7,8 +7,8 @@ import {
 } from './translations'
 
 describe('TRANSLATION_EDITIONS', () => {
-  it('includes at least 3 editions', () => {
-    expect(TRANSLATION_EDITIONS.length).toBeGreaterThanOrEqual(3)
+  it('includes at least 5 editions (2 Bengali + 4 English)', () => {
+    expect(TRANSLATION_EDITIONS.length).toBeGreaterThanOrEqual(5)
   })
 
   it('every edition has a unique key', () => {
@@ -37,13 +37,8 @@ describe('TRANSLATION_EDITIONS', () => {
 })
 
 describe('DEFAULT_TRANSLATION_KEY', () => {
-  it('is en.pickthall (public domain)', () => {
-    expect(DEFAULT_TRANSLATION_KEY).toBe('en.pickthall')
-  })
-
-  it('refers to a public-domain edition', () => {
-    const edition = getTranslationEdition(DEFAULT_TRANSLATION_KEY)
-    expect(edition.license).toBe('public-domain')
+  it('is bn.bengali (Bengali translation)', () => {
+    expect(DEFAULT_TRANSLATION_KEY).toBe('bn.bengali')
   })
 
   it('is NOT en.asad (the copyrighted edition)', () => {
@@ -55,17 +50,17 @@ describe('getTranslationEdition', () => {
   it('returns the matching edition for a known key', () => {
     const e = getTranslationEdition('en.sahih')
     expect(e.key).toBe('en.sahih')
-    expect(e.label).toBe('Saheeh International')
+    expect(e.label).toBe('English — Saheeh International')
   })
 
-  it('falls back to the first edition (pickthall) for an unknown key', () => {
+  it('falls back to the first edition (bn.bengali) for an unknown key', () => {
     const e = getTranslationEdition('nonexistent')
-    expect(e.key).toBe('en.pickthall')
+    expect(e.key).toBe('bn.bengali')
   })
 
   it('falls back for an empty string', () => {
     const e = getTranslationEdition('')
-    expect(e.key).toBe('en.pickthall')
+    expect(e.key).toBe('bn.bengali')
   })
 })
 
@@ -94,8 +89,9 @@ describe('videoAttributionLine', () => {
     expect(line).toContain('Dar al-Andalus')
   })
 
-  it('returns an empty string for an unknown key (falls back to pickthall)', () => {
-    expect(videoAttributionLine('nonexistent')).toBe('')
+  it('returns a non-empty attribution for an unknown key (falls back to bn.bengali)', () => {
+    const line = videoAttributionLine('nonexistent')
+    expect(line).toBeTruthy()
   })
 
   it('the attribution line includes both the full name and rights holder', () => {

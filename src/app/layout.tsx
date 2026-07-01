@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Amiri, Scheherazade_New } from "next/font/google";
+import { Inter, Amiri, Scheherazade_New, Noto_Sans_Bengali } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -19,6 +19,12 @@ const scheherazade = Scheherazade_New({
   variable: "--font-scheherazade",
   subsets: ["arabic", "latin"],
   weight: ["400", "700"],
+});
+
+const notoBengali = Noto_Sans_Bengali({
+  variable: "--font-bengali",
+  subsets: ["bengali"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -46,7 +52,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${amiri.variable} ${scheherazade.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${amiri.variable} ${scheherazade.variable} ${notoBengali.variable} antialiased bg-background text-foreground`}
       >
         {children}
         <Toaster />

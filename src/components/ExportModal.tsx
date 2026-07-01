@@ -805,10 +805,14 @@ function drawFrame({
   const translit = settings.showTransliteration ? slide.transliteration : ''
   const translitH = translit ? translitFontSize * 1.45 : 0
 
-  // Translation wrapped
+  // Translation wrapped — detect Bengali text and use the Bengali font
+  const isBengali = /[\u0980-\u09FF]/.test(slide.translation)
+  const transFontFamily = isBengali
+    ? '"Noto Sans Bengali", "Noto Sans", sans-serif'
+    : 'Inter, sans-serif'
   let transLines: string[] = []
   if (settings.showTranslation) {
-    ctx.font = `${transFontSize}px Inter, sans-serif`
+    ctx.font = `${transFontSize}px ${transFontFamily}`
     transLines = wrapLines(ctx, slide.translation, innerMaxW)
   }
   const transLineH = transFontSize * 1.4
@@ -898,7 +902,7 @@ function drawFrame({
   if (transLines.length) {
     if (!dividerGap) y += arabicToTransGap - (translit ? 0 : arabicLineH)
     else y += 0
-    ctx.font = `${transFontSize}px Inter, sans-serif`
+    ctx.font = `${transFontSize}px ${transFontFamily}`
     ctx.fillStyle = 'rgba(255,255,255,0.88)'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'

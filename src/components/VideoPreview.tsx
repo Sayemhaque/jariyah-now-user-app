@@ -71,6 +71,10 @@ export function VideoPreview() {
     [translationKey],
   )
 
+  // Detect if the selected translation is Bengali — use the Bengali font
+  // for the translation text in the preview.
+  const isBengaliTranslation = translationKey.startsWith('bn.')
+
   const aspect = ASPECT[settings.orientation]
 
   // Total duration estimate based on known audio durations.
@@ -423,7 +427,7 @@ export function VideoPreview() {
                     Tight gap, scales with frame. */}
                 {settings.showTranslation && (
                   <p
-                    className="qv-smooth text-white/85 mx-auto leading-snug drop-shadow text-center"
+                    className={`qv-smooth text-white/85 mx-auto leading-snug drop-shadow text-center ${isBengaliTranslation ? 'font-bengali' : ''}`}
                     style={{
                       fontSize: translationFontSizeCss,
                       marginTop: '1.5cqw',

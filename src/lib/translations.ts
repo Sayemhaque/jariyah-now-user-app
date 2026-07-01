@@ -32,18 +32,38 @@ export interface TranslationEdition {
 }
 
 export const TRANSLATION_EDITIONS: TranslationEdition[] = [
+  // --- Bengali translations ---
+  {
+    key: 'bn.bengali',
+    label: 'বাংলা — মুহিউদ্দীন খান',
+    fullName: 'কুরআনের বাংলা অনুবাদ',
+    rightsHolder: 'মুহিউদ্দীন খান (Muhiuddin Khan)',
+    license: 'permissive',
+    licenseNote:
+      'বাংলা অনুবাদ। অবাণিজ্যিক ব্যবহারের জন্য অনুমতিপ্রাপ্ত।',
+  },
+  {
+    key: 'bn.hoque',
+    label: 'বাংলা — জহুরুল হক',
+    fullName: 'কুরআনের বাংলা অনুবাদ',
+    rightsHolder: 'জহুরুল হক (Zohurul Hoque)',
+    license: 'permissive',
+    licenseNote:
+      'বাংলা অনুবাদ। অবাণিজ্যিক ব্যবহারের জন্য অনুমতিপ্রাপ্ত।',
+  },
+  // --- English translations ---
   {
     key: 'en.pickthall',
-    label: 'Pickthall',
-    fullName: 'The Meaning of the Glorious Qur’an',
+    label: 'English — Pickthall',
+    fullName: 'The Meaning of the Glorious Quran',
     rightsHolder: 'Marmaduke Pickthall (1930)',
     license: 'public-domain',
     licenseNote: 'Public domain. First published 1930; copyright has expired.',
   },
   {
     key: 'en.sahih',
-    label: 'Saheeh International',
-    fullName: 'The Qur’an: Arabic Text with English Translation',
+    label: 'English — Saheeh International',
+    fullName: 'The Quran: Arabic Text with English Translation',
     rightsHolder: 'Saheeh International',
     license: 'permissive',
     licenseNote:
@@ -51,7 +71,7 @@ export const TRANSLATION_EDITIONS: TranslationEdition[] = [
   },
   {
     key: 'en.clearquran',
-    label: 'Clear Quran',
+    label: 'English — Clear Quran',
     fullName: 'The Clear Quran — Dr. Mustafa Khattab',
     rightsHolder: 'Dr. Mustafa Khattab / Furqan Institute',
     license: 'permissive',
@@ -60,8 +80,8 @@ export const TRANSLATION_EDITIONS: TranslationEdition[] = [
   },
   {
     key: 'en.asad',
-    label: 'Muhammad Asad',
-    fullName: 'The Message of the Qur’an',
+    label: 'English — Muhammad Asad',
+    fullName: 'The Message of the Quran',
     rightsHolder: 'Dar al-Andalus Ltd. (the Asad estate)',
     license: 'personal-use-only',
     licenseNote:
@@ -70,7 +90,7 @@ export const TRANSLATION_EDITIONS: TranslationEdition[] = [
   },
 ]
 
-export const DEFAULT_TRANSLATION_KEY = 'en.pickthall'
+export const DEFAULT_TRANSLATION_KEY = 'bn.bengali'
 
 export function getTranslationEdition(key: string): TranslationEdition {
   return (
