@@ -10,6 +10,8 @@ import {
   Download,
   RefreshCw,
   BookOpenText,
+  Menu,
+  X,
 } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { validateAyatRange } from '@/lib/validation'
@@ -20,6 +22,13 @@ import { TranslationSelector } from '@/components/TranslationSelector'
 import { CustomizationPanel } from '@/components/CustomizationPanel'
 import { VideoPreview } from '@/components/VideoPreview'
 import { Button } from '@/components/ui/button'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 import { toast } from 'sonner'
 
 // Lazy-mount the ExportModal so the MediaRecorder + Canvas code isn't in the
@@ -49,6 +58,7 @@ export default function Home() {
   )
 
   const [exportOpen, setExportOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   useEffect(() => {
     loadSurahs()
@@ -71,15 +81,15 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border bg-card/60 qv-frosted sticky top-0 z-30">
+      {/* Header — light, frosted, with mobile menu */}
+      <header className="border-b border-border qv-frosted sticky top-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="grid place-items-center h-9 w-9 rounded-xl bg-primary text-primary-foreground shadow-lg shadow-primary/25">
+            <div className="grid place-items-center h-9 w-9 rounded-xl bg-primary text-primary-foreground">
               <Sparkles className="h-5 w-5" />
             </div>
             <div className="flex flex-col">
-              <span className="text-[15px] font-semibold leading-tight tracking-tight">
+              <span className="text-[15px] font-bold leading-tight tracking-tight">
                 QuranVid
               </span>
               <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground leading-tight mt-0.5">
@@ -87,22 +97,24 @@ export default function Home() {
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+
+          {/* Desktop nav + export */}
+          <div className="hidden sm:flex items-center gap-2">
             <Link
               href="/about"
-              className="text-[11px] text-muted-foreground hover:text-foreground transition px-2 py-1"
+              className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition px-3 py-1.5 rounded-lg hover:bg-muted"
             >
               About
             </Link>
             <Link
               href="/terms"
-              className="hidden sm:inline text-[11px] text-muted-foreground hover:text-foreground transition px-1 py-1"
+              className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition px-3 py-1.5 rounded-lg hover:bg-muted"
             >
               Terms
             </Link>
             <Link
               href="/privacy"
-              className="hidden sm:inline text-[11px] text-muted-foreground hover:text-foreground transition px-1 py-1"
+              className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition px-3 py-1.5 rounded-lg hover:bg-muted"
             >
               Privacy
             </Link>
@@ -110,24 +122,71 @@ export default function Home() {
               onClick={() => setExportOpen(true)}
               disabled={!canExport}
               size="sm"
-              className="qv-btn-primary border border-primary/30"
+              className="qv-btn-primary ml-2 font-semibold"
             >
               <Film className="h-4 w-4 mr-1.5" />
               Export video
             </Button>
           </div>
+
+          {/* Mobile: just export + menu button */}
+          <div className="flex sm:hidden items-center gap-1.5">
+            <Button
+              onClick={() => setExportOpen(true)}
+              disabled={!canExport}
+              size="sm"
+              className="qv-btn-primary font-semibold"
+            >
+              <Film className="h-4 w-4" />
+            </Button>
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-72">
+                <SheetHeader>
+                  <SheetTitle>Menu</SheetTitle>
+                </SheetHeader>
+                <nav className="flex flex-col gap-1 mt-4">
+                  <Link
+                    href="/about"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium"
+                  >
+                    About
+                  </Link>
+                  <Link
+                    href="/terms"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium"
+                  >
+                    Terms
+                  </Link>
+                  <Link
+                    href="/privacy"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium"
+                  >
+                    Privacy
+                  </Link>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </header>
 
-      {/* Main two-panel layout */}
+      {/* Main two-panel layout — responsive */}
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-0 min-h-0">
-        {/* Preview pane — 60% */}
-        <section className="relative bg-background min-h-[60vh] lg:min-h-0 lg:max-h-[calc(100vh-3.5rem)] flex flex-col">
+        {/* Preview pane — 60% on desktop, full width on mobile */}
+        <section className="relative bg-muted/30 min-h-[50vh] sm:min-h-[55vh] lg:min-h-0 lg:max-h-[calc(100vh-3.5rem)] flex flex-col">
           <VideoPreview />
         </section>
 
-        {/* Controls sidebar — 40% */}
-        <aside className="border-t lg:border-t-0 lg:border-l border-border bg-sidebar/40 lg:max-h-[calc(100vh-3.5rem)] lg:overflow-y-auto scrollbar-thin">
+        {/* Controls sidebar — 40% on desktop, below preview on mobile */}
+        <aside className="border-t lg:border-t-0 lg:border-l border-border bg-card lg:max-h-[calc(100vh-3.5rem)] lg:overflow-y-auto scrollbar-thin">
           <div className="p-4 sm:p-5 space-y-6">
             {/* Selection section */}
             <section className="space-y-4">
@@ -142,7 +201,7 @@ export default function Home() {
               <Button
                 onClick={onLoadAyats}
                 disabled={loading || !selectedSurah || !validation.ok}
-                className="w-full qv-btn-primary border border-primary/30"
+                className="w-full qv-btn-primary font-semibold"
                 size="lg"
               >
                 {loading ? (
@@ -176,7 +235,7 @@ export default function Home() {
 
             {/* Tip card */}
             <div className="qv-card rounded-xl p-3.5 flex gap-3">
-              <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/10 text-primary shrink-0">
+              <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/15 text-primary shrink-0">
                 <BookOpenText className="h-4 w-4" />
               </div>
               <div className="text-[11.5px] text-muted-foreground leading-relaxed">
@@ -188,8 +247,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Sidebar footer — attribution + legal links (visible on all
-                screen sizes, mirrors the site footer on legal pages) */}
+            {/* Sidebar footer — attribution + legal links */}
             <div className="pt-2 pb-1 border-t border-border text-[11px] text-muted-foreground space-y-2">
               <p className="leading-relaxed">
                 Quran text from{' '}
@@ -197,7 +255,7 @@ export default function Home() {
                   href="https://alquran.cloud"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary/80 hover:text-primary underline underline-offset-2"
+                  className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium"
                 >
                   alquran.cloud
                 </a>
@@ -206,7 +264,7 @@ export default function Home() {
                   href="https://quran.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary/80 hover:text-primary underline underline-offset-2"
+                  className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium"
                 >
                   quran.com
                 </a>
@@ -215,7 +273,7 @@ export default function Home() {
                   href="https://verses.quran.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary/80 hover:text-primary underline underline-offset-2"
+                  className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium"
                 >
                   verses.quran.com
                 </a>
@@ -257,15 +315,11 @@ function SectionHeader({ step, title }: { step: number; title: string }) {
   return (
     <div className="flex items-center gap-2.5">
       <span className="qv-step">{step}</span>
-      <h2 className="text-sm font-semibold tracking-tight">{title}</h2>
+      <h2 className="text-sm font-bold tracking-tight">{title}</h2>
     </div>
   )
 }
 
 function Divider() {
-  return (
-    <div className="relative h-px bg-border">
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-border to-transparent" />
-    </div>
-  )
+  return <div className="h-px bg-border" />
 }

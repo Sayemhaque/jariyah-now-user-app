@@ -196,7 +196,7 @@ export function CustomizationPanel() {
 
       {/* Background — real image thumbnails */}
       <SectionTitle>Background</SectionTitle>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {BG_PRESETS.map((p) => (
           <button
             key={p.key}
@@ -246,7 +246,7 @@ export function CustomizationPanel() {
       {/* Overlay — preset shapes + color + opacity */}
       <SectionTitle>Overlay</SectionTitle>
       <Card>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {OVERLAY_PRESETS.map((p) => (
             <button
               key={p.key}

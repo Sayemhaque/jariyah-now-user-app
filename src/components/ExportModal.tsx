@@ -224,7 +224,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-card border-border shadow-2xl">
+      <DialogContent className="max-w-2xl bg-card border-border shadow-xl sm:rounded-2xl max-sm:h-screen max-sm:w-screen max-sm:max-w-none max-sm:rounded-none sm:m-4">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/15 text-primary">
@@ -258,7 +258,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           {/* Platform presets */}
           <div className="space-y-2.5">
             <Label className="qv-section-title !mb-0">Platform</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               {PLATFORM_PRESETS.map((p) => (
                 <button
                   key={p.key}

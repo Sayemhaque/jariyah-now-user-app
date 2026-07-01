@@ -501,47 +501,51 @@ export function VideoPreview() {
         </div>
       </div>
 
-      {/* Controls bar — refined, professional transport */}
-      <div className="border-t border-border bg-card/60 qv-frosted px-4 sm:px-5 py-3 space-y-2.5">
-        <div className="flex items-center gap-2.5">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-lg hover:bg-secondary/60"
-            disabled={!ayatList.length}
-            onClick={() => playAyat(Math.max(0, currentIndex - 1))}
-            title="Previous ayat"
-            aria-label="Previous ayat"
-          >
-            <SkipBack className="h-4 w-4" />
-          </Button>
-          <Button
-            size="icon"
-            className="h-11 w-11 rounded-full qv-btn-primary border border-primary/30"
-            disabled={!ayatList.length}
-            onClick={togglePlay}
-            title={isPlaying ? 'Pause' : 'Play'}
-            aria-label={isPlaying ? 'Pause' : 'Play'}
-          >
-            {isPlaying ? (
-              <Pause className="h-4 w-4" />
-            ) : (
-              <Play className="h-4 w-4 translate-x-0.5" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 rounded-lg hover:bg-secondary/60"
-            disabled={!ayatList.length || currentIndex >= ayatList.length - 1}
-            onClick={() => playAyat(Math.min(ayatList.length - 1, currentIndex + 1))}
-            title="Next ayat"
-            aria-label="Next ayat"
-          >
-            <SkipForward className="h-4 w-4" />
-          </Button>
+      {/* Controls bar — light theme, responsive: 1 row on desktop, 2 rows on mobile */}
+      <div className="border-t border-border bg-card px-3 sm:px-5 py-2.5 sm:py-3 space-y-2">
+        {/* Row 1: transport buttons + seek bar + volume (desktop) / transport + seek (mobile) */}
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-lg hover:bg-muted"
+              disabled={!ayatList.length}
+              onClick={() => playAyat(Math.max(0, currentIndex - 1))}
+              title="Previous ayat"
+              aria-label="Previous ayat"
+            >
+              <SkipBack className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              className="h-11 w-11 rounded-full qv-btn-primary"
+              disabled={!ayatList.length}
+              onClick={togglePlay}
+              title={isPlaying ? 'Pause' : 'Play'}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+            >
+              {isPlaying ? (
+                <Pause className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4 translate-x-0.5" />
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-lg hover:bg-muted"
+              disabled={!ayatList.length || currentIndex >= ayatList.length - 1}
+              onClick={() => playAyat(Math.min(ayatList.length - 1, currentIndex + 1))}
+              title="Next ayat"
+              aria-label="Next ayat"
+            >
+              <SkipForward className="h-4 w-4" />
+            </Button>
+          </div>
 
-          <div className="flex-1 flex items-center gap-3 mx-2">
+          {/* Seek bar — flex-1 so it fills available space on all screens */}
+          <div className="flex-1 flex items-center gap-2 sm:gap-3 min-w-0">
             <Slider
               value={[
                 Math.min(
@@ -553,19 +557,20 @@ export function VideoPreview() {
               step={100}
               onValueChange={onSeek}
               disabled={!ayatList.length}
-              className="flex-1"
+              className="flex-1 min-w-0"
             />
-            <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap tabular-nums">
+            <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap tabular-nums shrink-0">
               {formatMs((offsets[currentIndex] || 0) + currentTimeMs)} /{' '}
               {formatMs(totalMs)}
             </span>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          {/* Volume — hidden on mobile (use device volume), shown on sm+ */}
+          <div className="hidden sm:flex items-center gap-1.5 shrink-0">
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-lg hover:bg-secondary/60"
+              className="h-9 w-9 rounded-lg hover:bg-muted"
               onClick={() => setMuted((m) => !m)}
               title={muted ? 'Unmute' : 'Mute'}
               aria-label={muted ? 'Unmute' : 'Mute'}
@@ -587,19 +592,37 @@ export function VideoPreview() {
               className="w-20"
             />
           </div>
+
+          {/* Mute-only on mobile */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sm:hidden h-9 w-9 rounded-lg hover:bg-muted shrink-0"
+            onClick={() => setMuted((m) => !m)}
+            title={muted ? 'Unmute' : 'Mute'}
+            aria-label={muted ? 'Unmute' : 'Mute'}
+          >
+            {muted || volume === 0 ? (
+              <VolumeX className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
+          </Button>
         </div>
+
+        {/* Row 2: status line */}
         {ayatList.length > 0 && (
           <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
-            <span className="flex items-center gap-2">
-              <span className="font-medium text-foreground/80">{surah?.name}</span>
-              <span className="opacity-50">·</span>
-              <span className="tabular-nums">
+            <span className="flex items-center gap-2 min-w-0">
+              <span className="font-medium text-foreground/80 truncate">{surah?.name}</span>
+              <span className="opacity-50 shrink-0">·</span>
+              <span className="tabular-nums shrink-0">
                 Ayats {fromAyat}–{toAyat}
               </span>
-              <span className="opacity-50">·</span>
-              <span>{reciter.name}</span>
+              <span className="opacity-50 shrink-0 hidden xs:inline">·</span>
+              <span className="hidden xs:inline truncate">{reciter.name}</span>
             </span>
-            <span className="flex items-center gap-1.5 text-primary/80">
+            <span className="flex items-center gap-1.5 text-foreground/70 shrink-0">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary qv-pulse" />
               <span className="uppercase tracking-[0.15em] text-[10px]">
                 Live preview
