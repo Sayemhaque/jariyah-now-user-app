@@ -154,14 +154,20 @@ export function VideoPreview() {
       if (currentIndex < ayatList.length - 1) {
         playAyat(currentIndex + 1)
       } else {
+        // Last ayat just finished — pin the seek bar to the very end so it
+        // visually shows 100% completion (instead of jumping back to the
+        // start of the last ayat, which is what resetting currentTimeMs to
+        // 0 would do).
         setIsPlaying(false)
         setActiveWord(null)
-        setCurrentTimeMs(0)
+        const lastAyat = ayatList[currentIndex]
+        const lastDur = lastAyat?.audioDurationMs ?? 0
+        setCurrentTimeMs(lastDur)
       }
     }
     audio.addEventListener('ended', onEnded)
     return () => audio.removeEventListener('ended', onEnded)
-  }, [currentIndex, ayatList.length, playAyat])
+  }, [currentIndex, ayatList.length, ayatList, playAyat])
 
   const togglePlay = () => {
     const audio = audioRef.current

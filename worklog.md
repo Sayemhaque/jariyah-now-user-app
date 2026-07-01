@@ -237,3 +237,19 @@ Stage Summary:
 - Two user complaints addressed:
   1. **Portrait feels like a reel now** — the preview fills the available vertical height (instead of being capped at 72vh), and all text scales with the actual preview frame width via CSS container queries. A narrow portrait preview gets proportionally smaller text, so nothing overflows or looks oversized. Default Arabic font reduced from 56→40px.
   2. **Square mode removed** — from the Orientation type, the layout picker, the export platform presets, and all internal maps. Only Portrait and Landscape remain.
+
+---
+Task ID: 5
+Agent: main (super-z)
+Task: Fix the seek bar not reaching 100% when the video finishes playing.
+
+Work Log:
+- Root cause: in VideoPreview's `onEnded` handler, when the LAST ayat finished playing, the code called `setCurrentTimeMs(0)`. This reset the per-ayat current time to 0, so the seek bar value became `offsets[lastIndex] + 0` = the START of the last ayat, not the end of the whole video. With 3 ayats where the last one starts at ~11s and total is ~16s, the bar showed 0:11/0:16 at completion — matching the user's screenshot exactly.
+- Fix: when the last ayat ends, set `currentTimeMs` to the last ayat's `audioDurationMs` (instead of 0). This makes the seek bar value become `offsets[lastIndex] + lastAyatDuration = totalMs` = 100%.
+- Also added `ayatList` to the useEffect dependency array so the closure always reads the latest ayat data.
+- Verified with Agent Browser: loaded Al-Fatihah ayat 1 (single ayat, ~6 seconds), pressed Play, waited for completion. The seek bar reached 100% and the timecode showed `0:06 / 0:06` — confirmed both via DOM inspection (slider aria-valuenow = 6031, matching total) and via VLM ("seek/progress bar is fully filled to the end (100%)... time shown is 0:06 / 0:06").
+- ESLint passes clean (0 errors, 0 warnings)
+
+Stage Summary:
+- One-line root cause: the `onEnded` handler reset `currentTimeMs` to 0 when the last ayat finished, making the seek bar jump back to the start of the last ayat instead of staying at 100%.
+- Fix: set `currentTimeMs` to the last ayat's duration so the bar pins to the very end on completion.
