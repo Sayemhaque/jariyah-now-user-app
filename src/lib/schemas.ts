@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isAllowedAudioUrl } from './urlAllowlist'
 
 /**
  * Zod schemas for every API route's input. The client validates too, but the
@@ -65,7 +66,13 @@ const slideSchema = z.object({
   surahNameArabic: z.string(),
   ayatNumber: ayatNumberSchema,
   surahNumber: surahNumberSchema,
-  audioUrl: z.string().url(),
+  audioUrl: z
+    .string()
+    .url()
+    .refine(isAllowedAudioUrl, {
+      message:
+        'audioUrl must be an HTTPS URL on the allowed audio CDN (verses.quran.com)',
+    }),
   audioDurationMs: z.number().min(0),
 })
 

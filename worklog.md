@@ -382,3 +382,63 @@ Stage Summary:
 - Site footer with attribution + legal links added to both the legal pages (via LegalPage wrapper) and the main builder (sidebar footer + header links), visible on all screen sizes.
 - README corrected: no longer falsely calls the data "public"; now has a proper licensing table + user guidance.
 - The exported video now carries an attribution line at the bottom-left when the selected translation requires it (Pickthall = none, Saheeh/Clear Quran/Asad = attribution shown).
+
+---
+Task ID: 8
+Agent: main (super-z)
+Task: Phase 2 — Security blockers (SSRF, CSRF, security headers, IP leak)
+
+Work Log:
+- Created `src/lib/urlAllowlist.ts` — SSRF prevention gatekeeper:
+  - `isAllowedAudioUrl(url)` returns true only for HTTPS URLs whose host matches the configured allowlist (default: verses.quran.com)
+  - Rejects: non-https URLs, URLs with embedded credentials, non-allowed hosts, malformed URLs
+  - Allowlist is configurable via `ALLOWED_AUDIO_HOSTS` env var (comma-separated)
+  - Prevents the server from being used to enumerate the internal network via HEAD requests to AWS metadata (169.254.169.254), localhost, private IP ranges, etc.
+- Created `src/lib/csrf.ts` — pure CSRF check function:
+  - `isSameOriginWrite({method, host, origin, secFetchSite})` returns {ok, reason}
+  - Exempts GET/HEAD/OPTIONS (side-effect-free)
+  - Accepts `Sec-Fetch-Site: same-origin` (modern reliable signal)
+  - Fallback: compares Origin header host against Host header (handles port correctly)
+  - Rejects: cross-site, same-site (subdomain), missing signals, malformed Origin
+  - Extracted as a pure function so it can be unit-tested without a Next.js server
+- Updated `src/lib/schemas.ts`:
+  - Replaced `audioUrl: z.string().url()` with a `.refine(isAllowedAudioUrl, ...)` that enforces the allowlist server-side
+  - Error message: "audioUrl must be an HTTPS URL on the allowed audio CDN (verses.quran.com)"
+- Rewrote `src/middleware.ts`:
+  - Added CSRF check on all state-changing API requests (POST/PUT/PATCH/DELETE) using `isSameOriginWrite`
+  - Returns 403 with `{error: "Forbidden — same-origin check failed", requestId}` when the check fails
+  - Logs the failure server-side (including IP) but does NOT leak the IP in the response body
+  - Kept the bot UA filter on /api/render POST
+  - Kept the request-ID header injection for log correlation
+- Updated `next.config.ts` with a `headers()` function returning security headers on every route:
+  - Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https://verses.quran.com; connect-src 'self' https://api.alquran.cloud https://api.quran.com https://verses.quran.com; font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+  - X-Frame-Options: DENY (clickjacking)
+  - X-Content-Type-Options: nosniff (MIME sniffing)
+  - Referrer-Policy: strict-origin-when-cross-origin
+  - Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  - Strict-Transport-Security: only in production (NODE_ENV=production) — HSTS would lock browsers out of dev HTTP
+- Added `ALLOWED_AUDIO_HOSTS` to the env schema (`src/lib/env.ts`) + `.env.example`
+- Added 39 unit tests (total now 145):
+  - `src/lib/urlAllowlist.test.ts` (20 tests): accepts valid CDN URLs (https, with path/query/port, case-insensitive), rejects SSRF vectors (http, AWS metadata, localhost, 127.0.0.1, 10.x, 192.168.x, 172.16.x, non-allowed external host, embedded credentials, file:, data:, lookalike host, empty string, non-URL), env override
+  - `src/lib/csrf.test.ts` (19 tests): exempts GET/HEAD/OPTIONS (case-insensitive), Sec-Fetch-Site same-origin passes / cross-site/same-site/none rejected, Origin fallback (host+port match passes, mismatch rejected, malformed rejected), missing signals rejected, all 4 write methods (POST/PUT/PATCH/DELETE) covered
+- Verified end-to-end with curl:
+  - SSRF: POST /api/render with `audioUrl: "http://169.254.169.254/..."` → 400 "audioUrl must be an HTTPS URL on the allowed audio CDN" (server never issues the HEAD request)
+  - CSRF: POST with no Origin → 403 "Forbidden — same-origin check failed"
+  - CSRF: POST with cross-origin Origin (https://evil.example.com) → 403
+  - CSRF: POST with same-origin Origin (http://localhost:3000) → passes CSRF, reaches body validation
+  - Security headers: all 5 present on page responses (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy); HSTS correctly omitted in dev
+  - IP leak: 403 response body contains only {error, requestId} — no IP
+  - GET /api/timings still works (CSRF exempts GET)
+- Verified the app still works in the browser:
+  - Page loads cleanly, no console errors
+  - Selected Al-Fatihah, loaded ayats successfully (GET /api/timings returned 200)
+  - Export modal opens (the POST /api/render from the browser includes the same-origin Origin header, so CSRF passes)
+- ESLint passes clean (0 errors, 0 warnings)
+- All 145 tests pass (39 new + 106 existing)
+
+Stage Summary:
+- Phase 2 (Security blockers) complete. The four blockers from the audit are all closed:
+  1. SSRF: audioUrl is now restricted to the allowed audio CDN (verses.quran.com) via a Zod refine + the isAllowedAudioUrl helper. An attacker can no longer use /api/render to enumerate the server's internal network.
+  2. CSRF: all state-changing API requests (POST/PUT/PATCH/DELETE) require a same-origin signal (Sec-Fetch-Site: same-origin OR Origin matching Host). Cross-site and token-less requests get 403.
+  3. Security headers: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and HSTS (prod only) are set on every response via next.config.ts headers().
+  4. IP leak: the middleware 403 response no longer includes the requester's IP — it's logged server-side only.

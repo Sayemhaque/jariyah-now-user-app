@@ -26,6 +26,12 @@ const envSchema = z.object({
     .url()
     .default('https://verses.quran.com'),
 
+  // --- SSRF allowlist ---
+  // Comma-separated list of hosts the server is allowed to HEAD-fetch as
+  // reciter audio (see lib/urlAllowlist.ts). Defaults to just the Quran.com
+  // CDN. Override if you host your own audio mirror.
+  ALLOWED_AUDIO_HOSTS: z.string().optional(),
+
   // --- Rate limiting ---
   // Max renders per IP per window. Defaults to 3/hour per the spec.
   RENDER_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(3),
