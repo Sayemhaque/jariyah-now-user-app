@@ -226,11 +226,11 @@ export default function Home() {
             mobileTab === 'settings' ? 'flex-1 overflow-y-auto scrollbar-thin' : 'hidden lg:block'
           }`}
         >
-          <div className="p-4 sm:p-5 space-y-6">
+          <div className="p-3 sm:p-5 space-y-4">
             {/* Selection section */}
-            <section className="space-y-4">
+            <section className="space-y-3">
               <SectionHeader step={1} title="Selection" />
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <SurahSelector />
                 <AyatRangePicker />
                 <ReciterSelector />
@@ -241,7 +241,7 @@ export default function Home() {
                 onClick={onLoadAyats}
                 disabled={loading || !selectedSurah || !validation.ok}
                 className="w-full qv-btn-primary font-semibold"
-                size="lg"
+                size="default"
               >
                 {loading ? (
                   <>
@@ -278,7 +278,7 @@ export default function Home() {
             <Divider />
 
             {/* Customization */}
-            <section className="space-y-4">
+            <section className="space-y-3">
               <SectionHeader step={2} title="Customize" />
               <CustomizationPanel />
             </section>

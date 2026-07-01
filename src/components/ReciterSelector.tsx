@@ -17,14 +17,14 @@ export function ReciterSelector() {
   const selected = RECITERS.find((r) => r.id === reciterId) ?? RECITERS[0]!
 
   return (
-    <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-foreground/90">
-        <Mic2 className="h-4 w-4 text-primary" />
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        <Mic2 className="h-3.5 w-3.5 text-primary" />
         Reciter
       </label>
 
       <Select value={reciterId} onValueChange={setReciter}>
-        <SelectTrigger className="w-full bg-card/60 h-11">
+        <SelectTrigger className="w-full bg-card h-9 text-sm">
           <SelectValue placeholder="Choose a reciter" />
         </SelectTrigger>
         <SelectContent className="bg-popover">
@@ -59,9 +59,9 @@ export function ReciterSelector() {
       </Select>
 
       {/* Inline preview of the selected reciter */}
-      <div className="flex items-center gap-3 rounded-xl border border-border bg-card/40 px-3 py-2.5">
+      <div className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-2.5 py-2">
         <div
-          className="grid place-items-center h-10 w-10 rounded-full text-sm font-bold text-white shrink-0 ring-2 ring-white/10"
+          className="grid place-items-center h-7 w-7 rounded-full text-[10px] font-bold text-white shrink-0"
           style={{ backgroundColor: selected.avatarColor }}
         >
           {selected.name

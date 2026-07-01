@@ -34,14 +34,14 @@ export function TranslationSelector() {
   const edition = getTranslationEdition(translationKey)
 
   return (
-    <div className="space-y-2">
-      <label className="flex items-center gap-2 text-sm font-medium text-foreground/90">
-        <BookText className="h-4 w-4 text-primary" />
+    <div className="space-y-1.5">
+      <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+        <BookText className="h-3.5 w-3.5 text-primary" />
         Translation
       </label>
 
       <Select value={translationKey} onValueChange={setTranslation}>
-        <SelectTrigger className="w-full bg-card/60 h-11">
+        <SelectTrigger className="w-full bg-card h-9 text-sm">
           <SelectValue placeholder="Choose a translation" />
         </SelectTrigger>
         <SelectContent className="bg-popover">
@@ -79,8 +79,8 @@ export function TranslationSelector() {
       </Select>
 
       {/* Inline summary of the selected edition's license */}
-      <div className="rounded-lg border border-border bg-card/40 px-3 py-2.5">
-        <div className="flex items-center justify-between gap-2 mb-1">
+      <div className="rounded-lg border border-border bg-card px-2.5 py-2">
+        <div className="flex items-center justify-between gap-2 mb-0.5">
           <span className="text-xs font-medium text-foreground/80 truncate">
             {edition.fullName}
           </span>

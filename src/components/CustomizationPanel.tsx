@@ -126,11 +126,11 @@ function ColorField({
 }
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
-  return <h3 className="qv-section-title mb-2.5 mt-5 first:mt-0">{children}</h3>
+  return <h3 className="qv-section-title mb-2 mt-4 first:mt-0">{children}</h3>
 }
 
 function Card({ children }: { children: React.ReactNode }) {
-  return <div className="qv-card rounded-xl p-3.5 space-y-3">{children}</div>
+  return <div className="qv-card rounded-xl p-3 space-y-2.5">{children}</div>
 }
 
 export function CustomizationPanel() {

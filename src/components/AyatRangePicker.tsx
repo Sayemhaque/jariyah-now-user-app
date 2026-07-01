@@ -38,9 +38,9 @@ export function AyatRangePicker() {
   const over = count > MAX_AYATS_PER_VIDEO
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <Label className="text-sm font-medium">Ayat range</Label>
+        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ayat range</Label>
         <span
           className={cn(
             'text-[11px] font-mono px-2 py-0.5 rounded-full tabular-nums border',
@@ -68,7 +68,7 @@ export function AyatRangePicker() {
             value={Number.isFinite(fromAyat) ? fromAyat : ''}
             onChange={(e) => setFromAyat(Number(e.target.value))}
             onBlur={onBlurFrom}
-            className="bg-card/60 h-10 tabular-nums"
+            className="bg-card h-9 tabular-nums text-sm"
           />
         </div>
         <div className="space-y-1.5">
@@ -86,7 +86,7 @@ export function AyatRangePicker() {
             value={Number.isFinite(toAyat) ? toAyat : ''}
             onChange={(e) => setToAyat(Number(e.target.value))}
             onBlur={onBlurTo}
-            className="bg-card/60 h-10 tabular-nums"
+            className="bg-card h-9 tabular-nums text-sm"
           />
         </div>
       </div>

@@ -61,7 +61,7 @@ const DEFAULT_SETTINGS: VideoSettings = {
   overlayColor: '#000000',
   overlayOpacity: 55,
   fontColor: '#ffffff',
-  highlightColor: '#F5A623',
+  highlightColor: '#9333ea',
   arabicFontSize: AUTO_FONT_SIZES.portrait.arabic,
   translationFontSize: AUTO_FONT_SIZES.portrait.translation,
   fontStyle: 'uthmani',
