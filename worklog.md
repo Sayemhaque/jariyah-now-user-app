@@ -442,3 +442,72 @@ Stage Summary:
   2. CSRF: all state-changing API requests (POST/PUT/PATCH/DELETE) require a same-origin signal (Sec-Fetch-Site: same-origin OR Origin matching Host). Cross-site and token-less requests get 403.
   3. Security headers: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and HSTS (prod only) are set on every response via next.config.ts headers().
   4. IP leak: the middleware 403 response no longer includes the requester's IP — it's logged server-side only.
+
+---
+Task ID: 9
+Agent: main (super-z)
+Task: Phase 3 — Browser compat + hardening (MediaRecorder pre-flight, honest export format, Redis rate limiter, crypto.randomUUID + ownership tokens)
+
+Work Log:
+- Created `src/lib/exportCapabilities.ts` — pre-flight browser-capability check:
+  - `checkExportCapabilities()` returns {ok, reason, mimeType}
+  - Checks: MediaRecorder exists, Canvas.captureStream exists, AudioContext (or webkitAudioContext) exists, at least one supported MIME type
+  - Safe for SSR (returns {ok: false} without throwing when `window` is undefined)
+  - `pickSupportedMimeType()` extracted as a shared helper (replaces the old local `pickMime()` in ExportModal)
+- Updated `src/components/ExportModal.tsx`:
+  - Added `capabilities` useMemo at the top of the component
+  - Added a browser-support warning block (amber, with AlertCircle icon) when `!capabilities.ok` — shows the human-readable reason + recommends Chrome/Edge/Firefox desktop
+  - Render button now disabled when `!capabilities.ok` (in addition to `!slides.length`)
+  - Removed the dead local `pickMime()` function — uses the shared `pickSupportedMimeType()` instead
+  - Replaced the `webkitAudioContext!` non-null assertion with a defensive `if (!AudioCtx) throw new Error(...)` — throws a clear message instead of crashing
+  - Updated platform preset hints to be honest about the WebM/MP4 situation: "convert to MP4" for Instagram Reel, "WebM ok" for YouTube Shorts/YouTube
+  - Added a "Format: WebM (VP9/Opus)" row to the export summary
+  - Added a "Heads up" format note explaining the WebM output + the ffmpeg one-liner for converting to MP4 for Instagram
+- Installed `@upstash/redis` + `@upstash/ratelimit` packages
+- Rewrote `src/lib/rateLimit.ts` to actually use Redis when configured:
+  - Lazy-initializes a `Ratelimit` instance (sliding-window algorithm) using `@upstash/ratelimit` + `@upstash/redis`
+  - `consumeRateLimit()` uses the Redis limiter when `hasRedis()`, falls back to in-memory otherwise
+  - If Redis fails mid-request (network error), degrades to in-memory rather than failing the request — a Redis outage shouldn't block legitimate users entirely
+  - Removed the old "commented-out Redis branch" — it's now real code
+- Rewrote `src/lib/jobStore.ts` for security:
+  - `generateJobId()` now uses `crypto.randomUUID()` (v4 UUID) instead of `Math.random()` — unpredictable, so attackers can't enumerate IDs
+  - Added `generateOwnerToken()` using `crypto.getRandomValues(32 bytes)` → 64-char hex (256 bits)
+  - Every `RenderJob` now carries an `ownerToken` field
+  - Added `verifyJobOwnership(jobId, token)` with a constant-time-ish comparison to prevent timing attacks
+  - `updateRenderJob()` no longer accepts `ownerToken` in its patch type (can't be overwritten)
+- Updated `src/app/api/render/route.ts`:
+  - POST now returns `ownerToken` in the 202 response (alongside jobId)
+  - PUT now requires `x-owner-token` header — calls `verifyJobOwnership()`, returns 403 if missing/wrong
+  - PUT response strips the `ownerToken` before returning (never echoes the secret back)
+  - Added structured logging for ownership-check failures
+- Updated `src/app/api/render-status/route.ts`:
+  - GET now requires `x-owner-token` header — same `verifyJobOwnership()` check
+  - Returns 403 if the token is missing/wrong (prevents jobId enumeration from polling other users' job status)
+- Updated `src/components/ExportModal.tsx` client:
+  - Captures `ownerToken` from the POST response
+  - All 3 PUT calls (progress update, done, error) now send `x-owner-token: <token>` header
+  - Consolidated the 3 inline fetch calls into a `sendUpdate()` helper
+- Added 19 unit tests (total now 164):
+  - `src/lib/exportCapabilities.test.ts` (11 tests): pickSupportedMimeType (VP9/VP8/webm/mp4/none/throw), checkExportCapabilities (ok when all present, not-ok on server, not-ok without MediaRecorder, not-ok without supported MIME)
+  - `src/lib/jobStore.test.ts` (8 new tests): ownerToken is unique + 64-char hex, verifyJobOwnership true for correct / false for wrong / empty / nonexistent / wrong-length tokens, ownerToken not mutated by updateRenderJob, job IDs are v4 UUIDs (version nibble '4')
+- Verified end-to-end with Agent Browser + curl:
+  - App loads cleanly, no console errors
+  - Export modal shows: honest platform hints ("convert to MP4" / "WebM ok"), Format row, "Heads up" WebM note
+  - Render button enabled (browser supports MediaRecorder) — no false "Browser not supported" warning
+  - curl POST /api/render → 202 with {jobId: "job_<UUID>", ownerToken: "<64 hex chars>", audioCheck, note}
+  - curl PUT without ownerToken → 403 "Forbidden — invalid or missing owner token"
+  - curl PUT with wrong ownerToken → 403
+  - curl PUT with correct ownerToken → 200, response has no ownerToken (stripped)
+  - curl GET /api/render-status without ownerToken → 403
+  - curl GET /api/render-status with correct ownerToken → 200 {status, progress}
+  - Job IDs are now proper v4 UUIDs (e.g. job_cc6f7877-9057-461c-89c3-c86c6c616afd) — not predictable
+  - Owner tokens are 64-char hex (256 bits of entropy)
+- ESLint passes clean (0 errors, 0 warnings)
+- All 164 tests pass (19 new + 145 existing)
+
+Stage Summary:
+- Phase 3 (Browser compat + hardening) complete. Four improvements shipped:
+  1. MediaRecorder pre-flight check — unsupported browsers now see a clear "Browser not supported" message + a disabled Render button, instead of a crash mid-render with a generic "Render failed" toast. Also fixed the webkitAudioContext! non-null assertion.
+  2. Honest export format — platform presets now say "convert to MP4" / "WebM ok", the summary shows "Format: WebM (VP9/Opus)", and a "Heads up" note explains the ffmpeg one-liner for Instagram. Users won't be surprised when IG rejects the .webm file.
+  3. Redis rate limiter — installed @upstash/redis + @upstash/ratelimit; the rate limiter now uses Redis (sliding-window) when configured, with graceful degradation to in-memory if Redis is unreachable. Production multi-instance deployments get correct shared limits.
+  4. crypto.randomUUID() + ownership tokens — job IDs are now unpredictable v4 UUIDs (not the old predictable timestamp+Math.random format). Every job carries a 256-bit owner token; PUT and GET-status require it via the `x-owner-token` header. This closes the "anyone with a jobId can overwrite another user's job" and "jobId enumeration" vulnerabilities from the audit.

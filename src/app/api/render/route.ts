@@ -13,10 +13,9 @@ import {
 } from '@/lib/rateLimit'
 import {
   createRenderJob,
-  getRenderJob,
+  verifyJobOwnership,
   updateRenderJob,
   computeDedupeHash,
-  type RenderJob,
 } from '@/lib/jobStore'
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout'
 
@@ -128,9 +127,13 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(
     {
       jobId: job.id,
+      // The ownerToken is the secret that authorizes subsequent PUT/GET-status
+      // requests for this job. The client must store it and send it back.
+      // It is NOT returned by GET /api/render-status — only by this POST.
+      ownerToken: job.ownerToken,
       audioCheck: audioChecks,
       note:
-        'Rendering happens client-side via Canvas + MediaRecorder. PUT progress to /api/render to update the job.',
+        'Rendering happens client-side via Canvas + MediaRecorder. PUT progress to /api/render with the ownerToken to update the job.',
     },
     { status: 202 }, // Accepted — the work hasn't finished, but the job exists
   )
@@ -142,6 +145,9 @@ export async function POST(req: NextRequest) {
  * Allows the client to update an existing job's progress + final state.
  * The client-side renderer is the source of truth for progress; this route
  * just stores what it reports so a tab refocus / re-poll can recover state.
+ *
+ * Requires the `ownerToken` returned at POST time — without it, anyone who
+ * guessed a jobId could overwrite another user's job state.
  */
 export async function PUT(req: NextRequest) {
   let body: z.infer<typeof renderUpdateBodySchema>
@@ -159,9 +165,19 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const existing = getRenderJob(body.jobId)
-  if (!existing) {
-    return NextResponse.json({ error: 'Unknown jobId' }, { status: 404 })
+  // --- Ownership check ------------------------------------------------
+  // The ownerToken must match the one returned at POST time. This prevents
+  // jobId enumeration from being able to overwrite other users' jobs.
+  const ownerToken = req.headers.get('x-owner-token')
+  if (!ownerToken || !verifyJobOwnership(body.jobId, ownerToken)) {
+    logger.warn('PUT /api/render ownership check failed', {
+      jobId: body.jobId,
+      hasToken: Boolean(ownerToken),
+    })
+    return NextResponse.json(
+      { error: 'Forbidden — invalid or missing owner token' },
+      { status: 403 },
+    )
   }
 
   const updated = updateRenderJob(body.jobId, {
@@ -170,5 +186,10 @@ export async function PUT(req: NextRequest) {
     downloadUrl: body.downloadUrl,
     error: body.error,
   })
-  return NextResponse.json(updated satisfies RenderJob)
+  if (!updated) {
+    return NextResponse.json({ error: 'Unknown jobId' }, { status: 404 })
+  }
+  // Strip the ownerToken from the response — never echo it back.
+  const { ownerToken: _omit, ...safe } = updated
+  return NextResponse.json(safe)
 }

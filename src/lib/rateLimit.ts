@@ -4,22 +4,19 @@ import { logger } from './logger'
 /**
  * Sliding-window rate limiter.
  *
- * Current implementation: in-memory Map. Correct for a single process (dev,
- * single-instance prod). Under-counts in multi-instance deployments because
- * each instance has its own Map.
+ * - When Upstash Redis is configured (UPSTASH_REDIS_REST_URL +
+ *   UPSTASH_REDIS_REST_TOKEN), uses @upstash/ratelimit so limits are shared
+ *   across serverless instances. This is the production path.
+ * - Otherwise, falls back to an in-memory Map. Correct for a single process
+ *   (dev, single-instance prod) but under-counts in multi-instance deployments
+ *   because each instance has its own Map.
  *
- * Production upgrade path (no code changes at call sites):
- *   1. Install @upstash/redis: `bun add @upstash/redis`
- *   2. Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN
- *   3. Uncomment the Redis branch in `getRedisClient()` below.
- *
- * The public API (`consumeRateLimit`) stays the same either way.
- *
- * We intentionally DON'T dynamically import @upstash/redis here because the
- * bundler tries to resolve it at build time even inside a try/catch, which
- * breaks the build when the package isn't installed. Instead, document the
- * upgrade path and require an explicit install step.
+ * The public API (`consumeRateLimit`) is the same either way, so call sites
+ * don't change when you flip from memory to Redis.
  */
+
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 export interface RateLimitResult {
   ok: boolean
@@ -52,42 +49,72 @@ function inMemoryConsume(
   return { ok: true, remaining: limit - arr.length, resetMs: now + windowMs }
 }
 
-/*
- * Redis implementation — uncomment after `bun add @upstash/redis`:
- *
- * import { Redis } from '@upstash/redis'
- *
- * let redis: Redis | null = null
- * function getRedis(): Redis | null {
- *   if (!hasRedis) return null
- *   if (!redis) redis = Redis.fromEnv()
- *   return redis
- * }
- *
- * async function redisConsume(key, limit, windowMs): Promise<RateLimitResult> {
- *   const r = getRedis()
- *   if (!r) return inMemoryConsume(key, limit, windowMs)
- *   const now = Date.now()
- *   const windowKey = `rl:${key}:${Math.floor(now / windowMs)}`
- *   const count = await r.incr(windowKey)
- *   if (count === 1) await r.expire(windowKey, Math.ceil(windowMs / 1000))
- *   return { ok: count <= limit, remaining: Math.max(0, limit - count), resetMs: now + windowMs }
- * }
- */
+// --- Redis implementation (lazy-initialized) --------------------------
+
+let redisLimiter: Ratelimit | null = null
+
+function getRedisLimiter(): Ratelimit | null {
+  if (redisLimiter) return redisLimiter
+  if (!hasRedis()) return null
+
+  try {
+    const redis = new Redis({
+      url: env.UPSTASH_REDIS_REST_URL!,
+      token: env.UPSTASH_REDIS_REST_TOKEN!,
+    })
+    // Sliding-window algorithm — accurate, slightly more expensive than
+    // fixed-window but worth it for a low-traffic API.
+    redisLimiter = new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(
+        env.RENDER_RATE_LIMIT_MAX,
+        `${env.RENDER_RATE_LIMIT_WINDOW_MS} ms`,
+      ),
+      // Prefix keys so we don't collide with other uses of the same Redis.
+      prefix: 'quranvid:rl',
+      analytics: false,
+    })
+    logger.info('rate limiter initialized with Upstash Redis')
+    return redisLimiter
+  } catch (err) {
+    logger.warn('Upstash Redis init failed — falling back to in-memory', {
+      error: err instanceof Error ? err.message : String(err),
+    })
+    return null
+  }
+}
 
 /**
  * Consume one unit from the rate-limit bucket identified by `key`. Returns
  * whether the request is allowed plus the remaining quota.
+ *
+ * Uses Redis when configured, in-memory otherwise.
  */
 export async function consumeRateLimit(
   key: string,
   limit: number = env.RENDER_RATE_LIMIT_MAX,
   windowMs: number = env.RENDER_RATE_LIMIT_WINDOW_MS,
 ): Promise<RateLimitResult> {
-  // When Redis is configured, swap to the Redis implementation (see comment
-  // block above). For now, always use in-memory.
-  if (hasRedis()) {
-    logger.debug('rate limit using in-memory (Redis branch not enabled)')
+  const limiter = getRedisLimiter()
+  if (limiter) {
+    try {
+      const result = await limiter.limit(key)
+      return {
+        ok: result.success,
+        remaining: result.remaining,
+        // @upstash/ratelimit returns reset as a Unix timestamp in seconds.
+        resetMs: result.reset * 1000,
+      }
+    } catch (err) {
+      // If Redis is unreachable mid-request, degrade to in-memory rather
+      // than failing the request outright. This is the safer default —
+      // a Redis outage shouldn't block legitimate users entirely, and the
+      // in-memory limiter still caps per-instance abuse.
+      logger.warn('Redis rate limit failed — degrading to in-memory', {
+        key,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
   }
   return inMemoryConsume(key, limit, windowMs)
 }
@@ -101,4 +128,3 @@ export function getClientIp(req: Request): string {
   if (fwd) return fwd.split(',')[0]!.trim()
   return req.headers.get('x-real-ip') ?? 'unknown'
 }
-

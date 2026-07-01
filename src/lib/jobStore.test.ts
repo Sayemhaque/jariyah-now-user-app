@@ -4,6 +4,7 @@ import {
   getRenderJob,
   updateRenderJob,
   computeDedupeHash,
+  verifyJobOwnership,
 } from './jobStore'
 
 describe('computeDedupeHash', () => {
@@ -124,5 +125,63 @@ describe('updateRenderJob', () => {
 
   it('returns undefined for an unknown jobId', () => {
     expect(updateRenderJob('nonexistent', { progress: 0.5 })).toBeUndefined()
+  })
+})
+
+describe('ownerToken + verifyJobOwnership', () => {
+  it('every new job gets a unique, non-empty ownerToken', () => {
+    const a = createRenderJob()
+    const b = createRenderJob()
+    expect(a.ownerToken).toBeTruthy()
+    expect(b.ownerToken).toBeTruthy()
+    expect(a.ownerToken).not.toBe(b.ownerToken)
+    // Tokens are 64 hex chars (256 bits) from crypto.getRandomValues.
+    expect(a.ownerToken).toMatch(/^[0-9a-f]{64}$/)
+  })
+
+  it('verifyJobOwnership returns true for the correct token', () => {
+    const job = createRenderJob()
+    expect(verifyJobOwnership(job.id, job.ownerToken)).toBe(true)
+  })
+
+  it('verifyJobOwnership returns false for a wrong token', () => {
+    const job = createRenderJob()
+    const wrong = '0'.repeat(64)
+    expect(verifyJobOwnership(job.id, wrong)).toBe(false)
+  })
+
+  it('verifyJobOwnership returns false for an empty token', () => {
+    const job = createRenderJob()
+    expect(verifyJobOwnership(job.id, '')).toBe(false)
+  })
+
+  it('verifyJobOwnership returns false for a nonexistent jobId', () => {
+    expect(verifyJobOwnership('nonexistent', 'any-token')).toBe(false)
+  })
+
+  it('verifyJobOwnership returns false for a token of a different length (timing-attack guard)', () => {
+    const job = createRenderJob()
+    // A shorter token should be rejected immediately without reaching the
+    // constant-time comparison loop.
+    expect(verifyJobOwnership(job.id, 'short')).toBe(false)
+  })
+
+  it('the ownerToken is not mutated by updateRenderJob', () => {
+    const job = createRenderJob()
+    const originalToken = job.ownerToken
+    updateRenderJob(job.id, { status: 'done', progress: 1 })
+    const updated = getRenderJob(job.id)
+    expect(updated?.ownerToken).toBe(originalToken)
+  })
+
+  it('job IDs are random UUIDs (not predictable timestamps)', () => {
+    // crypto.randomUUID() produces v4 UUIDs. We expect the job ID to be
+    // "job_" followed by a UUID with the v4 version nibble.
+    const job = createRenderJob()
+    const uuidPart = job.id.replace(/^job_/, '')
+    // v4 UUID format: 8-4-4-4-12 hex chars, version nibble is '4'.
+    expect(uuidPart).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    )
   })
 })

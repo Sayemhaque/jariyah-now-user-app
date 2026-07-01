@@ -7,6 +7,10 @@ import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { paintOverlayOnCanvas } from '@/lib/overlay'
 import { getActiveWordIndex } from '@/lib/highlight'
 import { videoAttributionLine } from '@/lib/translations'
+import {
+  checkExportCapabilities,
+  pickSupportedMimeType,
+} from '@/lib/exportCapabilities'
 import type { AyatSlide, ExportOptions, Orientation } from '@/lib/types'
 import {
   Dialog,
@@ -27,9 +31,9 @@ const PLATFORM_PRESETS: {
   hint: string
   orientation: Orientation
 }[] = [
-  { key: 'reel', label: 'Instagram Reel', hint: '1080×1920 · portrait', orientation: 'portrait' },
-  { key: 'shorts', label: 'YouTube Shorts', hint: '1080×1920 · portrait', orientation: 'portrait' },
-  { key: 'youtube', label: 'YouTube', hint: '1920×1080 · landscape', orientation: 'landscape' },
+  { key: 'reel', label: 'Instagram Reel', hint: '1080×1920 · portrait · convert to MP4', orientation: 'portrait' },
+  { key: 'shorts', label: 'YouTube Shorts', hint: '1080×1920 · portrait · WebM ok', orientation: 'portrait' },
+  { key: 'youtube', label: 'YouTube', hint: '1920×1080 · landscape · WebM ok', orientation: 'landscape' },
 ]
 
 const RES: Record<Orientation, { w: number; h: number }> = {
@@ -70,6 +74,11 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const [progress, setProgress] = useState(0)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  // Pre-flight check: does this browser support MediaRecorder + Canvas
+  // capture + AudioContext? If not, we show a clear message instead of
+  // letting the render crash mid-way with a generic "Render failed" toast.
+  const capabilities = useMemo(() => checkExportCapabilities(), [])
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const stopRef = useRef<(() => void) | null>(null)
@@ -139,6 +148,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
     // 1) hit POST /api/render (validates + HEAD-checks MP3s + creates job)
     let jobId: string | null = null
+    let ownerToken: string | null = null
     try {
       const r = await fetch('/api/render', {
         method: 'POST',
@@ -154,8 +164,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         const errBody = (await r.json().catch(() => ({}))) as { error?: string }
         throw new Error(errBody.error || `Render API returned ${r.status}`)
       }
-      const okBody = (await r.json()) as { jobId: string }
+      const okBody = (await r.json()) as { jobId: string; ownerToken: string }
       jobId = okBody.jobId
+      ownerToken = okBody.ownerToken
       jobIdRef.current = jobId
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to start render job'
@@ -163,6 +174,20 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
       setErrorMsg(msg)
       toast.error(msg)
       return
+    }
+
+    // Helper: send a PUT update with the ownerToken. Best-effort — if the
+    // server is unreachable the render still succeeds client-side.
+    const sendUpdate = (payload: Record<string, unknown>) => {
+      if (!jobId || !ownerToken) return
+      fetch('/api/render', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-owner-token': ownerToken,
+        },
+        body: JSON.stringify({ jobId, ...payload }),
+      }).catch(() => {})
     }
 
     // 2) Client-side canvas + MediaRecorder render.
@@ -176,40 +201,21 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         attributionLine: videoAttributionLine(translationKey),
         onProgress: (p) => {
           setProgress(p)
-          // best-effort progress sync to the server
-          if (jobId) {
-            fetch('/api/render', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ jobId, progress: p, status: 'rendering' }),
-            }).catch(() => {})
-          }
+          sendUpdate({ progress: p, status: 'rendering' })
         },
       })
 
       setDownloadUrl(url)
       setStatus('done')
       setProgress(1)
-      if (jobId) {
-        fetch('/api/render', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobId, status: 'done', progress: 1, downloadUrl: 'client' }),
-        }).catch(() => {})
-      }
+      sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
       toast.success('Video rendered successfully!')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Render failed'
       setStatus('error')
       setErrorMsg(msg)
       toast.error(msg)
-      if (jobId) {
-        fetch('/api/render', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ jobId, status: 'error', error: msg }),
-        }).catch(() => {})
-      }
+      sendUpdate({ status: 'error', error: msg })
     }
   }
 
@@ -232,6 +238,20 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         </DialogHeader>
 
         <canvas ref={canvasRef} className="hidden" />
+
+        {/* Browser-support warning — if the browser can't run the export
+            pipeline (no MediaRecorder / Canvas capture / AudioContext),
+            show a clear message and disable the Render button instead of
+            letting it crash mid-render with a generic error. */}
+        {!capabilities.ok && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 flex items-start gap-3 text-sm text-amber-600 dark:text-amber-400">
+            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="font-medium">Browser not supported</p>
+              <p className="text-xs leading-relaxed">{capabilities.reason}</p>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-5">
           {/* Platform presets */}
@@ -310,6 +330,25 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                 {RES[settings.orientation].h * (quality === '1080p' ? 1.5 : 1)}
               </span>
             </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground text-xs">Format</span>
+              <span className="font-mono tabular-nums">
+                WebM (VP9/Opus)
+              </span>
+            </div>
+          </div>
+
+          {/* Format note — honest about the WebM output and the Instagram
+              limitation, so users aren't surprised when IG rejects the file. */}
+          <div className="rounded-lg border border-border bg-background/40 px-3 py-2.5 text-[11px] text-muted-foreground leading-relaxed">
+            <span className="text-foreground/80 font-medium">Heads up:</span>{' '}
+            The export produces a <strong>WebM</strong> file. YouTube and
+            YouTube Shorts accept WebM directly. Instagram Reels requires
+            MP4 — convert with{' '}
+            <code className="bg-muted/40 px-1 py-0.5 rounded text-[10px]">
+              ffmpeg -i input.webm output.mp4
+            </code>{' '}
+            or an online converter before uploading.
           </div>
 
           {/* Progress */}
@@ -377,7 +416,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           {status !== 'rendering' && (
             <Button
               onClick={startRender}
-              disabled={!slides.length}
+              disabled={!slides.length || !capabilities.ok}
               className="qv-btn-primary border border-primary/30"
             >
               <Film className="h-4 w-4 mr-1.5" />
@@ -437,13 +476,19 @@ async function renderVideoToWebm({
 
   // Pre-load all ayat audio as AudioBuffers via Web Audio API so we can
   // schedule them precisely on a single MediaRecorder timeline.
-  // Safari < 14 ships AudioContext as webkitAudioContext. Cast through a
-  // minimal interface so we don't lose type-safety on the standard path.
+  // Safari < 14 ships AudioContext as webkitAudioContext. The capabilities
+  // check at the top of the modal should prevent us reaching this code path
+  // on a browser with neither variant, but we guard defensively anyway —
+  // throwing a clear error is better than a non-null-assertion crash.
   type AudioContextCtor = typeof AudioContext
   const win = window as Window &
     (Record<string, unknown> & { webkitAudioContext?: AudioContextCtor })
-  const AudioCtx: AudioContextCtor =
-    win.AudioContext ?? win.webkitAudioContext!
+  const AudioCtx = win.AudioContext ?? win.webkitAudioContext
+  if (!AudioCtx) {
+    throw new Error(
+      'Web Audio API is not available in this browser. Try Chrome, Edge, or Firefox on desktop.',
+    )
+  }
   const audioCtx = new AudioCtx()
   const buffers: AudioBuffer[] = []
   for (const s of slides) {
@@ -466,8 +511,9 @@ async function renderVideoToWebm({
     stream.addTrack(tr)
   }
 
-  // Pick a supported mime type. WebM/VP9 first, then VP8, then default.
-  const mime = pickMime()
+  // Pick a supported MIME type. Uses the shared picker so the pre-flight
+  // check and the actual render agree on what's supported.
+  const mime = pickSupportedMimeType()
   const recorder = new MediaRecorder(
     stream,
     mime
@@ -561,21 +607,6 @@ async function renderVideoToWebm({
 
   const blob = new Blob(chunks, { type: mime || 'video/webm' })
   return URL.createObjectURL(blob)
-}
-
-function pickMime(): string {
-  const candidates = [
-    'video/webm;codecs=vp9,opus',
-    'video/webm;codecs=vp8,opus',
-    'video/webm',
-    'video/mp4',
-  ]
-  for (const c of candidates) {
-    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(c)) {
-      return c
-    }
-  }
-  return ''
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
