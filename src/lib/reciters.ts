@@ -8,7 +8,7 @@ export const RECITERS: Reciter[] = [
     style: 'Murattal',
     audioKey: 'Alafasy/mp3',
     recitationId: 7,
-    avatarColor: '#10b981',
+    avatarColor: '#9333ea',
   },
   {
     id: 'abdulbasit',
@@ -17,7 +17,7 @@ export const RECITERS: Reciter[] = [
     style: 'Mujawwad',
     audioKey: 'AbdulBasit/Mujawwad/mp3',
     recitationId: 1,
-    avatarColor: '#f59e0b',
+    avatarColor: '#7c3aed',
   },
   {
     id: 'minshawi',
@@ -26,7 +26,7 @@ export const RECITERS: Reciter[] = [
     style: 'Mujawwad',
     audioKey: 'Minshawi/Mujawwad/mp3',
     recitationId: 5,
-    avatarColor: '#8b5cf6',
+    avatarColor: '#6d28d9',
   },
   {
     id: 'husary',
@@ -35,7 +35,7 @@ export const RECITERS: Reciter[] = [
     style: 'Murattal',
     audioKey: 'Husary/mp3',
     recitationId: 2,
-    avatarColor: '#06b6d4',
+    avatarColor: '#5b21b6',
   },
   {
     id: 'sudais',
@@ -44,7 +44,7 @@ export const RECITERS: Reciter[] = [
     style: 'Murattal',
     audioKey: 'Sudais/mp3',
     recitationId: 6,
-    avatarColor: '#ef4444',
+    avatarColor: '#1a1a1a',
   },
 ]
 

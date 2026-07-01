@@ -45,65 +45,65 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* QuranVid light theme — clean, modern, chartreuse accent.
-   Inspired by the target design: light gray bg, white cards, vivid accent. */
+/* QuranVid light theme — clean, minimal, purple accent on lavender-gray bg.
+   Matches the target design: #eeebf0 bg, white cards, #9333ea purple accent. */
 :root {
   --radius: 0.75rem;
-  --background: #f8f9fa;
-  --foreground: #212529;
+  --background: #eeebf0;
+  --foreground: #1a1a1a;
   --card: #ffffff;
-  --card-foreground: #212529;
+  --card-foreground: #1a1a1a;
   --popover: #ffffff;
-  --popover-foreground: #212529;
-  --primary: #c8ff00;
-  --primary-foreground: #1a1a1a;
-  --secondary: #f1f3f5;
-  --secondary-foreground: #212529;
-  --muted: #f1f3f5;
-  --muted-foreground: #6c757d;
-  --accent: #f1f3f5;
-  --accent-foreground: #212529;
-  --destructive: #e03131;
-  --border: #dee2e6;
-  --input: #e9ecef;
-  --ring: #c8ff00;
-  --chart-1: #c8ff00;
-  --chart-2: #7048e8;
+  --popover-foreground: #1a1a1a;
+  --primary: #9333ea;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f0f7;
+  --secondary-foreground: #1a1a1a;
+  --muted: #f3f0f7;
+  --muted-foreground: #6b6b6b;
+  --accent: #f3f0f7;
+  --accent-foreground: #1a1a1a;
+  --destructive: #dc2626;
+  --border: #e0dce8;
+  --input: #e8e4f0;
+  --ring: #9333ea;
+  --chart-1: #9333ea;
+  --chart-2: #a290d9;
   --chart-3: #1098ad;
   --chart-4: #f08c00;
-  --chart-5: #e03131;
+  --chart-5: #dc2626;
   --sidebar: #ffffff;
-  --sidebar-foreground: #212529;
-  --sidebar-primary: #c8ff00;
-  --sidebar-primary-foreground: #1a1a1a;
-  --sidebar-accent: #f1f3f5;
-  --sidebar-accent-foreground: #212529;
-  --sidebar-border: #dee2e6;
-  --sidebar-ring: #c8ff00;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-primary: #9333ea;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f3f0f7;
+  --sidebar-accent-foreground: #1a1a1a;
+  --sidebar-border: #e0dce8;
+  --sidebar-ring: #9333ea;
 }
 
 /* Keep a dark variant available for the video preview frame (which needs
    to stay dark for video content legibility). Applied via `qv-dark-frame`. */
 .qv-dark-frame,
 .dark {
-  --background: #0f1419;
+  --background: #140632;
   --foreground: #f8f9fa;
-  --card: #1a1f24;
+  --card: #1e0f3a;
   --card-foreground: #f8f9fa;
-  --popover: #1a1f24;
+  --popover: #1e0f3a;
   --popover-foreground: #f8f9fa;
-  --primary: #c8ff00;
-  --primary-foreground: #0f1419;
-  --secondary: #252a30;
+  --primary: #a290d9;
+  --primary-foreground: #140632;
+  --secondary: #2a1850;
   --secondary-foreground: #f8f9fa;
-  --muted: #252a30;
-  --muted-foreground: #adb5bd;
-  --accent: #252a30;
+  --muted: #2a1850;
+  --muted-foreground: #a290d9;
+  --accent: #2a1850;
   --accent-foreground: #f8f9fa;
-  --destructive: #e03131;
+  --destructive: #dc2626;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.1);
-  --ring: #c8ff00;
+  --ring: #a290d9;
 }
 
 @layer base {
@@ -193,16 +193,16 @@
   border-radius: 999px;
 }
 
-/* Primary button — chartreuse with dark text, subtle shadow */
+/* Primary button — purple with white text, subtle shadow */
 .qv-btn-primary {
   background-color: var(--primary);
   color: var(--primary-foreground);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(200, 255, 0, 0.1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(147, 51, 234, 0.1);
   transition: all 150ms ease;
 }
 .qv-btn-primary:hover {
-  background-color: #b8eb00;
-  box-shadow: 0 2px 8px 0 rgba(200, 255, 0, 0.3), 0 0 0 1px rgba(200, 255, 0, 0.2);
+  background-color: #7e22ce;
+  box-shadow: 0 2px 8px 0 rgba(147, 51, 234, 0.3), 0 0 0 1px rgba(147, 51, 234, 0.2);
 }
 
 /* Frosted-glass effect for the header */
