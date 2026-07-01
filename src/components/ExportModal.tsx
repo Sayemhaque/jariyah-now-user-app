@@ -224,9 +224,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-card border-border shadow-xl sm:rounded-2xl p-0 sm:p-6 max-sm:h-[100dvh] max-sm:w-screen max-sm:max-w-none max-sm:rounded-none flex flex-col overflow-hidden">
-        {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto scrollbar-thin px-5 sm:px-0 pt-5 sm:pt-0">
+      <DialogContent className="max-w-4xl bg-card border-border shadow-xl sm:rounded-2xl p-0 sm:p-6 max-sm:h-[100dvh] max-sm:w-screen max-sm:max-w-none max-sm:rounded-none flex flex-col overflow-hidden">
+        {/* Header — full width */}
+        <div className="px-5 sm:px-0 pt-5 sm:pt-0 shrink-0">
           <DialogHeader className="mb-4">
             <DialogTitle className="flex items-center gap-2 text-lg">
               <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/15 text-primary shrink-0">
@@ -238,170 +238,210 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
               Pick a platform preset, choose quality, then render.
             </DialogDescription>
           </DialogHeader>
+        </div>
 
-          <canvas ref={canvasRef} className="hidden" />
+        <canvas ref={canvasRef} className="hidden" />
 
-          {!capabilities.ok && (
-            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-3 text-sm text-amber-600 dark:text-amber-400 mb-5">
-              <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-              <div className="space-y-1">
-                <p className="font-medium">Browser not supported</p>
-                <p className="text-xs leading-relaxed">{capabilities.reason}</p>
-              </div>
+        {/* Browser support warning — full width */}
+        {!capabilities.ok && (
+          <div className="mx-5 sm:mx-0 mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-3 text-sm text-amber-600 dark:text-amber-400">
+            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="font-medium">Browser not supported</p>
+              <p className="text-xs leading-relaxed">{capabilities.reason}</p>
             </div>
-          )}
+          </div>
+        )}
 
-          <div className="space-y-4 sm:space-y-5 pb-5">
-            {/* Platform — 2 cols mobile, 3 cols sm+ */}
-            <div className="space-y-2">
-              <Label className="qv-section-title !mb-0">Platform</Label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {PLATFORM_PRESETS.map((p) => (
-                  <button
-                    key={p.key}
-                    onClick={() => setPlatform(p.key)}
-                    className={cn(
-                      'flex flex-col items-start gap-1 rounded-xl border p-2.5 sm:p-3 text-left transition',
-                      platform === p.key
-                        ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
-                        : 'border-border bg-card hover:border-foreground/30',
-                    )}
-                  >
-                    <span className="text-xs sm:text-sm font-medium leading-tight">{p.label}</span>
-                    <span className="text-[9px] sm:text-[10px] text-muted-foreground tabular-nums leading-tight">
-                      {p.hint}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* Two-column body on desktop, single column on mobile */}
+        <div className="flex-1 overflow-y-auto scrollbar-thin">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 px-5 sm:px-0 pb-5">
 
-            {/* Quality — 2 cols */}
-            <div className="space-y-2">
-              <Label className="qv-section-title !mb-0">Quality</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {(['720p', '1080p'] as const).map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => setQuality(q)}
-                    className={cn(
-                      'rounded-xl border p-2.5 sm:p-3 text-sm font-medium transition',
-                      quality === q
-                        ? 'border-primary bg-primary/10 text-primary shadow-sm shadow-primary/20'
-                        : 'border-border bg-card hover:border-foreground/30',
-                    )}
-                  >
-                    {q}
-                    {q === '1080p' && (
-                      <span className="ml-2 text-[10px] uppercase tracking-wider opacity-70">
-                        HD
+            {/* ─── LEFT: Settings ─── */}
+            <div className="space-y-4">
+              {/* Platform */}
+              <div className="space-y-2">
+                <Label className="qv-section-title !mb-0">Platform</Label>
+                <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
+                  {PLATFORM_PRESETS.map((p) => (
+                    <button
+                      key={p.key}
+                      onClick={() => setPlatform(p.key)}
+                      className={cn(
+                        'flex items-center justify-between gap-2 rounded-xl border p-2.5 sm:p-3 text-left transition',
+                        platform === p.key
+                          ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
+                          : 'border-border bg-card hover:border-foreground/30',
+                      )}
+                    >
+                      <span className="text-xs sm:text-sm font-medium">{p.label}</span>
+                      <span className="text-[9px] sm:text-[10px] text-muted-foreground tabular-nums text-right">
+                        {p.hint}
                       </span>
-                    )}
-                  </button>
-                ))}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quality */}
+              <div className="space-y-2">
+                <Label className="qv-section-title !mb-0">Quality</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['720p', '1080p'] as const).map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => setQuality(q)}
+                      className={cn(
+                        'rounded-xl border p-2.5 sm:p-3 text-sm font-medium transition',
+                        quality === q
+                          ? 'border-primary bg-primary/10 text-primary shadow-sm shadow-primary/20'
+                          : 'border-border bg-card hover:border-foreground/30',
+                      )}
+                    >
+                      {q}
+                      {q === '1080p' && (
+                        <span className="ml-2 text-[10px] uppercase tracking-wider opacity-70">
+                          HD
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="qv-card rounded-xl p-3 sm:p-3.5 text-[13px]">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                  <div className="col-span-2 flex justify-between items-center gap-2 pb-2 border-b border-border">
+                    <span className="text-muted-foreground text-xs">Filename</span>
+                    <span className="font-mono text-[11px] text-foreground/85 truncate max-w-[60%]">
+                      {filename}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground text-xs">Duration</span>
+                    <span className="font-mono tabular-nums text-xs">{estimatedDuration}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground text-xs">Ayats</span>
+                    <span className="tabular-nums text-xs">{slides.length}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground text-xs">Resolution</span>
+                    <span className="font-mono tabular-nums text-xs">
+                      {RES[settings.orientation].w * (quality === '1080p' ? 1.5 : 1)} ×{' '}
+                      {RES[settings.orientation].h * (quality === '1080p' ? 1.5 : 1)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground text-xs">Format</span>
+                    <span className="font-mono tabular-nums text-xs">WebM</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Format note */}
+              <div className="rounded-lg border border-border bg-background/40 px-3 py-2.5 text-[11px] text-muted-foreground leading-relaxed">
+                <span className="text-foreground/80 font-medium">Heads up:</span>{' '}
+                WebM output. YouTube accepts it directly. Instagram needs MP4 —
+                convert with{' '}
+                <code className="bg-muted/40 px-1 py-0.5 rounded text-[10px]">
+                  ffmpeg -i input.webm output.mp4
+                </code>
+                .
               </div>
             </div>
 
-            {/* Summary — 2-col grid on mobile */}
-            <div className="qv-card rounded-xl p-3 sm:p-3.5 text-[13px]">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                <div className="col-span-2 flex justify-between items-center gap-2 pb-2 border-b border-border">
-                  <span className="text-muted-foreground text-xs">Filename</span>
-                  <span className="font-mono text-[11px] text-foreground/85 truncate max-w-[60%]">
-                    {filename}
-                  </span>
+            {/* ─── RIGHT: Output / Processing / Download ─── */}
+            <div className="space-y-4">
+              {/* Idle state — show a placeholder */}
+              {status === 'idle' && (
+                <div className="qv-card rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[280px] gap-3">
+                  <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 text-primary">
+                    <Film className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Ready to render</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[240px]">
+                      Pick your settings on the left, then hit{' '}
+                      <span className="font-medium text-foreground">Render video</span>{' '}
+                      to start.
+                    </p>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs">Duration</span>
-                  <span className="font-mono tabular-nums text-xs">{estimatedDuration}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs">Ayats</span>
-                  <span className="tabular-nums text-xs">{slides.length}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs">Resolution</span>
-                  <span className="font-mono tabular-nums text-xs">
-                    {RES[settings.orientation].w * (quality === '1080p' ? 1.5 : 1)} ×{' '}
-                    {RES[settings.orientation].h * (quality === '1080p' ? 1.5 : 1)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground text-xs">Format</span>
-                  <span className="font-mono tabular-nums text-xs">WebM</span>
-                </div>
-              </div>
-            </div>
+              )}
 
-            {/* Format note */}
-            <div className="rounded-lg border border-border bg-background/40 px-3 py-2.5 text-[11px] text-muted-foreground leading-relaxed">
-              <span className="text-foreground/80 font-medium">Heads up:</span>{' '}
-              WebM output. YouTube accepts it directly. Instagram needs MP4 —
-              convert with{' '}
-              <code className="bg-muted/40 px-1 py-0.5 rounded text-[10px]">
-                ffmpeg -i input.webm output.mp4
-              </code>
-              .
-            </div>
-
-            {/* Progress */}
-            {status === 'rendering' && (
-              <div className="space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-3.5">
-                <div className="flex items-center justify-between text-sm flex-wrap gap-2">
-                  <span className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <span className="font-medium">Rendering…</span>
-                  </span>
-                  <span className="font-mono text-xs">do not close tab</span>
-                  <span className="font-mono font-bold">{Math.round(progress * 100)}%</span>
+              {/* Rendering state */}
+              {status === 'rendering' && (
+                <div className="qv-card rounded-xl p-5 space-y-4 min-h-[280px] flex flex-col justify-center">
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 text-primary">
+                      <Loader2 className="h-7 w-7 animate-spin" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Rendering your video…</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Do not close this tab
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="font-mono font-bold">{Math.round(progress * 100)}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-200 ease-out"
+                        style={{ width: `${progress * 100}%` }}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="h-1.5 rounded-full bg-background overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-all duration-200 ease-out"
-                    style={{ width: `${progress * 100}%` }}
+              )}
+
+              {/* Done state — video preview + download */}
+              {status === 'done' && downloadUrl && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-primary px-1">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span className="font-medium">Video ready!</span>
+                  </div>
+                  <video
+                    src={downloadUrl}
+                    controls
+                    className="w-full rounded-xl bg-black aspect-video"
                   />
+                  <a
+                    href={downloadUrl}
+                    download={filename}
+                    className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl qv-btn-primary text-sm font-semibold"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download {filename}
+                  </a>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Done */}
-            {status === 'done' && downloadUrl && (
-              <div className="rounded-xl border border-primary/30 bg-primary/10 p-3.5 space-y-3">
-                <div className="flex items-center gap-2 text-sm text-primary">
-                  <CheckCircle2 className="h-5 w-5" />
-                  <span className="font-medium">Video ready!</span>
+              {/* Error state */}
+              {status === 'error' && (
+                <div className="qv-card rounded-xl p-5 min-h-[280px] flex flex-col justify-center">
+                  <div className="flex items-start gap-3 text-sm text-destructive">
+                    <AlertCircle className="h-6 w-6 mt-0.5 shrink-0" />
+                    <div className="space-y-1">
+                      <p className="font-medium">Render failed</p>
+                      <p className="text-xs leading-relaxed text-muted-foreground">{errorMsg}</p>
+                    </div>
+                  </div>
                 </div>
-                <video
-                  src={downloadUrl}
-                  controls
-                  className="w-full rounded-lg max-h-48 sm:max-h-64 bg-black"
-                />
-                <a
-                  href={downloadUrl}
-                  download={filename}
-                  className="inline-flex items-center justify-center gap-2 w-full h-10 rounded-lg qv-btn-primary text-sm font-medium"
-                >
-                  <Download className="h-4 w-4" />
-                  Download
-                </a>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Error */}
-            {status === 'error' && (
-              <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3.5 flex items-start gap-3 text-sm text-destructive">
-                <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-                <div>
-                  <p className="font-medium">Render failed</p>
-                  <p className="text-xs mt-0.5 leading-relaxed">{errorMsg}</p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
         {/* Sticky footer */}
-        <div className="border-t border-border bg-card px-5 sm:px-0 py-3 sm:py-0 sm:pt-4 flex gap-2 shrink-0">
+        <div className="border-t border-border bg-card px-5 sm:px-0 py-3 sm:pt-4 flex gap-2 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
             <X className="h-4 w-4 mr-1.5" />
             Close
