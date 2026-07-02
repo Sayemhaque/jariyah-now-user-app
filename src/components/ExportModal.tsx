@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Download, Loader2, Film, X, CheckCircle2, AlertCircle, FileVideo } from 'lucide-react'
+import { Download, Loader2, Film, X, CheckCircle2, AlertCircle, FileVideo, Play, Pause, Volume2, VolumeX } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { paintOverlayOnCanvas } from '@/lib/overlay'
@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
@@ -50,6 +51,174 @@ type RenderStatus = 'idle' | 'rendering' | 'converting' | 'done' | 'error'
 interface ExportModalProps {
   open: boolean
   onOpenChange: (o: boolean) => void
+}
+
+/**
+ * Custom video preview player with proper controls (play/pause, seek bar,
+ * time display, volume). Replaces the bare <video controls> which showed
+ * 0:00 / 0:00 until metadata loaded and had no visible duration.
+ */
+function VideoPreviewPlayer({
+  src,
+  orientation,
+  filename,
+}: {
+  src: string
+  orientation: Orientation
+  filename: string
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [volume, setVolume] = useState(1)
+  const [muted, setMuted] = useState(false)
+
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v) return
+    const onTime = () => setCurrentTime(v.currentTime)
+    const onDur = () => setDuration(v.duration || 0)
+    const onPlay = () => setIsPlaying(true)
+    const onPause = () => setIsPlaying(false)
+    v.addEventListener('timeupdate', onTime)
+    v.addEventListener('loadedmetadata', onDur)
+    v.addEventListener('durationchange', onDur)
+    v.addEventListener('play', onPlay)
+    v.addEventListener('pause', onPause)
+    // Auto-play muted on load so the user sees motion immediately
+    v.muted = true
+    v.play().catch(() => {})
+    return () => {
+      v.removeEventListener('timeupdate', onTime)
+      v.removeEventListener('loadedmetadata', onDur)
+      v.removeEventListener('durationchange', onDur)
+      v.removeEventListener('play', onPlay)
+      v.removeEventListener('pause', onPause)
+    }
+  }, [src])
+
+  const togglePlay = () => {
+    const v = videoRef.current
+    if (!v) return
+    if (v.paused) v.play()
+    else v.pause()
+  }
+
+  const onSeek = (val: number[]) => {
+    const v = videoRef.current
+    if (!v || !duration) return
+    v.currentTime = (val[0]! / 100) * duration
+    setCurrentTime(v.currentTime)
+  }
+
+  const onVol = (val: number[]) => {
+    const v = videoRef.current
+    if (!v) return
+    const vol = val[0]! / 100
+    v.volume = vol
+    v.muted = vol === 0
+    setVolume(vol)
+    setMuted(vol === 0)
+  }
+
+  const toggleMute = () => {
+    const v = videoRef.current
+    if (!v) return
+    v.muted = !v.muted
+    setMuted(v.muted)
+  }
+
+  const pct = duration > 0 ? (currentTime / duration) * 100 : 0
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-sm text-primary px-1">
+        <CheckCircle2 className="h-5 w-5" />
+        <span className="font-medium">Video ready!</span>
+        <span className="text-xs text-muted-foreground ml-auto font-mono">
+          {formatMs(duration * 1000)}
+        </span>
+      </div>
+
+      {/* Video + custom controls overlay */}
+      <div className="relative rounded-xl overflow-hidden bg-black">
+        <video
+          ref={videoRef}
+          src={src}
+          preload="auto"
+          playsInline
+          loop
+          onClick={togglePlay}
+          className={`w-full block ${orientation === 'portrait' ? 'aspect-[9/16]' : 'aspect-video'}`}
+        />
+
+        {/* Center play/pause button overlay */}
+        {!isPlaying && (
+          <button
+            onClick={togglePlay}
+            className="absolute inset-0 grid place-items-center bg-black/30 transition"
+            aria-label="Play"
+          >
+            <div className="grid place-items-center h-14 w-14 rounded-full bg-primary/90 text-primary-foreground shadow-lg">
+              <Play className="h-7 w-7 translate-x-0.5" />
+            </div>
+          </button>
+        )}
+      </div>
+
+      {/* Custom controls bar */}
+      <div className="flex items-center gap-2 px-1">
+        <button
+          onClick={togglePlay}
+          className="grid place-items-center h-8 w-8 rounded-lg hover:bg-muted shrink-0"
+          aria-label={isPlaying ? 'Pause' : 'Play'}
+        >
+          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-0.5" />}
+        </button>
+
+        {/* Seek bar */}
+        <Slider
+          value={[pct]}
+          max={100}
+          step={0.1}
+          onValueChange={onSeek}
+          className="flex-1"
+        />
+
+        {/* Time display */}
+        <span className="text-xs font-mono tabular-nums text-muted-foreground whitespace-nowrap shrink-0">
+          {formatMs(currentTime * 1000)} / {formatMs(duration * 1000)}
+        </span>
+
+        {/* Volume */}
+        <button
+          onClick={toggleMute}
+          className="grid place-items-center h-8 w-8 rounded-lg hover:bg-muted shrink-0"
+          aria-label={muted ? 'Unmute' : 'Mute'}
+        >
+          {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+        </button>
+        <Slider
+          value={[muted ? 0 : volume * 100]}
+          max={100}
+          step={1}
+          onValueChange={onVol}
+          className="w-16 shrink-0"
+        />
+      </div>
+
+      {/* Download button */}
+      <a
+        href={src}
+        download={filename}
+        className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl qv-btn-primary text-sm font-semibold"
+      >
+        <Download className="h-4 w-4" />
+        Download {filename}
+      </a>
+    </div>
+  )
 }
 
 export function ExportModal({ open, onOpenChange }: ExportModalProps) {
@@ -465,30 +634,11 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
               {/* Done state — video preview + download */}
               {status === 'done' && downloadUrl && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-primary px-1">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <span className="font-medium">Video ready!</span>
-                  </div>
-                  <video
-                    src={downloadUrl}
-                    controls
-                    preload="auto"
-                    playsInline
-                    autoPlay
-                    muted
-                    loop
-                    className={`w-full rounded-xl bg-black ${settings.orientation === 'portrait' ? 'aspect-[9/16]' : 'aspect-video'}`}
-                  />
-                  <a
-                    href={downloadUrl}
-                    download={filename}
-                    className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl qv-btn-primary text-sm font-semibold"
-                  >
-                    <Download className="h-4 w-4" />
-                    Download {filename}
-                  </a>
-                </div>
+                <VideoPreviewPlayer
+                  src={downloadUrl}
+                  orientation={settings.orientation}
+                  filename={filename}
+                />
               )}
 
               {/* Error state */}
