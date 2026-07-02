@@ -364,8 +364,10 @@ export function VideoPreview() {
                 className="qv-smooth relative flex flex-col items-center rounded-2xl"
                 style={{
                   maxWidth: '90cqw',
-                  backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                  backgroundColor: 'rgba(15, 15, 20, 0.6)',
                   padding: '4cqw 5cqw',
+                  borderRadius: '3cqw',
+                  boxShadow: '0 2cqw 6cqw rgba(0, 0, 0, 0.4)',
                 }}
               >
                 {/* Arabic — word-by-word highlight */}

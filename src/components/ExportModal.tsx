@@ -861,17 +861,30 @@ function drawFrame({
   // spec ("do not need the card border"). The cardX/Y/W/H math is still used
   // to position the text block centered vertically.
 
-  // Draw a semi-transparent dark scrim behind the text area for contrast
-  // against busy backgrounds. This makes the text readable on any image.
-  const scrimPadX = Math.round(W * 0.06)
-  const scrimPadY = Math.round(H * 0.025)
-  const scrimX = cardX - scrimPadX
-  const scrimY = cardY - scrimPadY
-  const scrimW = cardW + scrimPadX * 2
-  const scrimH = cardH + scrimPadY * 2
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'
-  roundedRect(ctx, scrimX, scrimY, scrimW, scrimH, Math.round(H * 0.02))
+  // Draw a dark rounded card behind the text — matches the reference design:
+  // deep charcoal, ~60% opacity, large rounded corners, soft drop shadow.
+  const bgPadX = Math.round(W * 0.06)
+  const bgPadY = Math.round(H * 0.03)
+  const bgX = cardX - bgPadX
+  const bgY = cardY - bgPadY
+  const bgW = cardW + bgPadX * 2
+  const bgH = cardH + bgPadY * 2
+  const bgRadius = Math.round(minDim * 0.04)
+
+  // Soft drop shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'
+  ctx.shadowBlur = Math.round(minDim * 0.03)
+  ctx.shadowOffsetY = Math.round(minDim * 0.005)
+
+  // Dark card background — deep charcoal at ~60% opacity
+  ctx.fillStyle = 'rgba(15, 15, 20, 0.6)'
+  roundedRect(ctx, bgX, bgY, bgW, bgH, bgRadius)
   ctx.fill()
+
+  // Reset shadow for text
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetY = 0
 
   // Draw Arabic word-by-word
   ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
