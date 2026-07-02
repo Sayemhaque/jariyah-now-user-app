@@ -360,7 +360,14 @@ export function VideoPreview() {
               className="absolute inset-0 flex flex-col items-center justify-center"
               style={{ padding: '0 8cqw' }}
             >
-              <div className="qv-smooth relative flex flex-col items-center" style={{ maxWidth: '90cqw' }}>
+              <div
+                className="qv-smooth relative flex flex-col items-center rounded-2xl"
+                style={{
+                  maxWidth: '90cqw',
+                  backgroundColor: 'rgba(0, 0, 0, 0.35)',
+                  padding: '4cqw 5cqw',
+                }}
+              >
                 {/* Arabic — word-by-word highlight */}
                 <div
                   dir="rtl"
@@ -430,7 +437,7 @@ export function VideoPreview() {
                     className={`qv-smooth text-white/85 mx-auto leading-snug drop-shadow text-center ${isBengaliTranslation ? 'font-bengali' : ''}`}
                     style={{
                       fontSize: translationFontSizeCss,
-                      marginTop: '1.5cqw',
+                      marginTop: '3cqw',
                       maxWidth: '85cqw',
                     }}
                   >

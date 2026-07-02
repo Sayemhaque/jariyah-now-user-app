@@ -780,9 +780,11 @@ function drawFrame({
   // Using min(W,H) keeps the text proportional to the smaller dimension.
   const minDim = Math.min(W, H)
   const fontScale = minDim / 720
-  const arabicFontSize = settings.arabicFontSize * fontScale
-  const transFontSize = settings.translationFontSize * fontScale
-  const translitFontSize = Math.max(11, minDim * 0.018)
+  // Boost font sizes: multiply by 1.4x so text is clearly readable on
+  // mobile screens after Facebook/Instagram compression.
+  const arabicFontSize = settings.arabicFontSize * fontScale * 1.4
+  const transFontSize = settings.translationFontSize * fontScale * 1.4
+  const translitFontSize = Math.max(11, minDim * 0.018 * 1.4)
 
   const activeIdx = getActiveWordIndex(slide.words, intoMs)
 
@@ -834,11 +836,12 @@ function drawFrame({
 
   // Small divider (only when both translit and translation are shown)
   const dividerGap =
-    translit && transLines.length ? Math.round(H * 0.012) + 1 : 0
+    translit && transLines.length ? Math.round(H * 0.015) + 1 : 0
+  // Large gap between Arabic and translation so they NEVER touch
   const arabicToTransGap = transLines.length
-    ? Math.round(H * 0.014)
+    ? Math.round(H * 0.035)
     : 0
-  const arabicToTranslitGap = translit ? Math.round(H * 0.010) : 0
+  const arabicToTranslitGap = translit ? Math.round(H * 0.020) : 0
 
   const cardPadX = Math.round(W * 0.05)
   const cardPadY = Math.round(H * 0.04)
@@ -857,6 +860,18 @@ function drawFrame({
   // No card border / scrim — text floats directly on the background per the
   // spec ("do not need the card border"). The cardX/Y/W/H math is still used
   // to position the text block centered vertically.
+
+  // Draw a semi-transparent dark scrim behind the text area for contrast
+  // against busy backgrounds. This makes the text readable on any image.
+  const scrimPadX = Math.round(W * 0.06)
+  const scrimPadY = Math.round(H * 0.025)
+  const scrimX = cardX - scrimPadX
+  const scrimY = cardY - scrimPadY
+  const scrimW = cardW + scrimPadX * 2
+  const scrimH = cardH + scrimPadY * 2
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.35)'
+  roundedRect(ctx, scrimX, scrimY, scrimW, scrimH, Math.round(H * 0.02))
+  ctx.fill()
 
   // Draw Arabic word-by-word
   ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
@@ -878,8 +893,8 @@ function drawFrame({
         ctx.shadowColor = settings.highlightColor
         ctx.shadowBlur = H * 0.028
       } else {
-        ctx.shadowColor = 'rgba(0,0,0,0.7)'
-        ctx.shadowBlur = H * 0.008
+        ctx.shadowColor = 'rgba(0,0,0,0.9)'
+        ctx.shadowBlur = H * 0.012
       }
       ctx.fillText(w, x, y)
       ctx.shadowBlur = 0
@@ -920,8 +935,8 @@ function drawFrame({
     ctx.fillStyle = 'rgba(255,255,255,0.88)'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.shadowColor = 'rgba(0,0,0,0.6)'
-    ctx.shadowBlur = H * 0.005
+    ctx.shadowColor = 'rgba(0,0,0,0.9)'
+    ctx.shadowBlur = H * 0.008
     for (let i = 0; i < transLines.length; i++) {
       ctx.fillText(transLines[i]!, W / 2, y + i * transLineH)
     }
@@ -993,6 +1008,24 @@ function hexWithAlpha(hex: string, alpha: number): string {
   const g = parseInt(h.slice(2, 4), 16)
   const b = parseInt(h.slice(4, 6), 16)
   return `rgba(${r}, ${g}, ${b}, ${alpha})`
+}
+
+function roundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+) {
+  const radius = Math.min(r, w / 2, h / 2)
+  ctx.beginPath()
+  ctx.moveTo(x + radius, y)
+  ctx.arcTo(x + w, y, x + w, y + h, radius)
+  ctx.arcTo(x + w, y + h, x, y + h, radius)
+  ctx.arcTo(x, y + h, x, y, radius)
+  ctx.arcTo(x, y, x + w, y, radius)
+  ctx.closePath()
 }
 
 function formatMs(ms: number): string {
