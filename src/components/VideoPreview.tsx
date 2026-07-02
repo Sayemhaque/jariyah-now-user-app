@@ -58,6 +58,7 @@ export function VideoPreview() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTimeMs, setCurrentTimeMs] = useState(0)
+  const [liveDurations, setLiveDurations] = useState<Record<number, number>>({})
   const [volume, setVolume] = useState(0.9)
   const [muted, setMuted] = useState(false)
 
@@ -77,22 +78,30 @@ export function VideoPreview() {
 
   const aspect = ASPECT[settings.orientation]
 
-  // Total duration estimate based on known audio durations.
+  // Total duration — use the probed audioDurationMs, or fall back to the
+  // live duration captured from the actual <audio> element's loadedmetadata.
+  // This handles the case where the probe returned 0 (COEP blocking the
+  // separate Audio() element) but the real audio element in the page loads fine.
   const totalMs = useMemo(
-    () => ayatList.reduce((sum, a) => sum + (a.audioDurationMs || 0), 0),
-    [ayatList],
+    () =>
+      ayatList.reduce(
+        (sum, a, i) =>
+          sum + (a.audioDurationMs || liveDurations[i] || 0),
+        0,
+      ),
+    [ayatList, liveDurations],
   )
 
   // Cumulative offsets so the seek bar spans the whole range.
   const offsets = useMemo(() => {
     const arr: number[] = []
     let acc = 0
-    for (const a of ayatList) {
+    for (let i = 0; i < ayatList.length; i++) {
       arr.push(acc)
-      acc += a.audioDurationMs || 0
+      acc += ayatList[i]?.audioDurationMs || liveDurations[i] || 0
     }
     return arr
-  }, [ayatList])
+  }, [ayatList, liveDurations])
 
   // -- per-ayat word highlight, driven by audio.currentTime -------------
   const [activeWord, setActiveWord] = useState<ActiveWord | null>(null)
@@ -170,7 +179,27 @@ export function VideoPreview() {
       }
     }
     audio.addEventListener('ended', onEnded)
-    return () => audio.removeEventListener('ended', onEnded)
+
+    // Capture the duration from the real audio element when it loads.
+    // This is the fallback for when the probe (getAudioDurationMs) returned 0
+    // because COEP blocked the separate Audio() element.
+    const onMeta = () => {
+      const d = audio.duration
+      if (isFinite(d) && d > 0) {
+        setLiveDurations((prev) => {
+          if (prev[currentIndex] === d * 1000) return prev
+          return { ...prev, [currentIndex]: d * 1000 }
+        })
+      }
+    }
+    audio.addEventListener('loadedmetadata', onMeta)
+    audio.addEventListener('durationchange', onMeta)
+
+    return () => {
+      audio.removeEventListener('ended', onEnded)
+      audio.removeEventListener('loadedmetadata', onMeta)
+      audio.removeEventListener('durationchange', onMeta)
+    }
   }, [currentIndex, ayatList.length, ayatList, playAyat])
 
   const togglePlay = () => {
@@ -239,9 +268,36 @@ export function VideoPreview() {
     setIsPlaying(false)
     setActiveWord(null)
     setCurrentTimeMs(0)
+    setLiveDurations({})
     if (audioRef.current) {
       audioRef.current.pause()
       audioRef.current.removeAttribute('src')
+    }
+  }, [ayatList])
+
+  // Pre-probe audio durations for all ayats when the list loads.
+  // The store's getAudioDurationMs may return 0 under COEP — this is a
+  // second attempt using the actual audio element in the DOM. We load each
+  // ayat's audio URL silently (muted, not playing) just to get the metadata.
+  useEffect(() => {
+    if (!ayatList.length) return
+    const probes: HTMLAudioElement[] = []
+    ayatList.forEach((ayat, i) => {
+      if (ayat.audioDurationMs > 0) return // already have it
+      const a = new Audio()
+      a.preload = 'metadata'
+      a.crossOrigin = 'anonymous'
+      a.onloadedmetadata = () => {
+        const d = a.duration
+        if (isFinite(d) && d > 0) {
+          setLiveDurations((prev) => ({ ...prev, [i]: d * 1000 }))
+        }
+      }
+      a.src = ayat.audioUrl
+      probes.push(a)
+    })
+    return () => {
+      probes.forEach((a) => { a.src = '' })
     }
   }, [ayatList])
 
