@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Download, Loader2, Film, X, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Download, Loader2, Film, X, CheckCircle2, AlertCircle, FileVideo } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { paintOverlayOnCanvas } from '@/lib/overlay'
@@ -11,6 +11,7 @@ import {
   checkExportCapabilities,
   pickSupportedMimeType,
 } from '@/lib/exportCapabilities'
+import { webmToMp4, canConvertToMp4 } from '@/lib/videoConverter'
 import { InstagramIcon, YouTubeIcon, YouTubeShortsIcon } from '@/components/PlatformIcons'
 import type { AyatSlide, ExportOptions, Orientation } from '@/lib/types'
 import {
@@ -44,7 +45,7 @@ const RES: Record<Orientation, { w: number; h: number }> = {
   portrait: { w: 720, h: 1280 },
 }
 
-type RenderStatus = 'idle' | 'rendering' | 'done' | 'error'
+type RenderStatus = 'idle' | 'rendering' | 'converting' | 'done' | 'error'
 
 interface ExportModalProps {
   open: boolean
@@ -104,7 +105,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
   const filename = useMemo(() => {
     const s = surah?.number ?? 0
-    return `quran-${s}-ayat-${fromAyat}-${toAyat}-${reciter.id}.webm`
+    return `quran-${s}-ayat-${fromAyat}-${toAyat}-${reciter.id}.mp4`
   }, [surah, fromAyat, toAyat, reciter.id])
 
   // Reset when modal closes
@@ -193,9 +194,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
       }).catch(() => {})
     }
 
-    // 2) Client-side canvas + MediaRecorder render.
+    // 2) Client-side canvas + MediaRecorder render (produces WebM).
     try {
-      const url = await renderVideoToWebm({
+      const { url: webmUrl, blob: webmBlob } = await renderVideoToWebm({
         canvas: canvasRef.current!,
         slides,
         settings,
@@ -209,11 +210,41 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         },
       })
 
-      setDownloadUrl(url)
-      setStatus('done')
-      setProgress(1)
-      sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
-      toast.success('Video rendered successfully!')
+      // 3) Convert WebM → MP4 using ffmpeg.wasm (if available).
+      if (canConvertToMp4()) {
+        setStatus('converting')
+        setProgress(0)
+        try {
+          const mp4Blob = await webmToMp4(webmBlob, {
+            onProgress: (p) => setProgress(p),
+          })
+
+          // Revoke the temporary WebM URL
+          URL.revokeObjectURL(webmUrl)
+
+          const mp4Url = URL.createObjectURL(mp4Blob)
+          setDownloadUrl(mp4Url)
+          setStatus('done')
+          setProgress(1)
+          sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
+          toast.success('Video exported as MP4!')
+        } catch (convErr) {
+          // Conversion failed — fall back to the WebM URL
+          console.warn('MP4 conversion failed, falling back to WebM', convErr)
+          setDownloadUrl(webmUrl)
+          setStatus('done')
+          setProgress(1)
+          sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
+          toast.success('Video rendered (WebM — MP4 conversion failed)')
+        }
+      } else {
+        // No SharedArrayBuffer — can't run ffmpeg.wasm, return WebM as-is
+        setDownloadUrl(webmUrl)
+        setStatus('done')
+        setProgress(1)
+        sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
+        toast.success('Video rendered as WebM')
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Render failed'
       setStatus('error')
@@ -349,20 +380,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground text-xs">Format</span>
-                    <span className="font-mono tabular-nums text-xs">WebM</span>
+                    <span className="font-mono tabular-nums text-xs">MP4</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Format note */}
-              <div className="rounded-lg border border-border bg-background/40 px-3 py-2.5 text-[11px] text-muted-foreground leading-relaxed">
-                <span className="text-foreground/80 font-medium">Heads up:</span>{' '}
-                WebM output. YouTube accepts it directly. Instagram needs MP4 —
-                convert with{' '}
-                <code className="bg-muted/40 px-1 py-0.5 rounded text-[10px]">
-                  ffmpeg -i input.webm output.mp4
-                </code>
-                .
               </div>
             </div>
 
@@ -414,6 +434,35 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                 </div>
               )}
 
+              {/* Converting to MP4 state */}
+              {status === 'converting' && (
+                <div className="qv-card rounded-xl p-5 space-y-4 min-h-[280px] flex flex-col justify-center">
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 text-primary">
+                      <FileVideo className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">Converting to MP4…</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Almost done — making it Instagram-ready
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Converting</span>
+                      <span className="font-mono font-bold">{Math.round(progress * 100)}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-200 ease-out"
+                        style={{ width: `${progress * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Done state — video preview + download */}
               {status === 'done' && downloadUrl && (
                 <div className="space-y-3">
@@ -424,7 +473,12 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                   <video
                     src={downloadUrl}
                     controls
-                    className="w-full rounded-xl bg-black aspect-video"
+                    preload="auto"
+                    playsInline
+                    autoPlay
+                    muted
+                    loop
+                    className={`w-full rounded-xl bg-black ${settings.orientation === 'portrait' ? 'aspect-[9/16]' : 'aspect-video'}`}
                   />
                   <a
                     href={downloadUrl}
@@ -460,7 +514,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
             <X className="h-4 w-4 mr-1.5" />
             Close
           </Button>
-          {status !== 'rendering' && (
+          {status !== 'rendering' && status !== 'converting' && (
             <Button
               onClick={startRender}
               disabled={!slides.length || !capabilities.ok}
@@ -511,7 +565,7 @@ async function renderVideoToWebm({
   attributionLine,
   reciterName,
   onProgress,
-}: RenderArgs): Promise<string> {
+}: RenderArgs): Promise<{ url: string; blob: Blob }> {
   const base = RES[orientation]
   const scale = RENDER_QUALITY_SCALE[quality]
   const W = Math.round(base.w * scale)
@@ -659,7 +713,8 @@ async function renderVideoToWebm({
   audioCtx.close()
 
   const blob = new Blob(chunks, { type: mime || 'video/webm' })
-  return URL.createObjectURL(blob)
+  const url = URL.createObjectURL(blob)
+  return { url, blob }
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
