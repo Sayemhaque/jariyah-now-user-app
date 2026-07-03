@@ -12,6 +12,7 @@ import {
   X,
   Eye,
   Settings,
+  BookOpenText,
 } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { validateAyatRange } from '@/lib/validation'
@@ -60,7 +61,6 @@ export default function Home() {
   const [exportOpen, setExportOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<MobileTab>('settings')
-  const [customizeOpen, setCustomizeOpen] = useState(false)
 
   useEffect(() => {
     loadSurahs()
@@ -82,9 +82,9 @@ export default function Home() {
   const canExport = ayatList.length > 0 && validation.ok
 
   return (
-    <div className="min-h-screen flex flex-col">
-      {/* Header */}
-      <header className="border-b border-border qv-frosted sticky top-0 z-30">
+    <div className="h-screen flex flex-col overflow-hidden">
+      {/* Header — fixed height */}
+      <header className="border-b border-border qv-frosted shrink-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">
             <div className="grid place-items-center h-9 w-9 rounded-xl bg-primary text-primary-foreground">
@@ -127,82 +127,33 @@ export default function Home() {
       <div className="lg:hidden flex border-b border-border bg-card shrink-0">
         <button
           onClick={() => setMobileTab('preview')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${mobileTab === 'preview' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition ${mobileTab === 'preview' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
         >
           <Eye className="h-4 w-4" /> Preview
         </button>
         <button
           onClick={() => setMobileTab('settings')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${mobileTab === 'settings' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition ${mobileTab === 'settings' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
         >
           <Settings className="h-4 w-4" /> Settings
         </button>
       </div>
 
-      {/* Main layout — single column: preview (iPhone frame) + selection below */}
-      <main className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* Preview pane — iPhone frame with floating customize button */}
+      {/* Main layout — fills remaining viewport height, no scrolling on the page itself */}
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-0 min-h-0 overflow-hidden">
+        {/* Preview pane — fills available height, no iPhone frame */}
         <section
-          className={`relative bg-muted/30 flex flex-col min-h-0 ${mobileTab === 'preview' ? 'flex-1' : 'hidden lg:flex lg:flex-1'}`}
+          className={`relative bg-muted/30 flex flex-col min-h-0 overflow-hidden ${mobileTab === 'preview' ? 'flex-1' : 'hidden lg:flex'}`}
         >
-          {/* Floating Customize button — opens a drawer with all controls */}
-          <button
-            onClick={() => setCustomizeOpen(true)}
-            className="absolute top-3 right-3 z-20 grid place-items-center h-9 w-9 rounded-full bg-card border border-border shadow-md hover:bg-muted transition"
-            aria-label="Customize"
-          >
-            <Settings className="h-4 w-4" />
-          </button>
-
-          {/* Customize drawer */}
-          {customizeOpen && (
-            <div className="absolute inset-0 z-30 flex justify-end">
-              <div className="absolute inset-0 bg-black/40" onClick={() => setCustomizeOpen(false)} />
-              <div className="relative w-full sm:w-80 h-full bg-card border-l border-border overflow-y-auto scrollbar-thin p-4 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-bold">Customize</h3>
-                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCustomizeOpen(false)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <CustomizationPanel />
-              </div>
-            </div>
-          )}
-
-          {/* iPhone frame */}
-          <div className="flex-1 grid place-items-center p-4 sm:p-8">
-            <div
-              className="relative bg-black rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl"
-              style={{
-                width: 'min(100%, 320px)',
-                aspectRatio: '440 / 956',
-                padding: '3px',
-                maxHeight: '100%',
-              }}
-            >
-              {/* Dynamic Island */}
-              <div
-                className="absolute top-2 left-1/2 -translate-x-1/2 bg-black rounded-full z-10"
-                style={{ width: '26%', height: '2.5%' }}
-              />
-              {/* Screen — the actual video preview */}
-              <div
-                className="relative w-full h-full rounded-[2.3rem] sm:rounded-[2.7rem] overflow-hidden bg-black"
-                style={{ containerType: 'inline-size' }}
-              >
-                <VideoPreview />
-              </div>
-            </div>
-          </div>
+          <VideoPreview />
         </section>
 
-        {/* Selection sidebar — compact, just the selectors + load button */}
+        {/* Controls sidebar — Selection + Customize, scrollable internally */}
         <aside
-          className={`border-t lg:border-t-0 lg:border-l border-border bg-card lg:w-[340px] shrink-0 ${mobileTab === 'settings' ? 'flex-1 overflow-y-auto scrollbar-thin' : 'hidden lg:block'}`}
+          className={`border-t lg:border-t-0 lg:border-l border-border bg-card min-h-0 overflow-y-auto scrollbar-thin ${mobileTab === 'settings' ? 'flex-1' : 'hidden lg:block'}`}
         >
-          <div className="p-3 sm:p-4 space-y-3">
-            {/* Selection only — no customize here */}
+          <div className="p-3 sm:p-4 space-y-4">
+            {/* Selection */}
             <section className="space-y-3">
               <div className="flex items-center gap-2.5">
                 <span className="qv-step">1</span>
@@ -244,8 +195,31 @@ export default function Home() {
 
             <div className="h-px bg-border" />
 
+            {/* Customize — back in the sidebar where it was */}
+            <section className="space-y-3">
+              <div className="flex items-center gap-2.5">
+                <span className="qv-step">2</span>
+                <h2 className="text-sm font-bold tracking-tight">Customize</h2>
+              </div>
+              <CustomizationPanel />
+            </section>
+
+            <div className="h-px bg-border" />
+
+            {/* Tip */}
+            <div className="qv-card rounded-xl p-3 flex gap-3">
+              <div className="grid place-items-center h-7 w-7 rounded-lg bg-primary/15 text-primary shrink-0">
+                <BookOpenText className="h-3.5 w-3.5" />
+              </div>
+              <div className="text-[11px] text-muted-foreground leading-relaxed">
+                <span className="text-foreground font-medium">How it works.</span>{' '}
+                Click <em>Load ayats</em> after changing the surah, range, or reciter.
+                Then hit <span className="text-primary font-medium">Export video</span>.
+              </div>
+            </div>
+
             {/* Footer */}
-            <div className="pt-1 pb-1 text-[11px] text-muted-foreground space-y-2">
+            <div className="pt-1 pb-2 text-[11px] text-muted-foreground space-y-2">
               <p className="leading-relaxed">
                 Quran text from{' '}
                 <a href="https://alquran.cloud" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">alquran.cloud</a>
