@@ -948,7 +948,14 @@ function drawFrame({
     ? slide.words.map((w) => w.text)
     : slide.arabicText.split(/\s+/)
   const spaceW = ctx.measureText(' ').width
-  const innerMaxW = W * 0.84 // text area — wider so words don't wrap excessively
+  // Text width: maps the user's textWidth setting to a fraction of W
+  const TEXT_WIDTH_FRACTIONS: Record<string, number> = {
+    full: 0.94,
+    wide: 0.84,
+    medium: 0.72,
+    narrow: 0.60,
+  }
+  const innerMaxW = W * (TEXT_WIDTH_FRACTIONS[settings.textWidth] ?? 0.84)
   const lines: string[][] = []
   let line: string[] = []
   let lineW = 0
@@ -988,9 +995,14 @@ function drawFrame({
   // Small divider (only when both translit and translation are shown)
   const dividerGap =
     translit && transLines.length ? Math.round(H * 0.015) + 1 : 0
-  // Large gap between Arabic and translation so they NEVER touch
+  // Gap between Arabic and translation — controlled by textSpacing setting
+  const TEXT_SPACING_FRACTIONS: Record<string, number> = {
+    compact: 0.015,
+    normal: 0.035,
+    spacious: 0.060,
+  }
   const arabicToTransGap = transLines.length
-    ? Math.round(H * 0.035)
+    ? Math.round(H * (TEXT_SPACING_FRACTIONS[settings.textSpacing] ?? 0.035))
     : 0
   const arabicToTranslitGap = translit ? Math.round(H * 0.020) : 0
 

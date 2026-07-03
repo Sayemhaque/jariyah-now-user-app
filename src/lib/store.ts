@@ -69,6 +69,8 @@ const DEFAULT_SETTINGS: VideoSettings = {
   showTransliteration: false,
   orientation: 'portrait',
   autoFitFonts: true,
+  textWidth: 'wide',
+  textSpacing: 'normal',
 }
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({

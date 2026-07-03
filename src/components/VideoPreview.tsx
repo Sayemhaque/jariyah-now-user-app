@@ -25,6 +25,21 @@ const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
   portrait: { w: 720, h: 1280, ratio: '9 / 16' },
 }
 
+// Map textWidth setting → CSS max-width in cqw (container query units)
+const TEXT_WIDTH_MAP: Record<string, string> = {
+  full: '94cqw',
+  wide: '82cqw',
+  medium: '70cqw',
+  narrow: '58cqw',
+}
+
+// Map textSpacing setting → CSS margin-top in cqw for the translation
+const TEXT_SPACING_MAP: Record<string, string> = {
+  compact: '1cqw',
+  normal: '3cqw',
+  spacious: '6cqw',
+}
+
 interface ActiveWord {
   ayatIndex: number
   wordIndex: number
@@ -419,7 +434,7 @@ export function VideoPreview() {
               <div
                 className="qv-smooth relative flex flex-col items-center rounded-2xl"
                 style={{
-                  maxWidth: '90cqw',
+                  maxWidth: TEXT_WIDTH_MAP[settings.textWidth],
                   backgroundColor: 'rgba(15, 15, 20, 0.6)',
                   padding: '4cqw 5cqw',
                   borderRadius: '3cqw',
@@ -495,7 +510,7 @@ export function VideoPreview() {
                     className={`qv-smooth text-white/85 mx-auto leading-snug drop-shadow text-center ${isBengaliTranslation ? 'font-bengali' : ''}`}
                     style={{
                       fontSize: translationFontSizeCss,
-                      marginTop: '3cqw',
+                      marginTop: TEXT_SPACING_MAP[settings.textSpacing],
                       maxWidth: '85cqw',
                     }}
                   >

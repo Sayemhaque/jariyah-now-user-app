@@ -386,6 +386,48 @@ export function CustomizationPanel() {
           value={settings.highlightColor}
           onChange={(v) => update({ highlightColor: v })}
         />
+
+        {/* Text width — controls horizontal padding inside the card */}
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Text width</Label>
+          <div className="grid grid-cols-4 gap-1">
+            {(['full', 'wide', 'medium', 'narrow'] as const).map((w) => (
+              <button
+                key={w}
+                onClick={() => update({ textWidth: w })}
+                className={cn(
+                  'rounded-lg border py-1.5 text-[11px] font-medium capitalize transition',
+                  settings.textWidth === w
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-card hover:border-foreground/30',
+                )}
+              >
+                {w}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Text spacing — gap between Arabic and translation */}
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Text spacing</Label>
+          <div className="grid grid-cols-3 gap-1">
+            {(['compact', 'normal', 'spacious'] as const).map((s) => (
+              <button
+                key={s}
+                onClick={() => update({ textSpacing: s })}
+                className={cn(
+                  'rounded-lg border py-1.5 text-[11px] font-medium capitalize transition',
+                  settings.textSpacing === s
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-card hover:border-foreground/30',
+                )}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
       </Card>
 
       {/* Captions */}

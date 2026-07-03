@@ -78,6 +78,9 @@ export type OverlayStyle =
   | 'center-focus'
   | 'none'
 
+export type TextWidth = 'full' | 'wide' | 'medium' | 'narrow'
+export type TextSpacing = 'compact' | 'normal' | 'spacious'
+
 export interface VideoSettings {
   backgroundImage: string      // URL or data URL
   backgroundPreset: string     // preset key or 'custom'
@@ -94,6 +97,10 @@ export interface VideoSettings {
   orientation: Orientation
   /** When true, arabic + translation font sizes auto-scale to the orientation. */
   autoFitFonts: boolean
+  /** How much horizontal padding the text block gets inside the card. */
+  textWidth: TextWidth
+  /** Gap between Arabic text and translation. */
+  textSpacing: TextSpacing
 }
 
 export interface ExportOptions {
