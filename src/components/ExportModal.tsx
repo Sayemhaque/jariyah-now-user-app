@@ -947,7 +947,9 @@ function drawFrame({
   const wordsArr = slide.words.length
     ? slide.words.map((w) => w.text)
     : slide.arabicText.split(/\s+/)
-  const spaceW = ctx.measureText(' ').width
+  // Use a proportional space width — Arabic fonts often return a tiny
+  // space width from measureText(' '). Use 0.3 * fontSize for a natural gap.
+  const spaceW = arabicFontSize * 0.3
   // Text width: maps the user's textWidth setting to a fraction of W
   const TEXT_WIDTH_FRACTIONS: Record<string, number> = {
     full: 0.94,
@@ -1049,20 +1051,25 @@ function drawFrame({
   ctx.shadowBlur = 0
   ctx.shadowOffsetY = 0
 
-  // Draw Arabic word-by-word
+  // Draw Arabic word-by-word — properly centered, RTL, no gaps
   ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   let y = cardY + cardPadY + arabicLineH / 2
   let wordCounter = 0
   for (const ln of lines) {
+    // Measure each word width
     const widths = ln.map((w) => ctx.measureText(w).width)
-    const sum = widths.reduce((a, b) => a + b, 0) + spaceW * (ln.length - 1)
-    let x = W / 2 + sum / 2 // RTL: start at right edge
+    // Total line width = sum of word widths + spaces between them
+    const totalLineW = widths.reduce((a, b) => a + b, 0) + spaceW * (ln.length - 1)
+    // Start x for RTL: center the entire line, then go right-to-left
+    // The center of the line is at W/2. The right edge is at W/2 + totalLineW/2.
+    // We draw each word centered at its position, moving leftward.
+    let xPos = W / 2 + totalLineW / 2 // right edge of the line
     for (let i = 0; i < ln.length; i++) {
       const w = ln[i]!
       const ww = widths[i]!
-      x -= ww
+      xPos -= ww / 2 // move to the center of this word
       const isHi = wordCounter === activeIdx
       ctx.fillStyle = isHi ? settings.highlightColor : settings.fontColor
       if (isHi) {
@@ -1072,41 +1079,45 @@ function drawFrame({
         ctx.shadowColor = 'rgba(0,0,0,0.9)'
         ctx.shadowBlur = H * 0.012
       }
-      ctx.fillText(w, x, y)
+      ctx.fillText(w, xPos, y)
       ctx.shadowBlur = 0
-      x -= spaceW
+      xPos -= ww / 2 + spaceW // move past this word + space to the next word's right edge
       wordCounter++
     }
     y += arabicLineH
   }
 
+  // After Arabic loop, y is at the bottom of the last Arabic line.
+  // Reset y to a clean position based on the card layout, not the loop variable.
+  // This prevents overlap when the Arabic loop's y drifts.
+
   // Transliteration
+  let yAfterArabic = cardY + cardPadY + arabicTotalH
   if (translit) {
-    y += arabicToTranslitGap - arabicLineH + translitFontSize * 0.7
+    yAfterArabic += arabicToTranslitGap
     ctx.font = `italic ${translitFontSize}px Inter, sans-serif`
     ctx.fillStyle = 'rgba(255,255,255,0.72)'
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
-    ctx.fillText(translit, W / 2, y)
-    y += translitFontSize * 0.75
+    ctx.fillText(translit, W / 2, yAfterArabic + translitFontSize / 2)
+    yAfterArabic += translitH
   }
 
   // Divider
   if (dividerGap) {
-    y += Math.round(H * 0.010)
+    yAfterArabic += Math.round(H * 0.008)
     ctx.strokeStyle = hexWithAlpha(settings.fontColor, 0.4)
     ctx.lineWidth = 1
     ctx.beginPath()
-    ctx.moveTo(W / 2 - W * 0.03, y)
-    ctx.lineTo(W / 2 + W * 0.03, y)
+    ctx.moveTo(W / 2 - W * 0.03, yAfterArabic)
+    ctx.lineTo(W / 2 + W * 0.03, yAfterArabic)
     ctx.stroke()
-    y += Math.round(H * 0.010)
+    yAfterArabic += Math.round(H * 0.008)
   }
 
-  // Translation
+  // Translation — use the clean yAfterArabic position, not the loop's y
   if (transLines.length) {
-    if (!dividerGap) y += arabicToTransGap - (translit ? 0 : arabicLineH)
-    else y += 0
+    if (!dividerGap) yAfterArabic += arabicToTransGap
     ctx.font = `${transFontSize}px ${transFontFamily}`
     ctx.fillStyle = 'rgba(255,255,255,0.88)'
     ctx.textAlign = 'center'
@@ -1114,7 +1125,7 @@ function drawFrame({
     ctx.shadowColor = 'rgba(0,0,0,0.9)'
     ctx.shadowBlur = H * 0.008
     for (let i = 0; i < transLines.length; i++) {
-      ctx.fillText(transLines[i]!, W / 2, y + i * transLineH)
+      ctx.fillText(transLines[i]!, W / 2, yAfterArabic + transLineH / 2 + i * transLineH)
     }
     ctx.shadowBlur = 0
   }
