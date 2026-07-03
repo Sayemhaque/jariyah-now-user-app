@@ -71,14 +71,9 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
-        // Apply security headers + cross-origin isolation to every route.
-        // COOP + COEP are required for SharedArrayBuffer (ffmpeg.wasm).
+        // Apply security headers to every route.
         source: "/:path*",
-        headers: [
-          ...securityHeaders,
-          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
-          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" },
-        ],
+        headers: securityHeaders,
       },
     ];
   },

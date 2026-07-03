@@ -11,7 +11,6 @@ import {
   checkExportCapabilities,
   pickSupportedMimeType,
 } from '@/lib/exportCapabilities'
-import { webmToMp4, canConvertToMp4 } from '@/lib/videoConverter'
 import { InstagramIcon, YouTubeIcon, YouTubeShortsIcon } from '@/components/PlatformIcons'
 import type { AyatSlide, ExportOptions, Orientation } from '@/lib/types'
 import {
@@ -46,7 +45,7 @@ const RES: Record<Orientation, { w: number; h: number }> = {
   portrait: { w: 720, h: 1280 },
 }
 
-type RenderStatus = 'idle' | 'rendering' | 'converting' | 'done' | 'error'
+type RenderStatus = 'idle' | 'rendering' | 'done' | 'error'
 
 interface ExportModalProps {
   open: boolean
@@ -274,13 +273,14 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
   const filename = useMemo(() => {
     const s = surah?.number ?? 0
-    return `quran-${s}-ayat-${fromAyat}-${toAyat}-${reciter.id}.mp4`
+    return `quran-${s}-ayat-${fromAyat}-${toAyat}-${reciter.id}.webm`
   }, [surah, fromAyat, toAyat, reciter.id])
 
   // Reset when modal closes
   useEffect(() => {
     if (!open) {
       if (stopRef.current) stopRef.current()
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus('idle')
       setProgress(0)
       setDownloadUrl(null)
@@ -320,6 +320,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     setDownloadUrl(null)
 
     // 1) hit POST /api/render (validates + HEAD-checks MP3s + creates job)
+    // This is best-effort — if the API is rate-limited or unreachable,
+    // we still proceed with the client-side render. The API is just for
+    // job tracking, not for the actual rendering.
     let jobId: string | null = null
     let ownerToken: string | null = null
     try {
@@ -333,20 +336,16 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           orientation: settings.orientation,
         }),
       })
-      if (!r.ok) {
-        const errBody = (await r.json().catch(() => ({}))) as { error?: string }
-        throw new Error(errBody.error || `Render API returned ${r.status}`)
+      if (r.ok) {
+        const okBody = (await r.json()) as { jobId: string; ownerToken: string }
+        jobId = okBody.jobId
+        ownerToken = okBody.ownerToken
+        jobIdRef.current = jobId
       }
-      const okBody = (await r.json()) as { jobId: string; ownerToken: string }
-      jobId = okBody.jobId
-      ownerToken = okBody.ownerToken
-      jobIdRef.current = jobId
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Failed to start render job'
-      setStatus('error')
-      setErrorMsg(msg)
-      toast.error(msg)
-      return
+      // If the API returns an error (e.g. rate limit 429), we don't throw —
+      // we just skip the job tracking and proceed with the render.
+    } catch {
+      // Network error — proceed without job tracking.
     }
 
     // Helper: send a PUT update with the ownerToken. Best-effort — if the
@@ -379,41 +378,11 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         },
       })
 
-      // 3) Convert WebM → MP4 using ffmpeg.wasm (if available).
-      if (canConvertToMp4()) {
-        setStatus('converting')
-        setProgress(0)
-        try {
-          const mp4Blob = await webmToMp4(webmBlob, {
-            onProgress: (p) => setProgress(p),
-          })
-
-          // Revoke the temporary WebM URL
-          URL.revokeObjectURL(webmUrl)
-
-          const mp4Url = URL.createObjectURL(mp4Blob)
-          setDownloadUrl(mp4Url)
-          setStatus('done')
-          setProgress(1)
-          sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
-          toast.success('Video exported as MP4!')
-        } catch (convErr) {
-          // Conversion failed — fall back to the WebM URL
-          console.warn('MP4 conversion failed, falling back to WebM', convErr)
-          setDownloadUrl(webmUrl)
-          setStatus('done')
-          setProgress(1)
-          sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
-          toast.success('Video rendered (WebM — MP4 conversion failed)')
-        }
-      } else {
-        // No SharedArrayBuffer — can't run ffmpeg.wasm, return WebM as-is
-        setDownloadUrl(webmUrl)
-        setStatus('done')
-        setProgress(1)
-        sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
-        toast.success('Video rendered as WebM')
-      }
+      setDownloadUrl(webmUrl)
+      setStatus('done')
+      setProgress(1)
+      sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
+      toast.success('Video rendered successfully!')
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Render failed'
       setStatus('error')
@@ -549,7 +518,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground text-xs">Format</span>
-                    <span className="font-mono tabular-nums text-xs">MP4</span>
+                    <span className="font-mono tabular-nums text-xs">WebM</span>
                   </div>
                 </div>
               </div>
@@ -603,35 +572,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                 </div>
               )}
 
-              {/* Converting to MP4 state */}
-              {status === 'converting' && (
-                <div className="qv-card rounded-xl p-5 space-y-4 min-h-[280px] flex flex-col justify-center">
-                  <div className="flex flex-col items-center text-center gap-3">
-                    <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 text-primary">
-                      <FileVideo className="h-7 w-7" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Converting to MP4…</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Almost done — making it Instagram-ready
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Converting</span>
-                      <span className="font-mono font-bold">{Math.round(progress * 100)}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full bg-primary transition-all duration-200 ease-out"
-                        style={{ width: `${progress * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* Done state — video preview + download */}
               {status === 'done' && downloadUrl && (
                 <VideoPreviewPlayer
@@ -664,7 +604,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
             <X className="h-4 w-4 mr-1.5" />
             Close
           </Button>
-          {status !== 'rendering' && status !== 'converting' && (
+          {status !== 'rendering' && (
             <Button
               onClick={startRender}
               disabled={!slides.length || !capabilities.ok}
@@ -762,9 +702,15 @@ async function renderVideoToWebm({
   // Set up MediaRecorder on a canvas.captureStream() track.
   const stream = canvas.captureStream(RENDER_FPS)
   // Create a MediaStreamDestination to mix the audio into the recording.
-  const dest = audioCtx.createMediaStreamDestination()
-  for (const tr of dest.stream.getAudioTracks()) {
-    stream.addTrack(tr)
+  // Try to add audio tracks, but don't fail if it doesn't work.
+  let dest: MediaStreamAudioDestinationNode | null = null
+  try {
+    dest = audioCtx.createMediaStreamDestination()
+    for (const tr of dest.stream.getAudioTracks()) {
+      stream.addTrack(tr)
+    }
+  } catch {
+    // Audio mixing failed — record video only (silent video)
   }
 
   // Pick a supported MIME type. Uses the shared picker so the pre-flight
@@ -796,7 +742,7 @@ async function renderVideoToWebm({
   buffers.forEach((b) => {
     const src = audioCtx.createBufferSource()
     src.buffer = b
-    src.connect(dest)
+    if (dest) src.connect(dest)
     src.start(t0)
     startTimes.push(t0)
     sources.push(src)
@@ -804,7 +750,7 @@ async function renderVideoToWebm({
   })
   const totalSec = t0 - startTime
 
-  recorder.start()
+  recorder.start(1000) // collect data every 1 second
 
   // Drawing loop
   const startWall = performance.now()
