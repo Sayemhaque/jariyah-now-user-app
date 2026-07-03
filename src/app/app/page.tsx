@@ -6,10 +6,8 @@ import Link from 'next/link'
 import {
   Film,
   Loader2,
-  Sparkles,
   Download,
   RefreshCw,
-  BookOpenText,
   Menu,
   X,
   Eye,
@@ -35,8 +33,6 @@ import { toast } from 'sonner'
 
 type MobileTab = 'preview' | 'settings'
 
-// Lazy-mount the ExportModal so the MediaRecorder + Canvas code isn't in the
-// main page chunk. The modal only loads when the user first opens it.
 const ExportModal = dynamic(
   () => import('@/components/ExportModal').then((m) => m.ExportModal),
   { ssr: false },
@@ -64,6 +60,7 @@ export default function Home() {
   const [exportOpen, setExportOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<MobileTab>('settings')
+  const [customizeOpen, setCustomizeOpen] = useState(false)
 
   useEffect(() => {
     loadSurahs()
@@ -86,67 +83,28 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header — light, frosted, with mobile menu */}
+      {/* Header */}
       <header className="border-b border-border qv-frosted sticky top-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <div className="grid place-items-center h-9 w-9 rounded-xl bg-primary text-primary-foreground">
-              <Sparkles className="h-5 w-5" />
+              <Film className="h-5 w-5" />
             </div>
-            <div className="flex flex-col">
-              <span className="text-[15px] font-bold leading-tight tracking-tight">
-                QuranVid
-              </span>
-              <span className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground leading-tight mt-0.5">
-                Recitation video generator
-              </span>
-            </div>
-          </div>
-
-          {/* Desktop nav + export */}
-          <div className="hidden sm:flex items-center gap-2">
-            <Link
-              href="/about"
-              className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition px-3 py-1.5 rounded-lg hover:bg-muted"
-            >
-              About
-            </Link>
-            <Link
-              href="/terms"
-              className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition px-3 py-1.5 rounded-lg hover:bg-muted"
-            >
-              Terms
-            </Link>
-            <Link
-              href="/privacy"
-              className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition px-3 py-1.5 rounded-lg hover:bg-muted"
-            >
-              Privacy
-            </Link>
-            <Button
-              onClick={() => setExportOpen(true)}
-              disabled={!canExport}
-              size="sm"
-              className="qv-btn-primary ml-2 font-semibold"
-            >
-              <Film className="h-4 w-4 mr-1.5" />
-              Export video
-            </Button>
-          </div>
-
-          {/* Mobile: just export + menu button */}
-          <div className="flex sm:hidden items-center gap-1.5">
+            <span className="text-[15px] font-bold tracking-tight">QuranVid</span>
+          </Link>
+          <div className="flex items-center gap-2">
             <Button
               onClick={() => setExportOpen(true)}
               disabled={!canExport}
               size="sm"
               className="qv-btn-primary font-semibold"
             >
-              <Film className="h-4 w-4" />
+              <Film className="h-4 w-4 mr-1.5" />
+              <span className="hidden sm:inline">Export video</span>
             </Button>
             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9">
+                <Button variant="ghost" size="icon" className="h-9 w-9 sm:hidden">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
@@ -155,27 +113,9 @@ export default function Home() {
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-1 mt-4">
-                  <Link
-                    href="/about"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium"
-                  >
-                    About
-                  </Link>
-                  <Link
-                    href="/terms"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium"
-                  >
-                    Terms
-                  </Link>
-                  <Link
-                    href="/privacy"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium"
-                  >
-                    Privacy
-                  </Link>
+                  <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">About</Link>
+                  <Link href="/terms" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">Terms</Link>
+                  <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">Privacy</Link>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -183,53 +123,91 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Mobile tab bar — Preview / Settings */}
+      {/* Mobile tab bar */}
       <div className="lg:hidden flex border-b border-border bg-card shrink-0">
         <button
           onClick={() => setMobileTab('preview')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${
-            mobileTab === 'preview'
-              ? 'text-primary border-b-2 border-primary'
-              : 'text-muted-foreground'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${mobileTab === 'preview' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
         >
-          <Eye className="h-4 w-4" />
-          Preview
+          <Eye className="h-4 w-4" /> Preview
         </button>
         <button
           onClick={() => setMobileTab('settings')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${
-            mobileTab === 'settings'
-              ? 'text-primary border-b-2 border-primary'
-              : 'text-muted-foreground'
-          }`}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${mobileTab === 'settings' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
         >
-          <Settings className="h-4 w-4" />
-          Settings
+          <Settings className="h-4 w-4" /> Settings
         </button>
       </div>
 
-      {/* Main layout — tabs on mobile, side-by-side on desktop */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-0 min-h-0">
-        {/* Preview pane — always visible on desktop, tab-gated on mobile */}
+      {/* Main layout — single column: preview (iPhone frame) + selection below */}
+      <main className="flex-1 flex flex-col lg:flex-row min-h-0">
+        {/* Preview pane — iPhone frame with floating customize button */}
         <section
-          className={`relative bg-muted/30 lg:min-h-0 lg:max-h-[calc(100vh-3.5rem)] flex flex-col ${
-            mobileTab === 'preview' ? 'flex-1 min-h-0' : 'hidden lg:flex'
-          }`}
+          className={`relative bg-muted/30 flex flex-col min-h-0 ${mobileTab === 'preview' ? 'flex-1' : 'hidden lg:flex lg:flex-1'}`}
         >
-          <VideoPreview />
+          {/* Floating Customize button — opens a drawer with all controls */}
+          <button
+            onClick={() => setCustomizeOpen(true)}
+            className="absolute top-3 right-3 z-20 grid place-items-center h-9 w-9 rounded-full bg-card border border-border shadow-md hover:bg-muted transition"
+            aria-label="Customize"
+          >
+            <Settings className="h-4 w-4" />
+          </button>
+
+          {/* Customize drawer */}
+          {customizeOpen && (
+            <div className="absolute inset-0 z-30 flex justify-end">
+              <div className="absolute inset-0 bg-black/40" onClick={() => setCustomizeOpen(false)} />
+              <div className="relative w-full sm:w-80 h-full bg-card border-l border-border overflow-y-auto scrollbar-thin p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold">Customize</h3>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCustomizeOpen(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+                <CustomizationPanel />
+              </div>
+            </div>
+          )}
+
+          {/* iPhone frame */}
+          <div className="flex-1 grid place-items-center p-4 sm:p-8">
+            <div
+              className="relative bg-black rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl"
+              style={{
+                width: 'min(100%, 320px)',
+                aspectRatio: '440 / 956',
+                padding: '3px',
+                maxHeight: '100%',
+              }}
+            >
+              {/* Dynamic Island */}
+              <div
+                className="absolute top-2 left-1/2 -translate-x-1/2 bg-black rounded-full z-10"
+                style={{ width: '26%', height: '2.5%' }}
+              />
+              {/* Screen — the actual video preview */}
+              <div
+                className="relative w-full h-full rounded-[2.3rem] sm:rounded-[2.7rem] overflow-hidden bg-black"
+                style={{ containerType: 'inline-size' }}
+              >
+                <VideoPreview />
+              </div>
+            </div>
+          </div>
         </section>
 
-        {/* Controls sidebar — always visible on desktop, tab-gated on mobile */}
+        {/* Selection sidebar — compact, just the selectors + load button */}
         <aside
-          className={`border-t lg:border-t-0 lg:border-l border-border bg-card lg:max-h-[calc(100vh-3.5rem)] lg:overflow-y-auto scrollbar-thin ${
-            mobileTab === 'settings' ? 'flex-1 overflow-y-auto scrollbar-thin' : 'hidden lg:block'
-          }`}
+          className={`border-t lg:border-t-0 lg:border-l border-border bg-card lg:w-[340px] shrink-0 ${mobileTab === 'settings' ? 'flex-1 overflow-y-auto scrollbar-thin' : 'hidden lg:block'}`}
         >
-          <div className="p-3 sm:p-5 space-y-4">
-            {/* Selection section */}
+          <div className="p-3 sm:p-4 space-y-3">
+            {/* Selection only — no customize here */}
             <section className="space-y-3">
-              <SectionHeader step={1} title="Selection" />
+              <div className="flex items-center gap-2.5">
+                <span className="qv-step">1</span>
+                <h2 className="text-sm font-bold tracking-tight">Selection</h2>
+              </div>
               <div className="space-y-3">
                 <SurahSelector />
                 <AyatRangePicker />
@@ -244,24 +222,14 @@ export default function Home() {
                 size="default"
               >
                 {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
-                    Loading ayats…
-                  </>
+                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Loading ayats…</>
                 ) : ayatList.length ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-1.5" />
-                    Reload ayats
-                  </>
+                  <><RefreshCw className="h-4 w-4 mr-1.5" />Reload ayats</>
                 ) : (
-                  <>
-                    <Download className="h-4 w-4 mr-1.5" />
-                    Load ayats
-                  </>
+                  <><Download className="h-4 w-4 mr-1.5" />Load ayats</>
                 )}
               </Button>
 
-              {/* Quick "View preview" button after loading — switches to preview tab on mobile */}
               {ayatList.length > 0 && (
                 <Button
                   onClick={() => setMobileTab('preview')}
@@ -269,89 +237,29 @@ export default function Home() {
                   className="w-full lg:hidden"
                   size="sm"
                 >
-                  <Eye className="h-4 w-4 mr-1.5" />
-                  View preview
+                  <Eye className="h-4 w-4 mr-1.5" />View preview
                 </Button>
               )}
             </section>
 
-            <Divider />
+            <div className="h-px bg-border" />
 
-            {/* Customization */}
-            <section className="space-y-3">
-              <SectionHeader step={2} title="Customize" />
-              <CustomizationPanel />
-            </section>
-
-            <Divider />
-
-            {/* Tip card */}
-            <div className="qv-card rounded-xl p-3.5 flex gap-3">
-              <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/15 text-primary shrink-0">
-                <BookOpenText className="h-4 w-4" />
-              </div>
-              <div className="text-[11.5px] text-muted-foreground leading-relaxed">
-                <span className="text-foreground font-medium">How it works.</span>{' '}
-                Click <em>Load ayats</em> after changing the surah, range, or
-                reciter. The preview will play the recitation with each word
-                highlighted in real time. When you&apos;re happy, hit{' '}
-                <span className="text-primary font-medium">Export video</span>.
-              </div>
-            </div>
-
-            {/* Sidebar footer — attribution + legal links */}
-            <div className="pt-2 pb-1 border-t border-border text-[11px] text-muted-foreground space-y-2">
+            {/* Footer */}
+            <div className="pt-1 pb-1 text-[11px] text-muted-foreground space-y-2">
               <p className="leading-relaxed">
                 Quran text from{' '}
-                <a
-                  href="https://alquran.cloud"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium"
-                >
-                  alquran.cloud
-                </a>
+                <a href="https://alquran.cloud" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">alquran.cloud</a>
                 {', '}
-                <a
-                  href="https://quran.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium"
-                >
-                  quran.com
-                </a>
+                <a href="https://quran.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">quran.com</a>
                 . Audio from{' '}
-                <a
-                  href="https://verses.quran.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium"
-                >
-                  verses.quran.com
-                </a>
-                .
+                <a href="https://verses.quran.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">verses.quran.com</a>.
               </p>
               <nav className="flex items-center gap-3">
-                <Link
-                  href="/about"
-                  className="hover:text-foreground transition"
-                >
-                  About
-                </Link>
+                <Link href="/about" className="hover:text-foreground transition">About</Link>
                 <span className="opacity-40">·</span>
-                <Link
-                  href="/terms"
-                  className="hover:text-foreground transition"
-                >
-                  Terms
-                </Link>
+                <Link href="/terms" className="hover:text-foreground transition">Terms</Link>
                 <span className="opacity-40">·</span>
-                <Link
-                  href="/privacy"
-                  className="hover:text-foreground transition"
-                >
-                  Privacy
-                </Link>
+                <Link href="/privacy" className="hover:text-foreground transition">Privacy</Link>
               </nav>
             </div>
           </div>
@@ -361,17 +269,4 @@ export default function Home() {
       <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
     </div>
   )
-}
-
-function SectionHeader({ step, title }: { step: number; title: string }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <span className="qv-step">{step}</span>
-      <h2 className="text-sm font-bold tracking-tight">{title}</h2>
-    </div>
-  )
-}
-
-function Divider() {
-  return <div className="h-px bg-border" />
 }

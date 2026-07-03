@@ -750,7 +750,7 @@ async function renderVideoToWebm({
   })
   const totalSec = t0 - startTime
 
-  recorder.start(1000) // collect data every 1 second
+  recorder.start() // collect all data at stop() — faster than timeslice
 
   // Drawing loop
   const startWall = performance.now()
