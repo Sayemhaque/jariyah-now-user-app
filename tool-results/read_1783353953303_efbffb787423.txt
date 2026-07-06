@@ -1,0 +1,736 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+     4→import {
+     5→  Play,
+     6→  Pause,
+     7→  SkipBack,
+     8→  SkipForward,
+     9→  Volume2,
+    10→  VolumeX,
+    11→  Loader2,
+    12→  Sparkles,
+    13→} from 'lucide-react'
+    14→import { useBuilderStore } from '@/lib/store'
+    15→import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
+    16→import { overlayCssBackground } from '@/lib/overlay'
+    17→import { getActiveWordIndex } from '@/lib/highlight'
+    18→import { videoAttributionLine } from '@/lib/translations'
+    19→import { cn } from '@/lib/utils'
+    20→import { Button } from '@/components/ui/button'
+    21→import { Slider } from '@/components/ui/slider'
+    22→
+    23→const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
+    24→  landscape: { w: 1280, h: 720, ratio: '16 / 9' },
+    25→  portrait: { w: 720, h: 1280, ratio: '9 / 16' },
+    26→}
+    27→
+    28→// Map textWidth setting → CSS max-width in cqw (container query units)
+    29→const TEXT_WIDTH_MAP: Record<string, string> = {
+    30→  full: '94cqw',
+    31→  wide: '82cqw',
+    32→  medium: '70cqw',
+    33→  narrow: '58cqw',
+    34→}
+    35→
+    36→// Map textSpacing setting → CSS margin-top in cqw for the translation
+    37→const TEXT_SPACING_MAP: Record<string, string> = {
+    38→  compact: '1cqw',
+    39→  normal: '3cqw',
+    40→  spacious: '6cqw',
+    41→}
+    42→
+    43→interface ActiveWord {
+    44→  ayatIndex: number
+    45→  wordIndex: number
+    46→}
+    47→
+    48→export function VideoPreview() {
+    49→  const ayatList = useBuilderStore((s) => s.ayatList)
+    50→  const loading = useBuilderStore((s) => s.loadingAyats)
+    51→  const ayatError = useBuilderStore((s) => s.ayatError)
+    52→  const surahs = useBuilderStore((s) => s.surahs)
+    53→  const selectedSurahNumber = useBuilderStore((s) => s.selectedSurahNumber)
+    54→  const reciterId = useBuilderStore((s) => s.reciterId)
+    55→  const translationKey = useBuilderStore((s) => s.translationKey)
+    56→  const settings = useBuilderStore((s) => s.settings)
+    57→  const fromAyat = useBuilderStore((s) => s.fromAyat)
+    58→  const toAyat = useBuilderStore((s) => s.toAyat)
+    59→
+    60→  // Derive surah + reciter from raw state with stable references.
+    61→  const surah = useMemo(
+    62→    () => surahs.find((s) => s.number === selectedSurahNumber),
+    63→    [surahs, selectedSurahNumber],
+    64→  )
+    65→  const reciter = useMemo(
+    66→    () => RECITERS_LIST.find((r) => r.id === reciterId) ?? RECITERS_LIST[0]!,
+    67→    [reciterId],
+    68→  )
+    69→
+    70→  const audioRef = useRef<HTMLAudioElement | null>(null)
+    71→  const rafRef = useRef<number | null>(null)
+    72→
+    73→  const [currentIndex, setCurrentIndex] = useState(0)
+    74→  const [isPlaying, setIsPlaying] = useState(false)
+    75→  const [currentTimeMs, setCurrentTimeMs] = useState(0)
+    76→  const [liveDurations, setLiveDurations] = useState<Record<number, number>>({})
+    77→  const [volume, setVolume] = useState(0.9)
+    78→  const [muted, setMuted] = useState(false)
+    79→
+    80→  const current = ayatList[currentIndex]
+    81→
+    82→  // Attribution line for the selected translation edition. Empty for
+    83→  // public-domain editions (no attribution needed). For permissive/personal
+    84→  // editions, shown at the bottom-left of the preview + export.
+    85→  const attributionLine = useMemo(
+    86→    () => videoAttributionLine(translationKey),
+    87→    [translationKey],
+    88→  )
+    89→
+    90→  // Detect if the selected translation is Bengali — use the Bengali font
+    91→  // for the translation text in the preview.
+    92→  const isBengaliTranslation = translationKey.startsWith('bn.')
+    93→
+    94→  const aspect = ASPECT[settings.orientation]
+    95→
+    96→  // Total duration — use the probed audioDurationMs, or fall back to the
+    97→  // live duration captured from the actual <audio> element's loadedmetadata.
+    98→  // This handles the case where the probe returned 0 (COEP blocking the
+    99→  // separate Audio() element) but the real audio element in the page loads fine.
+   100→  const totalMs = useMemo(
+   101→    () =>
+   102→      ayatList.reduce(
+   103→        (sum, a, i) =>
+   104→          sum + (a.audioDurationMs || liveDurations[i] || 0),
+   105→        0,
+   106→      ),
+   107→    [ayatList, liveDurations],
+   108→  )
+   109→
+   110→  // Cumulative offsets so the seek bar spans the whole range.
+   111→  const offsets = useMemo(() => {
+   112→    const arr: number[] = []
+   113→    let acc = 0
+   114→    for (let i = 0; i < ayatList.length; i++) {
+   115→      arr.push(acc)
+   116→      acc += ayatList[i]?.audioDurationMs || liveDurations[i] || 0
+   117→    }
+   118→    return arr
+   119→  }, [ayatList, liveDurations])
+   120→
+   121→  // -- per-ayat word highlight, driven by audio.currentTime -------------
+   122→  const [activeWord, setActiveWord] = useState<ActiveWord | null>(null)
+   123→
+   124→  // Use a ref to break the recursive self-reference inside `tick` — this
+   125→  // also lets us always read the latest `current`/`currentIndex` without
+   126→  // re-creating the rAF loop on every state change.
+   127→  const stateRef = useRef({ current, currentIndex })
+   128→  useEffect(() => {
+   129→    stateRef.current = { current, currentIndex }
+   130→  }, [current, currentIndex])
+   131→
+   132→  useEffect(() => {
+   133→    if (!isPlaying) return
+   134→    let cancelled = false
+   135→
+   136→    const tick = () => {
+   137→      if (cancelled) return
+   138→      const audio = audioRef.current
+   139→      const { current: c, currentIndex: ci } = stateRef.current
+   140→      if (audio && c) {
+   141→        const tMs = audio.currentTime * 1000
+   142→        setCurrentTimeMs(tMs)
+   143→        const foundIdx = getActiveWordIndex(c.words, tMs)
+   144→        if (foundIdx >= 0) {
+   145→          setActiveWord({ ayatIndex: ci, wordIndex: foundIdx })
+   146→        }
+   147→      }
+   148→      rafRef.current = requestAnimationFrame(tick)
+   149→    }
+   150→    rafRef.current = requestAnimationFrame(tick)
+   151→    return () => {
+   152→      cancelled = true
+   153→      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+   154→    }
+   155→  }, [isPlaying])
+   156→
+   157→  // -- playback controls -------------------------------------------------
+   158→  const playAyat = useCallback(
+   159→    (idx: number) => {
+   160→      if (!ayatList[idx]) return
+   161→      const audio = audioRef.current
+   162→      if (!audio) return
+   163→      setCurrentIndex(idx)
+   164→      setActiveWord(null)
+   165→      setCurrentTimeMs(0)
+   166→      audio.src = ayatList[idx]!.audioUrl
+   167→      audio.volume = volume
+   168→      audio.muted = muted
+   169→      audio.play().then(() => setIsPlaying(true)).catch(() => {
+   170→        // Autoplay can fail; show paused state and let the user retry.
+   171→        setIsPlaying(false)
+   172→      })
+   173→    },
+   174→    [ayatList, volume, muted],
+   175→  )
+   176→
+   177→  // Auto-advance on ended
+   178→  useEffect(() => {
+   179→    const audio = audioRef.current
+   180→    if (!audio) return
+   181→    const onEnded = () => {
+   182→      if (currentIndex < ayatList.length - 1) {
+   183→        playAyat(currentIndex + 1)
+   184→      } else {
+   185→        // Last ayat just finished — pin the seek bar to the very end so it
+   186→        // visually shows 100% completion (instead of jumping back to the
+   187→        // start of the last ayat, which is what resetting currentTimeMs to
+   188→        // 0 would do).
+   189→        setIsPlaying(false)
+   190→        setActiveWord(null)
+   191→        const lastAyat = ayatList[currentIndex]
+   192→        const lastDur = lastAyat?.audioDurationMs ?? 0
+   193→        setCurrentTimeMs(lastDur)
+   194→      }
+   195→    }
+   196→    audio.addEventListener('ended', onEnded)
+   197→
+   198→    // Capture the duration from the real audio element when it loads.
+   199→    // This is the fallback for when the probe (getAudioDurationMs) returned 0
+   200→    // because COEP blocked the separate Audio() element.
+   201→    const onMeta = () => {
+   202→      const d = audio.duration
+   203→      if (isFinite(d) && d > 0) {
+   204→        setLiveDurations((prev) => {
+   205→          if (prev[currentIndex] === d * 1000) return prev
+   206→          return { ...prev, [currentIndex]: d * 1000 }
+   207→        })
+   208→      }
+   209→    }
+   210→    audio.addEventListener('loadedmetadata', onMeta)
+   211→    audio.addEventListener('durationchange', onMeta)
+   212→
+   213→    return () => {
+   214→      audio.removeEventListener('ended', onEnded)
+   215→      audio.removeEventListener('loadedmetadata', onMeta)
+   216→      audio.removeEventListener('durationchange', onMeta)
+   217→    }
+   218→  }, [currentIndex, ayatList.length, ayatList, playAyat])
+   219→
+   220→  const togglePlay = () => {
+   221→    const audio = audioRef.current
+   222→    if (!audio) return
+   223→    if (!ayatList.length) return
+   224→    if (isPlaying) {
+   225→      audio.pause()
+   226→      setIsPlaying(false)
+   227→    } else {
+   228→      // If audio is empty (first play), load current ayat
+   229→      if (!audio.src || audio.src === window.location.href) {
+   230→        playAyat(currentIndex)
+   231→      } else {
+   232→        audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
+   233→      }
+   234→    }
+   235→  }
+   236→
+   237→  const onSeek = (v: number[]) => {
+   238→    const target = v[0]!
+   239→    // find which ayat this falls into
+   240→    let idx = 0
+   241→    for (let i = 0; i < offsets.length; i++) {
+   242→      const start = offsets[i]!
+   243→      const end = start + (ayatList[i]?.audioDurationMs || 0)
+   244→      if (target >= start && target < end) {
+   245→        idx = i
+   246→        break
+   247→      }
+   248→      if (i === offsets.length - 1) idx = i
+   249→    }
+   250→    const into = target - (offsets[idx] || 0)
+   251→    if (idx !== currentIndex) {
+   252→      setCurrentIndex(idx)
+   253→      const audio = audioRef.current!
+   254→      audio.src = ayatList[idx]!.audioUrl
+   255→      audio.currentTime = into / 1000
+   256→      audio.volume = volume
+   257→      audio.muted = muted
+   258→      if (isPlaying) audio.play().catch(() => {})
+   259→    } else {
+   260→      const audio = audioRef.current!
+   261→      audio.currentTime = into / 1000
+   262→    }
+   263→    setCurrentTimeMs(into)
+   264→  }
+   265→
+   266→  useEffect(() => {
+   267→    if (audioRef.current) {
+   268→      audioRef.current.volume = volume
+   269→      audioRef.current.muted = muted
+   270→    }
+   271→  }, [volume, muted])
+   272→
+   273→  // Reset when the ayat list changes. This is the documented React
+   274→  // "reset all state when a prop changes" pattern — we can't use a `key`
+   275→  // here because the player owns the audio element. The setState calls
+   276→  // only fire when ayatList identity changes, so there's no cascading.
+   277→  const prevListRef = useRef(ayatList)
+   278→  useEffect(() => {
+   279→    if (prevListRef.current === ayatList) return
+   280→    prevListRef.current = ayatList
+   281→    // eslint-disable-next-line react-hooks/set-state-in-effect
+   282→    setCurrentIndex(0)
+   283→    setIsPlaying(false)
+   284→    setActiveWord(null)
+   285→    setCurrentTimeMs(0)
+   286→    setLiveDurations({})
+   287→    if (audioRef.current) {
+   288→      audioRef.current.pause()
+   289→      audioRef.current.removeAttribute('src')
+   290→    }
+   291→  }, [ayatList])
+   292→
+   293→  // Pre-probe audio durations for all ayats when the list loads.
+   294→  // The store's getAudioDurationMs may return 0 under COEP — this is a
+   295→  // second attempt using the actual audio element in the DOM. We load each
+   296→  // ayat's audio URL silently (muted, not playing) just to get the metadata.
+   297→  useEffect(() => {
+   298→    if (!ayatList.length) return
+   299→    const probes: HTMLAudioElement[] = []
+   300→    ayatList.forEach((ayat, i) => {
+   301→      if (ayat.audioDurationMs > 0) return // already have it
+   302→      const a = new Audio()
+   303→      a.preload = 'metadata'
+   304→      a.crossOrigin = 'anonymous'
+   305→      a.onloadedmetadata = () => {
+   306→        const d = a.duration
+   307→        if (isFinite(d) && d > 0) {
+   308→          setLiveDurations((prev) => ({ ...prev, [i]: d * 1000 }))
+   309→        }
+   310→      }
+   311→      a.src = ayat.audioUrl
+   312→      probes.push(a)
+   313→    })
+   314→    return () => {
+   315→      probes.forEach((a) => { a.src = '' })
+   316→    }
+   317→  }, [ayatList])
+   318→
+   319→  // Build the overlay background expression from the user's chosen preset.
+   320→  const overlayBg = overlayCssBackground(settings)
+   321→
+   322→  // Find the word to highlight in the current ayat
+   323→  const highlightedWordIdx =
+   324→    activeWord && activeWord.ayatIndex === currentIndex
+   325→      ? activeWord.wordIndex
+   326→      : -1
+   327→
+   328→  // Font sizes scale with the ACTUAL preview frame width using CSS container
+   329→  // query units (cqw = 1% of the container's inline size). This way, the text
+   330→  // is always proportional to the preview, not the browser viewport — so a
+   331→  // narrow portrait reel gets smaller text and a wide landscape preview gets
+   332→  // larger text, automatically.
+   333→  //
+   334→  // The user's font-size slider acts as a multiplier on top of the base
+   335→  // percentage. Reference sizes match AUTO_FONT_SIZES.
+   336→  const orientationFontBase: Record<string, { ar: number; tr: number; arRef: number; trRef: number }> = {
+   337→    portrait: { ar: 7.0, tr: 2.8, arRef: 30, trRef: 14 },
+   338→    landscape: { ar: 4.5, tr: 1.8, arRef: 34, trRef: 15 },
+   339→  }
+   340→  const fb = orientationFontBase[settings.orientation]!
+   341→  const arCqw = (fb.ar * settings.arabicFontSize / fb.arRef).toFixed(2)
+   342→  const trCqw = (fb.tr * settings.translationFontSize / fb.trRef).toFixed(2)
+   343→  const arabicFontSizeCss = `${arCqw}cqw`
+   344→  const translationFontSizeCss = `${trCqw}cqw`
+   345→
+   346→  return (
+   347→    <div className="flex flex-col h-full">
+   348→      {/* Hidden audio element drives playback + word timing */}
+   349→      <audio ref={audioRef} preload="auto" crossOrigin="anonymous" />
+   350→
+   351→      {/* Preview frame — sized so portrait fills the available height (reel-like)
+   352→          and landscape fills the available width. The frame is also a CSS
+   353→          container so cqw units inside it scale with its actual width. */}
+   354→      <div className="flex-1 min-h-0 grid place-items-center p-3 sm:p-6">
+   355→        <div
+   356→          className="qv-smooth relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10"
+   357→          style={{
+   358→            aspectRatio: aspect.ratio,
+   359→            // Portrait: fill the height, derive width from aspect-ratio.
+   360→            // Landscape: fill the width, cap height so it never overflows.
+   361→            ...(settings.orientation === 'portrait'
+   362→              ? { height: '100%', width: 'auto', maxWidth: '100%' }
+   363→              : { width: '100%', maxHeight: '100%', height: 'auto' }),
+   364→            containerType: 'inline-size',
+   365→            backgroundImage: `url(${settings.backgroundImage})`,
+   366→            backgroundSize: 'cover',
+   367→            backgroundPosition: 'center',
+   368→          }}
+   369→        >
+   370→          {/* Overlay (rendered using the user's selected preset shape) */}
+   371→          {overlayBg && (
+   372→            <div
+   373→              className="absolute inset-0 pointer-events-none"
+   374→              style={{ background: overlayBg }}
+   375→            />
+   376→          )}
+   377→
+   378→          {/* Subtle top + bottom gradient for legibility (always on, regardless
+   379→              of overlay preset — guarantees the header + watermark stay readable) */}
+   380→          <div
+   381→            className="absolute inset-0 pointer-events-none"
+   382→            style={{
+   383→              background:
+   384→                'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0) 18%, rgba(0,0,0,0) 78%, rgba(0,0,0,0.30) 100%)',
+   385→            }}
+   386→          />
+   387→
+   388→          {/* Top header bar — surah name + ayat indicator (scales with frame) */}
+   389→          {surah && current && (
+   390→            <div
+   391→              className="absolute top-0 inset-x-0 flex items-start justify-between text-white"
+   392→              style={{ padding: '4cqw 5cqw' }}
+   393→            >
+   394→              <div className="flex flex-col">
+   395→                <span
+   396→                  lang="ar"
+   397→                  className="font-arabic-uthmani leading-tight drop-shadow-lg"
+   398→                  style={{ fontSize: '5cqw' }}
+   399→                >
+   400→                  {surah.arabicName}
+   401→                </span>
+   402→                <span
+   403→                  className="uppercase tracking-[0.12em] opacity-75 mt-0.5"
+   404→                  style={{ fontSize: '2cqw' }}
+   405→                >
+   406→                  {surah.name} · {surah.revelationType}
+   407→                </span>
+   408→              </div>
+   409→              <div className="flex flex-col items-end">
+   410→                <span
+   411→                  className="font-arabic-uthmani leading-tight drop-shadow-lg"
+   412→                  style={{ fontSize: '4.2cqw' }}
+   413→                >
+   414→                  {surah.number}:{current.ayatNumber}
+   415→                </span>
+   416→                <span
+   417→                  className="uppercase tracking-[0.18em] opacity-65 mt-0.5"
+   418→                  style={{ fontSize: '1.8cqw' }}
+   419→                >
+   420→                  Ayat {currentIndex + 1} of {ayatList.length}
+   421→                </span>
+   422→              </div>
+   423→            </div>
+   424→          )}
+   425→
+   426→          {/* Center content — Arabic + transliteration + translation grouped
+   427→              tightly into one visual block. No card border (per spec).
+   428→              Padding scales with the frame so it stays proportional. */}
+   429→          {current ? (
+   430→            <div
+   431→              className="absolute inset-0 flex flex-col items-center justify-center"
+   432→              style={{ padding: '0 8cqw' }}
+   433→            >
+   434→              <div
+   435→                className="qv-smooth relative flex flex-col items-center rounded-2xl"
+   436→                style={{
+   437→                  maxWidth: TEXT_WIDTH_MAP[settings.textWidth],
+   438→                  backgroundColor: 'rgba(15, 15, 20, 0.6)',
+   439→                  padding: '4cqw 5cqw',
+   440→                  borderRadius: '3cqw',
+   441→                  boxShadow: '0 2cqw 6cqw rgba(0, 0, 0, 0.4)',
+   442→                }}
+   443→              >
+   444→                {/* Arabic — word-by-word highlight */}
+   445→                <div
+   446→                  dir="rtl"
+   447→                  lang="ar"
+   448→                  className={cn(
+   449→                    'qv-smooth text-center leading-[1.75] drop-shadow-lg',
+   450→                    settings.fontStyle === 'uthmani'
+   451→                      ? 'font-arabic-uthmani'
+   452→                      : 'font-arabic-naskh',
+   453→                  )}
+   454→                  style={{
+   455→                    color: settings.fontColor,
+   456→                    fontSize: arabicFontSizeCss,
+   457→                  }}
+   458→                >
+   459→                  {current.words.length > 0
+   460→                    ? current.words.map((w, i) => (
+   461→                        <span
+   462→                          key={i}
+   463→                          className="qv-smooth inline-block mx-[1px]"
+   464→                          style={{
+   465→                            color:
+   466→                              i === highlightedWordIdx
+   467→                                ? settings.highlightColor
+   468→                                : settings.fontColor,
+   469→                            textShadow:
+   470→                              i === highlightedWordIdx
+   471→                                ? `0 0 18px ${settings.highlightColor}88, 0 1px 4px rgba(0,0,0,0.7)`
+   472→                                : '0 1px 4px rgba(0,0,0,0.7)',
+   473→                            transition: 'color 120ms ease',
+   474→                          }}
+   475→                        >
+   476→                          {w.text}
+   477→                        </span>
+   478→                      ))
+   479→                    : current.arabicText}
+   480→                </div>
+   481→
+   482→                {/* Tiny divider between Arabic and translation — only when
+   483→                    both are visible. */}
+   484→                {settings.showTranslation &&
+   485→                  settings.showTransliteration &&
+   486→                  current.words.length > 0 && (
+   487→                    <div
+   488→                      className="my-2 h-px opacity-40"
+   489→                      style={{ backgroundColor: settings.fontColor, width: '12cqw' }}
+   490→                    />
+   491→                  )}
+   492→
+   493→                {/* Transliteration — sits right under Arabic (scales with frame) */}
+   494→                {settings.showTransliteration && current.words.length > 0 && (
+   495→                  <div
+   496→                    className="qv-smooth text-center italic text-white/70 leading-snug"
+   497→                    style={{ fontSize: '2.4cqw', maxWidth: '80cqw' }}
+   498→                  >
+   499→                    {current.words
+   500→                      .map((w) => w.transliteration || '')
+   501→                      .filter(Boolean)
+   502→                      .join(' ')}
+   503→                  </div>
+   504→                )}
+   505→
+   506→                {/* Translation — sits right under Arabic (or transliteration).
+   507→                    Tight gap, scales with frame. */}
+   508→                {settings.showTranslation && (
+   509→                  <p
+   510→                    className={`qv-smooth text-white/85 mx-auto leading-snug drop-shadow text-center ${isBengaliTranslation ? 'font-bengali' : ''}`}
+   511→                    style={{
+   512→                      fontSize: translationFontSizeCss,
+   513→                      marginTop: TEXT_SPACING_MAP[settings.textSpacing],
+   514→                      maxWidth: '85cqw',
+   515→                    }}
+   516→                  >
+   517→                    {current.translation}
+   518→                  </p>
+   519→                )}
+   520→              </div>
+   521→            </div>
+   522→          ) : (
+   523→            <div className="absolute inset-0 grid place-items-center text-center text-white/70 px-6">
+   524→              {loading ? (
+   525→                <div className="flex flex-col items-center gap-3">
+   526→                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+   527→                  <span className="text-sm">Loading ayat data…</span>
+   528→                </div>
+   529→              ) : ayatError ? (
+   530→                <div className="space-y-3">
+   531→                  <p className="text-sm text-destructive">{ayatError}</p>
+   532→                </div>
+   533→              ) : (
+   534→                <div className="space-y-4 max-w-sm">
+   535→                  <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 ring-1 ring-primary/20 mx-auto">
+   536→                    <Sparkles className="h-7 w-7 text-primary" />
+   537→                  </div>
+   538→                  <div className="space-y-1.5">
+   539→                    <p className="text-sm font-medium text-white/90">
+   540→                      Your recitation video will appear here
+   541→                    </p>
+   542→                    <p className="text-xs text-white/55 leading-relaxed">
+   543→                      Pick a surah and ayat range, choose a reciter, then click{' '}
+   544→                      <span className="text-primary font-medium">Load ayats</span>{' '}
+   545→                      to preview with word-by-word highlighting.
+   546→                    </p>
+   547→                  </div>
+   548→                </div>
+   549→              )}
+   550→            </div>
+   551→          )}
+   552→
+   553→          {/* Attribution block — bottom-left. Shows the translation attribution
+   554→              line (when the edition requires it) + the reciter credit (always).
+   555→              Stacked vertically so both are visible. */}
+   556→          {(attributionLine || ayatList.length > 0) && (
+   557→            <div
+   558→              className="absolute text-white/55 font-sans leading-tight max-w-[55%] space-y-0.5"
+   559→              style={{
+   560→                bottom: '2.5cqw',
+   561→                left: '3.5cqw',
+   562→                fontSize: '2.4cqw',
+   563→              }}
+   564→            >
+   565→              {attributionLine && <div>{attributionLine}</div>}
+   566→              {ayatList.length > 0 && (
+   567→                <div>Recited by {reciter.name}</div>
+   568→              )}
+   569→            </div>
+   570→          )}
+   571→
+   572→          {/* Top-center watermark — the Jariyah Now brand mark (cleaned
+   573→              transparent PNG at /public/watermark.png). Mirrors what
+   574→              gets baked into the exported MP4 by ExportModal.drawFrame,
+   575→              so the user sees the same branding in the live preview as
+   576→              they will in the final video. */}
+   577→          <img
+   578→            src="/watermark.png"
+   579→            alt=""
+   580→            aria-hidden="true"
+   581→            className="absolute pointer-events-none select-none"
+   582→            style={{
+   583→              top: '4cqw',
+   584→              left: '50%',
+   585→              transform: 'translateX(-50%)',
+   586→              height: '14cqw',
+   587→              width: 'auto',
+   588→              opacity: 0.9,
+   589→              filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
+   590→            }}
+   591→          />
+   592→        </div>
+   593→      </div>
+   594→
+   595→      {/* Controls bar — light theme, responsive: 1 row on desktop, 2 rows on mobile */}
+   596→      <div className="border-t border-border bg-card px-3 sm:px-5 py-2.5 sm:py-3 space-y-2">
+   597→        {/* Row 1: transport buttons + seek bar + volume (desktop) / transport + seek (mobile) */}
+   598→        <div className="flex items-center gap-2 sm:gap-2.5">
+   599→          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+   600→            <Button
+   601→              variant="ghost"
+   602→              size="icon"
+   603→              className="h-9 w-9 rounded-lg hover:bg-muted"
+   604→              disabled={!ayatList.length}
+   605→              onClick={() => playAyat(Math.max(0, currentIndex - 1))}
+   606→              title="Previous ayat"
+   607→              aria-label="Previous ayat"
+   608→            >
+   609→              <SkipBack className="h-4 w-4" />
+   610→            </Button>
+   611→            <Button
+   612→              size="icon"
+   613→              className="h-11 w-11 rounded-full qv-btn-primary"
+   614→              disabled={!ayatList.length}
+   615→              onClick={togglePlay}
+   616→              title={isPlaying ? 'Pause' : 'Play'}
+   617→              aria-label={isPlaying ? 'Pause' : 'Play'}
+   618→            >
+   619→              {isPlaying ? (
+   620→                <Pause className="h-4 w-4" />
+   621→              ) : (
+   622→                <Play className="h-4 w-4 translate-x-0.5" />
+   623→              )}
+   624→            </Button>
+   625→            <Button
+   626→              variant="ghost"
+   627→              size="icon"
+   628→              className="h-9 w-9 rounded-lg hover:bg-muted"
+   629→              disabled={!ayatList.length || currentIndex >= ayatList.length - 1}
+   630→              onClick={() => playAyat(Math.min(ayatList.length - 1, currentIndex + 1))}
+   631→              title="Next ayat"
+   632→              aria-label="Next ayat"
+   633→            >
+   634→              <SkipForward className="h-4 w-4" />
+   635→            </Button>
+   636→          </div>
+   637→
+   638→          {/* Seek bar — flex-1 so it fills available space on all screens */}
+   639→          <div className="flex-1 flex items-center gap-2 sm:gap-3 min-w-0">
+   640→            <Slider
+   641→              value={[
+   642→                Math.min(
+   643→                  totalMs,
+   644→                  (offsets[currentIndex] || 0) + currentTimeMs,
+   645→                ),
+   646→              ]}
+   647→              max={Math.max(1, totalMs)}
+   648→              step={100}
+   649→              onValueChange={onSeek}
+   650→              disabled={!ayatList.length}
+   651→              className="flex-1 min-w-0"
+   652→            />
+   653→            <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap tabular-nums shrink-0">
+   654→              {formatMs((offsets[currentIndex] || 0) + currentTimeMs)} /{' '}
+   655→              {formatMs(totalMs)}
+   656→            </span>
+   657→          </div>
+   658→
+   659→          {/* Volume — hidden on mobile (use device volume), shown on sm+ */}
+   660→          <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+   661→            <Button
+   662→              variant="ghost"
+   663→              size="icon"
+   664→              className="h-9 w-9 rounded-lg hover:bg-muted"
+   665→              onClick={() => setMuted((m) => !m)}
+   666→              title={muted ? 'Unmute' : 'Mute'}
+   667→              aria-label={muted ? 'Unmute' : 'Mute'}
+   668→            >
+   669→              {muted || volume === 0 ? (
+   670→                <VolumeX className="h-4 w-4" />
+   671→              ) : (
+   672→                <Volume2 className="h-4 w-4" />
+   673→              )}
+   674→            </Button>
+   675→            <Slider
+   676→              value={[muted ? 0 : volume * 100]}
+   677→              max={100}
+   678→              step={1}
+   679→              onValueChange={(v) => {
+   680→                setVolume(v[0]! / 100)
+   681→                setMuted(false)
+   682→              }}
+   683→              className="w-20"
+   684→            />
+   685→          </div>
+   686→
+   687→          {/* Mute-only on mobile */}
+   688→          <Button
+   689→            variant="ghost"
+   690→            size="icon"
+   691→            className="sm:hidden h-9 w-9 rounded-lg hover:bg-muted shrink-0"
+   692→            onClick={() => setMuted((m) => !m)}
+   693→            title={muted ? 'Unmute' : 'Mute'}
+   694→            aria-label={muted ? 'Unmute' : 'Mute'}
+   695→          >
+   696→            {muted || volume === 0 ? (
+   697→              <VolumeX className="h-4 w-4" />
+   698→            ) : (
+   699→              <Volume2 className="h-4 w-4" />
+   700→            )}
+   701→          </Button>
+   702→        </div>
+   703→
+   704→        {/* Row 2: status line */}
+   705→        {ayatList.length > 0 && (
+   706→          <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
+   707→            <span className="flex items-center gap-2 min-w-0">
+   708→              <span className="font-medium text-foreground/80 truncate">{surah?.name}</span>
+   709→              <span className="opacity-50 shrink-0">·</span>
+   710→              <span className="tabular-nums shrink-0">
+   711→                Ayats {fromAyat}–{toAyat}
+   712→              </span>
+   713→              <span className="opacity-50 shrink-0 hidden xs:inline">·</span>
+   714→              <span className="hidden xs:inline truncate">{reciter.name}</span>
+   715→            </span>
+   716→            <span className="flex items-center gap-1.5 text-foreground/70 shrink-0">
+   717→              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary qv-pulse" />
+   718→              <span className="uppercase tracking-[0.15em] text-[10px]">
+   719→                Live preview
+   720→              </span>
+   721→            </span>
+   722→          </div>
+   723→        )}
+   724→      </div>
+   725→    </div>
+   726→  )
+   727→}
+   728→
+   729→function formatMs(ms: number): string {
+   730→  if (!Number.isFinite(ms) || ms <= 0) return '0:00'
+   731→  const total = Math.floor(ms / 1000)
+   732→  const m = Math.floor(total / 60)
+   733→  const s = total % 60
+   734→  return `${m}:${String(s).padStart(2, '0')}`
+   735→}
+   736→

@@ -1041,3 +1041,40 @@ Stage Summary:
 - The fix is robust against future API changes: if quran.com ever brings back segment data, we use it directly; otherwise we compute timings from per-word MP3 durations
 - The per-word MP3 duration cache means re-loading the same ayat is instant after the first load
 - All 179 tests pass; build is green
+
+---
+Task ID: fix-word-highlight-csp
+Agent: main (super-z)
+Task: The previous fix (fix-word-by-word-highlighting) added the per-word MP3 duration probe fallback, but the user reported highlighting STILL wasn't working. Diagnosed and fixed the root cause.
+
+Root cause:
+- The per-word MP3 fallback in getWordAudioDurationMs() tries to load each word's MP3 from https://audio.qurancdn.com/wbw/NNN_NNN_NNN.mp3 via `new Audio()` with preload="metadata"
+- BUT the Content-Security-Policy in next.config.ts only allowed `media-src 'self' https://verses.quran.com` — it did NOT include https://audio.qurancdn.com
+- So every per-word MP3 fetch was blocked by CSP → every Audio element fired onerror → every word duration returned 0 → every word got startMs=0, endMs=0
+- With all timings at 0, getActiveWordIndex() only matched the last word (the ayat-end marker "١"), so the highlight was stuck on the wrong word forever
+
+The fix (one line):
+- Updated next.config.ts CSP `media-src` directive:
+  - FROM: `media-src 'self' https://verses.quran.com`
+  - TO:   `media-src 'self' https://verses.quran.com https://audio.qurancdn.com`
+- Also added https://audio.qurancdn.com to `connect-src` for safety (some browsers route Audio metadata fetches through connect-src)
+
+Verification (via agent-browser live test on Al-Fatihah 1:1):
+- Word timings now load with real non-zero values:
+  - Word 0 (بِسْمِ): 0 → 1122ms
+  - Word 1 (ٱللَّهِ): 1122 → 2479ms
+  - Word 2 (ٱلرَّحْمَـٰنِ): 2479 → 4358ms
+  - Word 3 (ٱلرَّحِيمِ): 4358 → 6107ms
+- During playback, the purple highlight (#9333ea) cycles through words 0→1→2→3 in lock-step with the reciter's voice:
+  - Word 0 highlighted during 190–990ms ✓
+  - Word 1 highlighted during 1390–2390ms ✓
+  - Word 2 highlighted during 2790–4406ms ✓
+  - Word 3 highlighted during 4590–5990ms ✓
+- Zero console errors, zero CSP violations
+- `npx next build` — 13/13 pages, clean
+- `npx vitest run` — 179/179 tests pass
+
+Stage Summary:
+- Word-by-word highlighting is now FULLY WORKING end-to-end
+- The complete pipeline: quran.com API → per-word MP3 paths → fetch each MP3 → measure duration → build cumulative timings → rAF loop reads audio.currentTime → getActiveWordIndex picks the active word → CSS color transition highlights it
+- The fix was a single CSP directive update — the rest of the pipeline was already correct from the previous task
