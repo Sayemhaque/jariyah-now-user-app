@@ -11,7 +11,6 @@ import {
   ArrowRight,
   Check,
   Heart,
-  Share2,
   Globe,
   Languages,
 } from 'lucide-react'
@@ -52,9 +51,11 @@ export default function LandingPage() {
       <header className="sticky top-0 z-30 qv-frosted border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="grid place-items-center h-10 w-10 rounded-xl bg-primary text-primary-foreground">
-              <Sparkles className="h-5 w-5" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Jariyah Now logo"
+              className="h-10 w-10 rounded-xl object-contain"
+            />
             <span className="text-lg font-bold tracking-tight">Jariyah Now</span>
           </Link>
           <div className="flex items-center gap-3">
@@ -93,7 +94,7 @@ export default function LandingPage() {
           <div className="max-w-3xl">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6">
-              <Sparkles className="h-3.5 w-3.5" />
+              <img src="/logo.png" alt="" className="h-3.5 w-3.5 rounded-sm" />
               Free • No account required
             </div>
 
@@ -370,9 +371,11 @@ export default function LandingPage() {
             {/* Decorative bg */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] bg-primary/5 rounded-full blur-3xl -z-10" />
 
-            <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary text-primary-foreground mx-auto mb-6">
-              <Share2 className="h-7 w-7" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Jariyah Now logo"
+              className="h-14 w-14 rounded-2xl object-contain mx-auto mb-6"
+            />
 
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
               Start creating now
@@ -399,9 +402,11 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <div className="grid place-items-center h-9 w-9 rounded-xl bg-primary text-primary-foreground">
-                <Sparkles className="h-5 w-5" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="Jariyah Now logo"
+                className="h-9 w-9 rounded-xl object-contain"
+              />
               <div>
                 <div className="font-bold text-sm">Jariyah Now</div>
                 <div className="text-xs text-muted-foreground">

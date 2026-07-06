@@ -912,3 +912,48 @@ Stage Summary:
 - When the user switches orientation via either the Layout buttons (`setOrientation`) or any `updateSettings({ orientation })` call, the background auto-swaps to the matching Twilight Mosque variant — but ONLY if Twilight Mosque is the active preset. User-uploaded custom backgrounds and other presets are preserved untouched across orientation changes.
 - Both generation scripts are reusable — re-running `python3 scripts/make_twilight_mosque_bg.py` and/or `python3 scripts/optimize_user_backgrounds.py` regenerates the assets from scratch (the former is fully deterministic thanks to `random.seed(42)`, the latter reads from /upload).
 - All tests pass (179/179), build is clean (13/13 pages), lint is clean, and the dev server is serving all 6 background images with HTTP 200.
+
+---
+Task ID: integrate-site-logo
+Agent: main (super-z)
+Task: Replace all placeholder Sparkles/Film/Share2 logo blocks across the landing page, app header, and metadata `icons` manifest with the real pre-staged logo assets (`/public/logo.png`, `/logo-32.png`, `/logo-180.png`, `/favicon.ico`).
+
+Work Log:
+
+1. **src/app/layout.tsx** — Rewrote the metadata `icons` block from the single-string `/logo.svg` form to the full array form so browsers can pick the best size:
+   ```ts
+   icons: {
+     icon: [
+       { url: '/favicon.ico', sizes: 'any' },
+       { url: '/logo-32.png', type: 'image/png', sizes: '32x32' },
+       { url: '/logo.png',    type: 'image/png', sizes: '256x256' },
+     ],
+     shortcut: '/favicon.ico',
+     apple: '/logo-180.png',
+   },
+   ```
+
+2. **src/app/page.tsx** (landing) — 4 logo placeholders swapped for `<img src="/logo.png" ... />`:
+   - **Header logo** (sticky top bar): replaced `<div className="grid place-items-center h-10 w-10 rounded-xl bg-primary text-primary-foreground"><Sparkles className="h-5 w-5" /></div>` with `<img src="/logo.png" alt="Jariyah Now logo" className="h-10 w-10 rounded-xl object-contain" />`.
+   - **Hero badge** ("Free • No account required"): replaced `<Sparkles className="h-3.5 w-3.5" />` with `<img src="/logo.png" alt="" className="h-3.5 w-3.5 rounded-sm" />`.
+   - **Final CTA section** ("Start creating now"): task spec mentioned Sparkles, but the actual code had `<Share2 className="h-7 w-7" />` inside the same `h-14 w-14 rounded-2xl bg-primary text-primary-foreground mx-auto mb-6` wrapper. Replaced the whole block with `<img src="/logo.png" alt="Jariyah Now logo" className="h-14 w-14 rounded-2xl object-contain mx-auto mb-6" />`.
+   - **Footer logo**: replaced `<div className="grid place-items-center h-9 w-9 rounded-xl bg-primary text-primary-foreground"><Sparkles className="h-5 w-5" /></div>` with `<img src="/logo.png" alt="Jariyah Now logo" className="h-9 w-9 rounded-xl object-contain" />`.
+   - **Import cleanup**: `Sparkles` kept (still used at `icon: Sparkles` for the "Word-by-word highlighting" feature card). `Share2` removed from the lucide-react import — it was only used at the Final CTA logo block and would otherwise trigger an unused-import lint error.
+
+3. **src/app/app/page.tsx** (builder header) — Replaced `<div className="grid place-items-center h-9 w-9 rounded-xl bg-primary text-primary-foreground"><Film className="h-5 w-5" /></div>` with `<img src="/logo.png" alt="Jariyah Now logo" className="h-9 w-9 rounded-xl object-contain" />`. `Film` import kept — still used at the Export-button icon (`<Film className="h-4 w-4 mr-1.5" />`).
+
+4. **src/components/LegalPage.tsx** — Inspected both `LegalPage` and the exported `SiteFooter`. Neither contains a Sparkles/icon logo placeholder; the SiteFooter renders the brand as plain text (`<span className="font-medium text-foreground/70">Jariyah Now</span>`). No changes needed.
+
+Verification (all PASS):
+- `ls -lh public/{logo.png,logo-32.png,logo-180.png,favicon.ico}` → all 4 files present ✓ (favicon.ico 828B, logo-180.png 35K, logo-32.png 2.2K, logo.png 64K)
+- `npx eslint src/app/layout.tsx src/app/page.tsx src/app/app/page.tsx src/components/LegalPage.tsx` → exit 0, 0 errors / 0 warnings ✓
+- `npx next build` → ✓ Compiled successfully in 10.9s, ✓ TypeScript pass, ✓ 13/13 static pages generated, route table intact (/, /_not-found, /about, /api, /api/convert-mp4, /api/health, /api/render, /api/render-status, /api/timings, /app, /privacy, /sitemap.xml, /terms) ✓
+- `npx vitest run` → 11 files / 179 tests passed in 1.18s ✓
+- `tail dev.log` → clean `GET / 200` after edits, no runtime errors ✓
+
+Stage Summary:
+- The real Jariyah Now logo PNG (`/public/logo.png`, 256×256 RGBA, 64K) is now wired in everywhere a brand mark is shown to the user: the landing-page sticky header, the hero "Free" badge, the Final CTA section, the landing footer, and the app builder header.
+- The Next.js metadata `icons` manifest now ships 4 size-annotated entries (favicon.ico `any`, 32px PNG, 256px PNG, and apple-touch-icon 180px PNG) so browsers and iOS pick the optimal asset for tabs, home-screen icons, and apple-touch-icon usage.
+- All five placeholder logo blocks (`Sparkles` × 3 + `Share2` × 1 on the landing page, `Film` × 1 in the app header) are gone, replaced with semantically-correct `<img>` tags carrying `alt="Jariyah Now logo"`.
+- Unused `Share2` import was pruned; `Sparkles` and `Film` imports are retained because they're still used elsewhere (feature-card icons and the Export-button icon, respectively) — no dead code left behind.
+- Build, lint, and all 179 tests are green; dev server serves the landing page with HTTP 200 and no runtime errors.

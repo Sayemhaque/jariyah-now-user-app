@@ -50,9 +50,13 @@ export const metadata: Metadata = {
     "Quran translation",
   ],
   icons: {
-    icon: "/logo.svg",
-    shortcut: "/logo.svg",
-    apple: "/logo.svg",
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/logo-32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/logo.png', type: 'image/png', sizes: '256x256' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/logo-180.png',
   },
   alternates: {
     canonical: siteUrl,

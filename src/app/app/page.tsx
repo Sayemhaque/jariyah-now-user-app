@@ -87,9 +87,11 @@ export default function Home() {
       <header className="border-b border-border qv-frosted shrink-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">
-            <div className="grid place-items-center h-9 w-9 rounded-xl bg-primary text-primary-foreground">
-              <Film className="h-5 w-5" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="Jariyah Now logo"
+              className="h-9 w-9 rounded-xl object-contain"
+            />
             <span className="text-[15px] font-bold tracking-tight">Jariyah Now</span>
           </Link>
           <div className="flex items-center gap-2">
