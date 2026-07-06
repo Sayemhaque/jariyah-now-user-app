@@ -133,6 +133,10 @@ export async function POST(req: NextRequest) {
   }
 
   // --- Pull the WebM bytes out of the request ----------------------------
+  // Read the raw body as a stream (via req.body) instead of req.arrayBuffer()
+  // to bypass Next.js's middleware body size limit (default 10MB). The
+  // middleware truncates arrayBuffer reads to 10MB, which silently corrupts
+  // larger WebM uploads. Streaming reads bypass that limit.
   let webmBytes: Uint8Array
   try {
     const contentType = req.headers.get('content-type') ?? ''
@@ -167,16 +171,33 @@ export async function POST(req: NextRequest) {
           { status: 413 },
         )
       }
-      const buf = Buffer.from(await req.arrayBuffer())
-      if (buf.byteLength > MAX_BODY_BYTES) {
-        return NextResponse.json(
-          { error: `Body too large: ${buf.byteLength} bytes (max ${MAX_BODY_BYTES})` },
-          { status: 413 },
-        )
+
+      // Stream the body — req.body is a ReadableStream<Uint8Array> in
+      // Node.js runtime. This bypasses the middleware's 10MB truncation.
+      const reader = req.body?.getReader()
+      if (!reader) {
+        return NextResponse.json({ error: 'No request body' }, { status: 400 })
       }
-      if (buf.byteLength === 0) {
+      const chunks: Uint8Array[] = []
+      let total = 0
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        if (!value) continue
+        total += value.byteLength
+        if (total > MAX_BODY_BYTES) {
+          return NextResponse.json(
+            { error: `Body too large: >${MAX_BODY_BYTES} bytes` },
+            { status: 413 },
+          )
+        }
+        chunks.push(value)
+      }
+      if (total === 0) {
         return NextResponse.json({ error: 'Empty request body' }, { status: 400 })
       }
+      // Concatenate all chunks into a single Buffer
+      const buf = Buffer.concat(chunks.map((c) => Buffer.from(c)))
       webmBytes = new Uint8Array(buf)
     }
   } catch (err) {

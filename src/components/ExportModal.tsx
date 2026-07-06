@@ -395,6 +395,86 @@ function ProcessingPanel({
   )
 }
 
+// ──────────────────────────────────────────────────────────────────────
+// DonePanel — clean success state with just a download button
+// ──────────────────────────────────────────────────────────────────────
+// Replaces the old VideoPreviewPlayer in the done state. No big video
+// preview — the user already saw the video in the live preview, so the
+// modal's job here is just to hand them the file. Compact, focused,
+// with a prominent download button.
+
+function DonePanel({
+  downloadUrl,
+  filename,
+  isMp4,
+  orientation,
+}: {
+  downloadUrl: string
+  filename: string
+  isMp4: boolean
+  orientation: Orientation
+}) {
+  return (
+    <div className="qv-processing-panel relative rounded-2xl border border-primary/20 overflow-hidden min-h-[280px] flex flex-col justify-center p-6 sm:p-8 text-center">
+      {/* Decorative blobs */}
+      <div
+        aria-hidden
+        className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-500/15 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/15 blur-3xl"
+      />
+
+      {/* Success checkmark with pulse */}
+      <div className="relative mx-auto mb-5">
+        <div
+          aria-hidden
+          className="absolute inset-0 rounded-full bg-emerald-500/30 blur-xl qv-processing-glow"
+        />
+        <div className="relative grid place-items-center h-16 w-16 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30">
+          <CheckCircle2 className="h-9 w-9 text-white" />
+        </div>
+      </div>
+
+      <div className="relative space-y-1.5 mb-6">
+        <p className="font-bold text-lg text-foreground">Video ready!</p>
+        <p className="text-xs text-muted-foreground">
+          Your video has been processed as {isMp4 ? 'MP4' : 'WebM'} ·{' '}
+          {orientation === 'portrait'
+            ? 'Portrait 9:16'
+            : orientation === 'landscape'
+              ? 'Landscape 16:9'
+              : 'Square 1:1'}
+        </p>
+      </div>
+
+      {/* Download button — the primary CTA */}
+      <a
+        href={downloadUrl}
+        download={filename}
+        className="qv-btn-primary relative inline-flex items-center justify-center gap-2 w-full h-12 rounded-xl text-base font-semibold"
+      >
+        <Download className="h-5 w-5" />
+        Download {filename}
+      </a>
+
+      {/* Format badge */}
+      <div className="relative flex items-center justify-center gap-2 mt-4">
+        <span
+          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+            isMp4
+              ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30'
+              : 'bg-amber-500/15 text-amber-600 border border-amber-500/30'
+          }`}
+        >
+          {isMp4 ? 'MP4 · H.264' : 'WebM fallback'}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const ayatList = useBuilderStore((s) => s.ayatList)
   const surahs = useBuilderStore((s) => s.surahs)
@@ -792,13 +872,17 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                 />
               )}
 
-              {/* Done state — video preview + download */}
+              {/* Done state — success panel + download button.
+                  No big video preview — just a clean success state with
+                  a prominent download button. The user already saw the
+                  video in the live preview; the modal's job here is to
+                  hand them the file. */}
               {status === 'done' && downloadUrl && (
-                <VideoPreviewPlayer
-                  src={downloadUrl}
-                  orientation={settings.orientation}
+                <DonePanel
+                  downloadUrl={downloadUrl}
                   filename={filename}
                   isMp4={isMp4}
+                  orientation={settings.orientation}
                 />
               )}
 
