@@ -71,7 +71,7 @@ function getRedisLimiter(): Ratelimit | null {
         `${env.RENDER_RATE_LIMIT_WINDOW_MS} ms`,
       ),
       // Prefix keys so we don't collide with other uses of the same Redis.
-      prefix: 'quranvid:rl',
+      prefix: 'jariyahnow:rl',
       analytics: false,
     })
     logger.info('rate limiter initialized with Upstash Redis')

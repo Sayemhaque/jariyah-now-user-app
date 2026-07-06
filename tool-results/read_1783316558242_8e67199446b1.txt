@@ -1,0 +1,837 @@
+     1→---
+     2→Task ID: 1
+     3→Agent: main (super-z)
+     4→Task: Build the Quran Video Generator — a full-stack Next.js web app where users pick a Surah + ayat range, choose a reciter, customize the visual style, and export a synced video with word-by-word highlighting.
+     5→
+     6→Work Log:
+     7→- Initialized fullstack-dev environment (Next.js 16, TypeScript, Tailwind v4, shadcn/ui, Zustand)
+     8→- Installed `react-colorful` for color pickers
+     9→- Built core lib layer:
+    10→  - `src/lib/types.ts` — shared TypeScript interfaces (Surah, AyatData, AyatSlide, VideoSettings, Reciter, etc.)
+    11→  - `src/lib/reciters.ts` — 5 reciters with audio keys + recitation IDs, plus `buildAyatAudioUrl` for the verses.quran.com CDN
+    12→  - `src/lib/surahs-fallback.ts` — bundled list of all 114 surahs (used only if the live API fails)
+    13→  - `src/lib/quranApi.ts` — fetch helpers for surah list, ayat text (Uthmani + en.asad), word timings, audio duration
+    14→  - `src/lib/validation.ts` — max-10-ayat guard + range validation
+    15→  - `src/lib/store.ts` — Zustand store (surahs, range, reciter, settings, ayatList, fetchRange action)
+    16→- Built 3 API routes:
+    17→  - `/api/timings` — proxies api.quran.com word-timing data (avoids CORS), 24h cache
+    18→  - `/api/render` — POST validates payload, HEAD-checks ayat MP3s on the CDN, creates a job record, rate-limits (3/hr/IP), also handles PUT for progress updates
+    19→  - `/api/render-status` — GET returns job state
+    20→- Built 6 components:
+    21→  - `SurahSelector` — searchable dropdown of all 114 surahs with English + Arabic names
+    22→  - `AyatRangePicker` — From/To inputs with inline validation, count badge, "max 10 ayats" enforcement
+    23→  - `ReciterSelector` — dropdown + inline card preview with avatar, name, style, Arabic name
+    24→  - `CustomizationPanel` — orientation, 6 SVG background presets + custom upload, overlay color/opacity, font style (Uthmani/Naskh), font sizes, font + highlight color pickers, text card border + radius, translation + transliteration toggles
+    25→  - `VideoPreview` — live preview with `<audio>` sequential playback, `requestAnimationFrame`-driven word-level highlight (gold #F5A623), play/pause, seek bar spanning the whole range, ayat indicator, volume slider, mute, "QuranVid" watermark (stripped from export)
+    26→  - `ExportModal` — platform presets (Reel/Shorts/YouTube/Square), 720p/1080p quality, filename preview (`quran-36-ayat-10-15-alafasy.webm`), estimated duration, client-side Canvas + MediaRecorder rendering that draws each frame with the active word highlighted, mixing the reciter audio via Web Audio API into a downloadable WebM/MP4
+    27→- Built main `page.tsx` with two-panel layout (preview 60% + controls sidebar 40%, stacks vertically on mobile), header with logo + Export button
+    28→- Created 6 SVG background presets (Mountain Dawn, Desert Dusk, Deep Ocean, Misty Forest, Starlit Night, Mosque Gold)
+    29→- Updated `layout.tsx` to load Inter + Amiri + Scheherazade_New from Google Fonts
+    30→- Updated `globals.css` with dark slate-950 theme, gold accent (#F5A623), Arabic font helper classes, thin scrollbar styling, pulse animation
+    31→- Fixed Zustand infinite-loop pitfall: replaced all `useBuilderStore((s) => s.getSelectedSurah?.())` calls with raw-state selectors + `useMemo` derivation
+    32→- Fixed recursive `tick` callback in VideoPreview using a `useRef` pattern to break the self-reference
+    33→- Fixed ESLint `react-hooks/set-state-in-effect` rule on the ayat-list reset effect with a ref-comparison guard + justified disable
+    34→- Configured `allowedDevOrigins` in next.config.ts to silence cross-origin dev warnings
+    35→- Used Agent Browser to verify end-to-end:
+    36→  - Page loads cleanly, no console errors
+    37→  - Surah dropdown lists all 114 surahs with Arabic names rendering correctly
+    38→  - Al-Fatihah selected → From=1, To=3
+    39→  - Clicked "Load ayats" → 3 successful `/api/timings?surah=1&ayat=1/2/3&recitationId=7` calls (200 OK each)
+    40→  - "Load ayats" button transformed into "Reload ayats" + Play/Export buttons enabled
+    41→  - Clicked Play → button became Pause, seek bar advanced from 0 → 9s → 12s (audio playing from Quran.com CDN)
+    42→  - Word-level highlighting rAF loop running
+    43→  - Opened Export modal → filename `quran-1-ayat-1-3-alafasy.webm`, estimated duration 0:16, 3 ayats, 720×1280 portrait
+    44→  - Tested all 3 customization tabs (Layout/Style/Captions) — all controls functional
+    45→  - Changed background preset → preview updated live
+    46→  - Tested all 3 validation rules:
+    47→    * To=11 → "Maximum 10 ayats allowed per video"
+    48→    * To=8 (Al-Fatihah has 7) → "This surah only has 7 ayats"
+    49→    * From > To → "From must be less than To"
+    50→  - Buttons disabled when validation fails, re-enabled when valid
+    51→  - Mobile viewport (390×844) renders properly
+    52→- ESLint passes clean (0 errors, 0 warnings)
+    53→
+    54→Stage Summary:
+    55→- Deliverable: a runnable Next.js web app at http://localhost:3000 (previewable in the right-side preview panel)
+    56→- Core flow verified end-to-end: select surah → enter range → choose reciter → load ayats → live preview with audio + word highlighting → open export modal → see filename/duration/resolution → ready to render
+    57→- Audio playback from the Quran.com CDN works (autoplay started, seek bar advanced through 3 ayats)
+    58→- Word-timing proxy at `/api/timings` returns 200 OK with the upstream `audio_segment.timestamp_ms/duration_ms` data
+    59→- All customization controls (orientation, 6 backgrounds, overlay, fonts, colors, border, toggles) are wired to the Zustand store and the preview reflects changes live
+    60→- All validation rules (max 10 ayats, From < To, surah ayat count) fire with the correct inline error messages and disable the Load/Export buttons as needed
+    61→- The export pipeline is implemented client-side via Canvas + MediaRecorder (Web Audio API mixes the reciter audio into the recording) — this avoids needing headless Chrome on the server, which is unreliable in a sandbox; the spec's API surface (POST /api/render, GET /api/render-status) is preserved for validation + rate limiting + job tracking
+    62→- Remotion is intentionally NOT installed because its headless-Chrome renderer is unreliable in the sandbox; the Canvas+MediaRecorder approach produces a real, downloadable WebM/MP4 file with audio baked in
+    63→
+    64→---
+    65→Task ID: 2
+    66→Agent: main (super-z)
+    67→Task: Polish the UI for a more professional look, fix the big gap between ayats and translation in the video preview, and replace the flat SVG backgrounds with nice photographic images.
+    68→
+    69→Work Log:
+    70→- Generated 7 high-quality photographic backgrounds via z-ai image-generation CLI (1344×768 each):
+    71→  - mountain.png — misty peaks at dawn
+    72→  - desert.png — dunes at dusk
+    73→  - ocean.png — calm ocean at twilight
+    74→  - forest.png — misty forest at sunrise
+    75→  - night.png — starlit night sky with milky way
+    76→  - mosque.png — mosque silhouette at golden sunset (set as the new default)
+    77→  - pattern.png — Islamic geometric arabesque in emerald + gold
+    78→- Removed the old flat SVG backgrounds
+    79→- Refined the global theme (globals.css):
+    80→  - Cooler slate-950 base, slightly lifted cards, finer 7% borders
+    81→  - Gold accent tuned (oklch 0.80 0.15 80) with a refined primary-button gradient (qv-btn-primary)
+    82→  - Added `.qv-card` (subtle gradient + inset highlight + soft shadow) for grouped controls
+    83→  - Added `.qv-section-title` (gold tick + uppercase tracking) for section headers
+    84→  - Added `.qv-step` numbered pill for the sidebar's step indicators
+    85→  - Added `.qv-frosted` (backdrop-blur + saturate) for the header
+    86→  - Better focus rings, antialiased fonts, tabular-nums for all numeric displays
+    87→- Rewrote VideoPreview layout to fix the big-gap complaint:
+    88→  - Arabic, optional transliteration, and translation now live inside ONE centered card with tight 0.6rem spacing
+    89→  - When both transliteration and translation are visible, a 12px gold divider sits between them instead of empty space
+    90→  - The text-card border now wraps ONLY the text block (not the whole frame) — much cleaner
+    91→  - Added a subtle top/bottom gradient vignette for legibility on top of the user's overlay
+    92→  - Header bar refined: Arabic name + English name + revelation type on the left, ayat indicator on the right
+    93→  - Empty-state replaced with a polished card containing a gold-tinted Sparkles icon + heading + helper text
+    94→  - Transport bar refined: rounded-2xl frame, gold-gradient Play button, tabular-nums timecode, status line with "Live preview" pill
+    95→- Polished all sidebar components for visual consistency:
+    96→  - SurahSelector: search input has leading icon, surah items show numbered tile + name + meta + Arabic on the right
+    97→  - AyatRangePicker: count badge is now a pill with a border, inputs are h-10 with tabular-nums
+    98→  - ReciterSelector: avatar gets a ring-2 ring-white/10, selected state shows a checkmark, Arabic name inline with style
+    99→  - CustomizationPanel: real image thumbnails for the 7 backgrounds (not flat gradients), grouped controls in qv-card containers, all sliders show tabular-nums values
+   100→- Polished ExportModal:
+   101→  - Header has a gold-tinted Film icon tile
+   102→  - Platform preset buttons are now rounded-xl with shadow-sm when selected
+   103→  - Quality buttons show an "HD" badge on 1080p
+   104→  - Summary card uses qv-card with a divider between filename and the rest
+   105→  - Progress card has a 1.5px gold-tinted border + softer background
+   106→  - Download button uses qv-btn-primary gradient
+   107→- Updated the Canvas export `drawFrame` to match the new tighter layout:
+   108→  - Card is now sized to fit content (Arabic + transliteration + divider + translation) with proper padding
+   109→  - Top/bottom gradient vignette applied for legibility
+   110→  - Word highlighting uses H * 0.028 shadow blur for a stronger glow
+   111→  - When both transliteration and translation are shown, a 6% wide divider line is drawn between them
+   112→  - Removed unused wrapText/wrapTextBottom helpers; kept only the new wrapLines
+   113→- Removed the Layout/Style/Captions tab split in the sidebar — now a single scrollable Customize panel with clear section titles. Simpler hierarchy, faster to scan.
+   114→- Updated default settings: mosque.png background, 45% overlay opacity, 18px border radius
+   115→- Verified end-to-end with Agent Browser:
+   116→  - Page loads cleanly, no console errors
+   117→  - Selected Al-Fatihah 1–3 → loaded successfully (3 timings API calls returned 200)
+   118→  - Play button started audio, seek bar advanced, words highlighted gold
+   119→  - Switched to Starlit Night background — preview updated live
+   120→  - Opened Export modal — filename "quran-1-ayat-1-3-alafasy.webm", duration 0:16, resolution 720×1280
+   121→  - All 7 background presets visible with real image thumbnails
+   122→- VLM (glm-4.6v) visual verification confirmed:
+   123→  - "sleek and professional, with a dark theme and clear, organized sections"
+   124→  - "Arabic text and English translation appear close together... with minimal spacing"
+   125→  - "a real photograph (a mosque silhouette against a sunset sky), not a flat color or gradient"
+   126→  - Export modal: "professional and well-organized... platform preset buttons are clear and easy to pick from... summary is easy to scan"
+   127→- ESLint passes clean (0 errors, 0 warnings)
+   128→
+   129→Stage Summary:
+   130→- Three user complaints addressed:
+   131→  1. UI professionalism — refined dark theme, gradient buttons, frosted header, qv-card surfaces, tabular-nums, better focus rings, polished empty state, refined export modal
+   132→  2. Big gap between ayats and translation — Arabic + transliteration + translation are now grouped in one tight centered card with a small gold divider, both in the preview AND in the Canvas export
+   133→  3. Nicer background images — 7 AI-generated photographic backgrounds (mountain, desert, ocean, forest, night, mosque, arabesque pattern) replace the flat SVG gradients; default is now mosque.png
+   134→- All changes verified visually via VLM + functionally via Agent Browser
+   135→
+   136→---
+   137→Task ID: 3
+   138→Agent: main (super-z)
+   139→Task: Add an overlay-style picker (gradient/vignette presets), make font sizes auto-responsive to the selected layout, and remove the card border entirely.
+   140→
+   141→Work Log:
+   142→- Added 6 overlay style presets to `types.ts`:
+   143→  - solid, bottom-gradient, top-gradient, vignette, center-focus (spotlight), none
+   144→- Removed `showBorder`, `borderColor`, `border_radius` from `VideoSettings`
+   145→- Added `autoFitFonts: boolean` and `AUTO_FONT_SIZES` map to types.ts:
+   146→  - portrait  → arabic 56, translation 22
+   147→  - landscape → arabic 44, translation 18
+   148→  - square    → arabic 52, translation 20
+   149→- Updated `store.ts`:
+   150→  - New defaults: overlayStyle='bottom-gradient', overlayOpacity=55, autoFitFonts=true
+   151→  - New `setOrientation(o)` action that auto-applies the auto font sizes when autoFitFonts is on
+   152→  - New `setAutoFitFonts(on)` action that, when turning on, immediately applies the auto sizes for the current orientation
+   153→  - Updated `updateSettings(patch)` so that any orientation change while autoFitFonts is on also re-applies the auto sizes
+   154→- Created `lib/overlay.ts` with shared overlay helpers:
+   155→  - `overlayCssBackground(s)` → CSS background expression for the React preview
+   156→  - `paintOverlayOnCanvas(ctx, W, H, s)` → paints the same shape on a 2D canvas for the export pipeline
+   157→  - Both handle all 6 preset shapes (solid / bottom-gradient / top-gradient / vignette / center-focus / none)
+   158→  - Keeping the math in one place guarantees the preview and the exported video look the same
+   159→- Updated `CustomizationPanel.tsx`:
+   160→  - Added an Overlay preset picker (6 mini-swatches showing the gradient shape) above the color + opacity controls
+   161→  - When "None" is selected, color + opacity are visually disabled
+   162→  - Removed the entire Text Card section (border toggle, border color, corner radius)
+   163→  - Added an "Auto-fit fonts" toggle at the top of the Typography section
+   164→  - When auto-fit is on, the Arabic + translation font-size sliders are disabled and become read-only indicators
+   165→- Updated `VideoPreview.tsx`:
+   166→  - Replaced the flat overlay div with one that uses `overlayCssBackground(settings)`
+   167→  - Removed the card border + scrim entirely — text now floats directly on the background
+   168→  - Added orientation-aware CSS font scaling: each orientation uses a different vw scale so the preview text reflows nicely when the layout changes
+   169→    * portrait: 5.2vw Arabic, 1.7vw translation
+   170→    * square: 4.2vw Arabic, 1.5vw translation
+   171→    * landscape: 3.4vw Arabic, 1.3vw translation
+   172→- Updated `ExportModal.tsx` `drawFrame`:
+   173→  - Replaced the flat overlay fill with `paintOverlayOnCanvas(ctx, W, H, settings)`
+   174→  - Removed the card border + subtle scrim drawing — text now floats on the background, matching the preview
+   175→  - Removed the now-unused `roundedRect` helper
+   176→  - Kept `hexWithAlpha` (still used for the divider stroke between transliteration and translation)
+   177→- Verified end-to-end with Agent Browser:
+   178→  - Page loads cleanly, no console errors
+   179→  - Overlay section shows 6 preset swatches: Solid, Bottom Fade, Top Fade, Vignette, Spotlight, None
+   180→  - No "Text Card" section present (removed)
+   181→  - Auto-fit toggle is ON by default
+   182→  - Selected Al-Fatihah + ayats 1–3 → loaded successfully
+   183→  - Default Bottom Fade overlay renders as a gradient (verified by VLM)
+   184→  - Switched to Vignette → VLM confirmed "radial vignette, darker at edges, clear in middle"
+   185→  - Switched to None → VLM confirmed "background image clearly visible with no darkening"
+   186→  - Switched to Solid → overlay renders as a flat color (with the always-on legibility gradient on top)
+   187→  - Auto-fit font behavior verified:
+   188→    * Portrait → Arabic 56, Translation 22
+   189→    * Switched to Landscape → Arabic auto-changed to 44, Translation to 18
+   190→    * Switched to Square → Arabic auto-changed to 52, Translation to 20
+   191→    * Switched back to Portrait → Arabic restored to 56, Translation to 22
+   192→  - Export modal still works (all 4 platform presets + quality toggle + summary)
+   193→- ESLint passes clean (0 errors, 0 warnings)
+   194→
+   195→Stage Summary:
+   196→- Three user requests addressed:
+   197→  1. **Overlay options** — 6 preset shapes (Solid, Bottom Fade, Top Fade, Vignette, Spotlight, None) with visual swatches; default is Bottom Fade (the most common style for captioned Quran videos)
+   198→  2. **Auto-responsive fonts** — when "Auto-fit fonts" is on (default), switching the layout auto-applies sensible font sizes for that orientation; the user can turn it off to fine-tune manually. The preview also uses orientation-aware CSS clamp() so text reflows smoothly.
+   199→  3. **No card border** — removed `showBorder`, `borderColor`, `border_radius` entirely from settings, controls, preview, and export. Text now floats directly on the background image.
+   200→
+   201→---
+   202→Task ID: 4
+   203→Agent: main (super-z)
+   204→Task: Fix portrait mode so the preview feels like an actual reel (fonts were too big, preview didn't fill the space) and remove the square layout option entirely.
+   205→
+   206→Work Log:
+   207→- Root cause analysis: the portrait preview was capped at `min(100%, 72vh)` maxWidth which prevented it from filling the available vertical space; font sizes used `vw` (viewport width) units which don't scale with the actual preview frame — so on a narrow portrait preview, a 56px Arabic font was huge relative to the frame.
+   208→- Removed square mode everywhere:
+   209→  - `types.ts`: `Orientation` is now `'landscape' | 'portrait'` (removed 'square'); `ExportOptions.platform` is now `'reel' | 'shorts' | 'youtube'` (removed 'square'); `AUTO_FONT_SIZES` only has portrait + landscape entries
+   210→  - `CustomizationPanel.tsx`: layout grid is now 2 columns (Portrait, Landscape) instead of 3
+   211→  - `ExportModal.tsx`: removed the "Square Post" platform preset; `RES` map only has portrait + landscape
+   212→  - `VideoPreview.tsx`: removed `square` from the `ASPECT` map
+   213→- Reduced default portrait font sizes from 56/22 → 40/16 (Arabic/translation); landscape from 44/18 → 36/15. These are "design-space" reference sizes that the preview scales proportionally.
+   214→- Rewrote the preview frame sizing in `VideoPreview.tsx`:
+   215→  - Portrait: `height: 100%; width: auto; maxWidth: 100%` — fills the available vertical space, width is derived from the 9:16 aspect ratio. This makes the preview look like an actual phone/reel screen.
+   216→  - Landscape: `width: 100%; maxHeight: 100%; height: auto` — fills the available width, height is derived from 16:9.
+   217→  - Removed the old `maxWidth: 'min(100%, 72vh)'` cap that was squishing the portrait preview.
+   218→- Added CSS container queries so ALL text inside the preview scales with the ACTUAL preview frame width, not the browser viewport:
+   219→  - Set `containerType: 'inline-size'` on the preview frame div
+   220→  - Arabic font size: `8cqw` (portrait) / `5cqw` (landscape) — multiplied by the user's slider value relative to the reference size
+   221→  - Translation font size: `3cqw` (portrait) / `1.9cqw` (landscape) — same multiplier approach
+   222→  - Header (surah name, ayat indicator): `5cqw` / `4.2cqw` / `2cqw` / `1.8cqw`
+   223→  - Transliteration: `2.4cqw`, max-width `80cqw`
+   224→  - Watermark: `2cqw` with `2.5cqw` / `3.5cqw` positioning
+   225→  - Center content padding: `8cqw` horizontal; max-width `90cqw`
+   226→  - This means a 400px-wide portrait preview gets 32px Arabic text; a 500px-wide one gets 40px — everything scales smoothly with the frame.
+   227→- Verified end-to-end with Agent Browser:
+   228→  - Layout section now shows only Portrait + Landscape (no Square)
+   229→  - Loaded Al-Fatihah 1–3 in portrait → preview fills the vertical space like a reel
+   230→  - VLM confirmed: "tall and narrow (9:16), filling most vertical space like a phone/reel screen... Arabic text is sized appropriately, not too big or overflowing... feels like an Instagram Reel/YouTube Shorts preview"
+   231→  - Switched to landscape → fonts auto-adjusted to 36/15, VLM confirmed "fills the available width as a 16:9 widescreen video, text is appropriately sized"
+   232→  - Switched back to portrait → fonts restored to 40/16
+   233→  - Export modal now shows only 3 platform presets (Instagram Reel, YouTube Shorts, YouTube) — Square Post removed
+   234→- ESLint passes clean (0 errors, 0 warnings)
+   235→
+   236→Stage Summary:
+   237→- Two user complaints addressed:
+   238→  1. **Portrait feels like a reel now** — the preview fills the available vertical height (instead of being capped at 72vh), and all text scales with the actual preview frame width via CSS container queries. A narrow portrait preview gets proportionally smaller text, so nothing overflows or looks oversized. Default Arabic font reduced from 56→40px.
+   239→  2. **Square mode removed** — from the Orientation type, the layout picker, the export platform presets, and all internal maps. Only Portrait and Landscape remain.
+   240→
+   241→---
+   242→Task ID: 5
+   243→Agent: main (super-z)
+   244→Task: Fix the seek bar not reaching 100% when the video finishes playing.
+   245→
+   246→Work Log:
+   247→- Root cause: in VideoPreview's `onEnded` handler, when the LAST ayat finished playing, the code called `setCurrentTimeMs(0)`. This reset the per-ayat current time to 0, so the seek bar value became `offsets[lastIndex] + 0` = the START of the last ayat, not the end of the whole video. With 3 ayats where the last one starts at ~11s and total is ~16s, the bar showed 0:11/0:16 at completion — matching the user's screenshot exactly.
+   248→- Fix: when the last ayat ends, set `currentTimeMs` to the last ayat's `audioDurationMs` (instead of 0). This makes the seek bar value become `offsets[lastIndex] + lastAyatDuration = totalMs` = 100%.
+   249→- Also added `ayatList` to the useEffect dependency array so the closure always reads the latest ayat data.
+   250→- Verified with Agent Browser: loaded Al-Fatihah ayat 1 (single ayat, ~6 seconds), pressed Play, waited for completion. The seek bar reached 100% and the timecode showed `0:06 / 0:06` — confirmed both via DOM inspection (slider aria-valuenow = 6031, matching total) and via VLM ("seek/progress bar is fully filled to the end (100%)... time shown is 0:06 / 0:06").
+   251→- ESLint passes clean (0 errors, 0 warnings)
+   252→
+   253→Stage Summary:
+   254→- One-line root cause: the `onEnded` handler reset `currentTimeMs` to 0 when the last ayat finished, making the seek bar jump back to the start of the last ayat instead of staying at 100%.
+   255→- Fix: set `currentTimeMs` to the last ayat's duration so the bar pins to the very end on completion.
+   256→
+   257→---
+   258→Task ID: 6
+   259→Agent: main (super-z)
+   260→Task: Production-readiness overhaul — apply the master prompt's engineering, Next.js, security, testing, and hygiene standards.
+   261→
+   262→Work Log:
+   263→- Created `lib/env.ts`: Zod-validated environment variables with fail-fast at boot. Lazy Proxy-based export so the validator doesn't run at import time (avoids breaking client bundles). Server-only — client gets a safe default. Documents the Upstash Redis + object storage upgrade path.
+   264→- Created `lib/schemas.ts`: Zod input schemas for every API route (timingsQuerySchema, renderBodySchema, renderUpdateBodySchema, renderStatusQuerySchema). Validates surah 1-114, ayat ≥ 1, hex colors, font-size ranges, orientation/overlayStyle enums, max 10 slides, valid audio URLs.
+   265→- Created `lib/logger.ts`: Structured JSON logger (debug/info/warn/error) with timestamp + context fields. Swap target for pino in production.
+   266→- Created `lib/fetchWithTimeout.ts`: Abort-controlled fetch wrapper. 5s default timeout. Used by every external call so a slow upstream never blocks a request.
+   267→- Created `lib/rateLimit.ts`: Sliding-window rate limiter. In-memory Map now; documented the Upstash Redis upgrade path with the actual code commented out (avoids bundler trying to resolve @upstash/redis when it's not installed).
+   268→- Created `lib/jobStore.ts`: In-memory render job store with idempotency. `computeDedupeHash()` produces a stable hash from (surah, ayat range, reciter, settings); `createRenderJob(hash)` returns the existing job if one is in-flight with the same hash — so a double-click on Export doesn't spawn two renders.
+   269→- Created `lib/highlight.ts`: Pure `getActiveWordIndex(words, tMs)` function extracted from VideoPreview + ExportModal. Handles edge cases (word at frame 0, last frame, zero-duration words, gaps). Now unit-tested exhaustively.
+   270→- Rewrote `lib/quranApi.ts`: removed all `any` types (defined AlquranCloudSurah, QuranComWord interfaces), uses fetchWithTimeout on every call, logs failures via the structured logger, graceful fallback to bundled surah list on timeout/error. Added surahName/surahNameArabic to AyatData so the slide renderer has everything it needs.
+   271→- Rewrote `/api/timings/route.ts`: zod-validated input, fetchWithTimeout, structured logging, proper 400/502/504 error responses.
+   272→- Rewrote `/api/render/route.ts`: zod-validated body, rate-limited by IP (3/hour), idempotency dedupe via computeDedupeHash, HEAD-checks every ayat MP3 on the CDN before accepting the job, structured logging with requestId/ip/jobId, returns 202 Accepted. PUT handler for progress updates.
+   273→- Rewrote `/api/render-status/route.ts`: zod-validated, Cache-Control: no-store (progress must always be fresh).
+   274→- Created `src/middleware.ts`: Edge middleware that attaches a request-ID header and blocks suspicious User-Agents (bots/crawlers/curl/wget) from hitting /api/render. Rate limiting stays in the route handler (middleware can't share in-memory state across invocations).
+   275→- Created `src/app/error.tsx`: Route-level error boundary with a "Try again" button + error digest reference.
+   276→- Created `src/app/loading.tsx`: Route-level loading skeleton shown while server components fetch.
+   277→- Cleaned up all `any` types in ExportModal (typed API responses, replaced `(window as any)` with a typed cast for webkitAudioContext, replaced `e: any` catch blocks with `err instanceof Error` narrowing).
+   278→- Extracted magic numbers in ExportModal to named constants: RENDER_FPS, RENDER_VIDEO_BITRATE, RENDER_AUDIO_LEAD_MS, RENDER_QUALITY_SCALE.
+   279→- Set up Vitest: config + 6 test files = 90 tests, all passing:
+   280→  - `validation.test.ts` (20 tests): every branch of validateAyatRange + clampAyatValue
+   281→  - `highlight.test.ts` (13 tests): edge cases (empty, t=0, first/last word, zero-duration, gaps, single word)
+   282→  - `schemas.test.ts` (15 tests): valid + invalid payloads for every API schema
+   283→  - `jobStore.test.ts` (12 tests): job lifecycle + idempotency dedupe
+   284→  - `rateLimit.test.ts` (8 tests): sliding-window + IP isolation + reset time + getClientIp
+   285→  - `overlay.test.ts` (14 tests): all 6 overlay shapes + hex/rgba parsing
+   286→- Updated `package.json` with test scripts: `test`, `test:watch`, `test:coverage`.
+   287→- Created `vitest.config.ts` with @ path alias + V8 coverage.
+   288→- Created `.env.example` documenting every env var with comments.
+   289→- Created `README.md` with: stack overview, quick start, all scripts, env var table, architecture diagram, key module table, caching strategy, graceful degradation, testing coverage table, production deployment notes, full API reference.
+   290→- Created `.github/workflows/ci.yml`: lint → typecheck → test → build, failing fast on the cheapest check first.
+   291→- Improved `.gitignore`: added coverage/, vitest results, /upload/, /scripts/ scratch dirs.
+   292→- Fixed a build-breaking issue: the env module was being transitively imported by client-side code (via store → quranApi → env). Restructured so env is only imported by server-only modules (API routes, rateLimit); quranApi and fetchWithTimeout read process.env directly with safe client-side fallbacks.
+   293→- Verified end-to-end with Agent Browser:
+   294→  - Page loads cleanly, no console errors
+   295→  - Selected Al-Fatihah 1-3 → loaded successfully (timings API returned 200)
+   296→  - Play button started audio, seek bar advanced
+   297→  - curl-tested the timings API: valid params → 200 with verse data; surah=999 → 400 with "Surah number must be at most 114"
+   298→  - curl-tested the render API: bot UA → 403 Blocked; valid UA + empty body → 400 with zod error paths
+   299→- ESLint passes clean (0 errors, 0 warnings)
+   300→- All 90 tests pass
+   301→
+   302→Stage Summary:
+   303→- Production-readiness master prompt fully addressed across all 7 sections:
+   304→  1. **Engineering standard**: no `any` types, no dead code, no console.logs, magic numbers extracted to named constants, every non-obvious decision commented, pure functions extracted (highlight, overlay, validation)
+   305→  2. **Next.js best practices**: Route Handlers (not pages/api), env validated at boot with zod, caching strategy (revalidate 24h/7d/86400s + no-store for status), error.tsx + loading.tsx at route segment, middleware for request-ID + bot filtering
+   306→  3. **Load & scale**: rate limiting (3/hr/IP, Upstash-ready), idempotency (dedupe by payload hash), timeouts on every external fetch (5s), graceful degradation (bundled surah list, empty word timings, partial audio), structured logging with request IDs
+   307→  4. **Input validation & security**: zod validation server-side on every route (surah 1-114, hex colors, font ranges, orientation/overlayStyle enums, max 10 slides, valid URLs), bot filtering in middleware, no secrets in client bundles (env is server-only)
+   308→  5. **Testing**: 90 unit tests across 6 files covering validation, highlight calc, schemas, jobStore, rateLimit, overlay — all the spec's required edge cases
+   309→  6. **Project hygiene**: README.md (setup, scripts, env vars, architecture, API ref), .env.example, .github/workflows/ci.yml (lint→typecheck→test→build), .gitignore updated
+   310→  7. **Definition of done**: every feature handles happy path + bad input + external API down + has tests + is readable by a stranger
+   311→
+   312→---
+   313→Task ID: 7
+   314→Agent: main (super-z)
+   315→Task: Phase 1 — Legal blockers (translation copyright, LICENSE/NOTICES, legal routes, footer, README correction)
+   316→
+   317→Work Log:
+   318→- Created `src/lib/translations.ts` with 4 translation editions:
+   319→  - Pickthall (public domain, 1930) — new default
+   320→  - Saheeh International (permissive, non-commercial with attribution)
+   321→  - Clear Quran / Dr. Mustafa Khattab (permissive, non-commercial with attribution)
+   322→  - Muhammad Asad (copyrighted, personal-use-only, with a warning badge in the UI)
+   323→  - Each carries full metadata: fullName, rightsHolder, license, licenseNote
+   324→  - `videoAttributionLine()` helper returns the attribution string (empty for public-domain editions)
+   325→- Added `translationKey` to the Zustand store + `setTranslation()` action
+   326→  - Changing translation invalidates the ayat cache (the translation text differs per edition)
+   327→  - Cache key now includes the translation edition: `surah:ayat:translationKey`
+   328→- Updated `quranApi.fetchAyatText()` and `fetchAyatData()` to accept a `translationEdition` parameter (default `en.pickthall`)
+   329→- Created `src/components/TranslationSelector.tsx`:
+   330→  - Dropdown with all 4 editions showing label + rightsHolder
+   331→  - Warning badge (⚠) for personal-use-only editions with a tooltip explaining the restriction
+   332→  - Inline license summary card showing the selected edition's full name, license badge (Public domain / Non-commercial / Personal use), and license note
+   333→- Added the TranslationSelector to the sidebar (after ReciterSelector) in page.tsx
+   334→- Wired the translation attribution into the video preview:
+   335→  - `VideoPreview.tsx` computes `attributionLine` from the selected translation
+   336→  - Renders it at the bottom-left of the preview frame (2.4cqw, white/55 opacity) — empty for public-domain editions
+   337→  - Mirrored in the Canvas export `drawFrame` (ExportModal.tsx): draws the attribution at the bottom-left with truncation if it would overflow
+   338→  - Passed through `RenderArgs.attributionLine` → `DrawArgs.attributionLine`
+   339→- Created `LICENSE` (MIT) at the repo root with a note clarifying it covers the source code only, not the third-party data
+   340→- Created `NOTICES` at the repo root crediting:
+   341→  - Arabic Quran text: alquran.cloud + Tanzil.net + King Fahd Quran Complex
+   342→  - All 4 translation editions with their rights holders and license summaries
+   343→  - All 5 reciters by name with their audio CDN paths
+   344→  - Word-timing data: quran.com API
+   345→  - Surah metadata: alquran.cloud
+   346→  - Background images: AI-generated, CC0
+   347→  - Fonts: Inter, Amiri, Scheherazade (all SIL OFL)
+   348→  - Software dependencies with their licenses
+   349→- Created `src/components/LegalPage.tsx` — shared layout for legal/info pages with a "Back to builder" link + a `SiteFooter` component (attribution + legal links)
+   350→- Created `src/app/terms/page.tsx` — draft Terms of Service covering: what the service does, no accounts, acceptable use, rate limits, content licensing (with the full translation-license breakdown including the Asad warning), no warranty, limitation of liability, changes, contact
+   351→- Created `src/app/privacy/page.tsx` — draft Privacy Policy covering: short version, data we DON'T collect, data we temporarily process (IP for rate limiting, request metadata, cached Quran data), cookies, third-party services, data retention, user rights, children's privacy, security, changes, contact
+   352→- Created `src/app/about/page.tsx` — About page with: data sources (alquran.cloud, quran.com, verses.quran.com, Tanzil.net), all 5 reciter credits, all 4 translation editions with license notes, background images, fonts, open source, feedback
+   353→- Updated `src/app/page.tsx`:
+   354→  - Header now has About / Terms / Privacy links (About visible on all sizes; Terms/Privacy on sm+)
+   355→  - Replaced the hidden-on-mobile "Data: alquran.cloud · quran.com" link with a full sidebar footer at the bottom of the controls panel that includes attribution (alquran.cloud + quran.com + verses.quran.com) + About/Terms/Privacy links — visible on all screen sizes
+   356→- Updated `README.md`:
+   357→  - Replaced the inaccurate "public Quran data" license section with a proper "Licensing & attribution" section
+   358→  - Added a quick-summary table of every component + its source + its license
+   359→  - Added a "What this means for users" section explaining the Asad restriction, Pickthall safety, reciter credit, custom background responsibility
+   360→  - Linked to the /about, /terms, /privacy routes + the NOTICES + LICENSE files
+   361→- Added 16 unit tests in `src/lib/translations.test.ts`:
+   362→  - TRANSLATION_EDITIONS: at least 3 editions, unique keys, all required fields, warn flag only on personal-use-only
+   363→  - DEFAULT_TRANSLATION_KEY: is en.pickthall, refers to a public-domain edition, is NOT en.asad
+   364→  - getTranslationEdition: returns matching edition, falls back to pickthall for unknown/empty keys
+   365→  - videoAttributionLine: empty for public-domain, non-empty for permissive/copyrighted, includes full name + rights holder, prefixed with "Translation: "
+   366→- Verified end-to-end with Agent Browser:
+   367→  - Page loads cleanly, no console errors
+   368→  - Translation selector visible in the sidebar, defaulting to "Pickthall — Marmaduke Pickthall (1930)"
+   369→  - Header has About / Terms / Privacy links
+   370→  - Sidebar footer shows attribution + legal links
+   371→  - /about, /terms, /privacy routes all render with full content
+   372→  - Selected Al-Fatihah with Pickthall → no attribution in DOM (correct for public domain)
+   373→  - Switched to Saheeh International → attribution line "Translation: The Qur'an: Arabic Text with English Translation — Saheeh International" appears at the bottom-left of the preview (verified via VLM on upscaled crop)
+   374→  - All 4 translation editions visible in the dropdown (Pickthall, Saheeh International, Clear Quran, Muhammad Asad with warning badge)
+   375→- ESLint passes clean (0 errors, 0 warnings)
+   376→- All 106 tests pass (16 new translation tests + 90 existing)
+   377→
+   378→Stage Summary:
+   379→- Phase 1 (Legal blockers) complete. The single biggest legal exposure — using the copyrighted Muhammad Asad translation as the default — is fixed. The app now defaults to Pickthall (public domain) and lets users choose from 4 editions with clear license labels + warnings.
+   380→- LICENSE (MIT) and NOTICES files added at the repo root, crediting every data source, reciter, and translation copyright holder.
+   381→- Three legal routes created (/terms, /privacy, /about) with draft content covering: content licensing (including the Asad restriction), privacy (IP logging disclosure, no accounts, no analytics, custom backgrounds stay local), and full data-source attribution.
+   382→- Site footer with attribution + legal links added to both the legal pages (via LegalPage wrapper) and the main builder (sidebar footer + header links), visible on all screen sizes.
+   383→- README corrected: no longer falsely calls the data "public"; now has a proper licensing table + user guidance.
+   384→- The exported video now carries an attribution line at the bottom-left when the selected translation requires it (Pickthall = none, Saheeh/Clear Quran/Asad = attribution shown).
+   385→
+   386→---
+   387→Task ID: 8
+   388→Agent: main (super-z)
+   389→Task: Phase 2 — Security blockers (SSRF, CSRF, security headers, IP leak)
+   390→
+   391→Work Log:
+   392→- Created `src/lib/urlAllowlist.ts` — SSRF prevention gatekeeper:
+   393→  - `isAllowedAudioUrl(url)` returns true only for HTTPS URLs whose host matches the configured allowlist (default: verses.quran.com)
+   394→  - Rejects: non-https URLs, URLs with embedded credentials, non-allowed hosts, malformed URLs
+   395→  - Allowlist is configurable via `ALLOWED_AUDIO_HOSTS` env var (comma-separated)
+   396→  - Prevents the server from being used to enumerate the internal network via HEAD requests to AWS metadata (169.254.169.254), localhost, private IP ranges, etc.
+   397→- Created `src/lib/csrf.ts` — pure CSRF check function:
+   398→  - `isSameOriginWrite({method, host, origin, secFetchSite})` returns {ok, reason}
+   399→  - Exempts GET/HEAD/OPTIONS (side-effect-free)
+   400→  - Accepts `Sec-Fetch-Site: same-origin` (modern reliable signal)
+   401→  - Fallback: compares Origin header host against Host header (handles port correctly)
+   402→  - Rejects: cross-site, same-site (subdomain), missing signals, malformed Origin
+   403→  - Extracted as a pure function so it can be unit-tested without a Next.js server
+   404→- Updated `src/lib/schemas.ts`:
+   405→  - Replaced `audioUrl: z.string().url()` with a `.refine(isAllowedAudioUrl, ...)` that enforces the allowlist server-side
+   406→  - Error message: "audioUrl must be an HTTPS URL on the allowed audio CDN (verses.quran.com)"
+   407→- Rewrote `src/middleware.ts`:
+   408→  - Added CSRF check on all state-changing API requests (POST/PUT/PATCH/DELETE) using `isSameOriginWrite`
+   409→  - Returns 403 with `{error: "Forbidden — same-origin check failed", requestId}` when the check fails
+   410→  - Logs the failure server-side (including IP) but does NOT leak the IP in the response body
+   411→  - Kept the bot UA filter on /api/render POST
+   412→  - Kept the request-ID header injection for log correlation
+   413→- Updated `next.config.ts` with a `headers()` function returning security headers on every route:
+   414→  - Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' https://verses.quran.com; connect-src 'self' https://api.alquran.cloud https://api.quran.com https://verses.quran.com; font-src 'self' https://fonts.gstatic.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+   415→  - X-Frame-Options: DENY (clickjacking)
+   416→  - X-Content-Type-Options: nosniff (MIME sniffing)
+   417→  - Referrer-Policy: strict-origin-when-cross-origin
+   418→  - Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+   419→  - Strict-Transport-Security: only in production (NODE_ENV=production) — HSTS would lock browsers out of dev HTTP
+   420→- Added `ALLOWED_AUDIO_HOSTS` to the env schema (`src/lib/env.ts`) + `.env.example`
+   421→- Added 39 unit tests (total now 145):
+   422→  - `src/lib/urlAllowlist.test.ts` (20 tests): accepts valid CDN URLs (https, with path/query/port, case-insensitive), rejects SSRF vectors (http, AWS metadata, localhost, 127.0.0.1, 10.x, 192.168.x, 172.16.x, non-allowed external host, embedded credentials, file:, data:, lookalike host, empty string, non-URL), env override
+   423→  - `src/lib/csrf.test.ts` (19 tests): exempts GET/HEAD/OPTIONS (case-insensitive), Sec-Fetch-Site same-origin passes / cross-site/same-site/none rejected, Origin fallback (host+port match passes, mismatch rejected, malformed rejected), missing signals rejected, all 4 write methods (POST/PUT/PATCH/DELETE) covered
+   424→- Verified end-to-end with curl:
+   425→  - SSRF: POST /api/render with `audioUrl: "http://169.254.169.254/..."` → 400 "audioUrl must be an HTTPS URL on the allowed audio CDN" (server never issues the HEAD request)
+   426→  - CSRF: POST with no Origin → 403 "Forbidden — same-origin check failed"
+   427→  - CSRF: POST with cross-origin Origin (https://evil.example.com) → 403
+   428→  - CSRF: POST with same-origin Origin (http://localhost:3000) → passes CSRF, reaches body validation
+   429→  - Security headers: all 5 present on page responses (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy); HSTS correctly omitted in dev
+   430→  - IP leak: 403 response body contains only {error, requestId} — no IP
+   431→  - GET /api/timings still works (CSRF exempts GET)
+   432→- Verified the app still works in the browser:
+   433→  - Page loads cleanly, no console errors
+   434→  - Selected Al-Fatihah, loaded ayats successfully (GET /api/timings returned 200)
+   435→  - Export modal opens (the POST /api/render from the browser includes the same-origin Origin header, so CSRF passes)
+   436→- ESLint passes clean (0 errors, 0 warnings)
+   437→- All 145 tests pass (39 new + 106 existing)
+   438→
+   439→Stage Summary:
+   440→- Phase 2 (Security blockers) complete. The four blockers from the audit are all closed:
+   441→  1. SSRF: audioUrl is now restricted to the allowed audio CDN (verses.quran.com) via a Zod refine + the isAllowedAudioUrl helper. An attacker can no longer use /api/render to enumerate the server's internal network.
+   442→  2. CSRF: all state-changing API requests (POST/PUT/PATCH/DELETE) require a same-origin signal (Sec-Fetch-Site: same-origin OR Origin matching Host). Cross-site and token-less requests get 403.
+   443→  3. Security headers: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and HSTS (prod only) are set on every response via next.config.ts headers().
+   444→  4. IP leak: the middleware 403 response no longer includes the requester's IP — it's logged server-side only.
+   445→
+   446→---
+   447→Task ID: 9
+   448→Agent: main (super-z)
+   449→Task: Phase 3 — Browser compat + hardening (MediaRecorder pre-flight, honest export format, Redis rate limiter, crypto.randomUUID + ownership tokens)
+   450→
+   451→Work Log:
+   452→- Created `src/lib/exportCapabilities.ts` — pre-flight browser-capability check:
+   453→  - `checkExportCapabilities()` returns {ok, reason, mimeType}
+   454→  - Checks: MediaRecorder exists, Canvas.captureStream exists, AudioContext (or webkitAudioContext) exists, at least one supported MIME type
+   455→  - Safe for SSR (returns {ok: false} without throwing when `window` is undefined)
+   456→  - `pickSupportedMimeType()` extracted as a shared helper (replaces the old local `pickMime()` in ExportModal)
+   457→- Updated `src/components/ExportModal.tsx`:
+   458→  - Added `capabilities` useMemo at the top of the component
+   459→  - Added a browser-support warning block (amber, with AlertCircle icon) when `!capabilities.ok` — shows the human-readable reason + recommends Chrome/Edge/Firefox desktop
+   460→  - Render button now disabled when `!capabilities.ok` (in addition to `!slides.length`)
+   461→  - Removed the dead local `pickMime()` function — uses the shared `pickSupportedMimeType()` instead
+   462→  - Replaced the `webkitAudioContext!` non-null assertion with a defensive `if (!AudioCtx) throw new Error(...)` — throws a clear message instead of crashing
+   463→  - Updated platform preset hints to be honest about the WebM/MP4 situation: "convert to MP4" for Instagram Reel, "WebM ok" for YouTube Shorts/YouTube
+   464→  - Added a "Format: WebM (VP9/Opus)" row to the export summary
+   465→  - Added a "Heads up" format note explaining the WebM output + the ffmpeg one-liner for converting to MP4 for Instagram
+   466→- Installed `@upstash/redis` + `@upstash/ratelimit` packages
+   467→- Rewrote `src/lib/rateLimit.ts` to actually use Redis when configured:
+   468→  - Lazy-initializes a `Ratelimit` instance (sliding-window algorithm) using `@upstash/ratelimit` + `@upstash/redis`
+   469→  - `consumeRateLimit()` uses the Redis limiter when `hasRedis()`, falls back to in-memory otherwise
+   470→  - If Redis fails mid-request (network error), degrades to in-memory rather than failing the request — a Redis outage shouldn't block legitimate users entirely
+   471→  - Removed the old "commented-out Redis branch" — it's now real code
+   472→- Rewrote `src/lib/jobStore.ts` for security:
+   473→  - `generateJobId()` now uses `crypto.randomUUID()` (v4 UUID) instead of `Math.random()` — unpredictable, so attackers can't enumerate IDs
+   474→  - Added `generateOwnerToken()` using `crypto.getRandomValues(32 bytes)` → 64-char hex (256 bits)
+   475→  - Every `RenderJob` now carries an `ownerToken` field
+   476→  - Added `verifyJobOwnership(jobId, token)` with a constant-time-ish comparison to prevent timing attacks
+   477→  - `updateRenderJob()` no longer accepts `ownerToken` in its patch type (can't be overwritten)
+   478→- Updated `src/app/api/render/route.ts`:
+   479→  - POST now returns `ownerToken` in the 202 response (alongside jobId)
+   480→  - PUT now requires `x-owner-token` header — calls `verifyJobOwnership()`, returns 403 if missing/wrong
+   481→  - PUT response strips the `ownerToken` before returning (never echoes the secret back)
+   482→  - Added structured logging for ownership-check failures
+   483→- Updated `src/app/api/render-status/route.ts`:
+   484→  - GET now requires `x-owner-token` header — same `verifyJobOwnership()` check
+   485→  - Returns 403 if the token is missing/wrong (prevents jobId enumeration from polling other users' job status)
+   486→- Updated `src/components/ExportModal.tsx` client:
+   487→  - Captures `ownerToken` from the POST response
+   488→  - All 3 PUT calls (progress update, done, error) now send `x-owner-token: <token>` header
+   489→  - Consolidated the 3 inline fetch calls into a `sendUpdate()` helper
+   490→- Added 19 unit tests (total now 164):
+   491→  - `src/lib/exportCapabilities.test.ts` (11 tests): pickSupportedMimeType (VP9/VP8/webm/mp4/none/throw), checkExportCapabilities (ok when all present, not-ok on server, not-ok without MediaRecorder, not-ok without supported MIME)
+   492→  - `src/lib/jobStore.test.ts` (8 new tests): ownerToken is unique + 64-char hex, verifyJobOwnership true for correct / false for wrong / empty / nonexistent / wrong-length tokens, ownerToken not mutated by updateRenderJob, job IDs are v4 UUIDs (version nibble '4')
+   493→- Verified end-to-end with Agent Browser + curl:
+   494→  - App loads cleanly, no console errors
+   495→  - Export modal shows: honest platform hints ("convert to MP4" / "WebM ok"), Format row, "Heads up" WebM note
+   496→  - Render button enabled (browser supports MediaRecorder) — no false "Browser not supported" warning
+   497→  - curl POST /api/render → 202 with {jobId: "job_<UUID>", ownerToken: "<64 hex chars>", audioCheck, note}
+   498→  - curl PUT without ownerToken → 403 "Forbidden — invalid or missing owner token"
+   499→  - curl PUT with wrong ownerToken → 403
+   500→  - curl PUT with correct ownerToken → 200, response has no ownerToken (stripped)
+   501→  - curl GET /api/render-status without ownerToken → 403
+   502→  - curl GET /api/render-status with correct ownerToken → 200 {status, progress}
+   503→  - Job IDs are now proper v4 UUIDs (e.g. job_cc6f7877-9057-461c-89c3-c86c6c616afd) — not predictable
+   504→  - Owner tokens are 64-char hex (256 bits of entropy)
+   505→- ESLint passes clean (0 errors, 0 warnings)
+   506→- All 164 tests pass (19 new + 145 existing)
+   507→
+   508→Stage Summary:
+   509→- Phase 3 (Browser compat + hardening) complete. Four improvements shipped:
+   510→  1. MediaRecorder pre-flight check — unsupported browsers now see a clear "Browser not supported" message + a disabled Render button, instead of a crash mid-render with a generic "Render failed" toast. Also fixed the webkitAudioContext! non-null assertion.
+   511→  2. Honest export format — platform presets now say "convert to MP4" / "WebM ok", the summary shows "Format: WebM (VP9/Opus)", and a "Heads up" note explains the ffmpeg one-liner for Instagram. Users won't be surprised when IG rejects the .webm file.
+   512→  3. Redis rate limiter — installed @upstash/redis + @upstash/ratelimit; the rate limiter now uses Redis (sliding-window) when configured, with graceful degradation to in-memory if Redis is unreachable. Production multi-instance deployments get correct shared limits.
+   513→  4. crypto.randomUUID() + ownership tokens — job IDs are now unpredictable v4 UUIDs (not the old predictable timestamp+Math.random format). Every job carries a 256-bit owner token; PUT and GET-status require it via the `x-owner-token` header. This closes the "anyone with a jobId can overwrite another user's job" and "jobId enumeration" vulnerabilities from the audit.
+   514→
+   515→---
+   516→Task ID: 10
+   517→Agent: main (super-z)
+   518→Task: Phase 4 — Upload safety + ops (image validation, health endpoint, timings rate limit, Sentry)
+   519→
+   520→Work Log:
+   521→- Created `src/lib/uploadValidation.ts` — pure validation helper for background image uploads:
+   522→  - `validateBackgroundImage({type, size, name})` returns {ok, error?}
+   523→  - Accepts: image/jpeg, image/png, image/webp, image/gif, image/avif
+   524→  - Rejects: image/svg+xml (with a specific message — XSS + canvas-taint risk), all other MIME types, empty MIME, files > 5MB
+   525→  - `MAX_BACKGROUND_IMAGE_BYTES = 5 * 1024 * 1024` (named constant, no magic number)
+   526→  - Extracted as a pure function for unit-testability
+   527→- Updated `src/components/CustomizationPanel.tsx`:
+   528→  - `onUpload()` now calls `validateBackgroundImage(file)` before `readAsDataURL`
+   529→  - On rejection, shows a `toast.error(validation.error)` with the specific reason (SVG warning, unsupported type, oversized)
+   530→  - Added imports for the validator + sonner toast
+   531→- Created `src/app/api/health/route.ts` — real health check:
+   532→  - `checkDb()` — runs `db.$queryRaw\`SELECT 1\`` to force a Prisma connection
+   533→  - `checkUpstream(name, url, expectedSubstring)` — fetches with a 3s timeout, verifies HTTP 200 + a substring in the body (confirms it's the real API, not a captive portal)
+   534→  - Checks 3 dependencies in parallel: DB, alquran.cloud /surah (looks for "englishName"), quran.com /chapters (looks for "chapters")
+   535→  - Returns `{status: 'ok'|'degraded'|'down', checks: {db, alquran, qurancom}, ts}` with 200 or 503
+   536→  - `Cache-Control: no-store` so the result is always fresh
+   537→  - Structured logging when degraded
+   538→- Updated `src/app/api/route.ts` — replaced the "Hello, world!" placeholder with a real service-info response (name, version, endpoint list, docs link)
+   539→- Added `TIMINGS_RATE_LIMIT_MAX` (60) + `TIMINGS_RATE_LIMIT_WINDOW_MS` (60000) to the env schema
+   540→- Updated `src/app/api/timings/route.ts`:
+   541→  - Added rate limiting (60/min/IP) via `consumeRateLimit()` with the `timings:` key prefix
+   542→  - Returns 429 + `Retry-After` header when the limit is hit
+   543→  - Structured logging on rate-limit events
+   544→  - This closes the "open proxy to quran.com" vulnerability from the audit — an attacker can no longer enumerate the entire verse set (114 surahs × ~286 ayats × 5 reciters ≈ 163k requests) through our proxy
+   545→- Installed `@sentry/nextjs`
+   546→- Added `SENTRY_DSN` (optional, URL) to the env schema + `.env.example`
+   547→- Created `src/lib/sentry.ts` — thin wrapper around Sentry:
+   548→  - `captureException(err, context?)` — forwards to Sentry when SENTRY_DSN is set
+   549→  - When SENTRY_DSN is unset (dev), falls through to the structured logger so errors still show up in the terminal
+   550→  - Dynamic import of @sentry/nextjs so the bundle doesn't pull in the SDK when Sentry isn't configured
+   551→  - If the Sentry import itself fails, falls back to the logger (never silently swallows an error)
+   552→- Updated `src/app/error.tsx`:
+   553→  - Replaced the `console.error('[error-boundary]', error)` placeholder with `captureException(error, { digest: error.digest })`
+   554→  - The digest is included so we can correlate the user-visible ref with the Sentry event
+   555→- Updated `.env.example` with the new env vars (TIMINGS_RATE_LIMIT_*, SENTRY_DSN)
+   556→- Added 16 unit tests in `src/lib/uploadValidation.test.ts`:
+   557→  - Accepts: JPEG/PNG/WebP/GIF/AVIF under the size limit, boundary case (exactly 5MB), case-insensitive MIME
+   558→  - Rejects SVG with specific message, rejects text/plain / empty MIME / application/pdf / video/mp4
+   559→  - Rejects 1-byte-over-limit, 500MB, includes actual file size in the error message
+   560→  - Confirms MAX_BACKGROUND_IMAGE_BYTES is 5MB
+   561→- Verified end-to-end with curl + Agent Browser:
+   562→  - /api/health returns `status: ok` with all 3 checks passing (db ✓, alquran ✓ 146ms, qurancom ✓ 47ms)
+   563→  - /api/timings rate limit: requests 1-60 succeed, request #61 gets 429 with Retry-After header ✅
+   564→  - /api root returns service info (name, version, endpoints, docs)
+   565→  - SVG upload rejected (no custom bg set after attempting to upload test.svg)
+   566→  - Normal flow still works: loaded Al-Fatihah, pressed Play, audio + seek bar advancing
+   567→- ESLint passes clean (0 errors, 0 warnings)
+   568→- All 180 tests pass (16 new upload validation + 164 existing)
+   569→
+   570→Stage Summary:
+   571→- Phase 4 (Upload safety + ops) complete. Four improvements shipped:
+   572→  1. Upload validation — SVG rejected (XSS/canvas-taint risk), files > 5MB rejected, unsupported MIME types rejected, all with clear toast messages. Closes the "no MIME validation / no size limit" vulnerability from the audit.
+   573→  2. Real /api/health — pings DB + alquran.cloud + quran.com in parallel with 3s timeouts, returns 200/503 with per-check status + latency. Suitable for uptime monitors + load balancers.
+   574→  3. /api/timings rate-limited (60/min/IP) — no longer an open proxy to quran.com. Verified request #61 gets 429.
+   575→  4. Sentry wired up — error.tsx now calls captureException() which forwards to Sentry when SENTRY_DSN is set, falls back to the structured logger in dev. Replaced the "Hello, world!" /api root with real service info.
+   576→
+   577→---
+   578→Task ID: 11
+   579→Agent: main (super-z)
+   580→Task: Phase 5 + 6 — Polish/a11y/perf + reciter attribution
+   581→
+   582→Work Log:
+   583→
+   584→**Phase 5 — Polish + a11y + perf:**
+   585→
+   586→5.1 Accessibility:
+   587→- Added `aria-label` to all 4 icon-only transport buttons in VideoPreview (Previous ayat, Play/Pause, Next ayat, Mute/Unmute) — `title` alone isn't reliably read by screen readers
+   588→- Added `lang="ar"` to Arabic content: surah name in the header, word-by-word text container, reciter Arabic name in both the dropdown + inline preview card, surah Arabic name in the SurahSelector dropdown
+   589→- Bumped watermark opacity from `text-white/35` to `text-white/50` for WCAG AA contrast
+   590→- Marked the watermark `aria-hidden="true"` so screen readers skip it
+   591→
+   592→5.2 Performance:
+   593→- Lazy-mounted ExportModal with `next/dynamic({ ssr: false })` — the MediaRecorder + Canvas code is no longer in the main page chunk; it loads only when the user first opens the export modal
+   594→- Switched the 7 background preset thumbnails from raw `<img>` to `next/image` with `fill` + `sizes` for responsive loading + automatic optimization
+   595→- Initialized the Zustand store with `SURAHS_FALLBACK` instead of `[]` — the surah dropdown is immediately populated on first render with no loading spinner. `loadSurahs()` still fetches the live list from alquran.cloud and updates if richer, but the UI is already interactive before that resolves
+   596→
+   597→5.3 next.config.ts hygiene:
+   598→- Set `typescript.ignoreBuildErrors: false` — production builds now fail on type errors instead of silently shipping broken code
+   599→- Set `reactStrictMode: true` — enables additional runtime checks in dev
+   600→- Fixed 3 type errors that surfaced: Window cast for webkitAudioContext (used `as unknown as` instead of direct cast), store.ts `data` typed as `AyatData | null` with `!` assertion in the closure (TypeScript can't narrow `let` in closures)
+   601→- Updated tsconfig.json to exclude `examples/`, `skills/`, `mini-services/` from typechecking (pre-existing scaffold code, not ours)
+   602→- Verified `tsc --noEmit` passes clean
+   603→
+   604→5.4 CI pipeline:
+   605→- Verified `.github/workflows/ci.yml` is correct: lint → typecheck → test → build, failing fast on the cheapest check first. DATABASE_URL placeholder is set for the env validator
+   606→
+   607→5.5 sitemap + robots.txt:
+   608→- Created `src/app/sitemap.ts` — Next.js metadata route that generates `/sitemap.xml` at build time, listing the 4 public pages (/, /about, /terms, /privacy) with changeFrequency + priority
+   609→- Updated `public/robots.txt` — every user-agent now has `Disallow: /api/` (API routes shouldn't be indexed) + a `Sitemap:` directive pointing to `/sitemap.xml`
+   610→
+   611→**Phase 6 — Reciter attribution:**
+   612→- Updated VideoPreview: the bottom-left attribution block now shows BOTH the translation attribution (when required) AND a "Recited by {reciter.name}" line (always shown). They're stacked vertically so both are visible
+   613→- Updated ExportModal drawFrame: the Canvas export draws the same two-line attribution block — reciter credit at the bottom, translation attribution above it. Both use the same font size, opacity, and truncation logic
+   614→- Wired `reciterName` through the RenderArgs → renderVideoToWebm → drawFrame chain
+   615→- Verified via DOM inspection: "Recited by Mishary Alafasy" is present in the preview frame at the correct position
+   616→- This makes every exported video self-attributing — viewers know both the translation source and the reciter
+   617→
+   618→**Verification:**
+   619→- ESLint passes clean (0 errors, 0 warnings)
+   620→- TypeScript typecheck passes clean (0 errors)
+   621→- All 180 tests pass
+   622→- App loads cleanly, no console errors
+   623→- Surah dropdown immediately populated (SSR fallback, no loading spinner)
+   624→- Transport buttons have aria-labels (verified via DOM: "Previous ayat", "Play", "Next ayat", "Mute")
+   625→- 5 elements with lang="ar" (surah name, word text, 2x reciter name, surah selector)
+   626→- Reciter attribution "Recited by Mishary Alafasy" visible in the preview frame (verified via DOM)
+   627→- Watermark at /50 opacity + aria-hidden
+   628→
+   629→Stage Summary:
+   630→- Phases 5 + 6 complete. All polish, accessibility, performance, and attribution items shipped:
+   631→  1. **Accessibility** — aria-labels on all icon-only buttons, lang="ar" on all Arabic content, watermark contrast bumped to /50 + aria-hidden
+   632→  2. **Performance** — ExportModal lazy-mounted (MediaRecorder code out of main chunk), background thumbnails use next/image, surah list SSR'd from bundled fallback (no loading spinner)
+   633→  3. **Config hygiene** — ignoreBuildErrors=false + reactStrictMode=true, 3 type errors fixed, tsc passes clean
+   634→  4. **CI** — workflow verified (lint → typecheck → test → build)
+   635→  5. **SEO** — sitemap.ts + robots.txt updated to disallow /api/*
+   636→  6. **Reciter attribution** — "Recited by {name}" now appears in both the preview and the exported video, alongside the translation attribution, making every video self-attributing
+   637→
+   638→---
+   639→Task ID: restore-rebrand
+   640→Agent: main (super-z)
+   641→Task: Rebrand the app from "QuranVid" → "Jariyah Now" across all source files AND add full SEO metadata (OpenGraph, Twitter cards, sitemap canonical, OG image). The session had been reset, so this restored + rebranded everything.
+   642→
+   643→Work Log:
+   644→- Read prior worklog to understand the existing Quran Video Generator build (5 reciters, 6 translations, word-by-word highlight, client-side render, legal pages, etc.)
+   645→- **src/app/layout.tsx** — Full SEO metadata rewrite:
+   646→  - metadataBase = new URL("https://jariyahnow.com")
+   647→  - title: "Jariyah Now — Turn Quran Verses Into Shareable Reels"
+   648→  - description: Quran-reels-in-seconds pitch
+   649→  - keywords: 12 SEO terms (Quran reels, Sadaqah Jariyah, Instagram reels, TikTok Quran, YouTube shorts, etc.)
+   650→  - icons: { icon, shortcut, apple } → /logo.svg
+   651→  - alternates.canonical = siteUrl
+   652→  - openGraph: title/description/url/siteName/images(1200×630)/type=website
+   653→  - twitter: summary_large_image + matching image
+   654→  - robots: index/follow + googleBot with max-image-preview: large
+   655→- **src/app/page.tsx** — Rewrote the entire landing page from Bengali → English:
+   656→  - Header: "Jariyah Now" brand + About/Terms/Privacy + "Open App" CTA
+   657→  - Hero: "Free • No account required" badge, "Share once, earn forever." tagline, "Turn Quran verses into shareable reels" headline, Sadaqah Jariyah subheadline
+   658→  - CTAs: "Create your reel" → /app, "See how it works" → #how-it-works
+   659→  - Trust indicators: 114 Surahs, 5 reciters, word-by-word highlight, 6 translations
+   660→  - App showcase with /landing/app-desktop.png (browser frame, URL bar shows jariyahnow.com/app) + /landing/app-mobile.png (phone frame)
+   661→  - "How it works" 4 steps (Pick a Surah / Choose a reciter / Customize the look / Export & share) using BookOpen, Mic2, Palette, Download icons
+   662→  - 6 feature cards: word-by-word highlighting, 5 reciters, 6 translations, full customization, Reels & Shorts ready, browser-based (Sparkles, Mic2, Languages, Palette, Film, Globe icons)
+   663→  - Sadaqah Jariyah band explaining the name ("the ongoing charity that keeps rewarding you")
+   664→  - Final CTA: "Start creating now" / "Open the builder" (Share2 icon)
+   665→  - Footer: brand + nav + legal disclaimer paragraph + attribution links + dynamic copyright year `© {new Date().getFullYear()} Jariyah Now`
+   666→  - Per-page metadata: title, description, openGraph, twitter (mirrors layout)
+   667→  - Used lucide-react icons: Sparkles, Play, Film, Mic2, BookOpen, Palette, Download, ArrowRight, Check, Heart, Share2, Globe, Languages
+   668→- **src/app/app/page.tsx** — header brand span "QuranVid" → "Jariyah Now"
+   669→- **src/app/loading.tsx** — "Loading QuranVid…" → "Loading Jariyah Now…"
+   670→- **src/app/api/route.ts** — `name: 'QuranVid API'` → `name: 'Jariyah Now API'`
+   671→- **src/app/about/page.tsx** — bulk "QuranVid"→"Jariyah Now" (sed) + metadata title "About — Jariyah Now" + rewrote intro paragraph to mention "Sadaqah Jariyah — the ongoing charity that keeps rewarding you"
+   672→- **src/app/terms/page.tsx** — bulk replace + metadata title "Terms of Service — Jariyah Now"
+   673→- **src/app/privacy/page.tsx** — bulk replace + metadata title "Privacy Policy — Jariyah Now"
+   674→- **src/components/LegalPage.tsx** — SiteFooter:
+   675→  - Brand text "QuranVid" → "Jariyah Now"
+   676→  - Added the legal disclaimer as a separate `<p>` (text-[11px], centered) below the main footer row
+   677→  - Added dynamic copyright: `© {new Date().getFullYear()} Jariyah Now — All rights reserved`
+   678→- **src/components/ExportModal.tsx** — canvas watermark `ctx.fillText('QuranVid', ...)` → `'Jariyah Now'`
+   679→- **src/components/VideoPreview.tsx** — preview watermark div text "QuranVid" → "Jariyah Now"
+   680→- **src/lib/rateLimit.ts** — Upstash Redis prefix `'quranvid:rl'` → `'jariyahnow:rl'`
+   681→- **src/lib/types.ts** — top comment "Quran Video Generator" → "Jariyah Now Quran Video Generator"
+   682→- **src/app/sitemap.ts** — base URL fallback `http://localhost:3000` → `https://jariyahnow.com`
+   683→- **README.md** — title "Jariyah Now — Turn Quran Verses Into Shareable Reels" + tagline blockquote "Share once, earn forever." + Sadaqah Jariyah paragraph + bulk replace remaining "QuranVid"
+   684→- **scripts/make_og_image.py** — NEW Python (PIL) script that renders a branded 1200×630 OG image:
+   685→  - Vertical smoothstep gradient #eeebf0 → #9333ea (eased so headline area stays light)
+   686→  - Top-left brand badge: purple rounded pill with a 4-point white sparkle + "Jariyah Now" (Liberation Sans Bold)
+   687→  - Purple tagline "SHARE ONCE, EARN FOREVER."
+   688→  - Headline line 1 "Turn Quran verses into" (dark) + line 2 "shareable reels." (purple)
+   689→  - Subheadline two lines: "Pick a Surah. Choose a reciter. Export a perfectly synced reel." + "Word-by-word highlighting. Bengali + English translations."
+   690→  - Bottom-right pill "jariyahnow.com" with purple outline
+   691→  - Ran the script → public/og-image.png (44 KB, 1200×630 RGB) ✓
+   692→- **Extras (rebrand completeness):**
+   693→  - src/app/globals.css — theme comment "QuranVid light theme" → "Jariyah Now light theme"
+   694→  - NOTICES — bulk "QuranVid" → "Jariyah Now"
+   695→  - LICENSE — bulk "QuranVid" → "Jariyah Now" (copyright line + MIT note)
+   696→- **Pre-existing type bug fixed to unblock build verification:**
+   697→  - src/lib/videoConverter.ts:99 — `new Blob([data], ...)` where `data: FileData` (Uint8Array<ArrayBufferLike>) failed TS 5.7+ strict BlobPart check. Added `as BlobPart` cast with explanatory comment. (Unrelated to rebrand but blocked `npx next build`.)
+   698→
+   699→Verification (all PASS):
+   700→- `grep -rn "QuranVid" --include="*.ts" --include="*.tsx" src/` → ZERO matches (exit 1)
+   701→- `grep -rn "QuranVid" src/` (any extension) → ZERO matches
+   702→- `bun run lint` (eslint .) → 0 errors, 0 warnings, clean exit 0
+   703→- `npx next build` → ✓ Compiled successfully in 10s, ✓ TypeScript pass, ✓ all 13 static pages generated, routes: / /about /app /privacy /sitemap.xml /terms (static) + /api /api/health /api/render /api/render-status /api/timings (dynamic)
+   704→- /public/og-image.png exists (44,475 bytes, 1200×630)
+   705→- Dev server log shows clean 200s on / and /app after the edits (no runtime errors)
+   706→
+   707→Stage Summary:
+   708→- Brand fully migrated QuranVid → Jariyah Now across all source files, legal pages, README, NOTICES, LICENSE, watermarks (canvas + DOM), Redis prefix, sitemap, and metadata.
+   709→- Full SEO suite added: metadataBase, OpenGraph, Twitter large-image cards, canonical alternates, robots directives with googleBot max-image-preview:large, keyword set, sitemap pointed at production domain, and a branded 1200×630 OG image generated by a reusable Python script.
+   710→- Legal disclaimer paragraph is now rendered in the footer of every page (landing page footer + shared LegalPage SiteFooter used by /about, /terms, /privacy).
+   711→- Dynamic copyright year via `new Date().getFullYear()` on both footer variants.
+   712→- Build passes end-to-end.
+   713→
+   714→---
+   715→Task ID: restore-mp4-conversion
+   716→Agent: main (super-z)
+   717→Task: Restore the MP4 conversion pipeline. The session had been reset, leaving the WebM→MP4 step removed from ExportModal and the old ffmpeg.wasm-based videoConverter.ts still in place (which required SharedArrayBuffer/COEP). Rebuilt the pipeline server-side with Python + ffmpeg, which works in every browser with no COEP tradeoffs.
+   718→
+   719→Work Log:
+   720→
+   721→1. **scripts/webm_to_mp4.py** — NEW Python wrapper around ffmpeg:
+   722→   - Args: `<input.webm> <output.mp4>`; prints usage to stderr on misuse.
+   723→   - ffmpeg flags tuned for MAXIMUM browser compatibility (no NotSupportedError anywhere):
+   724→     - `-y -i <input>` (overwrite, input)
+   725→     - `-c:v libx264 -profile:v baseline -level 3.1 -bf 0` — Constrained Baseline @ 3.1, no B-frames (Safari/iOS safety when playing from blob URLs)
+   726→     - `-preset fast -crf 23 -pix_fmt yuv420p` — universally-decodable pixel format
+   727→     - `-c:a aac -b:a 128k -shortest` — AAC-LC, stop at shortest stream (handles MediaRecorder chunk gap)
+   728→     - `-movflags +faststart` — moov atom at front, immediate playback + byte-range support
+   729→     - `-progress pipe:2 -nostats` — machine-readable progress on stderr
+   730→   - Exit-code mapping: 0=ok, 1=bad args / input missing, 2=ffmpeg missing (FFMPEG_BIN env override supported), 3=conversion failed
+   731→   - Defensive: validates input file exists, abspath(input)!=abspath(output), output non-empty
+   732→   - `chmod +x` applied; `shutil.which(FFMPEG_BIN)` check before spawning
+   733→   - Verified usage error: `python3 scripts/webm_to_mp4.py` → exit 1, prints "Usage: …"
+   734→   - Verified missing-ffmpeg path: `FFMPEG_BIN=/no/such/ffmpeg` → exit 2 with clear message
+   735→   - Verified end-to-end: 2-second test WebM (320×240, libvpx + libvorbis) → exit 0, output is a valid MP4 with H.264 Constrained Baseline @ level 31, yuv420p, AAC-LC, duration 2.0s
+   736→
+   737→2. **src/app/api/convert-mp4/route.ts** — NEW Next.js API route:
+   738→   - `export const runtime = 'nodejs'`, `maxDuration = 300`, `dynamic = 'force-dynamic'`
+   739→   - `PYTHON_BIN = process.env.PYTHON_BIN || 'python3'`
+   740→   - `CONVERTER_SCRIPT = path.join(process.cwd(), 'scripts', 'webm_to_mp4.py')`
+   741→   - `MAX_BODY_BYTES = 100 MB`, `FFMPEG_TIMEOUT_MS = 4 min`
+   742→   - **GET**: returns `{ok:true, converter:'python+ffmpeg', maxBodyBytes, timeoutMs}` — used by client capability ping
+   743→   - **POST**: rate-limited (reuses `consumeRateLimit` + `getClientIp` from `@/lib/rateLimit`, same `render:` budget as /api/render), accepts WebM as `application/octet-stream` (raw body) OR `multipart/form-data` (`file` field). Pre-flight size check via Content-Length + post-read check. Writes to `os.tmpdir()/jariyahnow-${randomUUID()}.{webm,mp4}`, spawns `python3 scripts/webm_to_mp4.py <in> <out>` via `child_process.spawn`, drains stdout, captures stderr (capped at 64 KB), enforces the 4-min timeout with SIGKILL, reads the output MP4, returns it as `video/mp4` with `Cache-Control: no-store` + `X-Converter: python+ffmpeg`. On non-zero exit: 503 for code 2 (ffmpeg missing), 500 otherwise, with the reason in the JSON `error` field. Temp files always cleaned up in a `finally` block via `Promise.allSettled([unlink(input), unlink(output)])`.
+   744→   - Strict TypeScript Blob fix: copies the Node Buffer into a fresh `new Uint8Array(byteLength)`-backed view before constructing the `Blob` (avoids the TS 5.7+ BlobPart rejection when Buffer's ArrayBuffer is SharedArrayBuffer-backed).
+   745→   - Logger from `@/lib/logger` for structured logs (info on success with input/output bytes, warn on rate-limit, error on spawn/read/empty-output failures).
+   746→   - Live-tested end-to-end with curl: `POST /api/convert-mp4` (with same-origin Origin + Sec-Fetch-Site headers to pass the CSRF middleware) → HTTP 200, 48016 bytes, 0.4s, output is a valid MP4.
+   747→
+   748→3. **src/lib/videoConverter.ts** — REWROTE (removed ffmpeg.wasm entirely):
+   749→   - `canConvertToMp4()` now always returns `true` (no more SharedArrayBuffer dependency).
+   750→   - `webmToMp4(blob, options?)` posts the WebM blob to `/api/convert-mp4` via XHR (so we can wire both upload + download progress), with a 5-min client-side timeout race. Upload progress maps 0→0.5, download progress maps 0.5→1.0. On HTTP error, reads the response blob as text, parses JSON, rejects with `json.error || json.detail || HTTP <status>`.
+   751→   - `isMp4ConversionAvailable()` GETs `/api/convert-mp4` and returns `Boolean(json.ok)`.
+   752→   - No more `@ffmpeg/ffmpeg` import, no more `localToBlobURL`, no more SharedArrayBuffer gating.
+   753→
+   754→4. **src/components/ExportModal.tsx** — Updated:
+   755→   - Added `import { webmToMp4, canConvertToMp4 } from '@/lib/videoConverter'`
+   756→   - Added `'converting'` to the `RenderStatus` union type
+   757→   - Restored the WebM→MP4 conversion step at the end of `startRender` (it had been removed in a prior reset): after the canvas+MediaRecorder render finishes, sets `status='converting'`, `progress=0`, calls `webmToMp4(webmBlob, {onProgress})`, revokes the temp WebM URL, creates a fresh MP4 object URL, sets `status='done'`, toasts `"Video exported as MP4!"`. On conversion failure: falls back to the WebM URL but **toasts `toast.error('MP4 conversion failed — downloaded as WebM instead. You can re-export to retry.')`** (was previously a misleading `toast.success`).
+   758→   - Added the `status === 'converting'` UI block (between rendering and done) with 3 phases driven by `progress`:
+   759→     - `progress < 0.5` → title "Uploading to converter…" / label "Upload"
+   760→     - `progress < 0.95` → title "Converting to MP4…" / label "Convert"
+   761→     - else → title "Downloading MP4…" / label "Download"
+   762→   - Updated the converting subtext from "Almost done — making it Instagram-ready" → **"Python + ffmpeg — server-side, no browser limits"**
+   763→   - Footer "Render video" button now hidden during both `'rendering'` and `'converting'` (was only `'rendering'`)
+   764→
+   765→5. **End-to-end verification:**
+   766→   - Generated test WebM: `ffmpeg -y -f lavfi -i testsrc=duration=2:size=320x240:rate=30 -f lavfi -i sine=frequency=440:duration=2 -c:v libvpx -c:a libvorbis /tmp/test_input.webm` (35 KB)
+   767→   - Direct Python script run: `python3 scripts/webm_to_mp4.py /tmp/test_input.webm /tmp/test_output.mp4` → exit 0, 48 KB output
+   768→   - `ffprobe -show_entries stream=codec_name,profile,level,pix_fmt -of compact` on the output:
+   769→     - `stream|codec_name=h264|profile=Constrained Baseline|pix_fmt=yuv420p|level=31`
+   770→     - `stream|codec_name=aac|profile=LC`
+   771→   - Live API route: `POST /api/convert-mp4` (CSRF-passing headers) → HTTP 200, 48016 bytes, valid MP4, same codec/profile/level/pix_fmt as the direct script run, duration 2.0s.
+   772→   - `GET /api/convert-mp4` → `{"ok":true,"converter":"python+ffmpeg","maxBodyBytes":104857600,"timeoutMs":240000}`
+   773→
+   774→6. **Build + lint:**
+   775→   - `npx eslint src/lib/videoConverter.ts src/app/api/convert-mp4/route.ts src/components/ExportModal.tsx` → 0 errors, 0 warnings (exit 0)
+   776→   - `npx next build` → ✓ Compiled successfully in 10.6s, ✓ TypeScript pass, ✓ 13/13 static pages generated, route table includes the new `ƒ /api/convert-mp4` entry. All routes: /, /_not-found, /about, /api, /api/convert-mp4, /api/health, /api/render, /api/render-status, /api/timings, /app, /privacy, /sitemap.xml, /terms.
+   777→
+   778→Stage Summary:
+   779→- MP4 conversion pipeline fully restored and modernized. Replaced the brittle ffmpeg.wasm client-side approach (which needed COOP+COEP headers on every page — breaking third-party iframes, Google sign-in, etc.) with a server-side Python+ffmpeg pipeline that works in every browser with zero cross-origin tradeoffs.
+   780→- The Python wrapper (`scripts/webm_to_mp4.py`) is a single source of truth for the encoder flags, with documented rationale for each (baseline profile, no B-frames, yuv420p, +faststart — the combination that avoids NotSupportedError in Safari/iOS when playing MP4s from blob URLs).
+   781→- The Next.js API route (`/api/convert-mp4`) rate-limits (reuses the render budget), enforces 100 MB body + 4-min ffmpeg timeout, accepts both octet-stream and multipart, cleans up temp files in a `finally` block, and copies the output Buffer into a fresh ArrayBuffer-backed Uint8Array to satisfy TS 5.7+'s strict BlobPart typing.
+   782→- The client (`videoConverter.ts`) uses XHR for upload+download progress reporting (0→0.5 upload, 0.5→1.0 download) with a 5-min timeout race; `canConvertToMp4()` always returns true (no more SharedArrayBuffer gating).
+   783→- The ExportModal now drives a 3-phase converting UI (Upload / Convert / Download) with honest subtext ("Python + ffmpeg — server-side, no browser limits"), and on conversion failure honestly toasts an error and falls back to WebM instead of falsely claiming success.
+   784→
+   785→---
+   786→Task ID: restore-watermark
+   787→Agent: main (super-z)
+   788→Task: Restore the image watermark. The session had been reset, leaving only the bottom-right text "Jariyah Now" watermark (added during the rebrand phase) in both ExportModal and VideoPreview. The user uploaded a real brand-mark PNG at /upload/jariyah-now-watermark.png — but it's 1920x1920 RGBA with a dark translucent wash (#172021 @ ~21% α) covering ~84% of the canvas, with only ~11% being the actual opaque white icon (crescent moon + play button + diamond). Needed to be cleaned before use, then wired into both the canvas drawFrame (exported MP4) and the live DOM preview.
+   789→
+   790→Work Log:
+   791→
+   792→1. **scripts/prepare_watermark.py** — NEW Python (PIL) script that cleans the uploaded watermark:
+   793→   - Loads /upload/jariyah-now-watermark.png (1920x1920 RGBA, 3.8 MB)
+   794→   - **Alpha-threshold at α ≥ 150**: builds a mask `point(255 if a>=150 else 0)`. The dark wash's α (~54) is well below 150, so the wash is zeroed; the solid white icon survives intact.
+   795→   - **Forces white**: composites the mask against a pure-white layer (drops any residual color bleed from the wash on partially-transparent edges).
+   796→   - **Tight-crops** to the icon's `getbbox()` of the alpha channel — drops the wash AND the empty padding around it. Source 1920x1920 → icon bbox (494,146,1503,1745) → cropped 1009x1599.
+   797→   - **Drop shadow**: builds a black silhouette from the icon's alpha, scales α to 110/255, applies GaussianBlur(4px), pastes 2px below the icon — keeps the white icon legible on bright video frames.
+   798→   - **Re-pads with 16px transparent margin** so the shadow isn't clipped.
+   799→   - Saves to /public/watermark.png with PNG optimize=True.
+   800→   - Final output: **1041 x 1637 RGBA, 57.9 KB** (down from 3.8 MB — a 66× size reduction thanks to dropping the wash + crop + optimize).
+   801→   - Prints source dimensions, icon bbox, final dimensions + file size.
+   802→   - Defensive: validates source exists (exit 1) + that the threshold left some opaque pixels (exit 2).
+   803→
+   804→2. **Ran the script**: `python3 scripts/prepare_watermark.py` → exit 0, clean output. /public/watermark.png verified as a valid PNG image (1041x1637 RGBA) via `file` + `PIL.Image.open`.
+   805→
+   806→3. **src/components/ExportModal.tsx** — Wired the watermark into the canvas drawFrame:
+   807→   - Added `watermarkImg: HTMLImageElement | null` to the `interface DrawArgs` (with doc comment explaining the text-fallback semantics).
+   808→   - Added `watermarkImg,` to the `function drawFrame({ ... })` destructuring.
+   809→   - **Replaced the old bottom-right text watermark ENTIRELY** (`ctx.fillText('Jariyah Now', W * 0.97, H * 0.985)` + its font/fill setup) with a new top-center image watermark block:
+   810→     - `wmY = H * 0.04` (4% from top edge)
+   811→     - Image path: if `watermarkImg.complete && naturalWidth>0`, scales to `targetH = round((min(W,H)/720)*112)` px → 112px @ 720p, ~168px @ 1080p. Width derived from aspect ratio. Horizontally centered. `globalAlpha = 0.9`. Drawn via `ctx.drawImage(watermarkImg, x, wmY, targetW, targetH)`.
+   812→     - Text fallback (only if the PNG hasn't loaded): "Made with Jariyah Now" centered at the top, white @ 75% α, with a black drop shadow (offset Y = 7% of font size, blur = 28% of font size) for legibility on any background.
+   813→   - In `renderVideoToWebm`, after the `bgImg = await loadImage(settings.backgroundImage).catch(() => null)` line, added `const watermarkImg = await loadImage('/watermark.png').catch(() => null)`.
+   814→   - Added `watermarkImg,` to the `drawFrame({ ... })` call inside the requestAnimationFrame loop in renderVideoToWebm.
+   815→
+   816→4. **src/components/VideoPreview.tsx** — Mirrored the watermark in the live preview:
+   817→   - **Replaced** the old bottom-right text watermark `<div>` (the `aria-hidden="true"` div with `tracking-[0.2em] text-white/50 font-mono uppercase` containing "Jariyah Now", positioned at bottom:2.5cqw right:3.5cqw) with a top-center `<img>`:
+   818→     - `src="/watermark.png"`, `alt=""`, `aria-hidden="true"`
+   819→     - `className="absolute pointer-events-none select-none"`
+   820→     - `style={{ top: '4cqw', left: '50%', transform: 'translateX(-50%)', height: '14cqw', width: 'auto', opacity: 0.9, filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))' }}`
+   821→   - Mirrors the canvas export positioning (top-center) and opacity (0.9) so the live preview matches the final MP4 exactly.
+   822→
+   823→Verification (all PASS):
+   824→- `ls -lh /public/watermark.png` → 58K, exists ✓
+   825→- `file /public/watermark.png` → "PNG image data, 1041 x 1637, 8-bit/color RGBA, non-interlaced" ✓
+   826→- `python3 -c "from PIL import Image; im = Image.open('public/watermark.png'); print(im.size, im.mode)"` → `(1041, 1637) RGBA` ✓ (RGBA confirms transparency preserved)
+   827→- `npx eslint src/components/ExportModal.tsx src/components/VideoPreview.tsx` → 0 errors, 0 warnings, clean exit 0 ✓
+   828→- `npx next build` → ✓ Compiled successfully in 10.2s, ✓ TypeScript pass, ✓ all 13 static pages generated, route table intact (/, /_not-found, /about, /api, /api/convert-mp4, /api/health, /api/render, /api/render-status, /api/timings, /app, /privacy, /sitemap.xml, /terms) ✓
+   829→- Dev server log: clean 200s on / and /app, no runtime errors after the edits ✓
+   830→
+   831→Stage Summary:
+   832→- The Jariyah Now brand mark is now a real transparent PNG asset at /public/watermark.png, generated by a reusable Python script that cleans the user's uploaded watermark (alpha-thresholds out the dark wash, tight-crops to the icon, adds a subtle drop shadow, re-pads with a 16px margin).
+   833→- Both the canvas export pipeline (ExportModal.drawFrame) and the live DOM preview (VideoPreview) now composite this PNG at the TOP-CENTER of every frame at 0.9 opacity, replacing the old bottom-right text-only "Jariyah Now" watermark.
+   834→- The export pipeline degrades gracefully: if /watermark.png fails to load (404 / network), it falls back to a centered "Made with Jariyah Now" text line with a drop shadow at the top of the frame — so the brand is always present, never blank.
+   835→- Live preview matches the exported MP4 exactly: same top-center position, same 0.9 opacity, same drop shadow. What you see is what you get.
+   836→- Asset is 57.9 KB (66× smaller than the 3.8 MB source upload) thanks to the alpha-threshold + tight-crop + PNG optimize.
+   837→

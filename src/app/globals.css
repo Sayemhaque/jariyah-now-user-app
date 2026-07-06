@@ -46,7 +46,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* QuranVid light theme — clean, minimal, purple accent on lavender-gray bg.
+/* Jariyah Now light theme — clean, minimal, purple accent on lavender-gray bg.
    Matches the target design: #eeebf0 bg, white cards, #9333ea purple accent. */
 :root {
   --radius: 0.75rem;

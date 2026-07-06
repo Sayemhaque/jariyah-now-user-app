@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server'
  */
 export async function GET() {
   return NextResponse.json({
-    name: 'QuranVid API',
+    name: 'Jariyah Now API',
     version: '1.0.0',
     endpoints: {
       health: '/api/health',

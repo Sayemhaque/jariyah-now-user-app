@@ -90,7 +90,7 @@ export default function Home() {
             <div className="grid place-items-center h-9 w-9 rounded-xl bg-primary text-primary-foreground">
               <Film className="h-5 w-5" />
             </div>
-            <span className="text-[15px] font-bold tracking-tight">QuranVid</span>
+            <span className="text-[15px] font-bold tracking-tight">Jariyah Now</span>
           </Link>
           <div className="flex items-center gap-2">
             <Button

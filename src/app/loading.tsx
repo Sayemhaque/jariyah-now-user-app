@@ -11,7 +11,7 @@ export default function Loading() {
     <div className="min-h-screen grid place-items-center bg-background">
       <div className="flex flex-col items-center gap-3 text-muted-foreground">
         <Loader2 className="h-7 w-7 animate-spin text-primary" />
-        <p className="text-sm">Loading QuranVid…</p>
+        <p className="text-sm">Loading Jariyah Now…</p>
       </div>
     </div>
   )

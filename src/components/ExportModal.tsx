@@ -11,6 +11,7 @@ import {
   checkExportCapabilities,
   pickSupportedMimeType,
 } from '@/lib/exportCapabilities'
+import { webmToMp4, canConvertToMp4 } from '@/lib/videoConverter'
 import { InstagramIcon, YouTubeIcon, YouTubeShortsIcon } from '@/components/PlatformIcons'
 import type { AyatSlide, ExportOptions, Orientation } from '@/lib/types'
 import {
@@ -45,7 +46,7 @@ const RES: Record<Orientation, { w: number; h: number }> = {
   portrait: { w: 720, h: 1280 },
 }
 
-type RenderStatus = 'idle' | 'rendering' | 'done' | 'error'
+type RenderStatus = 'idle' | 'rendering' | 'converting' | 'done' | 'error'
 
 interface ExportModalProps {
   open: boolean
@@ -378,11 +379,38 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         },
       })
 
-      setDownloadUrl(webmUrl)
-      setStatus('done')
       setProgress(1)
-      sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
-      toast.success('Video rendered successfully!')
+      sendUpdate({ progress: 1, status: 'rendering' })
+
+      // 3) Convert WebM → MP4 server-side (Python + ffmpeg).
+      //    Always attempt the conversion — the new converter doesn't depend
+      //    on SharedArrayBuffer / COEP, so it works in every browser.
+      setStatus('converting')
+      setProgress(0)
+      try {
+        const mp4Blob = await webmToMp4(webmBlob, {
+          onProgress: (p) => setProgress(p),
+        })
+
+        // Revoke the temporary WebM URL — the MP4 replaces it.
+        URL.revokeObjectURL(webmUrl)
+
+        const mp4Url = URL.createObjectURL(mp4Blob)
+        setDownloadUrl(mp4Url)
+        setStatus('done')
+        setProgress(1)
+        sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
+        toast.success('Video exported as MP4!')
+      } catch (convErr) {
+        // Conversion failed — fall back to the WebM URL so the user still
+        // has a downloadable video. Mark it clearly as a fallback.
+        console.warn('MP4 conversion failed, falling back to WebM', convErr)
+        setDownloadUrl(webmUrl)
+        setStatus('done')
+        setProgress(1)
+        sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
+        toast.error('MP4 conversion failed — downloaded as WebM instead. You can re-export to retry.')
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Render failed'
       setStatus('error')
@@ -572,6 +600,47 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                 </div>
               )}
 
+              {/* Converting to MP4 state */}
+              {status === 'converting' && (
+                <div className="qv-card rounded-xl p-5 space-y-4 min-h-[280px] flex flex-col justify-center">
+                  <div className="flex flex-col items-center text-center gap-3">
+                    <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 text-primary">
+                      <FileVideo className="h-7 w-7" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">
+                        {progress < 0.5
+                          ? 'Uploading to converter…'
+                          : progress < 0.95
+                            ? 'Converting to MP4…'
+                            : 'Downloading MP4…'}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Python + ffmpeg — server-side, no browser limits
+                      </p>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">
+                        {progress < 0.5
+                          ? 'Upload'
+                          : progress < 0.95
+                            ? 'Convert'
+                            : 'Download'}
+                      </span>
+                      <span className="font-mono font-bold">{Math.round(progress * 100)}%</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full bg-primary transition-all duration-200 ease-out"
+                        style={{ width: `${progress * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Done state — video preview + download */}
               {status === 'done' && downloadUrl && (
                 <VideoPreviewPlayer
@@ -604,7 +673,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
             <X className="h-4 w-4 mr-1.5" />
             Close
           </Button>
-          {status !== 'rendering' && (
+          {status !== 'rendering' && status !== 'converting' && (
             <Button
               onClick={startRender}
               disabled={!slides.length || !capabilities.ok}
@@ -667,6 +736,9 @@ async function renderVideoToWebm({
 
   // Load the background image once
   const bgImg = await loadImage(settings.backgroundImage).catch(() => null)
+
+  // Load the watermark image once.
+  const watermarkImg = await loadImage('/watermark.png').catch(() => null)
 
   // Pre-load all ayat audio as AudioBuffers via Web Audio API so we can
   // schedule them precisely on a single MediaRecorder timeline.
@@ -787,6 +859,7 @@ async function renderVideoToWebm({
         total: slides.length,
         attributionLine,
         reciterName,
+        watermarkImg,
       })
 
       onProgress(Math.min(1, elapsedSec / totalSec))
@@ -848,6 +921,9 @@ interface DrawArgs {
   attributionLine: string
   /** Reciter name for the "Recited by" credit (always shown). */
   reciterName: string
+  /** Pre-loaded watermark image (transparent PNG). Null while loading or if
+   *  the watermark file is missing — in that case we fall back to text. */
+  watermarkImg: HTMLImageElement | null
 }
 
 function drawFrame({
@@ -862,6 +938,7 @@ function drawFrame({
   total,
   attributionLine,
   reciterName,
+  watermarkImg,
 }: DrawArgs) {
   // ---- Background (cover-fit) -----------------------------------------
   if (bgImg) {
@@ -1160,12 +1237,41 @@ function drawFrame({
     ctx.fillText(truncateAttr(attributionLine), W * 0.03, attrBottom - attrLineH)
   }
 
-  // ---- Watermark (bottom-right) --------------------------------------
-  ctx.font = `${Math.round(H * 0.012)}px monospace`
-  ctx.fillStyle = 'rgba(255,255,255,0.35)'
-  ctx.textAlign = 'right'
-  ctx.textBaseline = 'bottom'
-  ctx.fillText('QuranVid', W * 0.97, H * 0.985)
+  // ---- Top-center watermark: Jariyah Now brand mark -------------------
+  // Rendered at the TOP LEVEL of the composition (inside drawFrame, so it
+  // appears on every frame, not tied to any single ayat's sequence).
+  {
+    const minDim = Math.min(W, H)
+    const wmY = H * 0.04 // top: 4% from top edge
+
+    if (watermarkImg && watermarkImg.complete && watermarkImg.naturalWidth > 0) {
+      // Image watermark — scale to a target height proportional to the canvas size.
+      // 112px @ 720p (clearly visible but not overpowering), scales to ~168px @ 1080p.
+      const targetH = Math.round((minDim / 720) * 112)
+      const scale = targetH / watermarkImg.naturalHeight
+      const targetW = Math.round(watermarkImg.naturalWidth * scale)
+      const x = Math.round((W - targetW) / 2) // horizontally centered
+
+      ctx.save()
+      ctx.globalAlpha = 0.9
+      ctx.drawImage(watermarkImg, x, wmY, targetW, targetH)
+      ctx.restore()
+    } else {
+      // Text fallback — used only if the watermark PNG hasn't loaded yet.
+      const wmFontSize = Math.round((minDim / 720) * 14)
+      ctx.save()
+      ctx.font = `500 ${wmFontSize}px Inter, sans-serif`
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'top'
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)'
+      ctx.shadowOffsetX = 0
+      ctx.shadowOffsetY = Math.max(1, Math.round(wmFontSize * 0.07))
+      ctx.shadowBlur = Math.round(wmFontSize * 0.28)
+      ctx.fillText('Made with Jariyah Now', W / 2, wmY)
+      ctx.restore()
+    }
+  }
 }
 
 function wrapLines(

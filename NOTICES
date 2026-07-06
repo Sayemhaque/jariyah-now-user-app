@@ -1,12 +1,12 @@
 NOTICES — Third-Party Data Sources and Attributions
 =====================================================
 
-QuranVid fetches Quran text, translations, reciter audio, and word-timing
+Jariyah Now fetches Quran text, translations, reciter audio, and word-timing
 data from the following third-party sources at runtime. This file credits
 each source and summarizes its licensing terms. The application code itself
 is MIT-licensed (see LICENSE); this file covers the DATA only.
 
-If you redistribute a video produced by QuranVid, you are responsible for
+If you redistribute a video produced by Jariyah Now, you are responsible for
 complying with the license of every data source embedded in that video.
 
 ─────────────────────────────────────────────────────────────────────────
@@ -29,7 +29,7 @@ Attribution:    "Quran text from Tanzil.net, served by alquran.cloud"
 2. ENGLISH TRANSLATIONS
 ─────────────────────────────────────────────────────────────────────────
 
-QuranVid offers multiple translation editions. The user picks one in the
+Jariyah Now offers multiple translation editions. The user picks one in the
 sidebar; the selected edition's attribution appears in the exported video
 when required by its license.
 
@@ -65,7 +65,7 @@ when required by its license.
     License:        COPYRIGHTED. Personal reading only. A separate license
                     from Dar al-Andalus is required for ANY public
                     distribution, including in videos.
-    Attribution:    QuranVid shows a warning badge in the UI when this
+    Attribution:    Jariyah Now shows a warning badge in the UI when this
                     edition is selected. Users are advised to pick a
                     different edition if they plan to publish their video.
                     The attribution line IS shown in the exported video,
@@ -78,7 +78,7 @@ when required by its license.
 ─────────────────────────────────────────────────────────────────────────
 
 Audio is streamed at runtime from the Quran.com / QuranFoundation CDN at
-https://verses.quran.com. QuranVid does not host or redistribute the audio
+https://verses.quran.com. Jariyah Now does not host or redistribute the audio
 files; it links to the CDN.
 
 3a. Mishary Rashid Alafasy
@@ -129,7 +129,7 @@ Used for:       Synchronizing word-by-word highlighting with the reciter
 
 License:        quran.com's API is free for non-commercial use with
                 attribution. See https://quran.com/api for their terms.
-                QuranVid proxies these requests through /api/timings to
+                Jariyah Now proxies these requests through /api/timings to
                 avoid browser CORS issues; the proxy is rate-limited.
 
 Attribution:    "Word timing data from quran.com"
@@ -198,5 +198,5 @@ Key dependencies and their licenses:
 
 For questions about this NOTICES file, contact the project maintainers.
 For questions about licensing a specific translation or reciter's audio
-for commercial use, contact the rights holder directly — QuranVid does
+for commercial use, contact the rights holder directly — Jariyah Now does
 not sublicense any of the third-party content it fetches.

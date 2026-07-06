@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { LegalPage } from '@/components/LegalPage'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service — QuranVid',
-  description: 'The terms governing your use of QuranVid.',
+  title: 'Terms of Service — Jariyah Now',
+  description: 'The terms governing your use of Jariyah Now.',
 }
 
 export default function TermsPage() {
@@ -11,14 +11,14 @@ export default function TermsPage() {
     <LegalPage title="Terms of Service" lastUpdated="January 2026">
       <p>
         These Terms of Service (&quot;Terms&quot;) govern your access to and
-        use of the QuranVid web application (the &quot;Service&quot;). By
+        use of the Jariyah Now web application (the &quot;Service&quot;). By
         using the Service, you agree to these Terms. If you do not agree,
         do not use the Service.
       </p>
 
       <h2>1. What the Service does</h2>
       <p>
-        QuranVid is a free tool that lets you select a passage of the
+        Jariyah Now is a free tool that lets you select a passage of the
         Quran, choose a reciter, customize the visual style, and export a
         short video with word-by-word highlighting and an English
         translation. The Service fetches Quran text, translations,
@@ -70,7 +70,7 @@ export default function TermsPage() {
 
       <h2>5. Content licensing — READ THIS</h2>
       <p>
-        The videos you create with QuranVid contain third-party content
+        The videos you create with Jariyah Now contain third-party content
         (Quran text, translations, reciter audio). <strong>You are
         responsible</strong> for complying with the license of each
         component in any video you distribute.
@@ -92,7 +92,7 @@ export default function TermsPage() {
 
       <h3>5.2 Translations</h3>
       <p>
-        Different translations have different licenses. QuranVid shows the
+        Different translations have different licenses. Jariyah Now shows the
         license summary for each edition in the sidebar. Specifically:
       </p>
       <ul>
@@ -112,11 +112,11 @@ export default function TermsPage() {
           <strong>Muhammad Asad</strong>: COPYRIGHTED by Dar al-Andalus
           Ltd. Personal reading only — a separate written license is
           required for any public distribution, including in videos.
-          QuranVid shows a warning badge when this edition is selected.
+          Jariyah Now shows a warning badge when this edition is selected.
         </li>
       </ul>
       <p>
-        When a translation requires attribution, QuranVid automatically
+        When a translation requires attribution, Jariyah Now automatically
         adds an attribution line to the bottom-left of the exported video.
         Attribution alone does not satisfy the Muhammad Asad license —
         you must obtain a separate license from Dar al-Andalus.
@@ -155,7 +155,7 @@ export default function TermsPage() {
       <h2>7. Limitation of liability</h2>
       <p>
         To the maximum extent permitted by law, the maintainers of
-        QuranVid shall not be liable for any indirect, incidental,
+        Jariyah Now shall not be liable for any indirect, incidental,
         special, consequential, or punitive damages, or any loss of data,
         arising out of your use of the Service.
       </p>

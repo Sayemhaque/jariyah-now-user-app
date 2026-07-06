@@ -55,8 +55,8 @@ interface BuilderState {
 }
 
 const DEFAULT_SETTINGS: VideoSettings = {
-  backgroundImage: '/backgrounds/mosque.png',
-  backgroundPreset: 'mosque',
+  backgroundImage: '/backgrounds/twilight-mosque-portrait.png',
+  backgroundPreset: 'twilight-mosque',
   overlayStyle: 'bottom-gradient',
   overlayColor: '#000000',
   overlayOpacity: 55,
@@ -71,6 +71,27 @@ const DEFAULT_SETTINGS: VideoSettings = {
   autoFitFonts: true,
   textWidth: 'wide',
   textSpacing: 'normal',
+}
+
+/**
+ * The Twilight Mosque brand theme has 3 orientation-specific variants.
+ * When the user has the Twilight Mosque preset selected and switches
+ * orientation, we auto-swap to the matching variant so the background
+ * always fits the composition cleanly.
+ */
+const TWILIGHT_MOSQUE_URLS: Record<string, string> = {
+  portrait: '/backgrounds/twilight-mosque-portrait.png',
+  landscape: '/backgrounds/twilight-mosque.png',
+  square: '/backgrounds/twilight-mosque-square.png',
+}
+
+function pickBgForOrientation(
+  currentPreset: string,
+  currentBg: string,
+  newOrientation: string,
+): string {
+  if (currentPreset !== 'twilight-mosque') return currentBg
+  return TWILIGHT_MOSQUE_URLS[newOrientation] ?? currentBg
 }
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
@@ -145,6 +166,16 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
         next.arabicFontSize = auto.arabic
         next.translationFontSize = auto.translation
       }
+      // When the orientation changes, also swap to the matching Twilight
+      // Mosque variant (if that preset is selected) so the background always
+      // fits the new aspect ratio cleanly.
+      if (patch.orientation) {
+        next.backgroundImage = pickBgForOrientation(
+          state.settings.backgroundPreset,
+          state.settings.backgroundImage,
+          patch.orientation,
+        )
+      }
       return { settings: next }
     }),
 
@@ -156,6 +187,13 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
       patch.arabicFontSize = auto.arabic
       patch.translationFontSize = auto.translation
     }
+    // Swap to the matching Twilight Mosque variant (if that preset is
+    // selected) so the background always fits the new aspect ratio cleanly.
+    patch.backgroundImage = pickBgForOrientation(
+      state.settings.backgroundPreset,
+      state.settings.backgroundImage,
+      o,
+    )
     set((s) => ({ settings: { ...s.settings, ...patch } }))
   },
 

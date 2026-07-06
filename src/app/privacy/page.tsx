@@ -2,15 +2,15 @@ import type { Metadata } from 'next'
 import { LegalPage } from '@/components/LegalPage'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy — QuranVid',
-  description: 'How QuranVid handles your data.',
+  title: 'Privacy Policy — Jariyah Now',
+  description: 'How Jariyah Now handles your data.',
 }
 
 export default function PrivacyPage() {
   return (
     <LegalPage title="Privacy Policy" lastUpdated="January 2026">
       <p>
-        This Privacy Policy explains what data QuranVid collects, how it
+        This Privacy Policy explains what data Jariyah Now collects, how it
         is used, and the choices you have. We designed the Service to
         collect as little as possible.
       </p>
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
 
       <h2>2. Data we do not collect</h2>
       <p>
-        QuranVid does <strong>not</strong> collect or process:
+        Jariyah Now does <strong>not</strong> collect or process:
       </p>
       <ul>
         <li>Names, email addresses, phone numbers, or any contact information</li>
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
 
       <h2>4. Cookies</h2>
       <p>
-        QuranVid does not set any cookies of its own. The hosting provider
+        Jariyah Now does not set any cookies of its own. The hosting provider
         (e.g. Vercel) may set infrastructure cookies for load balancing
         or session affinity; these are not used for tracking.
       </p>
@@ -81,7 +81,7 @@ export default function PrivacyPage() {
 
       <h2>5. Third-party services</h2>
       <p>
-        When you use QuranVid, your browser makes direct requests to the
+        When you use Jariyah Now, your browser makes direct requests to the
         following third-party services. Their privacy policies apply to
         those requests:
       </p>

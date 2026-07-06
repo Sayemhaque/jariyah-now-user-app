@@ -32,8 +32,19 @@ interface Preset {
   url: string
 }
 
-// 7 high-quality photographic backgrounds (AI-generated, stored in /public/backgrounds).
+// Background presets — high-quality images stored in /public/backgrounds.
+// `twilight-mosque` is the Jariyah Now brand theme — a clean, text-free
+// twilight sky with silhouetted mosque + crescent moon, generated in 3
+// orientations (landscape / portrait / square) so it always fits the
+// user's chosen aspect ratio cleanly.
+// The 3 user-uploaded presets (`crescent-night`, `sunset-mosque`,
+// `twilight-hills`) are portrait 1080x1920 — they look best in Reels/Shorts
+// mode but work in any orientation (the canvas cover-fits them).
 const BG_PRESETS: Preset[] = [
+  { key: 'twilight-mosque', label: 'Twilight Mosque', url: '/backgrounds/twilight-mosque.png' },
+  { key: 'crescent-night', label: 'Crescent Night', url: '/backgrounds/crescent-night.png' },
+  { key: 'sunset-mosque', label: 'Sunset Mosque', url: '/backgrounds/sunset-mosque.png' },
+  { key: 'twilight-hills', label: 'Twilight Hills', url: '/backgrounds/twilight-hills.png' },
   { key: 'mountain', label: 'Mountain Dawn', url: '/backgrounds/mountain.png' },
   { key: 'desert', label: 'Desert Dusk', url: '/backgrounds/desert.png' },
   { key: 'ocean', label: 'Deep Ocean', url: '/backgrounds/ocean.png' },
@@ -42,6 +53,15 @@ const BG_PRESETS: Preset[] = [
   { key: 'mosque', label: 'Mosque Gold', url: '/backgrounds/mosque.png' },
   { key: 'pattern', label: 'Arabesque', url: '/backgrounds/pattern.png' },
 ]
+
+// The Twilight Mosque preset has orientation-specific variants. When the
+// user clicks the preset, we load the variant matching the current
+// orientation so the background always fits cleanly without distortion.
+const TWILIGHT_MOSQUE_URLS: Record<string, string> = {
+  portrait: '/backgrounds/twilight-mosque-portrait.png',
+  landscape: '/backgrounds/twilight-mosque.png',
+  square: '/backgrounds/twilight-mosque-square.png',
+}
 
 // Overlay style presets — each one shapes the user's color + opacity
 // differently across the frame. The mini-swatch uses a real gradient so
@@ -197,31 +217,40 @@ export function CustomizationPanel() {
       {/* Background — real image thumbnails */}
       <SectionTitle>Background</SectionTitle>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {BG_PRESETS.map((p) => (
-          <button
-            key={p.key}
-            onClick={() =>
-              update({ backgroundImage: p.url, backgroundPreset: p.key })
-            }
-            className={cn(
-              'group relative aspect-video rounded-lg overflow-hidden border transition',
-              settings.backgroundPreset === p.key
-                ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-transparent'
-                : 'border-border hover:border-foreground/40',
-            )}
-          >
-            <Image
-              src={p.url}
-              alt={p.label}
-              fill
-              sizes="(max-width: 768px) 30vw, 120px"
-              className="object-cover"
-            />
-            <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[10px] font-medium py-1 px-1.5 text-center">
-              {p.label}
-            </span>
-          </button>
-        ))}
+        {BG_PRESETS.map((p) => {
+          const presetUrl =
+            p.key === 'twilight-mosque'
+              ? TWILIGHT_MOSQUE_URLS[settings.orientation] ?? p.url
+              : p.url
+          return (
+            <button
+              key={p.key}
+              onClick={() =>
+                update({
+                  backgroundImage: presetUrl,
+                  backgroundPreset: p.key,
+                })
+              }
+              className={cn(
+                'group relative aspect-video rounded-lg overflow-hidden border transition',
+                settings.backgroundPreset === p.key
+                  ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-transparent'
+                  : 'border-border hover:border-foreground/40',
+              )}
+            >
+              <Image
+                src={presetUrl}
+                alt={p.label}
+                fill
+                sizes="(max-width: 768px) 30vw, 120px"
+                className="object-cover"
+              />
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[10px] font-medium py-1 px-1.5 text-center">
+                {p.label}
+              </span>
+            </button>
+          )
+        })}
       </div>
 
       <div className="flex items-center gap-2 mt-2">

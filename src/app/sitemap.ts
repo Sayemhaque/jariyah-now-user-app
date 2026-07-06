@@ -7,7 +7,7 @@ import type { MetadataRoute } from 'next'
  * /api/* routes are intentionally excluded (they're not for crawling).
  */
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jariyahnow.com'
 
   const routes = ['/', '/app', '/about', '/terms', '/privacy']
 

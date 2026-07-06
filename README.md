@@ -1,9 +1,12 @@
-# QuranVid — Quran Video Generator
+# Jariyah Now — Turn Quran Verses Into Shareable Reels
+
+> **Share once, earn forever.**
 
 A full-stack Next.js app where users pick a Surah and an ayat range (max 10),
 choose a reciter, customize the visual style, and export a fully synced video —
 Arabic audio, word-by-word highlighted subtitles, and translation — ready to
-post as a Reel, Short, or YouTube video.
+post as a Reel, Short, or YouTube video. Every reel you share is **Sadaqah
+Jariyah** — ongoing charity that keeps rewarding you long after you hit share.
 
 ## Stack
 
@@ -203,7 +206,7 @@ Poll a job's state. Always fresh (`Cache-Control: no-store`).
 
 ## Licensing & attribution
 
-The QuranVid **source code** is MIT-licensed — see `LICENSE`.
+The Jariyah Now **source code** is MIT-licensed — see `LICENSE`.
 
 The **data** the app fetches at runtime (Quran text, translations, reciter
 audio, word timings) is NOT covered by the MIT license. Each data source has
@@ -227,7 +230,7 @@ and licensing details.
 
 ### What this means for users
 
-- **Videos you export are your responsibility.** QuranVid automatically adds
+- **Videos you export are your responsibility.** Jariyah Now automatically adds
   an attribution line to the bottom-left of the exported video when the
   selected translation requires it. Attribution alone does not satisfy the
   Muhammad Asad license — if you select that edition, you must obtain a

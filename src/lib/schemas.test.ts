@@ -9,8 +9,8 @@ import type { AyatSlide, VideoSettings } from './types'
 
 // A complete, valid settings object — used as the base for tests.
 const VALID_SETTINGS: VideoSettings = {
-  backgroundImage: '/backgrounds/mosque.png',
-  backgroundPreset: 'mosque',
+  backgroundImage: '/backgrounds/twilight-mosque-portrait.png',
+  backgroundPreset: 'twilight-mosque',
   overlayStyle: 'bottom-gradient',
   overlayColor: '#000000',
   overlayOpacity: 55,

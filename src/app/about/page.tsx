@@ -5,23 +5,26 @@ import { RECITERS } from '@/lib/reciters'
 import { TRANSLATION_EDITIONS } from '@/lib/translations'
 
 export const metadata: Metadata = {
-  title: 'About — QuranVid',
-  description: 'Data sources, reciter credits, and translation editions used by QuranVid.',
+  title: 'About — Jariyah Now',
+  description: 'Data sources, reciter credits, and translation editions used by Jariyah Now.',
 }
 
 export default function AboutPage() {
   return (
-    <LegalPage title="About QuranVid" lastUpdated="January 2026">
+    <LegalPage title="About Jariyah Now" lastUpdated="January 2026">
       <p>
-        QuranVid is a free tool for creating short recitation videos from
-        the Quran. Pick a surah and ayat range, choose a reciter, customize
-        the look, and export a video with word-by-word highlighting and an
-        English translation — ready to share.
+        Jariyah Now is a free tool for creating short recitation videos from
+        the Quran. The name comes from <strong>Sadaqah Jariyah</strong> — the
+        ongoing charity that keeps rewarding you long after the original act.
+        Every reel you publish and share becomes a source of continuous
+        reward: each view, each heart, each reshare counts. Pick a surah and
+        ayat range, choose a reciter, customize the look, and export a video
+        with word-by-word highlighting and a translation — ready to share.
       </p>
 
       <h2>Data sources</h2>
       <p>
-        QuranVid fetches its content from the following free, public APIs.
+        Jariyah Now fetches its content from the following free, public APIs.
         We are grateful to the maintainers of these services.
       </p>
       <ul>
@@ -56,7 +59,7 @@ export default function AboutPage() {
 
       <h2>Reciters</h2>
       <p>
-        QuranVid offers five reciters. We are deeply grateful to each of
+        Jariyah Now offers five reciters. We are deeply grateful to each of
         them and their estates for making these recitations available.
       </p>
       <ul>
@@ -79,7 +82,7 @@ export default function AboutPage() {
 
       <h2>Translation editions</h2>
       <p>
-        QuranVid lets you choose from several English translations. Each
+        Jariyah Now lets you choose from several English translations. Each
         has its own license — pick the one that fits your use case.
       </p>
       <ul>
@@ -94,7 +97,7 @@ export default function AboutPage() {
       <p>
         The default is <strong>Pickthall</strong> (public domain) so the
         app never ships with a copyright-restricted translation as the
-        default. When a translation requires attribution, QuranVid
+        default. When a translation requires attribution, Jariyah Now
         automatically adds an attribution line to the bottom-left of the
         exported video.
       </p>
@@ -126,7 +129,7 @@ export default function AboutPage() {
 
       <h2>Open source</h2>
       <p>
-        QuranVid&apos;s source code is MIT-licensed. See the{' '}
+        Jariyah Now&apos;s source code is MIT-licensed. See the{' '}
         <Link href="/terms" className="text-primary underline underline-offset-2">
           Terms of Service
         </Link>{' '}

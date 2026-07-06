@@ -569,18 +569,26 @@ export function VideoPreview() {
             </div>
           )}
 
-          {/* Watermark — decorative, aria-hidden for screen readers */}
-          <div
+          {/* Top-center watermark — the Jariyah Now brand mark (cleaned
+              transparent PNG at /public/watermark.png). Mirrors what
+              gets baked into the exported MP4 by ExportModal.drawFrame,
+              so the user sees the same branding in the live preview as
+              they will in the final video. */}
+          <img
+            src="/watermark.png"
+            alt=""
             aria-hidden="true"
-            className="absolute tracking-[0.2em] text-white/50 font-mono uppercase"
+            className="absolute pointer-events-none select-none"
             style={{
-              bottom: '2.5cqw',
-              right: '3.5cqw',
-              fontSize: '2cqw',
+              top: '4cqw',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              height: '14cqw',
+              width: 'auto',
+              opacity: 0.9,
+              filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
             }}
-          >
-            QuranVid
-          </div>
+          />
         </div>
       </div>
 

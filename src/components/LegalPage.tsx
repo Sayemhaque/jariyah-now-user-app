@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
+const LEGAL_DISCLAIMER =
+  'Jariyah Now is an independent tool and is not affiliated with or endorsed by any Quran recitation rights holder, translation publisher, or religious authority. Translations and audio recitations used in this app are credited to their respective sources. Users are responsible for the content they create and share using this platform.'
+
 /**
  * Shared layout wrapper for the legal/info pages (/terms, /privacy, /about).
  * Renders a centered prose column with a back-to-builder link at the top
@@ -57,7 +60,7 @@ export function SiteFooter() {
     <footer className="border-t border-border bg-card/30 mt-auto">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 justify-center sm:justify-start">
-          <span className="font-medium text-foreground/70">QuranVid</span>
+          <span className="font-medium text-foreground/70">Jariyah Now</span>
           <span className="opacity-40">·</span>
           <span>
             Quran text from{' '}
@@ -115,7 +118,16 @@ export function SiteFooter() {
           </Link>
         </nav>
       </div>
+
+      {/* Legal disclaimer — required on every page */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-5">
+        <p className="text-[11px] text-muted-foreground leading-relaxed text-center">
+          {LEGAL_DISCLAIMER}
+        </p>
+        <p className="mt-2 text-[11px] text-muted-foreground text-center">
+          © {new Date().getFullYear()} Jariyah Now — All rights reserved
+        </p>
+      </div>
     </footer>
   )
 }
-

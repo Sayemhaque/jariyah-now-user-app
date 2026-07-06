@@ -1,4 +1,4 @@
-// Shared types for the Quran Video Generator
+// Shared types for the Jariyah Now Quran Video Generator
 
 export interface Surah {
   number: number

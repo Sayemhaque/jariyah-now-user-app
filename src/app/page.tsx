@@ -10,50 +10,77 @@ import {
   Download,
   ArrowRight,
   Check,
+  Heart,
+  Share2,
+  Globe,
+  Languages,
 } from 'lucide-react'
 
+const siteUrl = 'https://jariyahnow.com'
+const ogImage = `${siteUrl}/og-image.png`
+
 export const metadata: Metadata = {
-  title: 'QuranVid — কুরআন থেকে সুন্দর ভিডিও তৈরি করুন',
+  title: 'Jariyah Now — Turn Quran Verses Into Shareable Reels',
   description:
-    'সূরা নির্বাচন করুন, কারী বেছে নিন, ডিজাইন কাস্টমাইজ করুন — এবং একটি সম্পূর্ণ সিঙ্ক করা ভিডিও এক্সপোর্ট করুন যাতে শব্দে শব্দে হাইলাইটিং এবং অনুবাদ রয়েছে।',
+    'Create Quran verse reels in seconds — pick a Surah, choose your ayat, add recitation audio and translation, then share on Instagram, TikTok & YouTube.',
+  alternates: { canonical: siteUrl },
+  openGraph: {
+    title: 'Jariyah Now — Share once, earn forever.',
+    description:
+      'Turn Quran verses into beautiful shareable reels with recitation, translation, and your own style.',
+    url: siteUrl,
+    siteName: 'Jariyah Now',
+    images: [{ url: ogImage, width: 1200, height: 630, alt: 'Jariyah Now' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Jariyah Now — Share once, earn forever.',
+    description:
+      'Turn Quran verses into beautiful shareable reels with recitation, translation, and your own style.',
+    images: [ogImage],
+  },
 }
+
+const LEGAL_DISCLAIMER =
+  'Jariyah Now is an independent tool and is not affiliated with or endorsed by any Quran recitation rights holder, translation publisher, or religious authority. Translations and audio recitations used in this app are credited to their respective sources. Users are responsible for the content they create and share using this platform.'
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* ─── Header ─── */}
       <header className="sticky top-0 z-30 qv-frosted border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3">
             <div className="grid place-items-center h-10 w-10 rounded-xl bg-primary text-primary-foreground">
               <Sparkles className="h-5 w-5" />
             </div>
-            <span className="text-lg font-bold tracking-tight">QuranVid</span>
-          </div>
+            <span className="text-lg font-bold tracking-tight">Jariyah Now</span>
+          </Link>
           <div className="flex items-center gap-3">
             <Link
               href="/about"
               className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
             >
-              সম্পর্কে
+              About
             </Link>
             <Link
               href="/terms"
               className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
             >
-              শর্তাবলী
+              Terms
             </Link>
             <Link
               href="/privacy"
               className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
             >
-              গোপনীয়তা
+              Privacy
             </Link>
             <Link
               href="/app"
               className="qv-btn-primary inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold"
             >
-              অ্যাপ খুলুন
+              Open App
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -67,22 +94,28 @@ export default function LandingPage() {
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6">
               <Sparkles className="h-3.5 w-3.5" />
-              বিনামূল্যে • কোনো অ্যাকাউন্ট লাগবে না
+              Free • No account required
             </div>
+
+            {/* Tagline */}
+            <p className="text-base sm:text-lg font-semibold text-primary mb-3 tracking-wide">
+              Share once, earn forever.
+            </p>
 
             {/* Headline */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
-              কুরআন থেকে
+              Turn Quran verses into
               <br />
-              <span className="text-primary">সুন্দর ভিডিও</span> তৈরি করুন
+              <span className="text-primary">shareable reels</span>
             </h1>
 
             {/* Subheadline */}
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8 max-w-2xl">
-              সূরা নির্বাচন করুন, কারী বেছে নিন, ডিজাইন কাস্টমাইজ করুন — এবং
-              একটি সম্পূর্ণ সিঙ্ক করা ভিডিও এক্সপোর্ট করুন যাতে শব্দে শব্দে
-              হাইলাইটিং এবং বাংলা/ইংরেজি অনুবাদ রয়েছে। রিল, শর্টস বা
-              ইউটিউবের জন্য তৈরি।
+              Every reel you publish is Sadaqah Jariyah — ongoing charity that
+              keeps earning reward long after you hit share. Pick a Surah,
+              choose a reciter, customize the look, and export a perfectly
+              synced video with word-by-word highlighting and translation.
+              Built for Instagram Reels, TikTok, and YouTube Shorts.
             </p>
 
             {/* CTAs */}
@@ -92,7 +125,7 @@ export default function LandingPage() {
                 className="qv-btn-primary inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-base font-semibold"
               >
                 <Film className="h-5 w-5" />
-                এখনই ভিডিও বানান
+                Create your reel
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <a
@@ -100,7 +133,7 @@ export default function LandingPage() {
                 className="inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-base font-semibold border border-border bg-card hover:bg-muted transition"
               >
                 <Play className="h-4 w-4" />
-                কিভাবে কাজ করে
+                See how it works
               </a>
             </div>
 
@@ -108,19 +141,19 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-10 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-primary" />
-                ১১৪টি সূরা
+                114 Surahs
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-primary" />
-                ৫জন বিখ্যাত কারী
+                5 reciters
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-primary" />
-                শব্দে শব্দে হাইলাইটিং
+                Word-by-word highlight
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-primary" />
-                ৪টি অনুবাদ
+                6 translations
               </div>
             </div>
           </div>
@@ -135,11 +168,11 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-              আপনার ব্রাউজারেই সবকিছু
+              Everything runs in your browser
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
-              কোনো সফটওয়্যার ইনস্টল করতে হবে না। সবকিছু ব্রাউজারেই হয় —
-              ভিডিও প্রিভিউ, এডিটিং, এবং এক্সপোর্ট।
+              No software to install. Preview, edit, and export — all without
+              leaving the page.
             </p>
           </div>
 
@@ -157,14 +190,14 @@ export default function LandingPage() {
                   </div>
                   <div className="flex-1 flex justify-center">
                     <div className="px-3 py-1 rounded-md bg-card border border-border text-[10px] text-muted-foreground font-mono">
-                      quranvid.app
+                      jariyahnow.com/app
                     </div>
                   </div>
                 </div>
                 {/* Screenshot */}
                 <img
                   src="/landing/app-desktop.png"
-                  alt="QuranVid অ্যাপ — ডেস্কটপ ভিউ"
+                  alt="Jariyah Now app — desktop view"
                   className="w-full h-auto block"
                 />
               </div>
@@ -176,7 +209,7 @@ export default function LandingPage() {
                 <div className="rounded-[1.5rem] overflow-hidden bg-background">
                   <img
                     src="/landing/app-mobile.png"
-                    alt="QuranVid অ্যাপ — মোবাইল ভিউ"
+                    alt="Jariyah Now app — mobile view"
                     className="w-full h-auto block"
                   />
                 </div>
@@ -191,10 +224,10 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-              মাত্র ৪ ধাপে আপনার ভিডিও
+              Your reel in 4 steps
             </h2>
             <p className="text-muted-foreground">
-              সহজ, দ্রুত, এবং সম্পূর্ণ ফ্রি
+              Simple, fast, and completely free
             </p>
           </div>
 
@@ -202,27 +235,27 @@ export default function LandingPage() {
             {[
               {
                 icon: BookOpen,
-                step: '১',
-                title: 'সূরা নির্বাচন করুন',
-                desc: '১১৪টি সূরা থেকে বেছে নিন এবং আয়াত রেঞ্জ সেট করুন (সর্বোচ্চ ১০টি আয়াত)।',
+                step: '1',
+                title: 'Pick a Surah',
+                desc: 'Choose from all 114 Surahs and set your ayat range (up to 10 ayats).',
               },
               {
                 icon: Mic2,
-                step: '২',
-                title: 'কারী বেছে নিন',
-                desc: 'আলাফাসী, আব্দুল বাসিত, মিনশাবী, হুসরী, সুদাইস — যে কোনো একজন।',
+                step: '2',
+                title: 'Choose a reciter',
+                desc: 'Alafasy, Abdul Basit, Minshawi, Husary, or Sudais — pick your favorite voice.',
               },
               {
                 icon: Palette,
-                step: '৩',
-                title: 'ডিজাইন করুন',
-                desc: 'ব্যাকগ্রাউন্ড, ফন্ট, রং, ওভারলে — সব কাস্টমাইজ করুন। লাইভ প্রিভিউ দেখুন।',
+                step: '3',
+                title: 'Customize the look',
+                desc: 'Background, fonts, colors, overlays — tweak everything with a live preview.',
               },
               {
                 icon: Download,
-                step: '৪',
-                title: 'এক্সপোর্ট করুন',
-                desc: 'এক ক্লিকে ভিডিও ডাউনলোড করুন — রিল, শর্টস, বা ইউটিউবের জন্য তৈরি।',
+                step: '4',
+                title: 'Export & share',
+                desc: 'Download in one click — ready for Reels, Shorts, or YouTube.',
               },
             ].map((item, i) => (
               <div
@@ -252,10 +285,10 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
             <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-              কেন QuranVid?
+              Why creators choose Jariyah Now
             </h2>
             <p className="text-muted-foreground">
-              যা আপনি অন্য কোথাও পাবেন না
+              Built for impact, designed for sharing
             </p>
           </div>
 
@@ -263,33 +296,33 @@ export default function LandingPage() {
             {[
               {
                 icon: Sparkles,
-                title: 'শব্দে শব্দে হাইলাইটিং',
-                desc: 'প্রতিটি শব্দ আবৃত্তির সাথে সাথে হাইলাইট হয় — দর্শক সহজে অনুসরণ করতে পারে।',
+                title: 'Word-by-word highlighting',
+                desc: 'Each word lights up in sync with the recitation, so viewers can follow along effortlessly.',
               },
               {
                 icon: Mic2,
-                title: '৫জন বিখ্যাত কারী',
-                desc: 'মিশারি আলাফাসী থেকে শুরু করে আব্দুল বাসিত — সবার আবৃত্তি একই জায়গায়।',
+                title: '5 world-class reciters',
+                desc: 'From Mishary Alafasy to Abdul Basit — every iconic voice in one place, streamed from the Quran CDN.',
               },
               {
-                icon: BookOpen,
-                title: '৪টি অনুবাদ',
-                desc: 'পিকথল (পাবলিক ডোমেইন), সহীহ ইন্টারন্যাশনাল, ক্লিয়ার কুরআন, এবং মুহাম্মদ আসাদ।',
+                icon: Languages,
+                title: '6 translations',
+                desc: 'Bengali & English editions including Pickthall (public domain), Saheeh International, Clear Quran, and more.',
               },
               {
                 icon: Palette,
-                title: 'সম্পূর্ণ কাস্টমাইজেশন',
-                desc: '৭টি ব্যাকগ্রাউন্ড প্রিসেট, কাস্টম আপলোড, ৬টি ওভারলে স্টাইল, ফন্ট কন্ট্রোল।',
+                title: 'Full customization',
+                desc: '7 background presets, custom uploads, 6 overlay styles, font controls, colors — make every reel your own.',
               },
               {
                 icon: Film,
-                title: 'রিল ও শর্টস রেডি',
-                desc: 'পোর্ট্রেট, ল্যান্ডস্কেপ — যেকোনো ফরম্যাটে এক্সপোর্ট করুন। ৭২০p বা ১০৮০p।',
+                title: 'Reels & Shorts ready',
+                desc: 'Export portrait or landscape, 720p or 1080p — perfectly sized for every platform.',
               },
               {
-                icon: Download,
-                title: 'ব্রাউজারেই সবকিছু',
-                desc: 'কোনো সফটওয়্যার লাগবে না। ভিডিও আপনার ব্রাউজারেই রেন্ডার হয় — সম্পূর্ণ প্রাইভেট।',
+                icon: Globe,
+                title: 'Runs in your browser',
+                desc: 'No software to install, no uploads, fully private — your video renders right on your device.',
               },
             ].map((f, i) => (
               <div key={i} className="qv-card rounded-2xl p-6">
@@ -306,6 +339,30 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── Sadaqah Jariyah band ─── */}
+      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-primary/5 border-y border-primary/10">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/15 text-primary mx-auto mb-6">
+            <Heart className="h-7 w-7" />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+            Why we’re called Jariyah Now
+          </h2>
+          <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
+            <strong className="text-foreground">Sadaqah Jariyah</strong> is the
+            ongoing charity that keeps rewarding you — long after the original
+            act. When someone benefits from a Quran reel you shared, you earn
+            reward for every view, every heart, every share.{' '}
+            <span className="text-primary font-semibold">
+              Share once, earn forever.
+            </span>{' '}
+            That’s the mission behind Jariyah Now: make it effortless to turn
+            the words of Allah into beautiful, shareable content that keeps
+            giving.
+          </p>
+        </div>
+      </section>
+
       {/* ─── Final CTA ─── */}
       <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
@@ -314,15 +371,15 @@ export default function LandingPage() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] bg-primary/5 rounded-full blur-3xl -z-10" />
 
             <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary text-primary-foreground mx-auto mb-6">
-              <Sparkles className="h-7 w-7" />
+              <Share2 className="h-7 w-7" />
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              এখনই শুরু করুন
+              Start creating now
             </h2>
             <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-              কোনো রেজিস্ট্রেশন ছাড়াই, সম্পূর্ণ ফ্রি। মাত্র কয়েক সেকেন্ডে
-              আপনার প্রথম কুরআন ভিডিও তৈরি করুন।
+              No sign-up, completely free. Your first Quran reel is seconds
+              away — and every share is Sadaqah Jariyah.
             </p>
 
             <Link
@@ -330,7 +387,7 @@ export default function LandingPage() {
               className="qv-btn-primary inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl text-lg font-semibold"
             >
               <Film className="h-6 w-6" />
-              ভিডিও বানান শুরু করুন
+              Open the builder
               <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
@@ -338,7 +395,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Footer ─── */}
-      <footer className="border-t border-border bg-card">
+      <footer className="border-t border-border bg-card mt-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
@@ -346,9 +403,9 @@ export default function LandingPage() {
                 <Sparkles className="h-5 w-5" />
               </div>
               <div>
-                <div className="font-bold text-sm">QuranVid</div>
+                <div className="font-bold text-sm">Jariyah Now</div>
                 <div className="text-xs text-muted-foreground">
-                  কুরআন থেকে সুন্দর ভিডিও
+                  Share once, earn forever.
                 </div>
               </div>
             </div>
@@ -358,31 +415,36 @@ export default function LandingPage() {
                 href="/app"
                 className="text-muted-foreground hover:text-foreground transition font-medium"
               >
-                অ্যাপ
+                App
               </Link>
               <Link
                 href="/about"
                 className="text-muted-foreground hover:text-foreground transition font-medium"
               >
-                সম্পর্কে
+                About
               </Link>
               <Link
                 href="/terms"
                 className="text-muted-foreground hover:text-foreground transition font-medium"
               >
-                শর্তাবলী
+                Terms
               </Link>
               <Link
                 href="/privacy"
                 className="text-muted-foreground hover:text-foreground transition font-medium"
               >
-                গোপনীয়তা
+                Privacy
               </Link>
             </nav>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-border text-xs text-muted-foreground text-center leading-relaxed">
-            কুরআন টেক্সট:{' '}
+          {/* Legal disclaimer */}
+          <p className="mt-8 text-xs text-muted-foreground leading-relaxed text-center max-w-4xl mx-auto">
+            {LEGAL_DISCLAIMER}
+          </p>
+
+          <div className="mt-6 pt-6 border-t border-border text-xs text-muted-foreground text-center leading-relaxed">
+            Quran text:{' '}
             <a
               href="https://alquran.cloud"
               target="_blank"
@@ -400,7 +462,7 @@ export default function LandingPage() {
             >
               quran.com
             </a>
-            {' • '}অডিও:{' '}
+            {' • '}Audio:{' '}
             <a
               href="https://verses.quran.com"
               target="_blank"
@@ -410,7 +472,7 @@ export default function LandingPage() {
               verses.quran.com
             </a>
             <br />
-            © ২০২৬ QuranVid — সকল অধিকার সংরক্ষিত
+            © {new Date().getFullYear()} Jariyah Now — All rights reserved
           </div>
         </div>
       </footer>
