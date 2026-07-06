@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Download, Loader2, Film, X, CheckCircle2, AlertCircle, FileVideo, Play, Pause, Volume2, VolumeX } from 'lucide-react'
+import { Download, Film, X, CheckCircle2, AlertCircle, Play, Pause, Volume2, VolumeX } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { paintOverlayOnCanvas } from '@/lib/overlay'
@@ -46,7 +46,7 @@ const RES: Record<Orientation, { w: number; h: number }> = {
   portrait: { w: 720, h: 1280 },
 }
 
-type RenderStatus = 'idle' | 'rendering' | 'converting' | 'done' | 'error'
+type RenderStatus = 'idle' | 'processing' | 'done' | 'error'
 
 interface ExportModalProps {
   open: boolean
@@ -62,10 +62,12 @@ function VideoPreviewPlayer({
   src,
   orientation,
   filename,
+  isMp4,
 }: {
   src: string
   orientation: Orientation
   filename: string
+  isMp4: boolean
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -145,13 +147,21 @@ function VideoPreviewPlayer({
       <div className="relative rounded-xl overflow-hidden bg-black">
         <video
           ref={videoRef}
-          src={src}
           preload="auto"
           playsInline
           loop
           onClick={togglePlay}
           className={`w-full block ${orientation === 'portrait' ? 'aspect-[9/16]' : 'aspect-video'}`}
-        />
+        >
+          <source
+            src={src}
+            type={
+              isMp4
+                ? 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+                : 'video/webm'
+            }
+          />
+        </video>
 
         {/* Center play/pause button overlay */}
         {!isPlaying && (
@@ -221,6 +231,170 @@ function VideoPreviewPlayer({
   )
 }
 
+// ──────────────────────────────────────────────────────────────────────
+// ProcessingPanel — premium animated processing state
+// ──────────────────────────────────────────────────────────────────────
+// Shown during the entire WebM render + MP4 conversion pipeline.
+// ONE unified 0–100% progress bar (no reset between phases).
+// The sub-phase label cross-fades between stages so the user always
+// knows what's happening. Heavy use of CSS animations defined in
+// globals.css: gradient pan, ring spin, pulse glow, shimmer, bar glow.
+
+type ProcessingPhase = 'composing' | 'uploading' | 'encoding' | 'finalizing'
+
+const PHASE_LABELS: Record<ProcessingPhase, { title: string; subtitle: string }> = {
+  composing: {
+    title: 'Composing frames',
+    subtitle: 'Rendering the canvas, frame by frame',
+  },
+  uploading: {
+    title: 'Preparing for conversion',
+    subtitle: 'Sending to the Python + ffmpeg encoder',
+  },
+  encoding: {
+    title: 'Encoding to MP4',
+    subtitle: 'H.264 + AAC, optimized for every platform',
+  },
+  finalizing: {
+    title: 'Finalizing',
+    subtitle: 'Almost done — preparing your download',
+  },
+}
+
+function ProcessingPanel({
+  progress,
+  phase,
+  isMp4,
+}: {
+  progress: number
+  phase: ProcessingPhase
+  isMp4: boolean
+}) {
+  const pct = Math.min(100, Math.max(0, Math.round(progress * 100)))
+  const { title, subtitle } = PHASE_LABELS[phase]
+
+  return (
+    <div className="qv-processing-panel relative rounded-2xl border border-primary/20 overflow-hidden min-h-[320px] flex flex-col justify-center p-6 sm:p-8">
+      {/* Decorative top-left + bottom-right gradient blobs for depth */}
+      <div
+        aria-hidden
+        className="absolute -top-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="absolute -bottom-16 -right-12 h-48 w-48 rounded-full bg-primary/15 blur-3xl"
+      />
+
+      {/* ─── Top: spinning ring + pulsing logo ─── */}
+      <div className="relative mx-auto mb-6">
+        {/* Pulsing glow halo */}
+        <div
+          aria-hidden
+          className="qv-processing-glow absolute inset-0 rounded-full bg-primary/30 blur-xl"
+        />
+        {/* Spinning conic ring */}
+        <div className="qv-processing-ring absolute inset-0 rounded-full" />
+        {/* Center logo */}
+        <div className="relative grid place-items-center h-20 w-20 rounded-full bg-card shadow-lg">
+          <img
+            src="/logo.png"
+            alt=""
+            className="h-10 w-10 object-contain"
+          />
+        </div>
+      </div>
+
+      {/* ─── Phase label (cross-fades on change) ─── */}
+      <div className="text-center mb-5 min-h-[44px]">
+        <p
+          key={phase}
+          className="qv-phase-label font-semibold text-base text-foreground"
+        >
+          {title}
+          <span className="inline-flex ml-1.5 align-middle">
+            <span className="qv-dot inline-block h-1.5 w-1.5 rounded-full bg-primary mx-0.5" />
+            <span className="qv-dot inline-block h-1.5 w-1.5 rounded-full bg-primary mx-0.5" />
+            <span className="qv-dot inline-block h-1.5 w-1.5 rounded-full bg-primary mx-0.5" />
+          </span>
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+      </div>
+
+      {/* ─── Unified progress bar ─── */}
+      <div className="space-y-2">
+        <div className="flex justify-between items-baseline">
+          <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+            {isMp4 ? 'MP4' : 'WebM'} · Processing
+          </span>
+          <span
+            className="font-mono font-bold text-lg text-primary tabular-nums"
+            style={{ textShadow: '0 0 12px hsl(var(--primary) / 0.4)' }}
+          >
+            {pct}%
+          </span>
+        </div>
+
+        {/* Track */}
+        <div className="relative h-2.5 rounded-full bg-muted/80 overflow-hidden ring-1 ring-inset ring-border">
+          {/* Fill */}
+          <div
+            className="qv-processing-bar relative h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/80 transition-[width] duration-300 ease-out"
+            style={{ width: `${pct}%` }}
+          >
+            {/* Shimmer overlay */}
+            <div
+              aria-hidden
+              className="qv-processing-shimmer absolute inset-0 rounded-full"
+            />
+          </div>
+        </div>
+
+        {/* Phase dots — 4 stages, current one highlighted */}
+        <div className="flex items-center justify-between pt-1.5">
+          {(['composing', 'uploading', 'encoding', 'finalizing'] as const).map(
+            (p, i) => {
+              const phaseOrder: ProcessingPhase[] = [
+                'composing',
+                'uploading',
+                'encoding',
+                'finalizing',
+              ]
+              const currentIdx = phaseOrder.indexOf(phase)
+              const isPast = i < currentIdx
+              const isCurrent = i === currentIdx
+              return (
+                <div key={p} className="flex items-center">
+                  <div
+                    className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+                      isCurrent
+                        ? 'bg-primary scale-150 shadow-[0_0_8px_var(--primary)]'
+                        : isPast
+                          ? 'bg-primary/60'
+                          : 'bg-muted-foreground/30'
+                    }`}
+                  />
+                  {i < 3 && (
+                    <div
+                      className={`h-px w-6 transition-colors duration-300 ${
+                        i < currentIdx ? 'bg-primary/40' : 'bg-border'
+                      }`}
+                    />
+                  )}
+                </div>
+              )
+            },
+          )}
+        </div>
+      </div>
+
+      {/* ─── Footer note ─── */}
+      <p className="text-center text-[10px] text-muted-foreground/70 mt-5">
+        Do not close this tab while processing
+      </p>
+    </div>
+  )
+}
+
 export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const ayatList = useBuilderStore((s) => s.ayatList)
   const surahs = useBuilderStore((s) => s.surahs)
@@ -247,6 +421,16 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const [progress, setProgress] = useState(0)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  // Tracks whether the final downloadable file is MP4 (true) or WebM
+  // (false, only when MP4 conversion fails). Drives the format badge in
+  // the processing UI + the download filename extension.
+  const [isMp4, setIsMp4] = useState(true)
+  // Sub-phase of the unified "processing" state, so the UI can show a
+  // contextual label ("Composing frames…" / "Encoding to MP4…") without
+  // splitting the progress bar.
+  const [processingPhase, setProcessingPhase] = useState<
+    'composing' | 'uploading' | 'encoding' | 'finalizing'
+  >('composing')
 
   // Pre-flight check: does this browser support MediaRecorder + Canvas
   // capture + AudioContext? If not, we show a clear message instead of
@@ -274,8 +458,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
   const filename = useMemo(() => {
     const s = surah?.number ?? 0
-    return `quran-${s}-ayat-${fromAyat}-${toAyat}-${reciter.id}.webm`
-  }, [surah, fromAyat, toAyat, reciter.id])
+    const ext = isMp4 ? 'mp4' : 'webm'
+    return `quran-${s}-ayat-${fromAyat}-${toAyat}-${reciter.id}.${ext}`
+  }, [surah, fromAyat, toAyat, reciter.id, isMp4])
 
   // Reset when modal closes
   useEffect(() => {
@@ -286,6 +471,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
       setProgress(0)
       setDownloadUrl(null)
       setErrorMsg(null)
+      setProcessingPhase('composing')
       jobIdRef.current = null
     }
   }, [open])
@@ -312,13 +498,20 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     [ayatList, surah],
   )
 
-  // ----------------- RENDER -----------------
+  // ----------------- PROCESS -----------------
+  // The whole pipeline (WebM render + MP4 conversion) is exposed to the
+  // user as a SINGLE "processing" state with one unified 0–100% progress
+  // bar. The WebM render fills 0–60%, the MP4 conversion fills 60–100%.
+  // The sub-phase (`processingPhase`) drives the label only — it does
+  // NOT split the progress.
   const startRender = async () => {
     if (!slides.length) return
-    setStatus('rendering')
+    setStatus('processing')
+    setProcessingPhase('composing')
     setProgress(0)
     setErrorMsg(null)
     setDownloadUrl(null)
+    setIsMp4(true)
 
     // 1) hit POST /api/render (validates + HEAD-checks MP3s + creates job)
     // This is best-effort — if the API is rate-limited or unreachable,
@@ -364,6 +557,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     }
 
     // 2) Client-side canvas + MediaRecorder render (produces WebM).
+    //    Scaled to 0–60% of the unified progress bar.
     try {
       const { url: webmUrl, blob: webmBlob } = await renderVideoToWebm({
         canvas: canvasRef.current!,
@@ -374,45 +568,57 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         attributionLine: videoAttributionLine(translationKey),
         reciterName: reciter.name,
         onProgress: (p) => {
-          setProgress(p)
-          sendUpdate({ progress: p, status: 'rendering' })
+          // Scale 0–1 → 0–0.6
+          const combined = p * 0.6
+          setProgress(combined)
+          sendUpdate({ progress: combined, status: 'processing' })
         },
       })
 
-      setProgress(1)
-      sendUpdate({ progress: 1, status: 'rendering' })
+      setProgress(0.6)
+      sendUpdate({ progress: 0.6, status: 'processing' })
 
       // 3) Convert WebM → MP4 server-side (Python + ffmpeg).
-      //    Always attempt the conversion — the new converter doesn't depend
-      //    on SharedArrayBuffer / COEP, so it works in every browser.
-      setStatus('converting')
-      setProgress(0)
+      //    Scaled to 60–100% of the unified progress bar.
+      //    No status change — we stay in 'processing' the whole time so
+      //    the user sees one continuous bar from 0% to 100%.
+      setProcessingPhase('uploading')
       try {
         const mp4Blob = await webmToMp4(webmBlob, {
-          onProgress: (p) => setProgress(p),
+          onProgress: (p) => {
+            // p is 0–1 within the conversion phase. Map to 0.6–1.0.
+            // Also nudge the sub-phase label based on the conversion's
+            // internal progress so the label reflects reality.
+            if (p < 0.5) setProcessingPhase('uploading')
+            else if (p < 0.95) setProcessingPhase('encoding')
+            else setProcessingPhase('finalizing')
+            const combined = 0.6 + p * 0.4
+            setProgress(combined)
+          },
         })
 
-        // Revoke the temporary WebM URL — the MP4 replaces it.
         URL.revokeObjectURL(webmUrl)
 
         const mp4Url = URL.createObjectURL(mp4Blob)
         setDownloadUrl(mp4Url)
+        setIsMp4(true)
         setStatus('done')
         setProgress(1)
         sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
-        toast.success('Video exported as MP4!')
+        toast.success('Video ready as MP4!')
       } catch (convErr) {
         // Conversion failed — fall back to the WebM URL so the user still
         // has a downloadable video. Mark it clearly as a fallback.
         console.warn('MP4 conversion failed, falling back to WebM', convErr)
         setDownloadUrl(webmUrl)
+        setIsMp4(false)
         setStatus('done')
         setProgress(1)
         sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
         toast.error('MP4 conversion failed — downloaded as WebM instead. You can re-export to retry.')
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Render failed'
+      const msg = err instanceof Error ? err.message : 'Processing failed'
       setStatus('error')
       setErrorMsg(msg)
       toast.error(msg)
@@ -546,7 +752,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground text-xs">Format</span>
-                    <span className="font-mono tabular-nums text-xs">WebM</span>
+                    <span className="font-mono tabular-nums text-xs">
+                      {isMp4 ? 'MP4' : 'WebM'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -561,84 +769,27 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                     <Film className="h-7 w-7" />
                   </div>
                   <div>
-                    <p className="font-medium text-sm">Ready to render</p>
+                    <p className="font-medium text-sm">Ready to process</p>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[240px]">
                       Pick your settings on the left, then hit{' '}
-                      <span className="font-medium text-foreground">Render video</span>{' '}
+                      <span className="font-medium text-foreground">Process video</span>{' '}
                       to start.
                     </p>
                   </div>
                 </div>
               )}
 
-              {/* Rendering state */}
-              {status === 'rendering' && (
-                <div className="qv-card rounded-xl p-5 space-y-4 min-h-[280px] flex flex-col justify-center">
-                  <div className="flex flex-col items-center text-center gap-3">
-                    <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 text-primary">
-                      <Loader2 className="h-7 w-7 animate-spin" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">Rendering your video…</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Do not close this tab
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Progress</span>
-                      <span className="font-mono font-bold">{Math.round(progress * 100)}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full bg-primary transition-all duration-200 ease-out"
-                        style={{ width: `${progress * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Converting to MP4 state */}
-              {status === 'converting' && (
-                <div className="qv-card rounded-xl p-5 space-y-4 min-h-[280px] flex flex-col justify-center">
-                  <div className="flex flex-col items-center text-center gap-3">
-                    <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 text-primary">
-                      <FileVideo className="h-7 w-7" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">
-                        {progress < 0.5
-                          ? 'Uploading to converter…'
-                          : progress < 0.95
-                            ? 'Converting to MP4…'
-                            : 'Downloading MP4…'}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Python + ffmpeg — server-side, no browser limits
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">
-                        {progress < 0.5
-                          ? 'Upload'
-                          : progress < 0.95
-                            ? 'Convert'
-                            : 'Download'}
-                      </span>
-                      <span className="font-mono font-bold">{Math.round(progress * 100)}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className="h-full bg-primary transition-all duration-200 ease-out"
-                        style={{ width: `${progress * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
+              {/* Processing state — premium animated UI.
+                  A SINGLE unified 0–100% progress bar spans the WebM render
+                  (0–60%) AND the MP4 conversion (60–100%). The sub-phase
+                  label cross-fades between stages so the user always knows
+                  what's happening, without splitting the progress bar. */}
+              {status === 'processing' && (
+                <ProcessingPanel
+                  progress={progress}
+                  phase={processingPhase}
+                  isMp4={isMp4}
+                />
               )}
 
               {/* Done state — video preview + download */}
@@ -647,6 +798,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                   src={downloadUrl}
                   orientation={settings.orientation}
                   filename={filename}
+                  isMp4={isMp4}
                 />
               )}
 
@@ -656,7 +808,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                   <div className="flex items-start gap-3 text-sm text-destructive">
                     <AlertCircle className="h-6 w-6 mt-0.5 shrink-0" />
                     <div className="space-y-1">
-                      <p className="font-medium">Render failed</p>
+                      <p className="font-medium">Processing failed</p>
                       <p className="text-xs leading-relaxed text-muted-foreground">{errorMsg}</p>
                     </div>
                   </div>
@@ -673,14 +825,14 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
             <X className="h-4 w-4 mr-1.5" />
             Close
           </Button>
-          {status !== 'rendering' && status !== 'converting' && (
+          {status !== 'processing' && (
             <Button
               onClick={startRender}
               disabled={!slides.length || !capabilities.ok}
               className="qv-btn-primary flex-1"
             >
               <Film className="h-4 w-4 mr-1.5" />
-              {status === 'done' ? 'Render again' : 'Render video'}
+              {status === 'done' ? 'Process again' : 'Process video'}
             </Button>
           )}
         </div>

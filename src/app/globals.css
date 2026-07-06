@@ -230,3 +230,109 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
+
+/* ─── Premium processing animations ─────────────────────────────────── */
+/* Used by the ProcessingPanel in ExportModal — gives the processing UI
+   a high-end, animated feel: gradient pulse, shimmer, ring spin, glow. */
+
+@keyframes qv-gradient-pan {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes qv-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+@keyframes qv-ring-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes qv-pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+@keyframes qv-bar-glow {
+  0%, 100% { box-shadow: 0 0 8px 0 var(--primary); }
+  50%      { box-shadow: 0 0 18px 2px var(--primary); }
+}
+
+@keyframes qv-fade-up {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes qv-dot-bounce {
+  0%, 80%, 100% { transform: scale(0.5); opacity: 0.4; }
+  40%           { transform: scale(1);   opacity: 1; }
+}
+
+/* Animated gradient background panel */
+.qv-processing-panel {
+  background: linear-gradient(
+    135deg,
+    hsl(var(--primary) / 0.08) 0%,
+    hsl(var(--primary) / 0.02) 30%,
+    hsl(var(--primary) / 0.08) 60%,
+    hsl(var(--primary) / 0.02) 100%
+  );
+  background-size: 300% 300%;
+  animation: qv-gradient-pan 6s ease-in-out infinite;
+}
+
+/* The spinning conic-gradient ring around the logo */
+.qv-processing-ring {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--primary) 60deg,
+    transparent 200deg,
+    var(--primary) 300deg,
+    transparent 360deg
+  );
+  animation: qv-ring-spin 1.6s linear infinite;
+  mask: radial-gradient(circle, transparent 58%, black 60%, black 100%);
+  -webkit-mask: radial-gradient(circle, transparent 58%, black 60%, black 100%);
+}
+
+/* The pulsing glow halo behind the logo */
+.qv-processing-glow {
+  animation: qv-pulse-glow 2.4s ease-in-out infinite;
+}
+
+/* The shimmer overlay on the progress bar */
+.qv-processing-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 100%
+  );
+  animation: qv-shimmer 1.8s ease-in-out infinite;
+}
+
+/* The progress bar itself — animated glow on the leading edge */
+.qv-processing-bar {
+  animation: qv-bar-glow 2s ease-in-out infinite;
+}
+
+/* Cross-fade between phase labels */
+.qv-phase-label {
+  animation: qv-fade-up 350ms ease-out;
+}
+
+/* Bouncing dots used as a "still working…" indicator */
+.qv-dot {
+  animation: qv-dot-bounce 1.4s ease-in-out infinite;
+}
+.qv-dot:nth-child(2) { animation-delay: 0.18s; }
+.qv-dot:nth-child(3) { animation-delay: 0.36s; }

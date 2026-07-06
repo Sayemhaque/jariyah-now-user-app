@@ -1078,3 +1078,71 @@ Stage Summary:
 - Word-by-word highlighting is now FULLY WORKING end-to-end
 - The complete pipeline: quran.com API → per-word MP3 paths → fetch each MP3 → measure duration → build cumulative timings → rAF loop reads audio.currentTime → getActiveWordIndex picks the active word → CSS color transition highlights it
 - The fix was a single CSP directive update — the rest of the pipeline was already correct from the previous task
+
+---
+Task ID: unified-premium-processing-ui
+Agent: main (super-z)
+Task: User asked for: (1) make MP4 conversion easy to use Python (already done), (2) don't show separate progress for convert — keep it in render progress, (3) don't show "render" — show "video is processing", (4) make the processing UI VERY VERY VERY premium and animated.
+
+Work Log:
+- Unified the render + convert pipeline into a SINGLE 'processing' status with one 0–100% progress bar:
+  - WebM render = 0–60% of total progress
+  - MP4 conversion = 60–100% of total progress
+  - Removed the 'converting' status entirely — the user sees ONE continuous bar from 0% to 100%
+  - Added a `processingPhase` state ('composing' | 'uploading' | 'encoding' | 'finalizing') that drives the label only — does NOT split the progress
+- Renamed all user-facing "render" text → "process":
+  - "Render video" → "Process video"
+  - "Render again" → "Process again"
+  - "Ready to render" → "Ready to process"
+  - "Rendering your video…" → "Composing frames" (phase label)
+  - "Render failed" → "Processing failed"
+  - "Video exported as MP4!" → "Video ready as MP4!"
+- Added 7 CSS keyframe animations to globals.css:
+  - qv-gradient-pan: animated gradient background (6s ease-in-out infinite)
+  - qv-shimmer: shimmer overlay on progress bar (1.8s ease-in-out infinite)
+  - qv-ring-spin: spinning conic-gradient ring around logo (1.6s linear infinite)
+  - qv-pulse-glow: pulsing glow halo behind logo (2.4s ease-in-out infinite)
+  - qv-bar-glow: animated glow on progress bar leading edge (2s ease-in-out infinite)
+  - qv-fade-up: cross-fade between phase labels (350ms ease-out)
+  - qv-dot-bounce: bouncing dots next to phase label (1.4s ease-in-out infinite, staggered)
+- Built a new ProcessingPanel component with:
+  - Animated gradient background panel (qv-processing-panel class)
+  - Decorative top-left + bottom-right gradient blobs for depth
+  - Spinning conic-gradient ring around the Jariyah Now logo
+  - Pulsing glow halo behind the logo
+  - Center logo image (256x256 /logo.png)
+  - Cross-fading phase label with bouncing dots (4 stages: composing → uploading → encoding → finalizing)
+  - Subtitle text that changes per phase
+  - Unified 0–100% progress bar with:
+    - Gradient fill (from-primary via-primary to-primary/80)
+    - Shimmer overlay sweeping across
+    - Animated glow on the leading edge
+    - Smooth width transition (300ms ease-out)
+  - Large % counter with text-shadow glow
+  - "MP4 · Processing" badge (or "WebM · Processing" on fallback)
+  - 4 phase dots with connecting lines (current = scaled + glowing, past = filled, future = muted)
+  - "Do not close this tab while processing" footer note
+- Fixed the isMp4 state (was lost in session reset) — added back, drives the filename extension + format badge + video <source> MIME type
+- Updated filename to use .mp4 extension when isMp4 is true (was hardcoded to .webm)
+- Updated VideoPreviewPlayer to accept isMp4 prop and use it for the <source> element's MIME type
+- Removed unused Loader2 + FileVideo imports
+
+Verification:
+- `npx next build` — 13/13 pages, clean
+- `npx eslint src/components/ExportModal.tsx` — passes clean
+- `npx vitest run` — 179/179 tests pass
+- ffmpeg confirmed installed (/usr/bin/ffmpeg v7.1.4)
+- /api/convert-mp4 GET returns {"ok":true,"converter":"python+ffmpeg",...}
+- Agent Browser visual check confirmed:
+  - "Process video" button replaces "Render video" ✓
+  - ProcessingPanel appears immediately on click ✓
+  - All 7 animations wired to CSS keyframes ✓
+  - Progress 0→100% without reset ✓
+  - Phase label changes through 4 stages ✓
+  - (Note: agent-browser's sandbox doesn't have ffmpeg, so it falls back to WebM — but the real server does have ffmpeg and the conversion works)
+
+Stage Summary:
+- The processing UI is now VERY premium and animated — spinning ring, pulsing glow, shimmer, gradient pan, cross-fading labels, bouncing dots, phase dots with connecting lines
+- ONE unified progress bar (0–100%) spans both the WebM render and the MP4 conversion — no reset between phases
+- All "render" text renamed to "process" / "processing"
+- The Python+ffmpeg MP4 conversion pipeline is intact and working (verified earlier: 35KB WebM → 48KB MP4 in 375ms)
