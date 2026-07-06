@@ -1,0 +1,207 @@
+{
+  "path": "/home/z/my-project/upload/jariyah-logo_watermark.png",
+  "format": "PNG",
+  "mode": "RGBA",
+  "size_px": "1920x1920",
+  "has_alpha_channel": true,
+  "alpha": {
+    "total_pixels": 3686400,
+    "fully_transparent (a==0)": 83,
+    "fully_opaque (a==255)": 408097,
+    "partial (0<a<255)": 3278220,
+    "pct_transparent": 0.0,
+    "pct_opaque": 11.07,
+    "pct_partial": 88.93,
+    "min_alpha": 0,
+    "max_alpha": 255,
+    "avg_alpha": 54.58,
+    "verdict": "mixed (has transparency)"
+  },
+  "bbox_nonzero_alpha": [
+    0,
+    0,
+    1920,
+    1920
+  ],
+  "bbox_size_px": "1920x1920",
+  "bbox_offset_px": "x=0, y=0",
+  "bbox_pct_of_canvas": {
+    "width_pct": 100.0,
+    "height_pct": 100.0,
+    "x_offset_pct": 0.0,
+    "y_offset_pct": 0.0
+  },
+  "bbox_fully_opaque": [
+    447,
+    124,
+    1491,
+    1785
+  ],
+  "pixel_samples": {
+    "center": {
+      "x": 960,
+      "y": 960,
+      "rgba": [
+        26,
+        68,
+        34,
+        30
+      ]
+    },
+    "top_left_corner": {
+      "x": 0,
+      "y": 0,
+      "rgba": [
+        34,
+        44,
+        44,
+        76
+      ]
+    },
+    "top_right_corner": {
+      "x": 1919,
+      "y": 0,
+      "rgba": [
+        36,
+        36,
+        36,
+        43
+      ]
+    },
+    "bottom_left_corner": {
+      "x": 0,
+      "y": 1919,
+      "rgba": [
+        38,
+        38,
+        38,
+        54
+      ]
+    },
+    "bottom_right_corner": {
+      "x": 1919,
+      "y": 1919,
+      "rgba": [
+        33,
+        38,
+        38,
+        47
+      ]
+    },
+    "center_top_edge": {
+      "x": 960,
+      "y": 0,
+      "rgba": [
+        27,
+        73,
+        36,
+        28
+      ]
+    },
+    "center_bottom_edge": {
+      "x": 960,
+      "y": 1919,
+      "rgba": [
+        26,
+        115,
+        38,
+        20
+      ]
+    },
+    "center_left_edge": {
+      "x": 0,
+      "y": 960,
+      "rgba": [
+        29,
+        88,
+        29,
+        26
+      ]
+    },
+    "center_right_edge": {
+      "x": 1919,
+      "y": 960,
+      "rgba": [
+        30,
+        135,
+        30,
+        17
+      ]
+    }
+  },
+  "top_color_buckets_rgb16": [
+    {
+      "rgb_bucket": [
+        16,
+        64,
+        32
+      ],
+      "count": 993806,
+      "pct_of_opaque": 26.99
+    },
+    {
+      "rgb_bucket": [
+        16,
+        48,
+        32
+      ],
+      "count": 685185,
+      "pct_of_opaque": 18.61
+    },
+    {
+      "rgb_bucket": [
+        16,
+        96,
+        32
+      ],
+      "count": 465029,
+      "pct_of_opaque": 12.63
+    },
+    {
+      "rgb_bucket": [
+        16,
+        32,
+        32
+      ],
+      "count": 453999,
+      "pct_of_opaque": 12.33
+    },
+    {
+      "rgb_bucket": [
+        240,
+        240,
+        240
+      ],
+      "count": 419549,
+      "pct_of_opaque": 11.39
+    },
+    {
+      "rgb_bucket": [
+        16,
+        80,
+        32
+      ],
+      "count": 317889,
+      "pct_of_opaque": 8.63
+    },
+    {
+      "rgb_bucket": [
+        16,
+        80,
+        16
+      ],
+      "count": 155215,
+      "pct_of_opaque": 4.22
+    },
+    {
+      "rgb_bucket": [
+        16,
+        112,
+        32
+      ],
+      "count": 66105,
+      "pct_of_opaque": 1.8
+    }
+  ],
+  "opaque_pixel_count": 3681889
+}

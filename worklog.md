@@ -957,3 +957,46 @@ Stage Summary:
 - All five placeholder logo blocks (`Sparkles` × 3 + `Share2` × 1 on the landing page, `Film` × 1 in the app header) are gone, replaced with semantically-correct `<img>` tags carrying `alt="Jariyah Now logo"`.
 - Unused `Share2` import was pruned; `Sparkles` and `Film` imports are retained because they're still used elsewhere (feature-card icons and the Export-button icon, respectively) — no dead code left behind.
 - Build, lint, and all 179 tests are green; dev server serves the landing page with HTTP 200 and no runtime errors.
+
+---
+Task ID: swap-watermark-and-favicon
+Agent: main (super-z)
+Task: User uploaded a new watermark image (jariyah-logo_watermark.png) and asked to: (1) use it as the watermark, (2) remove the old one, (3) use the logo as favicon.
+
+Work Log:
+- Analyzed the new upload (/upload/jariyah-logo_watermark.png, 1920x1920 RGBA, 4.2MB):
+  - VLM described: "white stylized logo (crescent + inner play-button triangle + small diamond at top)"
+  - PIL analysis revealed the same issue as the previous watermark: a dark green translucent wash covering ~89% of the frame (avg alpha ~54/255). The wash would tint the entire video frame green if used as-is.
+  - Only 11.07% of pixels were fully opaque (the white icon)
+  - Icon bbox: (447, 124, 1491, 1785) → 1044x1661 px
+
+- Wrote /home/z/my-project/scripts/prepare_watermark_v2.py (based on the previous prepare_watermark.py):
+  1. Alpha-threshold (α ≥ 150): zeroed out the dark green wash, kept only the opaque white icon
+  2. Tight-cropped to the icon's bounding box: 1048x1667 px
+  3. Added a subtle drop shadow (4px blur, 110/255 alpha, 2px Y offset)
+  4. Re-padded with 16px transparent margin
+  5. Saved to /public/watermark.png (1088x1709 RGBA, 282 KB) — OVERWRITES the old watermark
+
+- The favicon was already configured in the previous task (integrate-site-logo):
+  - /public/favicon.ico (828 bytes, multi-resolution ICO)
+  - /public/logo-32.png (32x32, 2.2KB)
+  - /public/logo-180.png (180x180, 35KB for apple-touch-icon)
+  - /public/logo.png (256x256, 63KB)
+  - layout.tsx metadata.icons block already references all of these
+
+- No code changes needed in ExportModal.tsx or VideoPreview.tsx — both already reference /watermark.png via <img src="/watermark.png"> (VideoPreview) and loadImage('/watermark.png') (ExportModal drawFrame). Replacing the file is sufficient.
+
+Verification:
+- `file /public/watermark.png` → "PNG image data, 1088 x 1709, 8-bit/color RGBA, non-interlaced"
+- Alpha range: (0, 255) — has full transparency + opacity
+- `npx next build` — succeeds clean (13/13 pages)
+- Live: curl /watermark.png → 200 OK (282 KB)
+- Live: curl /favicon.ico → 200 OK
+- Live: curl /logo.png → 200 OK
+- Live: curl /api/health → OK
+
+Stage Summary:
+- The new watermark image is now in place at /public/watermark.png (old one overwritten)
+- The watermark was pre-cleaned to remove the dark green wash that would have tinted the entire video frame
+- The favicon setup from the previous task is already in place (favicon.ico + logo-32.png + logo-180.png)
+- Both the live preview (VideoPreview.tsx) and the exported MP4 (ExportModal drawFrame) automatically use the new watermark image — no code changes needed
