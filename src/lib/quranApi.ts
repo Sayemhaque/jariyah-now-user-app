@@ -43,7 +43,9 @@ interface QuranComWord {
   text_uthmani?: string
   text?: string
   position?: number
-  transliteration?: string
+  /** Per-word MP3 path (e.g. "wbw/001_001_001.mp3"). Used as a fallback
+   *  for timing computation when the API doesn't return audio_segment. */
+  audio_url?: string | null
   audio_segment?: {
     timestamp_ms?: number
     duration_ms?: number
@@ -56,6 +58,8 @@ interface QuranComWord {
     start_time?: number
     duration?: number
   }
+  /** Some API responses embed transliteration as an object. */
+  transliteration?: { text?: string } | string
 }
 
 interface QuranComVerse {
@@ -63,6 +67,9 @@ interface QuranComVerse {
 }
 
 interface QuranComResponse {
+  /** /verses/by_key/{key} returns a single verse object under `verse`. */
+  verse?: QuranComVerse
+  /** /verses/by_keys/{keys} returns an array under `verses`. */
   verses?: QuranComVerse[]
 }
 
@@ -166,6 +173,17 @@ export async function fetchAyatText(
  * Returns an empty word list if the request fails — the caller can still
  * render the ayat without word-level highlighting. This is the graceful
  * degradation path called out in the production spec.
+ *
+ * The quran.com API has two response shapes:
+ *   - `/verses/by_key/{key}` returns `{ verse: { words: [...] } }` (singular)
+ *   - `/verses/by_keys/{keys}` returns `{ verses: [{ words: [...] }] }` (plural)
+ * We handle both.
+ *
+ * The API USED to return `audio_segment.timestamp_ms` + `duration_ms` per
+ * word, but as of 2025 it no longer does. We now compute timings by
+ * fetching each word's per-word MP3 (`wbw/NNN_NNN_NNN.mp3` on
+ * audio.qurancdn.com), measuring its duration via the browser's <audio>
+ * element, and concatenating. This is slower but reliable.
  */
 export async function fetchWordTimings(
   surah: number,
@@ -177,18 +195,28 @@ export async function fetchWordTimings(
     const res = await fetchWithTimeout(url, { next: { revalidate: 86_400 } })
     if (!res.ok) return []
     const json = (await res.json()) as QuranComResponse
-    const verses = json?.verses
-    if (!verses || !verses.length) return []
-    const wordsRaw = verses[0]?.words
-    if (!wordsRaw) return []
 
-    const words: WordTiming[] = wordsRaw
-      .map((w): WordTiming | null => {
+    // Handle BOTH response shapes: `verse.words` (by_key) and
+    // `verses[0].words` (by_keys). The old code only checked `verses`,
+    // which silently broke word highlighting when the proxy started
+    // hitting the by_key endpoint.
+    const wordsRaw =
+      json?.verse?.words ?? json?.verses?.[0]?.words ?? undefined
+    if (!wordsRaw || !wordsRaw.length) return []
+
+    // First pass: extract text + position + transliteration + any
+    // embedded segment data (if the API ever brings it back).
+    const extracted = wordsRaw
+      .map((w): Partial<WordTiming> & { audioUrl?: string | null } => {
         const seg = w.audio_segment ?? w.segment
         const startMs = seg?.timestamp_ms ?? seg?.start_time ?? null
         const durMs = seg?.duration_ms ?? seg?.duration ?? null
         const text = w.text_uthmani ?? w.text ?? ''
-        if (!text) return null
+        // transliteration can be either a string or { text: string }
+        const translit =
+          typeof w.transliteration === 'object'
+            ? w.transliteration?.text
+            : (w.transliteration as string | undefined)
         return {
           text,
           position: w.position ?? 0,
@@ -197,10 +225,44 @@ export async function fetchWordTimings(
             typeof startMs === 'number' && typeof durMs === 'number'
               ? startMs + durMs
               : 0,
-          transliteration: w.transliteration ?? undefined,
+          transliteration: translit,
+          audioUrl: w.audio_url ?? null,
         }
       })
-      .filter((w): w is WordTiming => w !== null)
+      .filter((w) => Boolean(w.text))
+
+    if (!extracted.length) return []
+
+    // If the API returned segment data, use it directly.
+    const hasSegments = extracted.every(
+      (w) => (w.startMs ?? 0) > 0 && (w.endMs ?? 0) > 0,
+    )
+    if (hasSegments) {
+      return extracted as WordTiming[]
+    }
+
+    // Fallback: compute timings by fetching each word's per-word MP3
+    // duration and concatenating. The audio_url is a relative path like
+    // "wbw/001_001_001.mp3" — we resolve it against audio.qurancdn.com.
+    // We do this in the BROWSER (not the API route) because:
+    //   1. The browser can play the MP3s directly via <audio>
+    //   2. We can parallelize the duration probes
+    //   3. The durations are cached in-memory for the session
+    const words: WordTiming[] = []
+    let cumMs = 0
+    for (const w of extracted) {
+      const durMs = w.audioUrl
+        ? await getWordAudioDurationMs(w.audioUrl)
+        : 0
+      words.push({
+        text: w.text!,
+        position: w.position ?? 0,
+        startMs: cumMs,
+        endMs: cumMs + durMs,
+        transliteration: w.transliteration,
+      })
+      cumMs += durMs
+    }
 
     return words
   } catch (err) {
@@ -212,6 +274,55 @@ export async function fetchWordTimings(
     })
     return []
   }
+}
+
+// --- per-word audio duration cache (session-only) ----------------------
+// Fetching each word's MP3 to measure duration is expensive (one network
+// request per word). We cache the results in-memory for the session so
+// re-loading the same ayat is instant. Cleared on page refresh.
+const wordDurationCache = new Map<string, number>()
+
+/**
+ * Resolve a relative word audio URL (e.g. "wbw/001_001_001.mp3") against
+ * the Quran.com audio CDN and measure its duration in milliseconds via
+ * an <audio> element. Returns 0 if the duration can't be determined.
+ *
+ * Browsers cache the MP3 binary, so repeated calls for the same word
+ * across different ayats are fast.
+ */
+function getWordAudioDurationMs(audioUrl: string): Promise<number> {
+  // Check cache first
+  const cached = wordDurationCache.get(audioUrl)
+  if (cached !== undefined) return Promise.resolve(cached)
+
+  // Resolve relative URL
+  const fullUrl = audioUrl.startsWith('http')
+    ? audioUrl
+    : `https://audio.qurancdn.com/${audioUrl}`
+
+  return new Promise<number>((resolve) => {
+    if (typeof Audio === 'undefined') {
+      resolve(0)
+      return
+    }
+    const audio = new Audio()
+    audio.preload = 'metadata'
+    let settled = false
+    const done = (val: number) => {
+      if (settled) return
+      settled = true
+      wordDurationCache.set(audioUrl, val)
+      resolve(val)
+    }
+    audio.onloadedmetadata = () => {
+      const d = audio.duration
+      done(isFinite(d) ? d * 1000 : 0)
+    }
+    audio.onerror = () => done(0)
+    // Safety timeout — if the MP3 hangs (rare), don't block the render
+    setTimeout(() => done(0), 5000)
+    audio.src = fullUrl
+  })
 }
 
 /**

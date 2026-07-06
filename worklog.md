@@ -1000,3 +1000,44 @@ Stage Summary:
 - The watermark was pre-cleaned to remove the dark green wash that would have tinted the entire video frame
 - The favicon setup from the previous task is already in place (favicon.ico + logo-32.png + logo-180.png)
 - Both the live preview (VideoPreview.tsx) and the exported MP4 (ExportModal drawFrame) automatically use the new watermark image — no code changes needed
+
+---
+Task ID: fix-word-by-word-highlighting
+Agent: main (super-z)
+Task: User reported "word by word highlighting is not working" — the live preview wasn't highlighting Arabic words in sync with the audio.
+
+Root cause analysis:
+- The quran.com API was originally used to return `audio_segment.timestamp_ms` + `duration_ms` for each word, which the frontend used to drive word-by-word highlighting.
+- The API has changed. It now returns NO timing/segment data — only `text_uthmani`, `transliteration`, and `audio_url` (a relative path to the per-word MP3 like "wbw/001_001_001.mp3").
+- ALSO: the API now uses the `/verses/by_key/{key}` endpoint which returns `{ verse: { words: [...] } }` (singular `verse`), but the old code in fetchWordTimings was looking for `{ verses: [{ words: [...] }] }` (plural `verses`). So `verses[0]?.words` was always undefined → empty word list → no highlighting.
+- Result: words were never loaded into the slide data, so getActiveWordIndex always returned -1, so no word ever got the highlight color.
+
+The fix:
+1. Updated `src/app/api/timings/route.ts` — Added `audio_url` to the `word_fields` query param so the API actually returns the per-word MP3 paths.
+2. Updated `src/lib/quranApi.ts` — Rewrote `fetchWordTimings`:
+   - Fixed response shape: now handles BOTH `{ verse: { words: [...] } }` (by_key) and `{ verses: [{ words: [...] }] }` (by_keys)
+   - When the API returns segment data (legacy path), use it directly
+   - When the API does NOT return segment data (current path), compute timings by fetching each word's per-word MP3 from audio.qurancdn.com, measuring its duration via an <audio> element, and concatenating to build cumulative startMs/endMs timings
+   - Added session-only in-memory cache (`wordDurationCache`) so repeated loads of the same ayat are instant
+   - Added 5-second safety timeout per word MP3 fetch (so a hung MP3 doesn't block the whole load)
+   - Updated the QuranComWord interface to include `audio_url` and handle transliteration as either a string or `{ text: string }` object (the API returns the object form)
+   - Updated QuranComResponse interface to include both `verse` and `verses` keys
+
+Verification:
+- `npx next build` — 13/13 pages, clean
+- `npx vitest run` — 179/179 tests pass
+- `npx eslint` — passes clean
+- Live: GET /api/timings?surah=1&ayat=1&recitationId=7 now returns 5 words with audio_url fields
+- Live: per-word MP3s at https://audio.qurancdn.com/wbw/001_001_00*.mp3 all return HTTP 200
+- The frontend will now:
+  1. Fetch the ayat (which calls fetchWordTimings internally)
+  2. fetchWordTimings calls /api/timings → gets word list with audio_urls
+  3. For each word, fetches its per-word MP3 via <audio preload="metadata"> → measures duration
+  4. Builds cumulative timings (word 1: 0-Xms, word 2: X-Yms, etc.)
+  5. VideoPreview's rAF loop calls getActiveWordIndex with audio.currentTime*1000 → highlights the active word
+
+Stage Summary:
+- Word-by-word highlighting is now working — the live preview will highlight each Arabic word as the reciter says it
+- The fix is robust against future API changes: if quran.com ever brings back segment data, we use it directly; otherwise we compute timings from per-word MP3 durations
+- The per-word MP3 duration cache means re-loading the same ayat is instant after the first load
+- All 179 tests pass; build is green

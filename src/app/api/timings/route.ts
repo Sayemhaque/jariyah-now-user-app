@@ -65,9 +65,11 @@ export async function GET(req: NextRequest) {
     `${env.QURAN_COM_API_BASE_URL}/verses/by_key/${verseKey}`,
   )
   upstreamUrl.searchParams.set('words', 'true')
+  // Include audio_url so we can fetch per-word MP3s for duration-based
+  // timing computation (the API no longer returns audio_segment data).
   upstreamUrl.searchParams.set(
     'word_fields',
-    'text_uthmani,location,transliteration,position',
+    'text_uthmani,location,transliteration,position,audio_url',
   )
   upstreamUrl.searchParams.set('audio_recitation', String(recitationId))
 
