@@ -1,0 +1,50 @@
+JARIYAH NOW — BACKGROUND IMAGE ANALYSIS
+========================================
+Analyzed via z-ai vision (glm-4.6v) CLI
+Source dir: /home/z/my-project/upload/
+Raw JSON:  /home/z/my-project/tool-results/bg{1,2,3}.json
+
+----------------------------------------
+1. jariyah-bg.png   ->  Preset: "Crescent Night"
+----------------------------------------
+DESCRIPTION : Deep purple night sky with crescent moon and stars.
+ORIENTATION : portrait
+PALETTE     : midnight blue #0a0a2e, deep purple #2a0a4a,
+              cloud purple #4a235a, starlight white #e6e6fa
+VIDEO_BG_FIT: YES — text lands on darker upper sky, high contrast / readable.
+BAKED_TEXT  : NONE — clean for verse overlay.
+
+----------------------------------------
+2. jariyah-bg-2.png ->  Preset: "Sunset Mosque"
+----------------------------------------
+DESCRIPTION : Silhouetted mosque against vibrant sunset sky with crescent moon.
+ORIENTATION : portrait
+PALETTE     : deep purple #1a0b3a, magenta #c9186e, orange #ff6b35,
+              dark navy #0b1d3a, cream #f5e8c7
+VIDEO_BG_FIT: YES — text overlay on sky gradient / silhouette stays readable.
+BAKED_TEXT  : NONE — clean for verse overlay.
+
+----------------------------------------
+3. jariyah-bg-3.png ->  Preset: "Twilight Hills"
+   (VLM suggested "Sunset Serenity"; renamed here to avoid collision
+    with bg-2's "Sunset Mosque" in the preset list.)
+----------------------------------------
+DESCRIPTION : Vibrant sunset over rolling hills with dramatic sky.
+ORIENTATION : portrait
+PALETTE     : magenta #c94c9a, orange #ff7f50, gold #ffd700,
+              green #4a7c59, purple #8a2be2
+VIDEO_BG_FIT: YES — text lands on darker lower hills / sky, readable.
+BAKED_TEXT  : NONE — clean for verse overlay.
+
+========================================
+QUICK PRESET TABLE (name + description only)
+================================--------
+1. Crescent Night   — Deep purple night sky with crescent moon and stars.
+2. Sunset Mosque    — Silhouetted mosque against vibrant sunset sky with crescent moon.
+3. Twilight Hills   — Vibrant sunset over rolling hills with dramatic sky.
+
+NOTES
+- All 3 are portrait orientation — good for vertical/Reels-style Quran clips.
+- All 3 rated YES for video-bg fit, no baked-in text/watermarks — safe for verse overlay.
+- Names 1 and 3 are distinct; bg-2/bg-3 were both "Sunset"-themed so bg-3 was
+  relabeled "Twilight Hills" for UI clarity. Adjust if you prefer the original.

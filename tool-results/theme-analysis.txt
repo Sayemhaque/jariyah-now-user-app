@@ -1,0 +1,234 @@
+================================================================
+THEME IMAGE ANALYSIS — Quran Video Generator Background Preset
+================================================================
+Source image : /home/z/my-project/upload/pasted_image_1783262651387.png
+Analyzed with: z-ai-web-dev-sdk VLM (glm-4.6v) + PIL/Python
+File size    : 312 KB
+Format       : PNG, 8-bit RGBA
+Generated    : 2025-07-05
+================================================================
+
+
+----------------------------------------------------------------
+PRESET IDENTITY
+----------------------------------------------------------------
+Preset Name  : "Twilight Mosque"
+(alternative suggestions: "Purple Dusk Mosque", "Crescent Twilight",
+ "Sadaqah Jariyah Dusk")
+
+Tooltip (UI) : "A serene dusk scene with silhouetted Islamic
+architecture under a purple-to-pink twilight sky — ideal for
+overlaying Quran verses with a calm, spiritual tone."
+
+One-liner    : Deep-purple twilight sky over a silhouetted mosque
+and minaret, with soft bokeh stars and a warm horizon glow.
+
+
+----------------------------------------------------------------
+IMAGE METRICS (PIL)
+----------------------------------------------------------------
+Dimensions   : 706 x 384 px
+Orientation  : LANDSCAPE  (aspect ratio 1.839 — wider than 16:9)
+Mode         : RGBA (has alpha channel — check transparency usage)
+File size    : 312 KB
+
+Average color        : RGB(65, 41, 112)  →  #41296F  (deep indigo/purple)
+Average brightness   : 72.7 / 255  →  relatively DARK (≈28% brightness)
+                     → white text will have strong contrast; dark text
+                       will be illegible. Use light/white text overlays.
+
+Dominant colors (quantized, top 6):
+   23.0%  #1C1732  near-black indigo      (deepest sky / shadow)
+   22.3%  #49258E  royal purple           (mid-sky)
+   17.0%  #321A7D  deep violet            (sky)
+   16.2%  #322376  deep blue-violet       (sky)
+   11.4%  #4E3080  muted purple           (sky / haze)
+   10.2%  #A16E96  dusty pink-mauve       (horizon glow / accent)
+
+   → Palette is overwhelmingly PURPLE/INDIGO with a single warm
+     pink-mauve accent. Cool-dominant, single warm accent.
+
+Corner samples (RGB) — useful for understanding gradient layout:
+   top-left     : (26, 26, 26)   pure near-black
+   top-right    : (55, 19, 154)  bright royal purple
+   center       : (67, 35, 132)  mid-purple
+   bottom-left  : (26, 26, 26)   pure near-black
+   bottom-right : (26, 26, 26)   pure near-black
+
+   → Note: 3 of 4 corners are pure (26,26,26). This suggests heavy
+     darkening/vignetting around the edges, very likely a deliberate
+     design choice to create a "letterbox" safe-zone for text overlay.
+     The brightest region is the top-right (the sky above the mosque).
+     The actual photographic gradient is in the upper portion of the
+     image; the bottom third is essentially silhouette black.
+
+
+----------------------------------------------------------------
+1. CONTENT
+----------------------------------------------------------------
+A serene Islamic architectural scene at twilight:
+  • Central focal point: a DOMED MOSQUE with a CRESCENT MOON on top.
+  • A tall MINARET rises to the right of the main dome.
+  • Smaller secondary domes appear to the left of the main dome.
+  • Low MOUNTAIN SILHOUETTES stretch across the bottom of the frame.
+  • SKY: gradient from deep purple (top) to warm orange-pink at the
+    horizon (bottom), giving a dusk/twilight feel.
+  • Faint STARS and soft BOKEH light particles scattered in the sky
+    (gives a dreamy, celestial quality).
+  • Soft warm GLOW / halo around the mosque silhouette (backlight).
+
+⚠ IMPORTANT — image already contains overlaid marketing text:
+    "Jariyah Now"            (large, white, sans-serif, upper area)
+    "Post today. Earn until the Day of Judgment."
+                             (smaller, white, below the headline)
+  This text is part of the source image (a sample/mockup). When this
+  image is used as a video background, that marketing text should be
+  treated as already-present or stripped/replaced before rendering
+  Quran verses. Recommend keeping a clean (text-free) master copy.
+
+
+----------------------------------------------------------------
+2. COLOR PALETTE
+----------------------------------------------------------------
+Dominant   : Deep indigo-purple #1C1732 → royal purple #49258E
+Accent     : Warm pink-mauve #A16E96 at the horizon
+Highlight  : Soft gold/cream glow behind the mosque silhouette
+Text color : Pure white #FFFFFF (matches existing marketing copy)
+
+Gradient direction: TOP-TO-BOTTOM
+  top    = deep purple / near-black
+  middle = royal purple → dusty pink
+  bottom = warm orange-pink horizon glow, then black silhouette
+
+Overall the palette is COOL-DOMINANT (purples) with a single WARM
+accent (pink-gold horizon). Very harmonious — analogous purples
+plus one warm complement.
+
+
+----------------------------------------------------------------
+3. MOOD / ATMOSPHERE
+----------------------------------------------------------------
+Spiritual, peaceful, contemplative, reverent.
+  • Twilight lighting evokes the calm of Maghrib/Isha prayer time.
+  • Silhouetted architecture = quiet reverence, no human distraction.
+  • Bokeh + soft glow = ethereal, celestial, dreamy.
+  • Cool purple dominant = serene, meditative.
+  • Warm horizon accent = subtle hope / divine warmth.
+
+Emotion keywords: calm, spiritual, contemplative, serene, ethereal,
+devotional, dusk, reverent. NOT dramatic, NOT energetic, NOT somber.
+
+
+----------------------------------------------------------------
+4. COMPOSITION
+----------------------------------------------------------------
+Focal point  : MOSQUE + MINARET, positioned CENTER-RIGHT, in the
+               vertical middle of the frame. Crescent moon draws
+               the eye upward.
+Negative space:
+  • UPPER-LEFT quadrant  → cleanest sky area, ideal for title text.
+  • TOP 40% of frame     → lowest visual detail; safe zone.
+  • BOTTOM 30%           → solid black silhouette; usable for
+                           subtitle/citation text if desired.
+  • CENTER-RIGHT         → busy (architecture) — AVOID for body text.
+
+Rule-of-thirds: mosque sits roughly on the right-third vertical;
+horizon glow sits on the lower-third horizontal. Classic balanced
+composition.
+
+
+----------------------------------------------------------------
+5. SUITABILITY AS VIDEO BACKGROUND
+----------------------------------------------------------------
+HIGHLY SUITABLE for Quran verse overlays. Specifically:
+
+  ✅ Recommended text placement:
+     • Quran verse (Arabic)         → upper-center to upper-left sky
+                                      (the clean purple band)
+     • Translation / transliteration → lower-third black silhouette
+                                       band (high contrast for white)
+     • Surah name + ayah number     → bottom-right corner
+     • App branding / watermark     → bottom-left corner
+
+  ✅ Contrast: image is dark (~28% brightness avg.) → white text
+     reads cleanly. Recommend text-shadow or 0.3-opacity black
+     scrim behind text for guaranteed legibility on the horizon
+     glow band.
+
+  ⚠ Caution:
+     • Avoid placing text over the mosque/minaret silhouette in the
+       center-right — it will clash with the architecture.
+     • The existing "Jariyah Now" marketing text is baked into this
+       source image — strip or avoid that region, or use a clean
+       text-free master.
+
+  ✅ Works at landscape video resolutions (16:9, 21:9). Source is
+     706×384 (1.84:1) so it scales naturally to 1920×1080 or
+     2560×1080 with minimal cropping. For 9:16 (portrait reels)
+     you'd need to crop the sides — the mosque would still be
+     framed but you'd lose the right-side minaret.
+
+
+----------------------------------------------------------------
+6. DISTINCTIVE VISUAL ELEMENTS
+----------------------------------------------------------------
+Islamic motifs:
+  • Dome (mosque)
+  • Minaret (tall spire right of dome)
+  • Crescent moon atop the dome
+  • (No explicit calligraphy, arabesque, or geometric tilework —
+     the Islamic identity comes from architectural silhouettes.)
+
+Nature elements:
+  • Twilight gradient sky
+  • Mountain silhouettes (horizon)
+  • Stars + bokeh particles (celestial)
+
+Light effects:
+  • Soft backlight / halo around the mosque
+  • Atmospheric haze (depth)
+  • Bokeh (dreamy, out-of-focus light orbs)
+  • Edge vignette (the 3 black corners)
+
+
+----------------------------------------------------------------
+7. LIGHTING
+----------------------------------------------------------------
+Temperature : Mixed — COOL purple sky + WARM pink-gold horizon glow
+              (classic twilight/dusk split-temperature)
+Softness    : Very SOFT — no harsh shadows, no hard highlights
+Direction   : BACKLIGHT — light comes from behind the mosque,
+              casting a warm halo around the silhouette
+Special FX  : Haze (adds depth), bokeh (celestial dreaminess),
+              edge vignette (frames the subject)
+Time of day : Twilight / dusk (just after sunset)
+
+
+----------------------------------------------------------------
+RECOMMENDED USAGE NOTES FOR THE DEV TEAM
+----------------------------------------------------------------
+1. Keep a TEXT-FREE master copy of this background. The current
+   PNG has "Jariayah Now" marketing copy burned in — that will
+   conflict with Quran verse overlays.
+
+2. Default text-overlay config for this preset:
+     Arabic verse  : white, font-size ~7% of frame height,
+                     positioned upper-center, with 0.4 black scrim.
+     Translation   : white, smaller, positioned lower-third
+                     over the black silhouette band.
+     Surah:Ayah    : white, small, bottom-right corner.
+
+3. Suggested companion fonts: elegant serif or traditional Arabic
+   calligraphy fonts (Amiri, Scheherazade) — matches the spiritual,
+   traditional mood. Avoid heavy sans-serif.
+
+4. Suggested accent color for UI cards / progress bars using this
+   theme: #A16E96 (the horizon pink) or #49258E (royal purple).
+
+5. Good pairing themes (for a preset library):
+     "Twilight Mosque" + "Golden Hour Madinah" + "Night Sky Kaaba"
+     + "Desert Dawn" — covers a full day-cycle of moods.
+
+================================================================
+END OF ANALYSIS
+================================================================

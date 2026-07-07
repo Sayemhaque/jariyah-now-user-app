@@ -1,0 +1,31 @@
+Twilight Mosque Background Verification
+========================================
+Image: /home/z/my-project/public/backgrounds/twilight-mosque.png
+Model: glm-4.6v (z-ai vision CLI)
+Date: 2026-07-05
+
+VERDICT: PASS
+
+Criteria check (yes/no):
+  1. Clean twilight sky with purple-to-pink gradient ............ YES
+  2. Mosque silhouette (dome + minaret) visible ................. YES
+  3. Crescent moon present ..................................... YES
+  4. Unwanted text / watermark baked in (should be NONE) ....... NO  (good - clean)
+  5. Dark areas where white text would be readable ............. YES
+  6. Suitable as a video background for Quran verses ........... YES
+
+Description (what the model saw):
+  The sky transitions from deep purple at the top to lighter purple near
+  the horizon, dotted with tiny stars. A crescent moon sits in the upper
+  left. The mosque silhouette features a large central dome, two smaller
+  domes, and two tall minarets, all in solid black. There is no visible
+  text or watermark, and the dark lower portion (landscape) offers ample
+  space for white text overlay.
+
+Note: The gradient reads as purple-to-lighter-purple rather than an
+explicit pink band at the horizon. All functional requirements for verse
+overlay are satisfied.
+
+Sources:
+  - /home/z/my-project/tool-results/twilight-bg-verify.json
+  - /home/z/my-project/tool-results/twilight-bg-verify-detail.json

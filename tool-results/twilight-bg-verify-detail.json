@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "The sky transitions from deep purple at the top to lighter purple near the horizon, dotted with tiny stars. A crescent moon (half-lit, half-dark) sits in the upper left. The mosque silhouette features a large central dome, two smaller domes, and two tall minarets, all in solid black. There’s no visible text/watermark, and the dark lower portion (landscape) offers ample space for white text overlay.",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783262942,
+  "id": "202607052248533bc360537aad4d15",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "202607052248533bc360537aad4d15",
+  "usage": {
+    "completion_tokens": 91,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 1368,
+    "prompt_tokens_details": {
+      "cached_tokens": 5
+    },
+    "total_tokens": 1459
+  }
+}

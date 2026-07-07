@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 1280" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="nsky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0f0c29"/>
+      <stop offset="50%" stop-color="#302b63"/>
+      <stop offset="100%" stop-color="#24243e"/>
+    </linearGradient>
+  </defs>
+  <rect width="1280" height="1280" fill="url(#nsky)"/>
+  <g fill="#ffffff">
+    <circle cx="120" cy="160" r="2"/>
+    <circle cx="280" cy="80" r="1.5"/>
+    <circle cx="420" cy="220" r="1.8"/>
+    <circle cx="560" cy="120" r="2.2"/>
+    <circle cx="720" cy="200" r="1.6"/>
+    <circle cx="880" cy="90" r="2"/>
+    <circle cx="1040" cy="180" r="1.7"/>
+    <circle cx="1180" cy="120" r="2.4"/>
+    <circle cx="200" cy="320" r="1.4"/>
+    <circle cx="380" cy="380" r="1.6"/>
+    <circle cx="640" cy="320" r="1.8"/>
+    <circle cx="900" cy="360" r="1.5"/>
+    <circle cx="1100" cy="320" r="2"/>
+    <circle cx="80" cy="460" r="1.4"/>
+    <circle cx="320" cy="500" r="1.6"/>
+    <circle cx="560" cy="480" r="1.8"/>
+    <circle cx="800" cy="460" r="1.5"/>
+    <circle cx="1080" cy="500" r="1.7"/>
+  </g>
+  <circle cx="1000" cy="220" r="48" fill="#f5f3d8" opacity="0.9"/>
+  <circle cx="1015" cy="208" r="42" fill="#0f0c29"/>
+</svg>

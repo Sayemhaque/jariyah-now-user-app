@@ -1,0 +1,206 @@
+================================================================================
+ LIVE PREVIEW WATERMARK VERIFICATION REPORT
+ Jariyah Now — http://localhost:3000/app
+================================================================================
+ Date:           2025 (live in-browser preview)
+ Performed via:  agent-browser (Playwright headless Chromium)
+ Viewport:       1440 x 900
+================================================================================
+
+VERDICT:  >>> PASS  <<<
+
+The white crescent-moon + play-button watermark icon IS visible at the
+TOP-CENTER of the video preview frame, in both the empty state and after
+loading Al-Fatihah ayats. It sits 16 px below the top edge of the preview
+frame and is perfectly horizontally centered against the dark Twilight
+Mosque background, making it clearly visible.
+
+--------------------------------------------------------------------------------
+1. WHAT I SAW (page layout)
+--------------------------------------------------------------------------------
+- LEFT (x=0..864, y=57..900): "Stage" section containing the video preview
+  frame (.qv-smooth) at x=228, y=81, w=408, h=726 (portrait 9:16 aspect).
+  The frame shows the Twilight Mosque background: a dark twilight sky
+  sampled at RGB ~(11,8,22)..(24,17,39) with a mosque silhouette. The
+  bottom strip holds the playback bar (Previous / Play / Next ayat,
+  timeline slider, Mute + volume slider).
+- RIGHT (x=864..1440): "Settings" panel with sections Selection (surah,
+  FROM/TO range, reciter, translation, Load ayats), Customize (Layout,
+  Background thumbnails, Overlay, Typography, Captions), and footer
+  links (alquran.cloud / quran.com / verses.quran.com / About / Terms
+  / Privacy).
+
+--------------------------------------------------------------------------------
+2. WATERMARK DOM / GEOMETRY CHECK
+--------------------------------------------------------------------------------
+Selector used:    .qv-smooth img[src*="watermark"]
+Source file:      /watermark.png  (HTTP 200, 291018 bytes, image/png)
+Loaded?:          complete=true, naturalWidth=1049, naturalHeight=1641
+Rendered size:    18 x 28 px (scaled down from 1049x1641)
+Opacity:          0.85  (visible, not washed out)
+Display/vis:      block / visible  ;  pointer-events: none ;  select: none
+Parent:           .qv-smooth (the preview frame itself, not an overlay sibling)
+
+ EMPTY STATE (before loading ayats):
+   Frame:        x=228, y=81, w=408, h=726
+   Watermark:    x=423, y=97,  w=18,  h=29
+   Watermark center X = 432     |  Frame center X = 432   --> centered ✓
+   Top offset (watermark.y - frame.y) = 16 px              --> top, not bottom ✓
+
+ AFTER LOADING AL-FATIHAH (ayats 1..3):
+   Frame:        x=235, y=81, w=393, h=700
+   Watermark:    x=423, y=97, w=18, h=28
+   Watermark center X = 432    |   Frame center X = 431.5 --> centered ✓
+   Top offset = 16 px                                     --> top, not bottom ✓
+
+==> The watermark stays pinned to the top-center of the frame in BOTH states.
+
+--------------------------------------------------------------------------------
+3. WATERMARK CONTENT CHECK (is it really a crescent-moon + play-button?)
+--------------------------------------------------------------------------------
+The /watermark.png asset (1049 x 1641, RGBA) is a white-on-transparent icon.
+Pixel sampling inside the file:
+   - White content pixels: ~ 1054 / 4399 sampled (~24% opaque)
+   - White color:           RGB(254, 253, 253)  -> essentially pure white
+   - Transparent pixels:    alpha = 0  (~76% of area)
+
+ASCII rendering of the icon's alpha channel (40 cols) clearly shows:
+   * a CRESCENT MOON curve in the upper portion (curls from top-right
+     down and to the left), and
+   * a solid PLAY-BUTTON triangle (pointing right) in the lower portion,
+   * the two elements overlapping in the middle to form a single
+     composite "crescent + play" mark.
+
+                    .#.
+                   #####.
+                   .####
+                     #.
+                      .#
+                      ##
+                     ###
+                  ..###
+                .#####
+              .#####.
+           .######
+         .######
+        ######
+      .#####.
+     ######
+    ######     .#..
+   ######      #####..
+  .#####.      #########.
+  ######.      ############..
+  ######.      ###############.
+  ######.      ###############.
+  #######      ###########
+  ########     ########
+  .########.   #####
+   .########.
+    .##########.
+     .############...        ...######.
+       ##############################.
+        .##########################.
+           .#####################.
+              ..#############..
+
+--------------------------------------------------------------------------------
+4. VISIBILITY AGAINST DARK TWILIGHT BACKGROUND
+--------------------------------------------------------------------------------
+Sampled pixels of the frame background near the watermark
+(screenshot preview-03-after-load.png):
+   bg-left-top    (280,110):  RGB(11, 8, 22)   very dark blue/violet
+   bg-right-top   (580,110):  RGB(12,10, 23)   very dark
+   bg-above-wm    (432, 90):  RGB(11, 9, 21)   very dark
+   bg-below-wm    (432,140):  RGB(18,11, 32)   very dark
+   bg-center      (432,400):  RGB(24,17, 39)   dark twilight
+   bg-bottom      (432,700):  RGB( 5, 4, 10)   near-black
+
+Watermark pixel sampling in the same screenshot
+(region 423..441, 97..125) shows white pixels (R>150,G>150,B>150)
+forming the crescent+play silhouette against the dark sky. The 0.85
+opacity plus pure-white source color gives strong contrast (≈ 15:1)
+against the ~RGB(12,10,23) background — comfortably visible.
+
+--------------------------------------------------------------------------------
+5. WATERMARK POSITION vs. EXPECTATION
+--------------------------------------------------------------------------------
+ Expectation:                         Result:
+   Top-center of preview frame ....... YES  (16 px below frame top, X-centered)
+   At the top, NOT the bottom ........ YES  (top offset 16 px; frame is 700+ px tall)
+   Visible against twilight bg ....... YES  (white on dark, opacity 0.85)
+   White crescent + play-button ...... YES  (confirmed by asset pixel analysis)
+   Present in empty state ............ YES  (preview-04-empty-state.png)
+   Present after loading ayats ....... YES  (preview-03-after-load.png)
+
+--------------------------------------------------------------------------------
+6. STEPS PERFORMED
+--------------------------------------------------------------------------------
+ 1. agent-browser open http://localhost:3000/app
+ 2. set viewport 1440x900, wait 1.5 s
+ 3. screenshot -> preview-01-initial.png  (empty state, watermark already visible)
+ 4. snapshot -i  (confirmed layout: preview left, settings right)
+ 5. clicked surah combobox @e12 -> selected "1 Al-Fatihah" @e5
+ 6. screenshot -> preview-02-surah-selected.png
+ 7. clicked "Load ayats" @e17, waited 3 s for ayat 1/3 to render
+ 8. screenshot -> preview-03-after-load.png  (Al-Fatihah 1:1 loaded, watermark still top-center)
+ 9. DOM/geometry queries confirmed watermark at x=423,y=97,w=18,h=28 in both states
+10. reloaded page to reconfirm watermark present in empty state too
+11. screenshot -> preview-04-empty-state.png
+12. downloaded /watermark.png and analyzed pixels (white crescent + play shape)
+13. cropped + upscaled watermark region -> preview-03-watermark-zoom.png
+14. side-by-side comparison crop -> preview-compare-topcenter.png
+15. agent-browser close
+
+--------------------------------------------------------------------------------
+7. SCREENSHOTS / ARTIFACTS SAVED
+--------------------------------------------------------------------------------
+ /home/z/my-project/tool-results/preview-01-initial.png
+       Empty state on first page load (watermark visible top-center).
+
+ /home/z/my-project/tool-results/preview-02-surah-selected.png
+       After selecting Al-Fatihah, before Load ayats.
+
+ /home/z/my-project/tool-results/preview-03-after-load.png
+       After clicking "Load ayats" — Al-Fatihah 1:1 displayed,
+       watermark still pinned to top-center of the preview frame.
+
+ /home/z/my-project/tool-results/preview-04-empty-state.png
+       Re-confirm empty state after reload (watermark present).
+
+ /home/z/my-project/tool-results/preview-03-watermark-zoom.png
+       4x upscaled crop of the watermark in the live preview
+       (region 395,75 -> 470,140 from preview-03).
+
+ /home/z/my-project/tool-results/preview-03-top-center.png
+       Wider crop of the top of the preview frame after load.
+
+ /home/z/my-project/tool-results/preview-compare-topcenter.png
+       Side-by-side: empty state (left) vs. loaded (right) top-center crop.
+
+ /home/z/my-project/tool-results/watermark.png
+       The /watermark.png asset as served by the dev server.
+
+ /home/z/my-project/tool-results/watermark-cropped.png
+       Asset cropped to its content bbox (1009 x 1599).
+
+ /home/z/my-project/tool-results/watermark-on-dark.png
+       Watermark composited on a dark swatch to simulate the twilight bg.
+
+--------------------------------------------------------------------------------
+8. SUMMARY
+--------------------------------------------------------------------------------
+- The watermark is rendered as <img src="/watermark.png"> inside the
+  .qv-smooth preview frame, absolutely positioned at top-center via
+  Tailwind classes `absolute ... top`-anchored placement.
+- It is the white crescent-moon + play-button icon (1049x1641 RGBA,
+  pure-white content, transparent surround).
+- It is positioned at the TOP of the frame (16 px below the top edge),
+  horizontally centered, NOT at the bottom.
+- It is clearly visible against the dark Twilight Mosque background
+  (white on ~RGB(12,10,23), opacity 0.85).
+- It is present in both the empty placeholder state and the active
+  state after loading Al-Fatihah 1:1.
+
+================================================================================
+ END OF REPORT — VERDICT: PASS
+================================================================================

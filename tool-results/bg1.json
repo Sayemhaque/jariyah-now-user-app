@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "PRESET_NAME: Crescent Night\nDESCRIPTION: Deep purple night sky with crescent moon and stars.\nORIENTATION: portrait\nPALETTE: midnight blue #0a0a2e, deep purple #2a0a4a, starlight white #e6e6fa, cloud purple #4a235a\nVIDEO_BG_FIT: YES - Text overlay would land on the darker upper portion, ensuring readability against the lighter moon and stars.\nBAKED_TEXT: NONE",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783267336,
+  "id": "20260706000209b4345400565e4158",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "20260706000209b4345400565e4158",
+  "usage": {
+    "completion_tokens": 101,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 4833,
+    "prompt_tokens_details": {
+      "cached_tokens": 4
+    },
+    "total_tokens": 4934
+  }
+}

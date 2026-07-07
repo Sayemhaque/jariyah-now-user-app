@@ -1,0 +1,66 @@
+=== IMAGE METADATA ===
+Mode: RGBA
+Size: (1920, 1920) (W x H)
+Format: PNG
+Has alpha channel: True
+Array shape: (1920, 1920, 4)
+
+=== ALPHA CHANNEL ===
+Total pixels: 3686400
+Fully transparent (alpha=0):            0 (  0.00%)
+Fully opaque (alpha=255):          410841 ( 11.14%)
+Partial alpha (1..254):           3275559 ( 88.86%)
+Alpha min=7, max=255, mean=77.27
+Partial alpha value distribution (10 bins):
+    7- 31:     1503
+   31- 56:  2470012
+   56- 81:   766291
+   81-105:    10559
+  105-130:     5745
+  130-155:     3854
+  155-179:     3960
+  179-204:     3706
+  204-229:     4354
+  229-254:     5575
+
+=== BOUNDING BOX OF NON-TRANSPARENT CONTENT ===
+Bounding box (alpha>0): left=0, top=0, right=1919, bottom=1919
+Content size: 1920 x 1920
+Padding: left=0, top=0, right=0, bottom=0
+Content area: 100.00% of frame
+Bounding box (alpha>=16): left=0, top=0, right=1919, bottom=1919
+Content size: 1920 x 1920
+
+=== PIXEL SAMPLES ===
+  top-left corner           (   0,   0)  RGB=( 39, 49, 49)  A=110  hex=#273131
+  top-right corner          (1919,   0)  RGB=( 39, 39, 39)  A= 66  hex=#272727
+  bottom-left corner        (   0,1919)  RGB=( 42, 42, 42)  A= 78  hex=#2A2A2A
+  bottom-right corner       (1919,1919)  RGB=( 40, 40, 40)  A= 76  hex=#282828
+  exact center              ( 960, 960)  RGB=( 24, 34, 34)  A= 53  hex=#182222
+  top-center                ( 960, 480)  RGB=( 21, 32, 32)  A= 48  hex=#152020
+  bottom-center             ( 960,1440)  RGB=( 23, 32, 32)  A= 55  hex=#172020
+  left-center               ( 480, 960)  RGB=( 25, 30, 35)  A= 51  hex=#191E23
+  right-center              (1440, 960)  RGB=( 23, 32, 32)  A= 56  hex=#172020
+
+=== DOMINANT COLORS (among opaque-ish pixels, alpha >= 200) ===
+Unique quantized colors among opaque pixels: 85
+Top 10 colors:
+  #F8F8F8  (248,248,248)  count=  414589 (98.31% of opaque)
+  #F0F8F0  (240,248,240)  count=    5089 ( 1.21% of opaque)
+  #F0F8F8  (240,248,248)  count=     991 ( 0.24% of opaque)
+  #F8F8F0  (248,248,240)  count=     484 ( 0.11% of opaque)
+  #F8F0F8  (248,240,248)  count=     109 ( 0.03% of opaque)
+  #F0F8E8  (240,248,232)  count=      48 ( 0.01% of opaque)
+  #E8F0E8  (232,240,232)  count=      39 ( 0.01% of opaque)
+  #E8F0E0  (232,240,224)  count=      30 ( 0.01% of opaque)
+  #E8F8E8  (232,248,232)  count=      29 ( 0.01% of opaque)
+  #D8E0D8  (216,224,216)  count=      21 ( 0.00% of opaque)
+
+=== LUMINANCE CHECK (opaque pixels) ===
+Near-white (lum>=240): 421406 (99.93%)
+Mid-tone (15<lum<240): 294 (0.07%)
+Near-black (lum<=15): 0 (0.00%)
+Mean luminance of opaque pixels: 253.55
+Luminance std dev: 1.84
+
+=== DONE ===
