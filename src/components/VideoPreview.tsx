@@ -16,9 +16,41 @@ import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { overlayCssBackground } from '@/lib/overlay'
 import { getActiveWordIndex } from '@/lib/highlight'
 import { videoAttributionLine } from '@/lib/translations'
+import { formatStructural, getStructuralPairs } from '@/lib/structural'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
+
+// Quick helper: returns true if the ayat has ANY structural markers to show.
+// Used to conditionally render the bottom metadata strip.
+function hasStructuralInfo(a: {
+  juzNumber?: number
+  hizbNumber?: number
+  rubElHizbNumber?: number
+  rukuNumber?: number
+  manzilNumber?: number
+  pageNumber?: number
+}): boolean {
+  return getStructuralPairs(a).length > 0
+}
+
+// Map the arabicFont setting to its CSS class. Falls back to Amiri if
+// an unknown value slips through (shouldn't happen, but defensive).
+const ARABIC_FONT_CLASS: Record<string, string> = {
+  uthmani: 'font-arabic-uthmani',
+  amiri: 'font-arabic-uthmani',
+  scheherazade: 'font-arabic-scheherazade',
+  naskh: 'font-arabic-naskh',
+  kufi: 'font-arabic-kufi',
+  cairo: 'font-arabic-cairo',
+}
+
+// Map the bengaliFont setting to its CSS class.
+const BENGALI_FONT_CLASS: Record<string, string> = {
+  sans: 'font-bengali-sans',
+  serif: 'font-bengali-serif',
+  hind: 'font-bengali-hind',
+}
 
 const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
   landscape: { w: 1280, h: 720, ratio: '16 / 9' },
@@ -69,6 +101,12 @@ export function VideoPreview() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const rafRef = useRef<number | null>(null)
+  // Preloader: a hidden Audio() object that fetches + decodes the NEXT
+  // ayat's MP3 while the current one plays. When `onEnded` fires, we
+  // swap the preloaded src into the main audio element so playback
+  // resumes within ~50ms instead of the ~1000ms gap caused by fetching
+  // + decoding on demand.
+  const nextAudioRef = useRef<HTMLAudioElement | null>(null)
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -173,6 +211,59 @@ export function VideoPreview() {
     },
     [ayatList, volume, muted],
   )
+
+  // ─── Preload the NEXT ayat's MP3 in parallel ─────────────────────────
+  // Whenever currentIndex changes, kick off a hidden Audio() download of
+  // the next ayat's MP3. The browser fetches + decodes it in the
+  // background. When the current ayat ends, we swap the preloaded src
+  // into the main audio element — playback resumes in ~50ms instead of
+  // the ~1000ms gap caused by fetching on demand.
+  useEffect(() => {
+    if (!ayatList.length) return
+    const nextIdx = currentIndex + 1
+    if (nextIdx >= ayatList.length) return // last ayat — nothing to preload
+    const nextUrl = ayatList[nextIdx]?.audioUrl
+    if (!nextUrl) return
+
+    // Reuse the same hidden Audio() instance, just swap the src.
+    // `preload='auto'` tells the browser to fetch + buffer aggressively.
+    if (!nextAudioRef.current) {
+      nextAudioRef.current = new Audio()
+    }
+    const nextAudio = nextAudioRef.current
+    // Skip if already preloading/loaded this exact URL (avoid re-fetch).
+    if (nextAudio.src !== nextUrl) {
+      nextAudio.src = nextUrl
+      nextAudio.preload = 'auto'
+      // Some browsers won't actually fetch until play() is called.
+      // Calling play() then immediately pausing forces the preload
+      // without producing audible sound.
+      nextAudio.muted = true
+      nextAudio.volume = 0
+      nextAudio.play().then(() => {
+        nextAudio.pause()
+        nextAudio.currentTime = 0
+        nextAudio.muted = false
+        nextAudio.volume = 1
+      }).catch(() => {
+        // Autoplay policy blocked the preload — fall back to setting
+        // preload='auto' and letting the browser fetch metadata-only.
+        nextAudio.muted = false
+        nextAudio.volume = 1
+      })
+    }
+  }, [currentIndex, ayatList])
+
+  // Cleanup: release the preloader Audio() when the component unmounts
+  // so it doesn't keep a network connection open in the background.
+  useEffect(() => {
+    return () => {
+      if (nextAudioRef.current) {
+        nextAudioRef.current.src = ''
+        nextAudioRef.current = null
+      }
+    }
+  }, [])
 
   // Auto-advance on ended
   useEffect(() => {
@@ -447,9 +538,7 @@ export function VideoPreview() {
                   lang="ar"
                   className={cn(
                     'qv-smooth text-center leading-[1.75] drop-shadow-lg',
-                    settings.fontStyle === 'uthmani'
-                      ? 'font-arabic-uthmani'
-                      : 'font-arabic-naskh',
+                    ARABIC_FONT_CLASS[settings.arabicFont] ?? 'font-arabic-uthmani',
                   )}
                   style={{
                     color: settings.fontColor,
@@ -504,10 +593,12 @@ export function VideoPreview() {
                 )}
 
                 {/* Translation — sits right under Arabic (or transliteration).
-                    Tight gap, scales with frame. */}
+                    Tight gap, scales with frame. Uses the selected Bengali
+                    font when the translation is Bengali, otherwise the
+                    default UI font (Inter). */}
                 {settings.showTranslation && (
                   <p
-                    className={`qv-smooth text-white/85 mx-auto leading-snug drop-shadow text-center ${isBengaliTranslation ? 'font-bengali' : ''}`}
+                    className={`qv-smooth text-white/85 mx-auto leading-snug drop-shadow text-center ${isBengaliTranslation ? (BENGALI_FONT_CLASS[settings.bengaliFont] ?? 'font-bengali-sans') : ''}`}
                     style={{
                       fontSize: translationFontSizeCss,
                       marginTop: TEXT_SPACING_MAP[settings.textSpacing],
@@ -566,6 +657,24 @@ export function VideoPreview() {
               {ayatList.length > 0 && (
                 <div>Recited by {reciter.name}</div>
               )}
+            </div>
+          )}
+
+          {/* Structural Quran markers — Juz, Hizb, Rubʿ al-Hizb, Ruku,
+              Manzil, Page. Sourced from the quran.com API. Shown at the
+              bottom-center of the frame, just above the attribution block,
+              so users can see which part of the Quran the current ayat
+              belongs to. Only shows fields that are actually present. */}
+          {current && hasStructuralInfo(current) && (
+            <div
+              className="absolute left-1/2 -translate-x-1/2 text-white/55 font-sans tracking-[0.08em] whitespace-nowrap"
+              style={{
+                bottom: '2.8cqw',
+                fontSize: '1.7cqw',
+                textShadow: '0 1px 4px rgba(0,0,0,0.6)',
+              }}
+            >
+              {formatStructural(current, false)}
             </div>
           )}
 

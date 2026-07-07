@@ -30,6 +30,15 @@ export interface AyatData {
   // has everything it needs without a separate lookup.
   surahName: string
   surahNameArabic: string
+  // ─── Structural Quran markers (Juz / Hizb / Rubʿ al-Hizb / Ruku / Manzil / Page) ───
+  // Sourced from api.quran.com's `fields` query param. All optional because
+  // older cached responses may not include them.
+  juzNumber?: number
+  hizbNumber?: number
+  rubElHizbNumber?: number
+  rukuNumber?: number
+  manzilNumber?: number
+  pageNumber?: number
 }
 
 export interface AyatSlide {
@@ -43,6 +52,14 @@ export interface AyatSlide {
   surahNumber: number
   audioUrl: string
   audioDurationMs: number
+  // Structural markers — passed through from AyatData so the export
+  // renderer can draw them on the canvas.
+  juzNumber?: number
+  hizbNumber?: number
+  rubElHizbNumber?: number
+  rukuNumber?: number
+  manzilNumber?: number
+  pageNumber?: number
 }
 
 export interface Reciter {
@@ -58,7 +75,31 @@ export interface Reciter {
 }
 
 export type Orientation = 'landscape' | 'portrait'
-export type FontStyle = 'uthmani' | 'naskh'
+
+/**
+ * Arabic font choices — 6 fonts spanning classical calligraphic → modern
+ * sans-serif. The class names in globals.css match these keys
+ * (`.font-arabic-{key}`).
+ */
+export type ArabicFont =
+  | 'uthmani'        // Amiri — classical Uthmani, calligraphic
+  | 'scheherazade'   // Scheherazade New — traditional Naskh
+  | 'naskh'          // Noto Naskh Arabic — clean modern Naskh
+  | 'kufi'           // Reem Kufi — geometric Kufi, contemporary
+  | 'cairo'          // Cairo — modern sans-serif Arabic
+  | 'amiri'          // Alias for uthmani (backwards compat)
+
+/**
+ * Bengali font choices — 3 fonts covering sans-serif (default), serif
+ * (formal/scholarly), and a clean modern variant. Class names in
+ * globals.css match these keys (`.font-bengali-{key}`).
+ */
+export type BengaliFont = 'sans' | 'serif' | 'hind'
+
+/** Backwards-compat alias — old code used `FontStyle` for Arabic font
+ *  selection. Kept so existing stores/tests don't break. New code should
+ *  use `ArabicFont` directly. */
+export type FontStyle = ArabicFont
 
 /**
  * Overlay style presets. Each one shapes the user's overlayColor/opacity
@@ -92,6 +133,11 @@ export interface VideoSettings {
   arabicFontSize: number       // 24–72
   translationFontSize: number  // 14–32
   fontStyle: FontStyle
+  /** Arabic font selection (6 options). Drives the .font-arabic-{key} class. */
+  arabicFont: ArabicFont
+  /** Bengali font selection (3 options). Drives the .font-bengali-{key} class
+   *  when the selected translation is Bengali. */
+  bengaliFont: BengaliFont
   showTranslation: boolean
   showTransliteration: boolean
   orientation: Orientation

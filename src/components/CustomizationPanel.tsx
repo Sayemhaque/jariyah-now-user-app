@@ -6,7 +6,7 @@ import { Upload, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import { useBuilderStore } from '@/lib/store'
 import { validateBackgroundImage } from '@/lib/uploadValidation'
-import type { FontStyle, Orientation, OverlayStyle } from '@/lib/types'
+import type { ArabicFont, BengaliFont, FontStyle, Orientation, OverlayStyle } from '@/lib/types'
 import { toast } from 'sonner'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
@@ -344,21 +344,60 @@ export function CustomizationPanel() {
           </p>
         )}
 
+        {/* Arabic font selector — 6 fonts spanning classical → modern.
+            Each option is rendered in its own typeface so the user can
+            see what the font looks like before selecting it. */}
         <div className="flex items-center justify-between">
-          <Label className="text-xs text-muted-foreground">Font style</Label>
+          <Label className="text-xs text-muted-foreground">Arabic font</Label>
           <Select
-            value={settings.fontStyle}
-            onValueChange={(v: FontStyle) => update({ fontStyle: v })}
+            value={settings.arabicFont}
+            onValueChange={(v: ArabicFont) => update({ arabicFont: v, fontStyle: v })}
           >
-            <SelectTrigger className="h-8 w-[160px] bg-background/60">
+            <SelectTrigger className="h-8 w-[180px] bg-background/60">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="uthmani">
-                <span className="font-arabic-uthmani">Uthmani (Amiri)</span>
+                <span className="font-arabic-uthmani">بِسْمِ ٱللَّهِ — Amiri</span>
+              </SelectItem>
+              <SelectItem value="scheherazade">
+                <span className="font-arabic-scheherazade">بِسْمِ ٱللَّهِ — Scheherazade</span>
               </SelectItem>
               <SelectItem value="naskh">
-                <span className="font-arabic-naskh">Naskh (Scheherazade)</span>
+                <span className="font-arabic-naskh">بِسْمِ ٱللَّهِ — Noto Naskh</span>
+              </SelectItem>
+              <SelectItem value="kufi">
+                <span className="font-arabic-kufi">بِسْمِ ٱللَّهِ — Reem Kufi</span>
+              </SelectItem>
+              <SelectItem value="cairo">
+                <span className="font-arabic-cairo">بِسْمِ ٱللَّهِ — Cairo</span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Bengali font selector — 3 fonts: sans (default), serif (formal),
+            and Hind Siliguri (modern). Only relevant when a Bengali
+            translation is selected, but always available so the user can
+            pre-set their preference. */}
+        <div className="flex items-center justify-between">
+          <Label className="text-xs text-muted-foreground">Bengali font</Label>
+          <Select
+            value={settings.bengaliFont}
+            onValueChange={(v: BengaliFont) => update({ bengaliFont: v })}
+          >
+            <SelectTrigger className="h-8 w-[180px] bg-background/60">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="sans">
+                <span className="font-bengali-sans">বিসমিল্লাহ — Noto Sans</span>
+              </SelectItem>
+              <SelectItem value="serif">
+                <span className="font-bengali-serif">বিসমিল্লাহ — Noto Serif</span>
+              </SelectItem>
+              <SelectItem value="hind">
+                <span className="font-bengali-hind">বিসমিল্লাহ — Hind Siliguri</span>
               </SelectItem>
             </SelectContent>
           </Select>

@@ -65,6 +65,8 @@ const DEFAULT_SETTINGS: VideoSettings = {
   arabicFontSize: AUTO_FONT_SIZES.portrait.arabic,
   translationFontSize: AUTO_FONT_SIZES.portrait.translation,
   fontStyle: 'uthmani',
+  arabicFont: 'uthmani',
+  bengaliFont: 'sans',
   showTranslation: true,
   showTransliteration: false,
   orientation: 'portrait',

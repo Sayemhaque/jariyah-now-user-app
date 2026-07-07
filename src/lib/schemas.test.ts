@@ -19,6 +19,8 @@ const VALID_SETTINGS: VideoSettings = {
   arabicFontSize: 40,
   translationFontSize: 16,
   fontStyle: 'uthmani',
+  arabicFont: 'uthmani',
+  bengaliFont: 'sans',
   showTranslation: true,
   showTransliteration: false,
   orientation: 'portrait',

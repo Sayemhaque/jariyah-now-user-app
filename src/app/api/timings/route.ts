@@ -71,6 +71,13 @@ export async function GET(req: NextRequest) {
     'word_fields',
     'text_uthmani,location,transliteration,position,audio_url',
   )
+  // Request structural Quran markers (Juz, Hizb, Rubʿ al-Hizb, Ruku,
+  // Manzil, Mushaf page) so the UI can display them in the preview +
+  // export. These come back on the verse object itself, not on each word.
+  upstreamUrl.searchParams.set(
+    'fields',
+    'juz_number,hizb_number,rub_el_hizb_number,ruku_number,manzil_number,page_number',
+  )
   upstreamUrl.searchParams.set('audio_recitation', String(recitationId))
 
   // --- Fetch with timeout ---------------------------------------------

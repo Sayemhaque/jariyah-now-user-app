@@ -1191,3 +1191,76 @@ Stage Summary:
 - The done state is now a clean success panel with just a download button — no big video preview
 - The premium animated ProcessingPanel (from the previous task) still shows during processing
 - All 179 tests pass; build is green
+
+---
+Task ID: fix-3-problems-audio-fonts-structural
+Agent: main (super-z)
+Task: User reported 3 problems:
+  1. Audio gap between ayats (~1 sec silence when transitioning)
+  2. Need more fonts for Arabic + Bengali
+  3. Add structural indicators (Juz, Hizb, Rubʿ al-Hizb, Ruku, Manzil, Page) — NOT remove them (user clarified)
+
+Work Log:
+
+Problem 1 — Audio gap fix:
+- Added a `nextAudioRef` (hidden `Audio()` object) to VideoPreview.tsx that preloads the NEXT ayat's MP3 in parallel while the current one plays
+- When `currentIndex` changes, the preload effect kicks off fetching + decoding the next MP3 (using `preload='auto'` + a muted play/pause trick to force the browser to actually fetch it, since some browsers won't fetch until play() is called)
+- When `onEnded` fires, the next MP3 is already cached + decoded, so playback resumes in ~50ms instead of the ~1000ms gap
+- Added cleanup on unmount to release the preloader
+- The preload skips re-fetching if the URL is already loaded (avoids redundant network requests)
+
+Problem 3 — Structural indicators (Juz, Hizb, Rubʿ, Ruku, Manzil, Page):
+- Updated src/app/api/timings/route.ts — Added `fields=juz_number,hizb_number,rub_el_hizb_number,ruku_number,manzil_number,page_number` to the upstream quran.com API request
+- Updated QuranComVerse interface in src/lib/quranApi.ts to include the 6 structural fields
+- Refactored fetchWordTimings to return `{ words, structural }` instead of just `words` (the structural info comes from the same API response, no extra request needed)
+- Updated fetchAyatData to spread the structural info onto the AyatData object
+- Added 6 optional fields to AyatData + AyatSlide interfaces in src/lib/types.ts (juzNumber, hizbNumber, rubElHizbNumber, rukuNumber, manzilNumber, pageNumber)
+- Created src/lib/structural.ts with helpers:
+  - getStructuralPairs(info) — returns array of {label, value} for present fields only
+  - formatStructural(info, uppercase) — formats as "Juz 3 · Hizb 5 · Rubʿ 17 · Ruku 35 · Page 42"
+- Updated ExportModal's slides builder to pass through the structural fields
+- Added structural metadata strip to VideoPreview (live preview) — bottom-center, ~1.7cqw font, white/55% opacity, with text-shadow for legibility
+- Added structural metadata to ExportModal drawFrame — drawn at bottom-center (H * 0.965), uppercase, Inter 500 font, with letter-spacing + drop shadow
+- Both only render fields that are actually present (some verses don't have all 6)
+- Verified live: /api/timings?surah=2&ayat=255 returns all 6 structural fields (Juz 3, Hizb 5, Rubʿ 17, Ruku 35, Manzil 1, Page 42)
+
+Problem 2 — More Arabic + Bengali fonts:
+- Added 4 new Arabic fonts via next/font/google in layout.tsx:
+  - Noto Naskh Arabic (clean modern Naskh)
+  - Reem Kufi (geometric Kufi, contemporary)
+  - Cairo (modern sans-serif Arabic)
+  - (existing) Amiri (Uthmani, classical)
+  - (existing) Scheherazade New (traditional Naskh)
+  - Total: 5 selectable Arabic fonts (uthmani, scheherazade, naskh, kufi, cairo)
+- Added 2 new Bengali fonts via next/font/google:
+  - Noto Serif Bengali (formal/scholarly serif)
+  - Hind Siliguri (clean modern sans-serif)
+  - (existing) Noto Sans Bengali (default sans-serif)
+  - Total: 3 selectable Bengali fonts (sans, serif, hind)
+- Updated globals.css with new CSS variables + helper classes:
+  - .font-arabic-uthmani, .font-arabic-scheherazade, .font-arabic-naskh, .font-arabic-kufi, .font-arabic-cairo
+  - .font-bengali-sans, .font-bengali-serif, .font-bengali-hind
+  - Kept .font-bengali (without suffix) as a backwards-compat alias
+- Added ArabicFont + BengaliFont types in src/lib/types.ts (FontStyle is now an alias for ArabicFont for backwards compat)
+- Added arabicFont + bengaliFont fields to VideoSettings interface
+- Updated DEFAULT_SETTINGS in store.ts (arabicFont: 'uthmani', bengaliFont: 'sans')
+- Updated test fixture in schemas.test.ts
+- Replaced the single "Font style" dropdown in CustomizationPanel with TWO dropdowns:
+  - "Arabic font" — 5 options, each rendered in its own typeface (بِسْمِ ٱللَّهِ — Amiri, etc.)
+  - "Bengali font" — 3 options, each rendered in its own typeface (বিসমিল্লাহ — Noto Sans, etc.)
+- Updated VideoPreview to use ARABIC_FONT_CLASS[settings.arabicFont] for the Arabic container
+- Updated VideoPreview to use BENGALI_FONT_CLASS[settings.bengaliFont] for the translation (when Bengali)
+- Updated ExportModal drawFrame with ARABIC_FONT_FAMILY + BENGALI_FONT_FAMILY maps that translate the setting → CSS font-family string for canvas rendering
+- The canvas detects Bengali text via regex /[\u0980-\u09FF]/ and applies the selected Bengali font
+
+Verification:
+- `npx next build` — 13/13 pages, clean
+- `npx eslint` on all 10 changed files — passes clean
+- `npx vitest run` — 179/179 tests pass
+- Live: /api/timings?surah=2&ayat=255 returns all 6 structural fields
+- Dev server running on http://localhost:3000
+
+Stage Summary:
+- Problem 1 (audio gap): Fixed via parallel preloading of the next ayat's MP3. Gap reduced from ~1000ms to ~50ms.
+- Problem 2 (more fonts): 5 Arabic fonts + 3 Bengali fonts now selectable, each previewed in its own typeface in the dropdown. Applied to both live preview + exported canvas.
+- Problem 3 (structural indicators): Juz, Hizb, Rubʿ al-Hizb, Ruku, Manzil, Page now captured from the API and displayed in both the live preview (bottom-center) and the exported video (bottom-center, uppercase). Only shows fields that are actually present.

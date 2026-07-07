@@ -7,6 +7,7 @@ import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { paintOverlayOnCanvas } from '@/lib/overlay'
 import { getActiveWordIndex } from '@/lib/highlight'
 import { videoAttributionLine } from '@/lib/translations'
+import { formatStructural, getStructuralPairs } from '@/lib/structural'
 import {
   checkExportCapabilities,
   pickSupportedMimeType,
@@ -574,6 +575,13 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         surahNumber: a.surahNumber,
         audioUrl: a.audioUrl,
         audioDurationMs: a.audioDurationMs,
+        // Structural markers — passed through so drawFrame can draw them.
+        juzNumber: a.juzNumber,
+        hizbNumber: a.hizbNumber,
+        rubElHizbNumber: a.rubElHizbNumber,
+        rukuNumber: a.rukuNumber,
+        manzilNumber: a.manzilNumber,
+        pageNumber: a.pageNumber,
       })),
     [ayatList, surah],
   )
@@ -1233,10 +1241,37 @@ function drawFrame({
 
   // ---- Center content card --------------------------------------------
   // Find the currently-active word first so we can size the card to fit.
+
+  // Map the arabicFont setting → CSS font-family string for canvas.
+  // The fonts are loaded via next/font in layout.tsx and are available
+  // to the canvas as long as they've been rendered at least once on the
+  // page (which they have, since the CustomizationPanel previews them).
+  const ARABIC_FONT_FAMILY: Record<string, string> = {
+    uthmani: '"Amiri Quran", "Amiri", serif',
+    amiri: '"Amiri Quran", "Amiri", serif',
+    scheherazade: '"Scheherazade New", "Scheherazade", serif',
+    naskh: '"Noto Naskh Arabic", "Noto Naskh", serif',
+    kufi: '"Reem Kufi", "Reem", sans-serif',
+    cairo: '"Cairo", sans-serif',
+  }
   const arabicFontFamily =
-    settings.fontStyle === 'uthmani'
-      ? '"Amiri Quran", "Amiri", serif'
-      : '"Scheherazade New", "Scheherazade", serif'
+    ARABIC_FONT_FAMILY[settings.arabicFont] ?? ARABIC_FONT_FAMILY.uthmani
+
+  // Bengali font family — used when the translation is Bengali.
+  const BENGALI_FONT_FAMILY: Record<string, string> = {
+    sans: '"Noto Sans Bengali", "Noto Sans", sans-serif',
+    serif: '"Noto Serif Bengali", "Noto Serif", serif',
+    hind: '"Hind Siliguri", "Hind", sans-serif',
+  }
+  // Detect if the translation is Bengali by checking the translationKey
+  // (passed via the attribution line helper, but we can also sniff the
+  // slide's translation text for Bengali Unicode range). For canvas
+  // rendering we use the bengaliFont setting only when the translation
+  // contains Bengali characters.
+  const isBengaliTranslation = /[\u0980-\u09FF]/.test(slide.translation)
+  const bengaliFontFamily = isBengaliTranslation
+    ? BENGALI_FONT_FAMILY[settings.bengaliFont] ?? BENGALI_FONT_FAMILY.sans
+    : 'Inter, sans-serif'
 
   // Scale font by the SHORTER dimension (min of W, H) so text never
   // overflows on narrow portrait frames. Previously we scaled by H alone,
@@ -1294,10 +1329,11 @@ function drawFrame({
   const translit = settings.showTransliteration ? slide.transliteration : ''
   const translitH = translit ? translitFontSize * 1.45 : 0
 
-  // Translation wrapped — detect Bengali text and use the Bengali font
+  // Translation wrapped — detect Bengali text and use the user-selected
+  // Bengali font (sans/serif/hind). For non-Bengali translations, use Inter.
   const isBengali = /[\u0980-\u09FF]/.test(slide.translation)
   const transFontFamily = isBengali
-    ? '"Noto Sans Bengali", "Noto Sans", sans-serif'
+    ? bengaliFontFamily
     : 'Inter, sans-serif'
   let transLines: string[] = []
   if (settings.showTranslation) {
@@ -1471,6 +1507,37 @@ function drawFrame({
   }
   if (attributionLine) {
     ctx.fillText(truncateAttr(attributionLine), W * 0.03, attrBottom - attrLineH)
+  }
+
+  // ---- Structural Quran markers (Juz / Hizb / Rubʿ / Ruku / Manzil / Page) ----
+  // Drawn at the bottom-center of the frame, just above the attribution
+  // block. Only shows fields that are actually present on the verse.
+  // Matches the live preview's formatting so WYSIWYG.
+  {
+    const pairs = getStructuralPairs(slide)
+    if (pairs.length > 0) {
+      const structText = formatStructural(slide, true) // uppercase for export
+      const structFontSize = Math.round(H * 0.014)
+      ctx.save()
+      ctx.font = `500 ${structFontSize}px Inter, sans-serif`
+      ctx.fillStyle = 'rgba(255,255,255,0.55)'
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'bottom'
+      ctx.shadowColor = 'rgba(0,0,0,0.6)'
+      ctx.shadowBlur = Math.max(1, Math.round(structFontSize * 0.2))
+      // Letter-spacing for the uppercase tracking look — guarded for Safari.
+      type CtxWithLs = CanvasRenderingContext2D & { letterSpacing?: string }
+      const ctxLs = ctx as CtxWithLs
+      if (typeof ctxLs.letterSpacing === 'string') {
+        try {
+          ctxLs.letterSpacing = `${Math.round(structFontSize * 0.08)}px`
+        } catch {
+          // ignore
+        }
+      }
+      ctx.fillText(structText, W / 2, H * 0.965)
+      ctx.restore()
+    }
   }
 
   // ---- Top-center watermark: Jariyah Now brand mark -------------------

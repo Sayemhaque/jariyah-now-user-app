@@ -1,4 +1,18 @@
 import type { Surah, WordTiming, AyatData } from './types'
+
+/**
+ * Structural Quran markers for a verse — sourced from the quran.com API's
+ * `fields` query param. All fields are optional because some verses don't
+ * have all markers (e.g. the very first verses don't have a Ruku number).
+ */
+export interface AyatStructuralInfo {
+  juzNumber?: number
+  hizbNumber?: number
+  rubElHizbNumber?: number
+  rukuNumber?: number
+  manzilNumber?: number
+  pageNumber?: number
+}
 import { buildAyatAudioUrl } from './reciters'
 import { SURAHS_FALLBACK } from './surahs-fallback'
 import { fetchWithTimeout, isFetchAbort } from './fetchWithTimeout'
@@ -64,6 +78,13 @@ interface QuranComWord {
 
 interface QuranComVerse {
   words?: QuranComWord[]
+  // Structural markers (requested via `fields=` query param).
+  juz_number?: number
+  hizb_number?: number
+  rub_el_hizb_number?: number
+  ruku_number?: number
+  manzil_number?: number
+  page_number?: number
 }
 
 interface QuranComResponse {
@@ -189,20 +210,31 @@ export async function fetchWordTimings(
   surah: number,
   ayat: number,
   recitationId: number,
-): Promise<WordTiming[]> {
+): Promise<{ words: WordTiming[]; structural: AyatStructuralInfo }> {
+  const emptyResult = { words: [], structural: {} }
   try {
     const url = `/api/timings?surah=${surah}&ayat=${ayat}&recitationId=${recitationId}`
     const res = await fetchWithTimeout(url, { next: { revalidate: 86_400 } })
-    if (!res.ok) return []
+    if (!res.ok) return emptyResult
     const json = (await res.json()) as QuranComResponse
 
     // Handle BOTH response shapes: `verse.words` (by_key) and
     // `verses[0].words` (by_keys). The old code only checked `verses`,
     // which silently broke word highlighting when the proxy started
     // hitting the by_key endpoint.
-    const wordsRaw =
-      json?.verse?.words ?? json?.verses?.[0]?.words ?? undefined
-    if (!wordsRaw || !wordsRaw.length) return []
+    const verseObj = json?.verse ?? json?.verses?.[0] ?? undefined
+    const wordsRaw = verseObj?.words
+    if (!wordsRaw || !wordsRaw.length) return emptyResult
+
+    // Extract structural markers from the verse object.
+    const structural: AyatStructuralInfo = {
+      juzNumber: verseObj?.juz_number,
+      hizbNumber: verseObj?.hizb_number,
+      rubElHizbNumber: verseObj?.rub_el_hizb_number,
+      rukuNumber: verseObj?.ruku_number,
+      manzilNumber: verseObj?.manzil_number,
+      pageNumber: verseObj?.page_number,
+    }
 
     // First pass: extract text + position + transliteration + any
     // embedded segment data (if the API ever brings it back).
@@ -231,14 +263,14 @@ export async function fetchWordTimings(
       })
       .filter((w) => Boolean(w.text))
 
-    if (!extracted.length) return []
+    if (!extracted.length) return { words: [], structural }
 
     // If the API returned segment data, use it directly.
     const hasSegments = extracted.every(
       (w) => (w.startMs ?? 0) > 0 && (w.endMs ?? 0) > 0,
     )
     if (hasSegments) {
-      return extracted as WordTiming[]
+      return { words: extracted as WordTiming[], structural }
     }
 
     // Fallback: compute timings by fetching each word's per-word MP3
@@ -264,7 +296,7 @@ export async function fetchWordTimings(
       cumMs += durMs
     }
 
-    return words
+    return { words, structural }
   } catch (err) {
     logger.warn('fetchWordTimings failed', {
       surah,
@@ -272,7 +304,7 @@ export async function fetchWordTimings(
       recitationId,
       error: err instanceof Error ? err.message : String(err),
     })
-    return []
+    return emptyResult
   }
 }
 
@@ -362,7 +394,7 @@ export async function fetchAyatData(
   surahNameArabic: string,
   translationEdition: string = 'en.pickthall',
 ): Promise<AyatData | null> {
-  const [textData, words] = await Promise.all([
+  const [textData, timingsResult] = await Promise.all([
     fetchAyatText(surah, ayat, translationEdition),
     fetchWordTimings(surah, ayat, recitationId),
   ])
@@ -373,10 +405,12 @@ export async function fetchAyatData(
     ayatNumber: ayat,
     arabicText: textData.arabic,
     translation: textData.translation,
-    words,
+    words: timingsResult.words,
     audioUrl,
     audioDurationMs: 0, // filled in later by the store
     surahName,
     surahNameArabic,
+    // Structural markers — pass through from the timings API response.
+    ...timingsResult.structural,
   }
 }
