@@ -224,12 +224,15 @@ export function buildSilenceSnappedPlan(
     idealBoundaries.push((i * totalDurationMs) / numChunks)
   }
 
-  // ─── Step 2: snap each boundary to the nearest UNUSED silence ─────
-  // A silence's midpoint is the natural "switch here" moment.
-  // Each silence can only be claimed by ONE boundary (the closest
-  // one) — otherwise two boundaries would snap to the same point
-  // and create an empty chunk between them.
-  const SNAP_THRESHOLD_MS = 3000 // ±3 seconds
+  // ─── Step 2: snap each boundary to the nearest UNUSED dip ─────────
+  // Each dip can only be claimed by ONE boundary (the closest one) —
+  // otherwise two boundaries would snap to the same point and create
+  // an empty chunk between them.
+  //
+  // The snap threshold is generous (±4s) because energy dips from
+  // continuous recitation can be a few seconds away from the ideal
+  // even split — and that's fine, it's the natural phrase boundary.
+  const SNAP_THRESHOLD_MS = 4000 // ±4 seconds
   const usedSilenceIdx = new Set<number>()
   const snappedBoundaries = idealBoundaries.map((ideal) => {
     let bestVal = ideal

@@ -271,10 +271,16 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
             useTajweed,
           )
           if (data) {
-            // resolve audio duration (best effort) + breath pauses in parallel
+            // resolve audio duration (best effort) + energy breakpoints
+            // in parallel. Request enough breakpoints for pagination:
+            // ~1 per 8 Arabic words (matching MAX_WORDS_PER_CHUNK).
+            const arWordCount = data.arabicText.split(/\s+/).filter(Boolean).length
+            const numBreakpoints = arWordCount > 20 ? Math.ceil(arWordCount / 8) - 1 : 0
             const [dur, pauses] = await Promise.all([
               getAudioDurationMs(data.audioUrl),
-              fetchAudioPauses(data.audioUrl),
+              numBreakpoints > 0
+                ? fetchAudioPauses(data.audioUrl, numBreakpoints)
+                : Promise.resolve([]),
             ])
             data.audioDurationMs = dur
             if (pauses.length) data.audioPauses = pauses

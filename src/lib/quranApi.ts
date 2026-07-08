@@ -451,35 +451,41 @@ export function getAudioDurationMs(url: string): Promise<number> {
 }
 
 /**
- * Detect natural breath pauses in the actual audio file using ffmpeg's
- * silencedetect filter (server-side via /api/silence-detect).
+ * Detect natural phrase boundaries in the actual audio file using
+ * energy-based analysis (server-side via /api/audio-breakpoints).
  *
- * This is the ONLY reliable way to get chunk boundaries that match the
- * audio the user actually hears. The word-timing API approach doesn't
- * work because:
- *   1. Quran.com's recitation IDs don't match UmmahAPI's
- *   2. Even if they did, quran.com no longer returns per-word segments
- *   3. Isolated word MP3 durations ≠ continuous recitation timings
+ * Unlike silence detection (which looks for ABSOLUTE silence and
+ * fails on continuous recitation), this finds RELATIVE energy dips
+ * — the slight quiet moments between phrases that every reciter
+ * has, even in Murattal style.
  *
- * Returns pause timestamps in MILLISECONDS. Empty array on failure.
+ * Returns boundary timestamps in MILLISECONDS. Empty array on failure.
  */
 export async function fetchAudioPauses(
   audioUrl: string,
+  numBreakpoints?: number,
 ): Promise<{ start: number; end: number; duration: number }[]> {
   try {
-    const res = await fetchWithTimeout('/api/silence-detect', {
+    const res = await fetchWithTimeout('/api/audio-breakpoints', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ audioUrl }),
+      body: JSON.stringify({ audioUrl, numBreakpoints }),
     })
     if (!res.ok) return []
-    const json = (await res.json()) as { silences?: { start: number; end: number; duration: number }[] }
-    if (!json.silences) return []
-    // Convert seconds → milliseconds
-    return json.silences.map((s) => ({
-      start: s.start * 1000,
-      end: s.end * 1000,
-      duration: s.duration * 1000,
+    const json = (await res.json()) as {
+      breakpoints?: number[]
+      duration?: number
+    }
+    if (!json.breakpoints || !json.breakpoints.length) return []
+
+    // Convert breakpoint timestamps (seconds) → pause objects (ms).
+    // Each breakpoint is a single timestamp (the dip's center). We
+    // create a small synthetic pause window around it (±100ms) so
+    // the snapping logic has a range to work with.
+    return json.breakpoints.map((t) => ({
+      start: t * 1000 - 100,
+      end: t * 1000 + 100,
+      duration: 200,
     }))
   } catch (err) {
     logger.warn('fetchAudioPauses failed', {
