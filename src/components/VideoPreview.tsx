@@ -52,6 +52,26 @@ const BENGALI_FONT_CLASS: Record<string, string> = {
   hind: 'font-bengali-hind',
 }
 
+// ─── Text pagination helpers ─────────────────────────────────────────
+// Split a text into word chunks for pagination. Used when an ayah is
+// very long (e.g. Ayat al-Kursi) and the text would be cramped.
+function getWordChunk(text: string, chunkIdx: number, totalChunks: number): string {
+  const words = text.split(/\s+/).filter(Boolean)
+  if (totalChunks <= 1) return text
+  const perChunk = Math.ceil(words.length / totalChunks)
+  const start = chunkIdx * perChunk
+  const end = start + perChunk
+  return words.slice(start, end).join(' ')
+}
+
+function calcTotalChunks(arabicText: string, translation: string): number {
+  const arWords = arabicText.split(/\s+/).filter(Boolean).length
+  const transWords = translation.split(/\s+/).filter(Boolean).length
+  const arChunks = arWords > 20 ? Math.ceil(arWords / 8) : 1
+  const transChunks = transWords > 24 ? Math.ceil(transWords / 12) : 1
+  return Math.max(arChunks, transChunks, 1)
+}
+
 const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
   landscape: { w: 1280, h: 720, ratio: '16 / 9' },
   portrait: { w: 720, h: 1280, ratio: '9 / 16' },
@@ -112,6 +132,7 @@ export function VideoPreview() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTimeMs, setCurrentTimeMs] = useState(0)
   const [liveDurations, setLiveDurations] = useState<Record<number, number>>({})
+  const [textPage, setTextPage] = useState(0) // current pagination page for long text
   const [volume, setVolume] = useState(0.9)
   const [muted, setMuted] = useState(false)
 
@@ -178,6 +199,23 @@ export function VideoPreview() {
       if (audio && c) {
         const tMs = audio.currentTime * 1000
         setCurrentTimeMs(tMs)
+        // Calculate text pagination page for long ayats
+        const dur = c.audioDurationMs || liveDurations[ci] || 0
+        if (dur > 0) {
+          const progress = Math.min(1, tMs / dur)
+          // Count words to determine if pagination is needed
+          const transWords = c.translation.split(/\s+/).filter(Boolean).length
+          const arWords = c.arabicText.split(/\s+/).filter(Boolean).length
+          const transChunks = transWords > 24 ? Math.ceil(transWords / 12) : 1
+          const arChunks = arWords > 20 ? Math.ceil(arWords / 8) : 1
+          const totalChunks = Math.max(transChunks, arChunks)
+          if (totalChunks > 1) {
+            const page = Math.min(totalChunks - 1, Math.floor(progress * totalChunks))
+            setTextPage(page)
+          } else {
+            setTextPage(0)
+          }
+        }
         const foundIdx = getActiveWordIndex(c.words, tMs)
         if (foundIdx >= 0) {
           setActiveWord({ ayatIndex: ci, wordIndex: foundIdx })
@@ -601,7 +639,12 @@ export function VideoPreview() {
                             {seg.text}
                           </span>
                         ))
-                      : current.arabicText}
+                      : current.arabicText
+                        ? (() => {
+                            const tc = calcTotalChunks(current.arabicText, current.translation)
+                            return getWordChunk(current.arabicText, textPage, tc)
+                          })()
+                        : ''}
                 </div>
 
                 {/* Tiny divider between Arabic and translation — only when
@@ -641,9 +684,23 @@ export function VideoPreview() {
                       maxWidth: '85cqw',
                     }}
                   >
-                    {current.translation}
+                    {(() => {
+                      const tc = calcTotalChunks(current.arabicText, current.translation)
+                      return getWordChunk(current.translation, textPage, tc)
+                    })()}
                   </p>
                 )}
+
+                {/* Page indicator — shows "1 / 3" when text is paginated */}
+                {(() => {
+                  const tc = calcTotalChunks(current?.arabicText ?? '', current?.translation ?? '')
+                  if (tc <= 1 || !current) return null
+                  return (
+                    <div className="text-white/35 text-[1.4cqw] font-mono mt-1.5">
+                      {textPage + 1} / {tc}
+                    </div>
+                  )
+                })()}
               </div>
             </div>
           ) : (

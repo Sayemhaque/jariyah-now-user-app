@@ -1459,7 +1459,32 @@ function drawFrame({
   if (line.length) lines.push(line)
 
   const arabicLineH = arabicFontSize * 1.8 // generous line height to prevent overlap
-  const arabicTotalH = lines.length * arabicLineH
+
+  // ─── Text Pagination ───────────────────────────────────────────────
+  // When an ayah is very long (e.g. Ayat al-Kursi), the Arabic + translation
+  // would be cramped on one screen. We split them into chunks of MAX_LINES
+  // and cycle through them during the audio playback, like movie subtitles.
+  //
+  // The chunk index is calculated from the elapsed time (intoMs) relative
+  // to the total audio duration. Each chunk gets equal time.
+  const MAX_ARABIC_LINES = 3   // show max 3 lines of Arabic per page
+  const MAX_TRANS_LINES = 2    // show max 2 lines of translation per page
+
+  const slideDurationMs = slide.audioDurationMs || 10000
+  const progressRatio = Math.min(1, intoMs / slideDurationMs)
+
+  // Paginate Arabic lines
+  let visibleArabicLines: string[][]
+  let arabicPageInfo: { current: number; total: number } | null = null
+  if (lines.length > MAX_ARABIC_LINES) {
+    const numChunks = Math.ceil(lines.length / MAX_ARABIC_LINES)
+    const chunkIdx = Math.min(numChunks - 1, Math.floor(progressRatio * numChunks))
+    visibleArabicLines = lines.slice(chunkIdx * MAX_ARABIC_LINES, (chunkIdx + 1) * MAX_ARABIC_LINES)
+    arabicPageInfo = { current: chunkIdx + 1, total: numChunks }
+  } else {
+    visibleArabicLines = lines
+  }
+  const arabicTotalH = visibleArabicLines.length * arabicLineH
 
   // Transliteration (one-line approximation)
   const translit = settings.showTransliteration ? slide.transliteration : ''
@@ -1471,10 +1496,22 @@ function drawFrame({
   const transFontFamily = isBengali
     ? bengaliFontFamily
     : 'Inter, sans-serif'
-  let transLines: string[] = []
+  let allTransLines: string[] = []
   if (settings.showTranslation) {
     ctx.font = `${transFontSize}px ${transFontFamily}`
-    transLines = wrapLines(ctx, slide.translation, innerMaxW)
+    allTransLines = wrapLines(ctx, slide.translation, innerMaxW)
+  }
+
+  // Paginate translation lines
+  let transLines: string[]
+  let transPageInfo: { current: number; total: number } | null = null
+  if (allTransLines.length > MAX_TRANS_LINES) {
+    const numChunks = Math.ceil(allTransLines.length / MAX_TRANS_LINES)
+    const chunkIdx = Math.min(numChunks - 1, Math.floor(progressRatio * numChunks))
+    transLines = allTransLines.slice(chunkIdx * MAX_TRANS_LINES, (chunkIdx + 1) * MAX_TRANS_LINES)
+    transPageInfo = { current: chunkIdx + 1, total: numChunks }
+  } else {
+    transLines = allTransLines
   }
   const transLineH = transFontSize * 1.4
   const transTotalH = transLines.length * transLineH
@@ -1567,7 +1604,15 @@ function drawFrame({
     }
     if (curLine.length > 0) tajweedLines.push(curLine)
 
-    for (const lineSegs of tajweedLines) {
+    // Paginate Tajweed lines if too many
+    let visibleTajweedLines = tajweedLines
+    if (tajweedLines.length > MAX_ARABIC_LINES) {
+      const numChunks = Math.ceil(tajweedLines.length / MAX_ARABIC_LINES)
+      const chunkIdx = Math.min(numChunks - 1, Math.floor(progressRatio * numChunks))
+      visibleTajweedLines = tajweedLines.slice(chunkIdx * MAX_ARABIC_LINES, (chunkIdx + 1) * MAX_ARABIC_LINES)
+    }
+
+    for (const lineSegs of visibleTajweedLines) {
       let totalW = 0
       for (const seg of lineSegs) totalW += ctx.measureText(seg.text).width
       let xPos = W / 2 + totalW / 2
@@ -1586,7 +1631,7 @@ function drawFrame({
   } else {
     // ─── Plain word-by-word rendering ──────────────────────────────
     let wordCounter = 0
-    for (const ln of lines) {
+    for (const ln of visibleArabicLines) {
       const widths = ln.map((w) => ctx.measureText(w).width)
       const totalLineW = widths.reduce((a, b) => a + b, 0) + spaceW * (ln.length - 1)
       let xPos = W / 2 + totalLineW / 2
@@ -1653,6 +1698,20 @@ function drawFrame({
       ctx.fillText(transLines[i]!, W / 2, yAfterArabic + transLineH / 2 + i * transLineH)
     }
     ctx.shadowBlur = 0
+  }
+
+  // ─── Page indicator ───────────────────────────────────────────────
+  // If either Arabic or translation is paginated, show a small "1/3" indicator
+  // below the translation so viewers know there's more text coming.
+  if (arabicPageInfo || transPageInfo) {
+    const pageInfo = transPageInfo || arabicPageInfo!
+    const indicatorFontSize = Math.round(H * 0.012)
+    ctx.font = `${indicatorFontSize}px Inter, sans-serif`
+    ctx.fillStyle = 'rgba(255,255,255,0.35)'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    const indicatorY = yAfterArabic + transTotalH + Math.round(H * 0.015)
+    ctx.fillText(`${pageInfo.current} / ${pageInfo.total}`, W / 2, indicatorY)
   }
 
   // ---- Attribution block (bottom-left) --------------------------------
