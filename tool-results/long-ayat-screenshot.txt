@@ -1,0 +1,54 @@
+Long Ayat Screenshot Analysis — Jariyah Now Video Preview
+Source: /home/z/my-project/upload/Screenshot From 2026-07-08 21-48-10.png
+Model: glm-4.6v (z-ai vision CLI, thinking enabled)
+Raw JSON: /home/z/my-project/tool-results/long-ayat-screenshot-detailed.json
+
+------------------------------------------------------------------------
+IDENTIFIED CONTENT
+------------------------------------------------------------------------
+- Verse: Ayat al-Kursi — Surah Al-Baqarah (2), Ayah 255
+- This is one of the LONGEST single ayats in the entire Quran.
+
+VISIBLE TEXT (as read by the VLM):
+- Arabic (4–5 wrapped lines):
+  إِنَّ اللَّهَ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ
+  لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ مَنْ هُوَ الَّذِي يَشْفَعُ عِنْدَهُ
+  إِلَّا بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلَا يُحِيطُونَ
+  بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ
+  وَلَا يَؤُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ
+
+- English translation (wraps to ~5–6 lines in the 9:16 frame):
+  "Allah - there is no deity except Him, the Ever-Living, the Self-Sustaining.
+   Neither drowsiness overtakes Him nor sleep. To Him belongs whatever is in
+   the heavens and whatever is on the earth. Who is it that can intercede with
+   Him except by His permission? He knows what is (presently) before them and
+   what will be after them, and they encompass not a thing of His knowledge
+   except what He wills. His Kursi extends over the heavens and the earth, and
+   their preservation tires Him not. And He is the Most High, the Most Great."
+
+------------------------------------------------------------------------
+ANSWERS TO THE 4 QUESTIONS (short version)
+------------------------------------------------------------------------
+1. VISIBLE TEXT & ARABIC LENGTH: The frame shows Ayat al-Kursi (2:255). The
+   Arabic verse is LONG — it wraps across roughly 4–5 lines in the vertical
+   reel frame because the ayat itself is one of the longest in the Quran.
+
+2. TRANSLATION LENGTH: The English translation is very long for a single
+   ayat, wrapping to approximately 5–6 lines inside the 9:16 preview.
+
+3. CRAMPED / OVERFLOWING: The text is dense in the frame — it does not bleed
+   past the edges or get cut off, but the 5–6 line block is visually heavy
+   and tightly packed for a reel format, leaving little breathing room.
+
+4. SINGLE AYAT WITH LONG TRANSLATION: Yes. This is exactly one ayat
+   (Ayat al-Kursi) carrying an unusually long translation — a textbook case
+   for the proposed 2-line chunking so each reel frame shows a readable,
+   scannable slice instead of the whole block at once.
+
+------------------------------------------------------------------------
+RECOMMENDATION (for the chunking feature)
+------------------------------------------------------------------------
+Confirmed: this screenshot is a valid test case for splitting a long ayat's
+translation into 2-line chunks. With ~5–6 lines of translation, the ayat
+would naturally break into ~3 chunks of 2 lines each, giving the reel a
+clean, paced reveal of the meaning instead of one cramped block.
