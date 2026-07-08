@@ -13,6 +13,7 @@ import {
   Eye,
   Settings,
   BookOpenText,
+  Scissors,
 } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { validateAyatRange } from '@/lib/validation'
@@ -22,6 +23,8 @@ import { ReciterSelector } from '@/components/ReciterSelector'
 import { TranslationSelector } from '@/components/TranslationSelector'
 import { CustomizationPanel } from '@/components/CustomizationPanel'
 import { VideoPreview } from '@/components/VideoPreview'
+import { AyatSplitter } from '@/components/AyatSplitter'
+import { isSplittable, type AyatSplit } from '@/lib/ayatSplitter'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -61,6 +64,8 @@ export default function Home() {
   const [exportOpen, setExportOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<MobileTab>('settings')
+  const [splitOpen, setSplitOpen] = useState(false)
+  const [activeSplit, setActiveSplit] = useState<AyatSplit | null>(null)
 
   useEffect(() => {
     loadSurahs()
@@ -95,6 +100,24 @@ export default function Home() {
             <span className="text-[15px] font-bold tracking-tight">Jariyah Now</span>
           </Link>
           <div className="flex items-center gap-2">
+            <Link
+              href="/zikr"
+              className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition"
+            >
+              Zikr Reels
+            </Link>
+            {/* Split button — shows when the current ayat is long enough */}
+            {ayatList.length > 0 && ayatList[0] && isSplittable(ayatList[0].arabicText) && (
+              <Button
+                onClick={() => setSplitOpen(true)}
+                variant="outline"
+                size="sm"
+                className="font-medium"
+              >
+                <Scissors className="h-4 w-4 mr-1.5" />
+                <span className="hidden sm:inline">Split</span>
+              </Button>
+            )}
             <Button
               onClick={() => setExportOpen(true)}
               disabled={!canExport}
@@ -242,7 +265,21 @@ export default function Home() {
         </aside>
       </main>
 
-      <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
+      <ExportModal open={exportOpen} onOpenChange={setExportOpen} activeSplit={activeSplit} />
+
+      {/* Split Long Ayah modal — shows when the user clicks the Split button */}
+      {ayatList.length > 0 && ayatList[0] && (
+        <AyatSplitter
+          open={splitOpen}
+          onClose={() => setSplitOpen(false)}
+          surah={ayatList[0].surahNumber}
+          ayat={ayatList[0].ayatNumber}
+          arabicText={ayatList[0].arabicText}
+          audioUrl={ayatList[0].audioUrl}
+          audioDurationMs={ayatList[0].audioDurationMs}
+          onApplySplit={(split) => setActiveSplit(split)}
+        />
+      )}
     </div>
   )
 }

@@ -52,6 +52,8 @@ type RenderStatus = 'idle' | 'processing' | 'done' | 'error'
 interface ExportModalProps {
   open: boolean
   onOpenChange: (o: boolean) => void
+  /** Active split data — when set, the export renders sub-clips with "Part X/N" captions. */
+  activeSplit?: import('@/lib/ayatSplitter').AyatSplit | null
 }
 
 /**
@@ -476,7 +478,7 @@ function DonePanel({
   )
 }
 
-export function ExportModal({ open, onOpenChange }: ExportModalProps) {
+export function ExportModal({ open, onOpenChange, activeSplit }: ExportModalProps) {
   const ayatList = useBuilderStore((s) => s.ayatList)
   const surahs = useBuilderStore((s) => s.surahs)
   const selectedSurahNumber = useBuilderStore((s) => s.selectedSurahNumber)
@@ -655,6 +657,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         quality,
         attributionLine: videoAttributionLine(translationKey),
         reciterName: reciter.name,
+        activeSplit,
         onProgress: (p) => {
           // Scale 0–1 → 0–0.6
           const combined = p * 0.6
@@ -957,6 +960,8 @@ interface RenderArgs {
   /** Reciter name for the "Recited by" credit (always shown). */
   reciterName: string
   onProgress: (p: number) => void
+  /** Active split data — when set, draws "Part X/N" badges. */
+  activeSplit?: import('@/lib/ayatSplitter').AyatSplit | null
 }
 
 async function renderVideoToWebm({
@@ -968,6 +973,7 @@ async function renderVideoToWebm({
   attributionLine,
   reciterName,
   onProgress,
+  activeSplit,
 }: RenderArgs): Promise<{ url: string; blob: Blob }> {
   const base = RES[orientation]
   const scale = RENDER_QUALITY_SCALE[quality]
@@ -1104,6 +1110,9 @@ async function renderVideoToWebm({
         attributionLine,
         reciterName,
         watermarkImg,
+        splitPart: activeSplit && activeSplit.segments.length > 0
+          ? { partNumber: idx + 1, totalParts: activeSplit.segments.length }
+          : null,
       })
 
       onProgress(Math.min(1, elapsedSec / totalSec))
@@ -1168,6 +1177,8 @@ interface DrawArgs {
   /** Pre-loaded watermark image (transparent PNG). Null while loading or if
    *  the watermark file is missing — in that case we fall back to text. */
   watermarkImg: HTMLImageElement | null
+  /** When set, draws a "Part X/N" badge on the frame. */
+  splitPart?: { partNumber: number; totalParts: number } | null
 }
 
 function drawFrame({
@@ -1183,6 +1194,7 @@ function drawFrame({
   attributionLine,
   reciterName,
   watermarkImg,
+  splitPart,
 }: DrawArgs) {
   // ---- Background (cover-fit) -----------------------------------------
   if (bgImg) {
@@ -1238,6 +1250,40 @@ function drawFrame({
     W * 0.955,
     H * 0.045 + H * 0.045,
   )
+
+  // ---- Split part badge (top-center) ----------------------------------
+  // When an ayah is split, draw "Part X/N" as a badge at the top-center
+  // of the frame so viewers know which part they're watching.
+  if (splitPart) {
+    const badgeText = `PART ${splitPart.partNumber} / ${splitPart.totalParts}`
+    const badgeFontSize = Math.round(H * 0.014)
+    ctx.save()
+    ctx.font = `600 ${badgeFontSize}px Inter, sans-serif`
+    ctx.fillStyle = 'rgba(124, 58, 237, 0.9)' // primary gradient color
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'top'
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'
+    ctx.shadowBlur = 4
+    // Draw a pill background
+    const textW = ctx.measureText(badgeText).width
+    const pillW = textW + badgeFontSize * 1.5
+    const pillH = badgeFontSize * 1.8
+    const pillX = W / 2 - pillW / 2
+    const pillY = H * 0.04
+    // Pill background
+    ctx.fillStyle = 'rgba(124, 58, 237, 0.85)'
+    ctx.beginPath()
+    if (typeof ctx.roundRect === 'function') {
+      ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2)
+    } else {
+      ctx.rect(pillX, pillY, pillW, pillH)
+    }
+    ctx.fill()
+    // Text
+    ctx.fillStyle = '#ffffff'
+    ctx.fillText(badgeText, W / 2, pillY + badgeFontSize * 0.4)
+    ctx.restore()
+  }
 
   // ---- Center content card --------------------------------------------
   // Find the currently-active word first so we can size the card to fit.
