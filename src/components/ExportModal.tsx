@@ -984,8 +984,17 @@ async function renderVideoToWebm({
   const ctx = canvas.getContext('2d')!
   if (!ctx) throw new Error('Canvas 2D context unavailable')
 
-  // Load the background image once
-  const bgImg = await loadImage(settings.backgroundImage).catch(() => null)
+  // Load the background — for an MP4 video background we use a separate
+  // <video> element that we'll seek frame-by-frame in the render loop;
+  // for an image we use a regular <img>. Either way, `bgImg`/`bgVideo`
+  // carries the loaded media (the other is null).
+  const isVideoBg = settings.backgroundImage.endsWith('.mp4')
+  const bgImg = isVideoBg
+    ? null
+    : await loadImage(settings.backgroundImage).catch(() => null)
+  const bgVideo = isVideoBg
+    ? await loadVideo(settings.backgroundImage).catch(() => null)
+    : null
 
   // Load the watermark image once.
   const watermarkImg = await loadImage('/watermark.png').catch(() => null)
@@ -1097,6 +1106,25 @@ async function renderVideoToWebm({
         }
       }
 
+      // ── Seek the background video to the current frame ───────────────
+      // The video loops every `bgDurationSec` seconds. We seek to
+      // `elapsedSec % bgDurationSec` so the background animation stays
+      // in sync with the recitation timeline. Seeking is async, but
+      // for short clips (<10s) the browser usually has the frame ready
+      // by the next rAF tick; we draw whatever frame is currently
+      // visible (which may be the previous frame for one tick).
+      if (bgVideo) {
+        const bgDur = bgVideo.duration
+        if (Number.isFinite(bgDur) && bgDur > 0) {
+          const targetT = elapsedSec % bgDur
+          // Only seek if we're more than ~1 frame off — avoids excessive
+          // re-seeking that can stall the video element.
+          if (Math.abs(bgVideo.currentTime - targetT) > 1 / RENDER_FPS) {
+            try { bgVideo.currentTime = targetT } catch { /* seeking can throw if not ready */ }
+          }
+        }
+      }
+
       drawFrame({
         ctx,
         W,
@@ -1105,6 +1133,7 @@ async function renderVideoToWebm({
         intoMs,
         settings,
         bgImg,
+        bgVideo,
         ayatIndex: idx,
         total: slides.length,
         attributionLine,
@@ -1149,6 +1178,48 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   })
 }
 
+/**
+ * Load a video file and wait until it has metadata + at least one frame
+ * ready to draw. Used by the export pipeline to render MP4 video
+ * backgrounds frame-by-frame onto the canvas. The video is muted and
+ * paused — we drive it manually via `currentTime` seeking in the render
+ * loop. `playsInline` is set so iOS Safari allows the metadata load
+ * without a user gesture.
+ */
+function loadVideo(src: string): Promise<HTMLVideoElement> {
+  return new Promise((resolve, reject) => {
+    const v = document.createElement('video')
+    v.src = src
+    v.muted = true
+    v.playsInline = true
+    v.preload = 'auto'
+    v.crossOrigin = 'anonymous'
+    // Some browsers won't decode frames until the video starts playing
+    // or at least has been "loadeddata". We wait for `loadeddata` (one
+    // frame is available for drawing).
+    v.onloadeddata = () => {
+      // Try to start playback so the decoder actually decodes frames —
+      // we immediately pause so there's no audible sound. This is the
+      // most reliable cross-browser way to ensure `drawImage(video)`
+      // produces a non-blank frame.
+      v.play()
+        .then(() => {
+          v.pause()
+          resolve(v)
+        })
+        .catch(() => {
+          // Autoplay was blocked — fall back to a seeked-frame approach.
+          // The video element should still be drawable after loadeddata
+          // on most browsers (Chrome, Firefox, Safari desktop).
+          resolve(v)
+        })
+    }
+    v.onerror = () => reject(new Error(`Failed to load video: ${src}`))
+    // Trigger the metadata load.
+    v.load()
+  })
+}
+
 async function fetchAudioBuffer(url: string, ctx: AudioContext): Promise<AudioBuffer> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Failed to fetch audio ${url}: ${res.status}`)
@@ -1168,6 +1239,11 @@ interface DrawArgs {
   intoMs: number
   settings: RenderArgs['settings']
   bgImg: HTMLImageElement | null
+  /** When the background is an MP4 video, this carries the loaded
+   *  <video> element. The render loop seeks it to the correct frame
+   *  before calling drawFrame; here we just `drawImage` its current
+   *  frame onto the canvas (cover-fit, same as bgImg). */
+  bgVideo: HTMLVideoElement | null
   ayatIndex: number
   total: number
   /** Attribution line for the translation edition (empty for public-domain). */
@@ -1189,6 +1265,7 @@ function drawFrame({
   intoMs,
   settings,
   bgImg,
+  bgVideo,
   ayatIndex,
   total,
   attributionLine,
@@ -1197,11 +1274,23 @@ function drawFrame({
   splitPart,
 }: DrawArgs) {
   // ---- Background (cover-fit) -----------------------------------------
+  // For image backgrounds: draw the loaded <img> cover-fit.
+  // For video backgrounds: draw the current frame of the loaded <video>
+  //   (the render loop has already seeked it to the right time).
+  // Fallback: solid dark color if neither is available.
   if (bgImg) {
     const ratio = Math.max(W / bgImg.width, H / bgImg.height)
     const dw = bgImg.width * ratio
     const dh = bgImg.height * ratio
     ctx.drawImage(bgImg, (W - dw) / 2, (H - dh) / 2, dw, dh)
+  } else if (bgVideo && bgVideo.videoWidth > 0) {
+    // Cover-fit: scale so the video fills the canvas, cropping overflow.
+    const vw = bgVideo.videoWidth
+    const vh = bgVideo.videoHeight
+    const ratio = Math.max(W / vw, H / vh)
+    const dw = vw * ratio
+    const dh = vh * ratio
+    ctx.drawImage(bgVideo, (W - dw) / 2, (H - dh) / 2, dw, dh)
   } else {
     ctx.fillStyle = '#0a0f1a'
     ctx.fillRect(0, 0, W, H)

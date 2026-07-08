@@ -84,8 +84,8 @@ export default function TermsPage() {
           Tanzil.net
         </a>{' '}
         via{' '}
-        <a href="https://alquran.cloud" target="_blank" rel="noopener noreferrer">
-          alquran.cloud
+        <a href="https://ummahapi.com" target="_blank" rel="noopener noreferrer">
+          ummahapi.com
         </a>
         .
       </p>
@@ -97,38 +97,37 @@ export default function TermsPage() {
       </p>
       <ul>
         <li>
-          <strong>Pickthall</strong> (default): public domain. You may
+          <strong>Bengali (Muhiuddin Khan)</strong> (default): permissive.
+          Non-commercial use with attribution.
+        </li>
+        <li>
+          <strong>Pickthall</strong>: public domain. You may
           distribute freely.
         </li>
         <li>
-          <strong>Saheeh International</strong>: permitted for
-          non-commercial use with attribution.
-        </li>
-        <li>
-          <strong>Clear Quran (Dr. Mustafa Khattab)</strong>: permitted
-          for non-commercial use with attribution to the Furqan Institute.
-        </li>
-        <li>
-          <strong>Muhammad Asad</strong>: COPYRIGHTED by Dar al-Andalus
-          Ltd. Personal reading only — a separate written license is
-          required for any public distribution, including in videos.
-          Jariyah Now shows a warning badge when this edition is selected.
+          <strong>Saheeh International, Yusuf Ali, Urdu (Jalandhari),
+          Turkish (Diyanet), Indonesian, French (Hamidullah), German
+          (Abu Rida), Spanish (Cortés), Malay (Basmeih), Bosnian
+          (Korkut)</strong>: permitted for non-commercial use with
+          attribution.
         </li>
       </ul>
       <p>
         When a translation requires attribution, Jariyah Now automatically
         adds an attribution line to the bottom-left of the exported video.
-        Attribution alone does not satisfy the Muhammad Asad license —
-        you must obtain a separate license from Dar al-Andalus.
       </p>
 
       <h3>5.3 Reciter audio</h3>
       <p>
-        Reciter audio is streamed from the{' '}
-        <a href="https://quran.com" target="_blank" rel="noopener noreferrer">
-          quran.com
+        Reciter audio is streamed from{' '}
+        <a href="https://everyayah.com" target="_blank" rel="noopener noreferrer">
+          everyayah.com
         </a>{' '}
-        CDN. Rights belong to the reciters and their estates. Non-commercial
+        (via URLs provided by{' '}
+        <a href="https://ummahapi.com" target="_blank" rel="noopener noreferrer">
+          ummahapi.com
+        </a>
+        ). Rights belong to the reciters and their estates. Non-commercial
         use with attribution is widely accepted; commercial use requires
         permission from the rights holder. We encourage you to credit the
         reciter by name in any video description when publishing.

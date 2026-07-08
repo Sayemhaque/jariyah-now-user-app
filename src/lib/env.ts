@@ -13,10 +13,14 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
   // --- External API base URLs (overrideable for testing) ---
-  ALQURAN_CLOUD_BASE_URL: z
+  // UmmahAPI is the primary upstream — surah list, ayat text, translations,
+  // reciter audio URLs. The X-API-Key for UmmahAPI is exposed to the client
+  // via NEXT_PUBLIC_UMMAHAPI_KEY (see .env) so the browser can call the
+  // API directly without proxying through our server.
+  UMMAHAPI_BASE_URL: z
     .string()
     .url()
-    .default('https://api.alquran.cloud/v1'),
+    .default('https://ummahapi.com/api'),
   QURAN_COM_API_BASE_URL: z
     .string()
     .url()
@@ -24,12 +28,13 @@ const envSchema = z.object({
   QURAN_AUDIO_CDN_BASE_URL: z
     .string()
     .url()
-    .default('https://verses.quran.com'),
+    .default('https://everyayah.com'),
 
   // --- SSRF allowlist ---
   // Comma-separated list of hosts the server is allowed to HEAD-fetch as
-  // reciter audio (see lib/urlAllowlist.ts). Defaults to just the Quran.com
-  // CDN. Override if you host your own audio mirror.
+  // reciter audio (see lib/urlAllowlist.ts). Defaults to everyayah.com +
+  // verses.quran.com (the UmmahAPI-backed MP3 CDN + the legacy per-word
+  // fallback). Override if you host your own audio mirror.
   ALLOWED_AUDIO_HOSTS: z.string().optional(),
 
   // --- Rate limiting ---
@@ -43,8 +48,8 @@ const envSchema = z.object({
   TIMINGS_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
 
   // --- External fetch timeout (ms) ---
-  // Applied to every call to alquran.cloud / quran.com / the audio CDN so a
-  // slow upstream never blocks a request indefinitely.
+  // Applied to every call to UmmahAPI / quran.com / the audio CDN so a slow
+  // upstream never blocks a request indefinitely.
   EXTERNAL_FETCH_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
 
   // --- Upstash Redis (optional — used for distributed rate limiting in prod) ---

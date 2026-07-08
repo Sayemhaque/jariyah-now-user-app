@@ -8,13 +8,14 @@
  *
  * This module exposes a single `isAllowedAudioUrl()` function that returns
  * true only for HTTPS URLs whose host matches the configured audio CDN
- * (default: verses.quran.com). The allowlist is configurable via env so a
- * fork can add their own CDN without touching code.
+ * (default: everyayah.com + verses.quran.com). The allowlist is configurable
+ * via env so a fork can add their own CDN without touching code.
  */
 
 /**
  * The set of hosts we allow the server to HEAD-fetch as reciter audio.
- * Defaults to just the Quran.com audio CDN. Override by setting
+ * Defaults to the everyayah.com CDN (UmmahAPI-backed reciter MP3s) plus
+ * the legacy verses.quran.com per-ayat CDN. Override by setting
  * `ALLOWED_AUDIO_HOSTS` in the env (comma-separated).
  */
 function getAllowedAudioHosts(): string[] {
@@ -28,7 +29,7 @@ function getAllowedAudioHosts(): string[] {
       .map((h) => h.trim().toLowerCase())
       .filter(Boolean)
   }
-  return ['verses.quran.com']
+  return ['everyayah.com', 'verses.quran.com']
 }
 
 /**

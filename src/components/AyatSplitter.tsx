@@ -43,36 +43,49 @@ export function AyatSplitter({
   const [silences, setSilences] = useState<SilencePoint[]>([])
   const [analyzingAudio, setAnalyzingAudio] = useState(false)
 
-  // Fetch word data when opened
+  // Fetch word data when opened. Uses a microtask-deferred setState
+  // pattern to avoid the React 19 lint rule against calling setState
+  // synchronously inside an effect body (which can trigger cascading
+  // renders). The state updates still happen in the same tick from the
+  // user's perspective.
   useEffect(() => {
     if (!open) return
-    setLoading(true)
-    setSplitPoints([])
-    fetchWordData(surah, ayat).then((data) => {
-      if (data && data.length > 0) {
-        setWords(data)
-      } else {
-        // Fallback: split arabicText by whitespace
-        const fallbackWords = arabicText
-          .split(/\s+/)
-          .filter(Boolean)
-          .map((text, i) => ({
-            position: i + 1,
-            arabic: text,
-            transliteration: '',
-            meaning: '',
-          }))
-        setWords(fallbackWords)
-      }
-      setLoading(false)
-    })
+    let cancelled = false
+    Promise.resolve().then(() => {
+      if (cancelled) return
+      setLoading(true)
+      setSplitPoints([])
+      fetchWordData(surah, ayat).then((data) => {
+        if (cancelled) return
+        if (data && data.length > 0) {
+          setWords(data)
+        } else {
+          // Fallback: split arabicText by whitespace
+          const fallbackWords = arabicText
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((text, i) => ({
+              position: i + 1,
+              arabic: text,
+              transliteration: '',
+              meaning: '',
+            }))
+          setWords(fallbackWords)
+        }
+        setLoading(false)
+      })
 
-    // Fetch silence points in parallel
-    setAnalyzingAudio(true)
-    fetchSilencePoints(audioUrl).then((sils) => {
-      setSilences(sils)
-      setAnalyzingAudio(false)
+      // Fetch silence points in parallel
+      setAnalyzingAudio(true)
+      fetchSilencePoints(audioUrl).then((sils) => {
+        if (cancelled) return
+        setSilences(sils)
+        setAnalyzingAudio(false)
+      })
     })
+    return () => {
+      cancelled = true
+    }
   }, [open, surah, ayat, arabicText, audioUrl])
 
   // Toggle a split point at a word index

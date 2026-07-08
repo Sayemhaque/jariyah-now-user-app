@@ -71,7 +71,7 @@ const slideSchema = z.object({
     .url()
     .refine(isAllowedAudioUrl, {
       message:
-        'audioUrl must be an HTTPS URL on the allowed audio CDN (verses.quran.com)',
+        'audioUrl must be an HTTPS URL on the allowed audio CDN (everyayah.com or verses.quran.com)',
     }),
   audioDurationMs: z.number().min(0),
 })

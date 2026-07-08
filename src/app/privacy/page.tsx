@@ -62,7 +62,7 @@ export default function PrivacyPage() {
       <p>
         When you select a surah and ayat range, your browser fetches the
         Quran text, translation, and word timings from our API routes
-        (which proxy alquran.cloud and quran.com). This data is cached at
+        (which proxy UmmahAPI and quran.com). This data is cached at
         the CDN edge (Cloudflare/Vercel) and in your browser. The cache
         keys are the surah number, ayat number, reciter ID, and
         translation edition — none of which identify you personally.
@@ -87,10 +87,10 @@ export default function PrivacyPage() {
       </p>
       <ul>
         <li>
-          <a href="https://alquran.cloud" target="_blank" rel="noopener noreferrer">
-            alquran.cloud
+          <a href="https://ummahapi.com" target="_blank" rel="noopener noreferrer">
+            ummahapi.com
           </a>{' '}
-          — Quran text and translation. Their privacy policy applies.
+          — Quran text, translations, and reciter audio URLs. Their privacy policy applies.
         </li>
         <li>
           <a href="https://quran.com" target="_blank" rel="noopener noreferrer">
@@ -100,8 +100,8 @@ export default function PrivacyPage() {
           Their privacy policy applies.
         </li>
         <li>
-          <a href="https://verses.quran.com" target="_blank" rel="noopener noreferrer">
-            verses.quran.com
+          <a href="https://everyayah.com" target="_blank" rel="noopener noreferrer">
+            everyayah.com
           </a>{' '}
           — Reciter audio MP3s, loaded directly by your browser.
         </li>

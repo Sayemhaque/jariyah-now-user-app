@@ -25,6 +25,7 @@ const VALID_SETTINGS: VideoSettings = {
   showTransliteration: false,
   orientation: 'portrait',
   autoFitFonts: true,
+  useTajweed: false,
 }
 
 const VALID_SLIDE: AyatSlide = {
@@ -36,7 +37,7 @@ const VALID_SLIDE: AyatSlide = {
   surahNameArabic: 'الفاتحة',
   ayatNumber: 1,
   surahNumber: 1,
-  audioUrl: 'https://verses.quran.com/Alafasy/mp3/001001.mp3',
+  audioUrl: 'https://everyayah.com/data/Alafasy_128kbps/001001.mp3',
   audioDurationMs: 5000,
 }
 
@@ -82,7 +83,7 @@ describe('renderBodySchema', () => {
   function validBody() {
     return {
       slides: [VALID_SLIDE],
-      reciterKey: 'Alafasy/mp3',
+      reciterKey: 'Alafasy_128kbps',
       settings: VALID_SETTINGS,
       orientation: 'portrait' as const,
     }

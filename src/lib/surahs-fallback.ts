@@ -1,6 +1,6 @@
 import type { Surah } from './types'
 
-// Bundled fallback list of all 114 surahs (alquran.cloud shape).
+// Bundled fallback list of all 114 surahs (UmmahAPI shape).
 // Used only if the live API is unreachable so the UI never blocks.
 export const SURAHS_FALLBACK: Surah[] = [
   { number: 1, name: 'Al-Fatihah', englishName: 'The Opening', arabicName: 'الفاتحة', numberOfAyahs: 7, revelationType: 'Meccan' },

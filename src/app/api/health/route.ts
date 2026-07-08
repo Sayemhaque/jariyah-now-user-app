@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
 import { env } from '@/lib/env'
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout'
+import { ummahHeaders } from '@/lib/quranApi'
 import { logger } from '@/lib/logger'
 
 /**
  * GET /api/health
  *
  * Real health check — pings the database and both upstream Quran APIs
- * (alquran.cloud, quran.com) with a short timeout. Returns 200 when
- * everything is reachable, 503 when any dependency is down.
+ * (UmmahAPI, quran.com) with a short timeout. Returns 200 when everything
+ * is reachable, 503 when any dependency is down.
  *
  * Used by:
  *   - Uptime monitors (UptimeRobot, BetterUptime, etc.)
@@ -17,7 +18,7 @@ import { logger } from '@/lib/logger'
  *   - The /about page (optionally) to show a live status indicator
  *
  * Response shape:
- *   { status: 'ok' | 'degraded' | 'down', checks: { db, alquran, qurancom }, ts }
+ *   { status: 'ok' | 'degraded' | 'down', checks: { db, ummahapi, qurancom }, ts }
  *
  * `no-store` so the result is always fresh.
  */
@@ -51,11 +52,13 @@ async function checkUpstream(
   name: string,
   url: string,
   expectedSubstring?: string,
+  headers?: HeadersInit,
 ): Promise<CheckResult> {
   const start = Date.now()
   try {
     const res = await fetchWithTimeout(url, {
       method: 'GET',
+      headers,
       // Health checks should be fast — 3s cap so a slow upstream doesn't
       // make our health check itself slow.
       timeoutMs: 3_000,
@@ -88,19 +91,23 @@ async function checkUpstream(
 }
 
 export async function GET() {
-  const [db, alquran, qurancom] = await Promise.all([
+  const [db, ummahapi, qurancom] = await Promise.all([
     checkDb(),
-    // alquran.cloud /surah returns a JSON array of 114 surahs — cheap + cached upstream.
-    // The response body contains "englishName" (e.g. "Al-Faatiha") which confirms
-    // it's the real API and not a captive portal.
-    checkUpstream('alquran.cloud', `${env.ALQURAN_CLOUD_BASE_URL}/surah`, 'englishName'),
+    // UmmahAPI /quran/surahs returns a JSON list of 114 surahs — our
+    // primary upstream. Requires the X-API-Key header for auth.
+    checkUpstream(
+      'ummahapi',
+      `${env.UMMAHAPI_BASE_URL}/quran/surahs`,
+      undefined,
+      ummahHeaders(),
+    ),
     // quran.com /chapters returns a JSON list of surahs — a reliable 200.
     checkUpstream('quran.com', `${env.QURAN_COM_API_BASE_URL}/chapters`, 'chapters'),
   ])
 
-  const checks = { db, alquran, qurancom }
-  const allOk = db.ok && alquran.ok && qurancom.ok
-  const anyOk = db.ok || alquran.ok || qurancom.ok
+  const checks = { db, ummahapi, qurancom }
+  const allOk = db.ok && ummahapi.ok && qurancom.ok
+  const anyOk = db.ok || ummahapi.ok || qurancom.ok
 
   const status: 'ok' | 'degraded' | 'down' = allOk
     ? 'ok'

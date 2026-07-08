@@ -1,5 +1,5 @@
 /**
- * fetch with an abort timeout. Every external call (alquran.cloud, quran.com,
+ * fetch with an abort timeout. Every external call (UmmahAPI, quran.com,
  * the audio CDN) goes through this so a slow upstream never blocks a request
  * indefinitely. The timeout default comes from env.EXTERNAL_FETCH_TIMEOUT_MS
  * on the server, and falls back to 5s on the client (where env isn't read).

@@ -39,6 +39,11 @@ export interface AyatData {
   rukuNumber?: number
   manzilNumber?: number
   pageNumber?: number
+  // ─── Tajweed HTML (optional) ───
+  // Populated only when `useTajweed` is enabled. Sourced from the legacy
+  // quran.com API; contains the Uthmani text with embedded Tajweed diacritics
+  // that the client can color-code using the quran.com Tajweed rules palette.
+  tajweedHtml?: string
 }
 
 export interface AyatSlide {
@@ -60,6 +65,8 @@ export interface AyatSlide {
   rukuNumber?: number
   manzilNumber?: number
   pageNumber?: number
+  // Tajweed HTML — passed through from AyatData when useTajweed is enabled.
+  tajweedHtml?: string
 }
 
 export interface Reciter {
@@ -147,6 +154,10 @@ export interface VideoSettings {
   textWidth: TextWidth
   /** Gap between Arabic text and translation. */
   textSpacing: TextSpacing
+  /** When true, fetch Tajweed HTML from the legacy quran.com API and stash
+   *  it on each AyatData (under `tajweedHtml`) so the renderer can color-code
+   *  Tajweed rules. Default false — adds an extra upstream request per ayat. */
+  useTajweed: boolean
 }
 
 export interface ExportOptions {

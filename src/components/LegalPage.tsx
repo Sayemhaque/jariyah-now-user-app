@@ -65,12 +65,12 @@ export function SiteFooter() {
           <span>
             Quran text from{' '}
             <a
-              href="https://alquran.cloud"
+              href="https://ummahapi.com"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary/80 hover:text-primary underline underline-offset-2"
             >
-              alquran.cloud
+              ummahapi.com
             </a>{' '}
             &{' '}
             <a
@@ -86,12 +86,12 @@ export function SiteFooter() {
           <span>
             Audio from{' '}
             <a
-              href="https://verses.quran.com"
+              href="https://everyayah.com"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary/80 hover:text-primary underline underline-offset-2"
             >
-              verses.quran.com
+              everyayah.com
             </a>
           </span>
         </div>

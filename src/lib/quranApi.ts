@@ -19,38 +19,118 @@ import { fetchWithTimeout, isFetchAbort } from './fetchWithTimeout'
 import { logger } from './logger'
 
 // --- API base URLs -----------------------------------------------------
-// These have sensible defaults and are only overridden via env on the server.
-// We read them lazily so this module is safe to import from client bundles
-// (the env validator only runs on the server).
-const ALQURAN_BASE =
-  typeof process !== 'undefined' && process.env?.ALQURAN_CLOUD_BASE_URL
-    ? process.env.ALQURAN_CLOUD_BASE_URL
-    : 'https://api.alquran.cloud/v1'
+// UmmahAPI is the primary upstream for surah metadata + ayat text +
+// translation + reciter audio URLs. The legacy quran.com API is still used
+// for word-level timings (via our /api/timings proxy) and for optional
+// Tajweed HTML when `useTajweed` is enabled.
+const UMMAHAPI_BASE =
+  typeof process !== 'undefined' && process.env?.UMMAHAPI_BASE_URL
+    ? process.env.UMMAHAPI_BASE_URL
+    : 'https://ummahapi.com/api'
 const QURAN_COM_BASE =
   typeof process !== 'undefined' && process.env?.QURAN_COM_API_BASE_URL
     ? process.env.QURAN_COM_API_BASE_URL
     : 'https://api.quran.com/api/v4'
 
+/**
+ * Build the standard headers for an UmmahAPI request. The X-API-Key is
+ * required for every endpoint and is exposed to the client via the
+ * `NEXT_PUBLIC_UMMAHAPI_KEY` env var (so it must be prefixed with
+ * NEXT_PUBLIC_ for the bundler to inline it into client bundles).
+ */
+export function ummahHeaders(): HeadersInit {
+  const apiKey =
+    typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_UMMAHAPI_KEY
+      ? process.env.NEXT_PUBLIC_UMMAHAPI_KEY
+      : ''
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+  }
+  if (apiKey) headers['X-API-Key'] = apiKey
+  return headers
+}
+
 // --- types for the upstream API responses ------------------------------
-// We define these locally because the alquran.cloud / quran.com APIs don't
-// publish TypeScript types. Keeping them narrow lets the compiler catch any
-// drift if the response shape changes.
+// We define these locally because UmmahAPI / quran.com don't publish
+// TypeScript types. Keeping them narrow lets the compiler catch any drift
+// if the response shape changes.
 
-interface AlquranCloudSurah {
-  number: number
-  name: string
-  englishName: string
+interface UmmahSurah {
+  id?: number
+  number?: number
+  name?: string
+  // Arabic name — UmmahAPI uses `name_arabic`, some forks use `arabic_name`
+  name_arabic?: string
+  arabic_name?: string
+  arabicName?: string
+  // English name — UmmahAPI uses `name_english`, some forks use `english_name`
+  name_english?: string
+  english_name?: string
+  englishName?: string
+  // English translation of the name — UmmahAPI uses `name_translation`
+  name_translation?: string
+  name_complex?: string
+  translated_name?: string
   englishNameTranslation?: string
-  numberOfAyahs: number
-  revelationType: 'Meccan' | 'Medinan'
+  // Ayah count — UmmahAPI uses `verses_count`
+  verses_count?: number
+  ayah_count?: number
+  numberOfAyahs?: number
+  // Revelation place — UmmahAPI uses `revelation_place` ("makkah"/"madinah")
+  revelation_place?: 'makkah' | 'madinah' | 'Meccan' | 'Medinan' | 'meccan' | 'medinan'
+  revelation_type?: 'Meccan' | 'Medinan' | 'meccan' | 'medinan'
+  revelationType?: 'Meccan' | 'Medinan' | 'meccan' | 'medinan'
 }
 
-interface AlquranCloudResponse {
-  data: AlquranCloudSurah[] | AlquranCloudAyah
+interface UmmahSurahsResponse {
+  success?: boolean
+  data?: UmmahSurah[] | { surahs?: UmmahSurah[]; total?: number }
+  surahs?: UmmahSurah[]
 }
 
-interface AlquranCloudAyah {
-  text: string
+interface UmmahAudioItem {
+  reciter_id?: number
+  reciterId?: number
+  /** Per-ayah MP3 URL — UmmahAPI field name is `ayah_audio`. */
+  ayah_audio?: string
+  /** Full-surah MP3 URL — UmmahAPI field name is `surah_audio`. */
+  surah_audio?: string
+  /** Generic fallback field names (older API shapes). */
+  url?: string
+  audio_url?: string
+}
+
+interface UmmahAyahResponse {
+  success?: boolean
+  data?: UmmahAyah | { verse?: UmmahAyah; surah?: unknown }
+  verse?: UmmahAyah
+}
+
+interface UmmahAyah {
+  surah?: number
+  surah_number?: number
+  ayah?: number
+  ayah_number?: number
+  number_in_surah?: number
+  verse_key?: string
+  // Arabic text (Uthmani script) — UmmahAPI uses `arabic`
+  arabic?: string
+  text?: string
+  text_uthmani?: string
+  uthmani?: string
+  // Transliteration (Latin) — UmmahAPI returns a plain string
+  transliteration?: string | { text?: string; romanized?: string }
+  romanized?: string
+  // Primary translation (depends on the ?translation= query param).
+  // UmmahAPI doesn't currently populate this; translations live in the map.
+  translation?: string
+  translated_text?: string
+  // Map of translation keys → text. UmmahAPI always returns all 12 here.
+  translations?: Record<string, string>
+  // Reciter audio URLs (one per reciter). UmmahAPI returns an array of
+  // { reciter_id, reciter, style, surah_audio, ayah_audio } objects.
+  audio?: UmmahAudioItem[]
+  audio_urls?: UmmahAudioItem[]
 }
 
 interface QuranComWord {
@@ -78,6 +158,7 @@ interface QuranComWord {
 
 interface QuranComVerse {
   words?: QuranComWord[]
+  text_uthmani?: string
   // Structural markers (requested via `fields=` query param).
   juz_number?: number
   hizb_number?: number
@@ -101,31 +182,59 @@ const surahCache: { list?: Surah[]; byNumber: Map<number, Surah> } = {
 }
 
 /**
- * Fetch the list of all 114 surahs. Falls back to the bundled list on error
- * so the UI never blocks — users can still pick a surah even if the live API
- * is down.
+ * Fetch the list of all 114 surahs from UmmahAPI. Falls back to the bundled
+ * list on error so the UI never blocks — users can still pick a surah even
+ * if the live API is down or the API key is missing/invalid.
  */
 export async function fetchSurahs(): Promise<Surah[]> {
   if (surahCache.list) return surahCache.list
 
   try {
-    const res = await fetchWithTimeout(`${ALQURAN_BASE}/surah`, {
+    const res = await fetchWithTimeout(`${UMMAHAPI_BASE}/quran/surahs`, {
+      headers: ummahHeaders(),
       cache: 'force-cache',
       // Next.js revalidate tag — surah metadata never changes, cache for 24h.
       next: { revalidate: 86_400 },
     })
     if (!res.ok) {
-      throw new Error(`alquran.cloud /surah returned ${res.status}`)
+      throw new Error(`UmmahAPI /quran/surahs returned ${res.status}`)
     }
-    const json = (await res.json()) as AlquranCloudResponse
-    const list: Surah[] = ((json.data as AlquranCloudSurah[]) ?? []).map((s) => ({
-      number: s.number,
-      name: s.englishName,
-      englishName: s.englishNameTranslation ?? s.englishName,
-      arabicName: s.name,
-      numberOfAyahs: s.numberOfAyahs,
-      revelationType: s.revelationType === 'Medinan' ? 'Medinan' : 'Meccan',
-    }))
+    const json = (await res.json()) as UmmahSurahsResponse
+
+    // Defensive: handle multiple response shapes — top-level array, nested
+    // `data` array, or `data.surahs` array.
+    const raw: UmmahSurah[] = Array.isArray(json.data)
+      ? (json.data as UmmahSurah[])
+      : Array.isArray(json.surahs)
+        ? json.surahs
+        : Array.isArray(json.data?.surahs)
+          ? json.data.surahs
+          : []
+
+    const list: Surah[] = raw.map((s) => {
+      const rev = (
+        s.revelation_place ??
+        s.revelationType ??
+        s.revelation_type ??
+        ''
+      )
+        .toString()
+        .toLowerCase()
+      return {
+        number: s.number ?? s.id ?? 0,
+        name: s.name_english ?? s.englishName ?? s.english_name ?? s.name ?? '',
+        englishName:
+          s.name_translation ??
+          s.englishNameTranslation ??
+          s.translated_name ??
+          s.name_english ??
+          '',
+        arabicName: s.name_arabic ?? s.arabicName ?? s.arabic_name ?? s.name ?? '',
+        numberOfAyahs: s.verses_count ?? s.numberOfAyahs ?? s.ayah_count ?? 0,
+        revelationType:
+          rev === 'madinah' || rev === 'medinan' ? 'Medinan' : 'Meccan',
+      }
+    })
     if (!list.length) throw new Error('empty surah list')
     surahCache.list = list
     list.forEach((s) => surahCache.byNumber.set(s.number, s))
@@ -148,45 +257,6 @@ export async function fetchSurahs(): Promise<Surah[]> {
 
 export function getSurahFromCache(number: number): Surah | undefined {
   return surahCache.byNumber.get(number)
-}
-
-/**
- * Fetch a single ayah's Arabic (Uthmani) text and English translation.
- * Returns null on any failure so callers can skip broken ayat gracefully —
- * the rest of the range still loads.
- */
-export async function fetchAyatText(
-  surah: number,
-  ayat: number,
-  translationEdition: string = 'en.pickthall',
-): Promise<{ arabic: string; translation: string } | null> {
-  const ref = `${surah}:${ayat}`
-  try {
-    const [arRes, enRes] = await Promise.all([
-      fetchWithTimeout(
-        `${ALQURAN_BASE}/ayah/${ref}/quran-uthmani`,
-        { cache: 'force-cache', next: { revalidate: 604_800 } }, // 7 days
-      ),
-      fetchWithTimeout(`${ALQURAN_BASE}/ayah/${ref}/${translationEdition}`, {
-        cache: 'force-cache',
-        next: { revalidate: 604_800 },
-      }),
-    ])
-    if (!arRes.ok || !enRes.ok) throw new Error('ayah fetch failed')
-    const arJson = (await arRes.json()) as AlquranCloudResponse
-    const enJson = (await enRes.json()) as AlquranCloudResponse
-    const arabic = (arJson.data as AlquranCloudAyah)?.text ?? ''
-    const translation = (enJson.data as AlquranCloudAyah)?.text ?? ''
-    if (!arabic) return null
-    return { arabic, translation }
-  } catch (err) {
-    logger.warn('fetchAyatText failed', {
-      ref,
-      translationEdition,
-      error: err instanceof Error ? err.message : String(err),
-    })
-    return null
-  }
 }
 
 /**
@@ -381,9 +451,80 @@ export function getAudioDurationMs(url: string): Promise<number> {
 }
 
 /**
- * Fetch full data for a single ayat: text, translation, word timings, and the
- * audio URL. Audio duration is resolved lazily by the store when the audio
- * is loaded.
+ * Fetch Tajweed HTML for a single ayah from the legacy quran.com API.
+ * Used when `useTajweed` is enabled — the response's `text_uthmani` field
+ * contains the full Uthmani text with embedded Tajweed diacritics which
+ * the client can color-code using the quran.com Tajweed rules palette.
+ *
+ * Returns null if the request fails so the caller can fall back to the
+ * plain Arabic text from UmmahAPI.
+ */
+async function fetchTajweedHtml(
+  surah: number,
+  ayat: number,
+): Promise<string | null> {
+  const verseKey = `${surah}:${ayat}`
+  try {
+    const url = `${QURAN_COM_BASE}/verses/by_key/${verseKey}?fields=text_uthmani&words=true&word_fields=text_uthmani`
+    const res = await fetchWithTimeout(url, {
+      headers: { Accept: 'application/json' },
+      next: { revalidate: 604_800 }, // 7 days — Tajweed markup is stable
+    })
+    if (!res.ok) return null
+    const json = (await res.json()) as QuranComResponse
+    const verseObj = json?.verse ?? json?.verses?.[0]
+    return verseObj?.text_uthmani ?? null
+  } catch (err) {
+    if (!isFetchAbort(err)) {
+      logger.warn('fetchTajweedHtml failed', {
+        verseKey,
+        error: err instanceof Error ? err.message : String(err),
+      })
+    }
+    return null
+  }
+}
+
+/**
+ * Extract the per-ayah audio URL from UmmahAPI's `audio` array. Matches on
+ * the `reciter_id` field (UmmahAPI's identifier for each reciter — 1..13 in
+ * the default reciter set) and prefers the `ayah_audio` field (per-ayah MP3
+ * on everyayah.com). Returns null if no match is found so the caller can
+ * fall back to the everyayah.com URL constructed from the audio key.
+ */
+function findAudioUrlForReciter(
+  audio: UmmahAudioItem[] | undefined,
+  reciterId: number,
+): string | null {
+  if (!audio || !audio.length) return null
+  for (const item of audio) {
+    const id = item.reciter_id ?? item.reciterId
+    if (id === reciterId) {
+      const url = item.ayah_audio ?? item.url ?? item.audio_url
+      if (url) return url
+    }
+  }
+  return null
+}
+
+/**
+ * Fetch full data for a single ayat: Arabic text, translation,
+ * transliteration, audio URL, and (optionally) Tajweed HTML + word-level
+ * timings. All upstream calls happen in parallel where possible.
+ *
+ * @param surah            Surah number (1..114)
+ * @param ayat             Ayat number within the surah
+ * @param recitationId     UmmahAPI reciter ID (1..13) — used to pick the
+ *                         right audio URL from the response's audio array.
+ * @param audioKey         everyayah.com audio key (e.g. "Alafasy_128kbps")
+ *                         used as a fallback if UmmahAPI doesn't return an
+ *                         audio URL for this reciter.
+ * @param surahName        English surah name (denormalized onto the slide)
+ * @param surahNameArabic  Arabic surah name (denormalized onto the slide)
+ * @param translationEdition  UmmahAPI translation key (e.g. "bengali")
+ * @param useTajweed       When true, also fetch Tajweed HTML from the
+ *                         legacy quran.com API and stash it on the result
+ *                         (under `tajweedHtml`). Default false.
  */
 export async function fetchAyatData(
   surah: number,
@@ -392,24 +533,104 @@ export async function fetchAyatData(
   audioKey: string,
   surahName: string,
   surahNameArabic: string,
-  translationEdition: string = 'en.pickthall',
+  translationEdition: string = 'bengali',
+  useTajweed: boolean = false,
 ): Promise<AyatData | null> {
-  const [textData, timingsResult] = await Promise.all([
-    fetchAyatText(surah, ayat, translationEdition),
+  const ayahUrl = `${UMMAHAPI_BASE}/quran/surah/${surah}/ayah/${ayat}?translation=${encodeURIComponent(
+    translationEdition,
+  )}&script=uthmani`
+
+  // Kick off all independent fetches in parallel.
+  const [ayahRes, timingsResult, tajweedHtml] = await Promise.all([
+    fetchWithTimeout(ayahUrl, {
+      headers: ummahHeaders(),
+      cache: 'force-cache',
+      next: { revalidate: 604_800 }, // 7 days — verse text + translation are stable
+    }).catch((err) => {
+      logger.warn('fetchAyatData: UmmahAPI ayah fetch failed', {
+        surah,
+        ayat,
+        translationEdition,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      return null
+    }),
     fetchWordTimings(surah, ayat, recitationId),
+    useTajweed ? fetchTajweedHtml(surah, ayat) : Promise.resolve(null),
   ])
-  if (!textData) return null
-  const audioUrl = buildAyatAudioUrl(audioKey, surah, ayat)
+
+  if (!ayahRes || !ayahRes.ok) {
+    return null
+  }
+
+  let json: UmmahAyahResponse
+  try {
+    json = (await ayahRes.json()) as UmmahAyahResponse
+  } catch (err) {
+    logger.warn('fetchAyatData: failed to parse UmmahAPI response', {
+      surah,
+      ayat,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    return null
+  }
+
+  // The verse can live under `data`, `data.verse`, or `verse` depending
+  // on the response envelope. Handle all three.
+  const verse: UmmahAyah | undefined =
+    json.verse ??
+    (json.data && 'verse' in (json.data as object)
+      ? (json.data as { verse?: UmmahAyah }).verse
+      : (json.data as UmmahAyah | undefined))
+
+  if (!verse) return null
+
+  // Arabic text — try every plausible field name.
+  const arabicText =
+    verse.arabic ?? verse.text_uthmani ?? verse.uthmani ?? verse.text ?? ''
+  if (!arabicText) return null
+
+  // Translation — primary `translation` field, with a fallback to the
+  // `translations` object keyed by the requested edition.
+  let translation =
+    verse.translation ?? verse.translated_text ?? ''
+  if (!translation && verse.translations) {
+    translation = verse.translations[translationEdition] ?? ''
+  }
+  // Final fallback: pick the first available translation if the requested
+  // edition isn't in the map. This keeps the UI populated even when
+  // UmmahAPI's translation key set drifts from ours.
+  if (!translation && verse.translations) {
+    const first = Object.values(verse.translations)[0]
+    if (first) translation = first
+  }
+
+  // Transliteration — can be a string or an object with `.text`.
+  const translitRaw = verse.transliteration
+  const transliteration =
+    typeof translitRaw === 'object'
+      ? translitRaw?.text ?? translitRaw?.romanized ?? ''
+      : (translitRaw as string | undefined) ?? verse.romanized ?? ''
+
+  // Audio URL — find the reciter's entry in the audio array. Fall back
+  // to the everyayah.com CDN URL constructed from the audio key.
+  const audioItems = verse.audio ?? verse.audio_urls
+  const audioUrl =
+    findAudioUrlForReciter(audioItems, recitationId) ??
+    buildAyatAudioUrl(audioKey, surah, ayat)
+
   return {
     surahNumber: surah,
     ayatNumber: ayat,
-    arabicText: textData.arabic,
-    translation: textData.translation,
+    arabicText,
+    translation,
     words: timingsResult.words,
     audioUrl,
     audioDurationMs: 0, // filled in later by the store
     surahName,
     surahNameArabic,
+    // Optional Tajweed HTML — only populated when useTajweed is true.
+    ...(tajweedHtml ? { tajweedHtml } : {}),
     // Structural markers — pass through from the timings API response.
     ...timingsResult.structural,
   }

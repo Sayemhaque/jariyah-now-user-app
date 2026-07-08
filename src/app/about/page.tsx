@@ -29,24 +29,25 @@ export default function AboutPage() {
       </p>
       <ul>
         <li>
-          <a href="https://alquran.cloud" target="_blank" rel="noopener noreferrer">
-            alquran.cloud
+          <a href="https://ummahapi.com" target="_blank" rel="noopener noreferrer">
+            ummahapi.com
           </a>{' '}
-          — Quran text (Uthmani script), English translations, and surah
-          metadata. Serves as the primary text source.
+          — Quran text (Uthmani script), translations across 12 languages,
+          and reciter audio URLs. Serves as the primary text + translation source.
         </li>
         <li>
           <a href="https://quran.com" target="_blank" rel="noopener noreferrer">
             quran.com
           </a>{' '}
           — Word-level timing data used to synchronize the
-          word-by-word highlighting with the reciter audio.
+          word-by-word highlighting with the reciter audio. Also used
+          (optionally) for Tajweed HTML.
         </li>
         <li>
-          <a href="https://verses.quran.com" target="_blank" rel="noopener noreferrer">
-            verses.quran.com
+          <a href="https://everyayah.com" target="_blank" rel="noopener noreferrer">
+            everyayah.com
           </a>{' '}
-          — Reciter audio MP3s, hosted by the QuranFoundation CDN.
+          — Reciter audio MP3s, hosted per-ayah for direct streaming.
         </li>
         <li>
           <a href="https://tanzil.net" target="_blank" rel="noopener noreferrer">
@@ -59,8 +60,9 @@ export default function AboutPage() {
 
       <h2>Reciters</h2>
       <p>
-        Jariyah Now offers five reciters. We are deeply grateful to each of
-        them and their estates for making these recitations available.
+        Jariyah Now offers {RECITERS.length} reciters via UmmahAPI. We are
+        deeply grateful to each of them and their estates for making these
+        recitations available.
       </p>
       <ul>
         {RECITERS.map((r) => (
@@ -69,7 +71,7 @@ export default function AboutPage() {
             <span className="font-arabic-uthmani text-base">
               {r.arabicName}
             </span>
-            {' '}— {r.style} style. Audio from verses.quran.com.
+            {' '}— {r.style} style. Audio from everyayah.com.
           </li>
         ))}
       </ul>
@@ -82,8 +84,11 @@ export default function AboutPage() {
 
       <h2>Translation editions</h2>
       <p>
-        Jariyah Now lets you choose from several English translations. Each
-        has its own license — pick the one that fits your use case.
+        Jariyah Now lets you choose from {TRANSLATION_EDITIONS.length}{' '}
+        translations across Bengali, English, Urdu, Turkish, Indonesian,
+        French, German, Spanish, Malay, and Bosnian — all sourced from
+        UmmahAPI. Each has its own license — pick the one that fits your
+        use case.
       </p>
       <ul>
         {TRANSLATION_EDITIONS.map((e) => (
@@ -95,7 +100,7 @@ export default function AboutPage() {
         ))}
       </ul>
       <p>
-        The default is <strong>Pickthall</strong> (public domain) so the
+        The default is <strong>Bengali (Muhiuddin Khan)</strong> so the
         app never ships with a copyright-restricted translation as the
         default. When a translation requires attribution, Jariyah Now
         automatically adds an attribution line to the bottom-left of the

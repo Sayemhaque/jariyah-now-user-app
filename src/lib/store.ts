@@ -24,7 +24,7 @@ interface BuilderState {
   fromAyat: number
   toAyat: number
   reciterId: string
-  /** alquran.cloud edition key (e.g. en.pickthall). See lib/translations.ts. */
+  /** UmmahAPI translation key (e.g. bengali). See lib/translations.ts. */
   translationKey: string
   settings: VideoSettings
 
@@ -73,6 +73,7 @@ const DEFAULT_SETTINGS: VideoSettings = {
   autoFitFonts: true,
   textWidth: 'wide',
   textSpacing: 'normal',
+  useTajweed: false,
 }
 
 /**
@@ -99,7 +100,7 @@ function pickBgForOrientation(
 export const useBuilderStore = create<BuilderState>((set, get) => ({
   // Initialize with the bundled fallback so the dropdown is immediately
   // populated on first render — no loading spinner. loadSurahs() will
-  // try to fetch the live list from alquran.cloud and update if it's
+  // try to fetch the live list from UmmahAPI and update if it's
   // richer (e.g. slightly different Arabic names), but the UI is already
   // interactive before that resolves.
   surahs: SURAHS_FALLBACK,
@@ -246,15 +247,17 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     }
     const reciter = state.getReciter()
     const translationKey = state.translationKey
+    const useTajweed = state.settings.useTajweed
     set({ loadingAyats: true, ayatError: null, ayatList: [] })
 
     try {
       const list: AyatData[] = []
       for (let ayat = state.fromAyat; ayat <= state.toAyat; ayat++) {
-        // Cache key includes the translation edition so switching editions
-        // re-fetches the translation text while still benefiting from the
-        // cache for repeated loads of the same edition.
-        const key = `${surah.number}:${ayat}:${translationKey}`
+        // Cache key includes the translation edition + the useTajweed flag
+        // so switching editions OR toggling Tajweed re-fetches with the new
+        // parameters, while still benefiting from the cache for repeated
+        // loads of the same configuration.
+        const key = `${surah.number}:${ayat}:${translationKey}:tajweed=${useTajweed ? 1 : 0}`
         let data: AyatData | null = state.ayatCache[key] ?? null
         if (!data) {
           data = await fetchAyatData(
@@ -265,6 +268,7 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
             surah.name,
             surah.arabicName,
             translationKey,
+            useTajweed,
           )
           if (data) {
             // resolve audio duration (best effort)

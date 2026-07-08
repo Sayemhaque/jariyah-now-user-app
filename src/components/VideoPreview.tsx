@@ -410,6 +410,13 @@ export function VideoPreview() {
   // Build the overlay background expression from the user's chosen preset.
   const overlayBg = overlayCssBackground(settings)
 
+  // Detect if the selected background is a looping MP4 video. The preset
+  // URL ends with `.mp4` (e.g. /backgrounds/videos/rain.mp4). When true,
+  // we render a <video> element behind the content instead of using CSS
+  // `background-image`. The export pipeline (ExportModal.tsx) detects the
+  // same condition and seeks the video frame-by-frame onto the canvas.
+  const isVideoBg = settings.backgroundImage.endsWith('.mp4')
+
   // Find the word to highlight in the current ayat
   const highlightedWordIdx =
     activeWord && activeWord.ayatIndex === currentIndex
@@ -453,11 +460,34 @@ export function VideoPreview() {
               ? { height: '100%', width: 'auto', maxWidth: '100%' }
               : { width: '100%', maxHeight: '100%', height: 'auto' }),
             containerType: 'inline-size',
-            backgroundImage: `url(${settings.backgroundImage})`,
+            // For image backgrounds, the cover-fit image is set via CSS
+            // `background-image`. For video backgrounds, we render a
+            // <video> element behind the content (see below) and leave
+            // the CSS background empty so the video shows through.
+            backgroundImage: isVideoBg
+              ? undefined
+              : `url(${settings.backgroundImage})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+            backgroundColor: isVideoBg ? '#0a0a14' : undefined,
           }}
         >
+          {/* Looping video background — played muted behind the content.
+              Covers the frame (object-cover) so it always fills the
+              aspect ratio cleanly. Auto-plays + loops infinitely. */}
+          {isVideoBg && (
+            <video
+              key={settings.backgroundImage}
+              src={settings.backgroundImage}
+              className="absolute inset-0 h-full w-full object-cover"
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+            />
+          )}
+
           {/* Overlay (rendered using the user's selected preset shape) */}
           {overlayBg && (
             <div

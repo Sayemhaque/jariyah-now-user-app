@@ -11,10 +11,23 @@ import type { NextConfig } from "next";
  *     a bigger refactor)
  *   - images from 'self' + data: (for uploaded backgrounds) + https: (for
  *     the preset PNGs and any remote image)
- *   - media from 'self' + https://verses.quran.com (the reciter audio CDN)
- *   - connect to 'self' + https://api.alquran.cloud + https://api.quran.com
- *     (the upstream Quran APIs; the browser calls alquran.cloud directly
- *     for text, and our /api/timings proxy calls quran.com server-side)
+ *   - media from:
+ *       'self'                                   — uploaded / generated audio
+ *       https://everyayah.com                    — UmmahAPI-backed reciter MP3s
+ *       https://download.quranicaudio.com        — full-recitation fallback
+ *       https://verses.quran.com                 — legacy per-word MP3s
+ *       https://audio.qurancdn.com               — quran.com word MP3 CDN
+ *   - connect to:
+ *       'self'                                   — our own API routes
+ *       https://ummahapi.com                     — primary Quran API (text +
+ *                                                  translation + audio URLs)
+ *       https://api.quran.com                    — legacy quran.com API (used
+ *                                                  by /api/timings for word
+ *                                                  timings + Tajweed HTML)
+ *       https://everyayah.com                    — reciter MP3 fetches
+ *       https://download.quranicaudio.com        — full-recitation fallback
+ *       https://verses.quran.com                 — legacy per-word MP3 fallback
+ *       https://audio.qurancdn.com               — quran.com word MP3 CDN
  *   - fonts from 'self' + https://fonts.gstatic.com (Google Fonts)
  *
  * HSTS is only sent in production (NODE_ENV=production) — in dev, HTTPS
@@ -28,8 +41,8 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
-      "media-src 'self' https://verses.quran.com https://audio.qurancdn.com",
-      "connect-src 'self' https://api.alquran.cloud https://api.quran.com https://verses.quran.com https://audio.qurancdn.com",
+      "media-src 'self' https://everyayah.com https://download.quranicaudio.com https://verses.quran.com https://audio.qurancdn.com",
+      "connect-src 'self' https://ummahapi.com https://api.quran.com https://everyayah.com https://download.quranicaudio.com https://verses.quran.com https://audio.qurancdn.com",
       "font-src 'self' https://fonts.gstatic.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",

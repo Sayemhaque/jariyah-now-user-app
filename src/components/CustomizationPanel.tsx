@@ -30,6 +30,12 @@ interface Preset {
   key: string
   label: string
   url: string
+  /** When true, the preset is a looping MP4 video background and is
+   *  rendered with a <video> thumbnail (and used as a <video> element
+   *  in the live preview + export canvas). */
+  isVideo?: boolean
+  /** Optional emoji shown alongside the label for video presets. */
+  emoji?: string
 }
 
 // Background presets — high-quality images stored in /public/backgrounds.
@@ -40,6 +46,10 @@ interface Preset {
 // The 3 user-uploaded presets (`crescent-night`, `sunset-mosque`,
 // `twilight-hills`) are portrait 1080x1920 — they look best in Reels/Shorts
 // mode but work in any orientation (the canvas cover-fits them).
+// The 4 video presets (`rain`, `ocean-calm`, `sunset-glow`,
+// `golden-particles`) are 720x1280 looping MP4s rendered with a <video>
+// thumbnail + a `<video>` element in the live preview and a frame-seeking
+// <video> in the export canvas (see VideoPreview.tsx + ExportModal.tsx).
 const BG_PRESETS: Preset[] = [
   { key: 'twilight-mosque', label: 'Twilight Mosque', url: '/backgrounds/twilight-mosque.png' },
   { key: 'crescent-night', label: 'Crescent Night', url: '/backgrounds/crescent-night.png' },
@@ -52,6 +62,13 @@ const BG_PRESETS: Preset[] = [
   { key: 'night', label: 'Starlit Night', url: '/backgrounds/night.png' },
   { key: 'mosque', label: 'Mosque Gold', url: '/backgrounds/mosque.png' },
   { key: 'pattern', label: 'Arabesque', url: '/backgrounds/pattern.png' },
+  // ─── Looping video backgrounds ───────────────────────────────────────
+  // 10s seamless loops, 720x1280, H.264 Constrained Baseline. Live preview
+  // plays them muted behind the text; export renders them frame-by-frame.
+  { key: 'rain', label: 'Rain', url: '/backgrounds/videos/rain.mp4', isVideo: true, emoji: '🌧️' },
+  { key: 'ocean-calm', label: 'Ocean Calm', url: '/backgrounds/videos/ocean-calm.mp4', isVideo: true, emoji: '🌊' },
+  { key: 'sunset-glow', label: 'Sunset Glow', url: '/backgrounds/videos/sunset-glow.mp4', isVideo: true, emoji: '🌅' },
+  { key: 'golden-particles', label: 'Golden Particles', url: '/backgrounds/videos/golden-particles.mp4', isVideo: true, emoji: '✨' },
 ]
 
 // The Twilight Mosque preset has orientation-specific variants. When the
@@ -238,14 +255,30 @@ export function CustomizationPanel() {
                   : 'border-border hover:border-foreground/40',
               )}
             >
-              <Image
-                src={presetUrl}
-                alt={p.label}
-                fill
-                sizes="(max-width: 768px) 30vw, 120px"
-                className="object-cover"
-              />
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[10px] font-medium py-1 px-1.5 text-center">
+              {p.isVideo ? (
+                // Looping video thumbnail — plays muted in the picker so the
+                // user can see the motion before applying. Mirrors what the
+                // live preview + export will show.
+                <video
+                  src={presetUrl}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  muted
+                  loop
+                  autoPlay
+                  playsInline
+                  preload="metadata"
+                />
+              ) : (
+                <Image
+                  src={presetUrl}
+                  alt={p.label}
+                  fill
+                  sizes="(max-width: 768px) 30vw, 120px"
+                  className="object-cover"
+                />
+              )}
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[10px] font-medium py-1 px-1.5 text-center flex items-center justify-center gap-1">
+                {p.emoji && <span aria-hidden>{p.emoji}</span>}
                 {p.label}
               </span>
             </button>

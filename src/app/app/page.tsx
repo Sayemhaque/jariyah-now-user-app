@@ -247,11 +247,11 @@ export default function Home() {
             <div className="pt-1 pb-2 text-[11px] text-muted-foreground space-y-2">
               <p className="leading-relaxed">
                 Quran text from{' '}
-                <a href="https://alquran.cloud" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">alquran.cloud</a>
+                <a href="https://ummahapi.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">ummahapi.com</a>
                 {', '}
                 <a href="https://quran.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">quran.com</a>
                 . Audio from{' '}
-                <a href="https://verses.quran.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">verses.quran.com</a>.
+                <a href="https://everyayah.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">everyayah.com</a>.
               </p>
               <nav className="flex items-center gap-3">
                 <Link href="/about" className="hover:text-foreground transition">About</Link>

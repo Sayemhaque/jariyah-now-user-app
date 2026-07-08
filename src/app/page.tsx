@@ -13,7 +13,9 @@ import {
   Heart,
   Globe,
   Languages,
+  LayoutGrid,
 } from 'lucide-react'
+import { TEMPLATE_PRESETS, isQuranTemplate, isZikrTemplate } from '@/lib/templatePresets'
 
 const siteUrl = 'https://jariyahnow.com'
 const ogImage = `${siteUrl}/og-image.png`
@@ -59,6 +61,18 @@ export default function LandingPage() {
             <span className="text-lg font-bold tracking-tight">Jariyah Now</span>
           </Link>
           <div className="flex items-center gap-3">
+            <Link
+              href="/templates"
+              className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
+            >
+              Templates
+            </Link>
+            <Link
+              href="/zikr"
+              className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
+            >
+              Zikr
+            </Link>
             <Link
               href="/about"
               className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
@@ -244,7 +258,7 @@ export default function LandingPage() {
                 icon: Mic2,
                 step: '2',
                 title: 'Choose a reciter',
-                desc: 'Alafasy, Abdul Basit, Minshawi, Husary, or Sudais — pick your favorite voice.',
+                desc: 'Alafasy, Sudais, Abdul Basit, Muaiqly, Ghamdi and more — 13 iconic voices to pick from.',
               },
               {
                 icon: Palette,
@@ -302,13 +316,13 @@ export default function LandingPage() {
               },
               {
                 icon: Mic2,
-                title: '5 world-class reciters',
-                desc: 'From Mishary Alafasy to Abdul Basit — every iconic voice in one place, streamed from the Quran CDN.',
+                title: '13 world-class reciters',
+                desc: 'From Mishary Alafasy to Abdul Basit — every iconic voice in one place, streamed from everyayah.com.',
               },
               {
                 icon: Languages,
-                title: '6 translations',
-                desc: 'Bengali & English editions including Pickthall (public domain), Saheeh International, Clear Quran, and more.',
+                title: '12 translations',
+                desc: 'Bengali, English, Urdu, Turkish, Indonesian, French, German, Spanish, Malay, and Bosnian — via UmmahAPI.',
               },
               {
                 icon: Palette,
@@ -339,6 +353,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ─── Start from a template ─── */}
+      <TemplatesShowcaseSection />
 
       {/* ─── Sadaqah Jariyah band ─── */}
       <section className="py-16 sm:py-20 px-4 sm:px-6 bg-primary/5 border-y border-primary/10">
@@ -423,6 +440,18 @@ export default function LandingPage() {
                 App
               </Link>
               <Link
+                href="/templates"
+                className="text-muted-foreground hover:text-foreground transition font-medium"
+              >
+                Templates
+              </Link>
+              <Link
+                href="/zikr"
+                className="text-muted-foreground hover:text-foreground transition font-medium"
+              >
+                Zikr
+              </Link>
+              <Link
                 href="/about"
                 className="text-muted-foreground hover:text-foreground transition font-medium"
               >
@@ -451,12 +480,12 @@ export default function LandingPage() {
           <div className="mt-6 pt-6 border-t border-border text-xs text-muted-foreground text-center leading-relaxed">
             Quran text:{' '}
             <a
-              href="https://alquran.cloud"
+              href="https://ummahapi.com"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
             >
-              alquran.cloud
+              ummahapi.com
             </a>
             {' • '}
             <a
@@ -469,12 +498,12 @@ export default function LandingPage() {
             </a>
             {' • '}Audio:{' '}
             <a
-              href="https://verses.quran.com"
+              href="https://everyayah.com"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
             >
-              verses.quran.com
+              everyayah.com
             </a>
             <br />
             © {new Date().getFullYear()} Jariyah Now — All rights reserved
@@ -482,5 +511,135 @@ export default function LandingPage() {
         </div>
       </footer>
     </div>
+  )
+}
+
+// ─── Templates showcase section (6 featured templates) ──────────────────────
+// Rendered inline on the landing page so visitors see the templates offering
+// without having to navigate. Clicking a card navigates to the templates page
+// (we don't auto-apply from the landing page — let the user browse first).
+
+function TemplatesShowcaseSection() {
+  // Pick 6 featured templates — a mix of Quran + Zikr + Dua.
+  const featured = [
+    'ayat-al-kursi',
+    'al-fatihah',
+    'subhanallah-33',
+    'ar-rahman',
+    'dua-morning',
+    'astaghfirullah-100',
+  ]
+    .map((id) => TEMPLATE_PRESETS.find((t) => t.id === id))
+    .filter((t): t is NonNullable<typeof t> => Boolean(t))
+
+  // Fallback — if any of the featured IDs don't match, just take the first 6.
+  const templates = featured.length >= 6 ? featured : TEMPLATE_PRESETS.slice(0, 6)
+
+  return (
+    <section className="py-16 sm:py-24 px-4 sm:px-6 bg-card border-y border-border">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-4">
+            <LayoutGrid className="h-3.5 w-3.5" />
+            One-click starting points
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3">
+            Start from a template
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto">
+            Pre-configured reels for Quran verses, zikr, duas, and more. Each
+            template auto-loads the surah, reciter, font, and colors — so you
+            can publish in minutes.
+          </p>
+        </div>
+
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+          {templates.map((t) => {
+            // Build the target URL based on the template type. We don't
+            // auto-apply templates from the landing page (the store would
+            // need to be hydrated first); we just deep-link to /templates
+            // so the user can browse + click apply there.
+            const targetUrl =
+              isZikrTemplate(t)
+                ? `/zikr?zikr=${t.config.zikrId}&count=${t.config.count}${t.config.pacing ? `&pacing=${t.config.pacing}` : ''}`
+                : isQuranTemplate(t)
+                ? `/app`
+                : '/templates'
+            return (
+              <Link
+                key={t.id}
+                href={targetUrl}
+                className="group qv-card rounded-2xl p-0 overflow-hidden transition hover:shadow-lg hover:-translate-y-0.5 flex flex-col"
+              >
+                {/* Gradient header */}
+                <div
+                  className={`relative h-28 bg-gradient-to-br ${t.gradient} flex items-center justify-center overflow-hidden`}
+                >
+                  <span
+                    className="text-5xl filter drop-shadow-lg transition-transform duration-300 group-hover:scale-110"
+                    aria-hidden
+                  >
+                    {t.icon}
+                  </span>
+                  <div className="absolute -top-4 -right-4 h-16 w-16 rounded-full bg-white/15 blur-xl" />
+                  <div className="absolute -bottom-6 -left-4 h-20 w-20 rounded-full bg-black/15 blur-xl" />
+                  <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-black/30 text-white backdrop-blur-sm">
+                    {t.type === 'quran' && '📖 Quran'}
+                    {t.type === 'zikr' && '📿 Zikr'}
+                    {t.type === 'dua' && '🤲 Dua'}
+                    {t.type === 'names' && '✨ Names'}
+                    {t.type === 'hadith' && '📜 Hadith'}
+                  </span>
+                </div>
+
+                {/* Content */}
+                <div className="p-5 flex flex-col flex-1">
+                  <h3 className="font-bold text-base mb-1.5 flex items-center gap-2">
+                    {t.title}
+                    <ArrowRight className="h-4 w-4 text-primary opacity-0 -translate-x-1 transition group-hover:opacity-100 group-hover:translate-x-0" />
+                  </h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2 mb-3">
+                    {t.description}
+                  </p>
+                  <div className="mt-auto pt-3 border-t border-border/60 flex items-center gap-2 text-[11px] text-muted-foreground">
+                    {isQuranTemplate(t) && (
+                      <>
+                        <span className="font-mono font-semibold text-foreground/80">
+                          {t.config.surah}:{t.config.fromAyat}
+                          {t.config.toAyat !== t.config.fromAyat && `–${t.config.toAyat}`}
+                        </span>
+                        <span className="opacity-40">·</span>
+                        <span className="capitalize">{t.config.arabicFont ?? 'uthmani'}</span>
+                      </>
+                    )}
+                    {isZikrTemplate(t) && (
+                      <>
+                        <span className="font-mono font-semibold text-foreground/80">
+                          × {t.config.count}
+                        </span>
+                        <span className="opacity-40">·</span>
+                        <span className="capitalize">{t.config.pacing ?? 'realtime'}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* See all templates CTA */}
+        <div className="text-center mt-10">
+          <Link
+            href="/templates"
+            className="inline-flex items-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            Browse all {TEMPLATE_PRESETS.length} templates
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    </section>
   )
 }
