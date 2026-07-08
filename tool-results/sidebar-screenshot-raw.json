@@ -1,0 +1,28 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": {
+        "content": "Based on the screenshot of the Jariyah Now app's sidebar (settings panel), here's a detailed breakdown:\n\n### 1. Reciter Section\nThe 'Reciter' section appears as a card with a purple header icon (resembling a microphone or speaker symbol). It contains:\n- A purple circular avatar with \"MR\" initials\n- The name \"Mishary Rashid Alafasy\" in bold text\n- The style \"Murattal\" in smaller gray text below the name\n- The Arabic name \"مشاري راشد العفاسي\" (Mishary Rashid Alafasy) in Arabic script\n- A dropdown arrow on the right side\n- Below this is a second entry with the same information, but with a checkmark (✓) indicating the currently selected reciter\n\n### 2. Translation Section\nThe 'Translation' section has a blue header icon (resembling a book or document symbol) and shows:\n- The language \"বাংলা — Bengali\" (Bengali in both Bengali script and English)\n- \"UmmahAPI Bengali edition\" in smaller gray text\n- Below this is the full license text: \"Quran Bengali Translation\" followed by \"Bengali translation. Permitted for non-commercial use with attribution.\"\n- A purple \"NON-COMMERCIAL\" badge on the right side\n- A dropdown arrow on the right side\n\n### 3. Other UI Elements Visible\n- A purple \"Load ayats\" button at the bottom with a download icon\n- The section header \"Ayah Selection\" at the top\n- A \"SURAH\" section showing \"Al-Baqarah\" (The Cow - 286 ayats - Medinan) with Arabic name \"البقرة\" and a dropdown arrow\n- An \"AYAT RANGE\" section with \"FROM\" and \"TO\" fields showing \"Ayat 1\" and \"Ayat 3\" with dropdown arrows\n- A counter \"3 / 10\" in the top right of the ayat range section\n- Text stating \"Al-Baqarah has 286 ayats.\"",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1783421635,
+  "id": "202607071853458fafb576d6c94f3f",
+  "model": "glm-4.6v",
+  "object": "chat.completion",
+  "request_id": "202607071853458fafb576d6c94f3f",
+  "usage": {
+    "completion_tokens": 451,
+    "completion_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "prompt_tokens": 543,
+    "prompt_tokens_details": {
+      "cached_tokens": 9
+    },
+    "total_tokens": 994
+  }
+}

@@ -548,6 +548,17 @@ export function CustomizationPanel() {
             onCheckedChange={(v) => update({ showTransliteration: v })}
           />
         </div>
+        {/* Tajweed color-coding toggle */}
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <Label className="text-sm">Tajweed colors</Label>
+            <span className="text-[10px] text-muted-foreground">Color-coded pronunciation rules</span>
+          </div>
+          <Switch
+            checked={settings.useTajweed}
+            onCheckedChange={(v) => update({ useTajweed: v })}
+          />
+        </div>
       </Card>
     </div>
   )

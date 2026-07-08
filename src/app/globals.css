@@ -63,7 +63,9 @@
   --card-foreground: #1a1a1a;
   --popover: #ffffff;
   --popover-foreground: #1a1a1a;
-  --primary: #9333ea;
+  --primary: #7c3aed;
+  --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  --primary-gradient-soft: linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(168,85,247,0.1) 100%);
   --primary-foreground: #ffffff;
   --secondary: #f3f0f7;
   --secondary-foreground: #1a1a1a;
@@ -82,7 +84,7 @@
   --chart-5: #dc2626;
   --sidebar: #ffffff;
   --sidebar-foreground: #1a1a1a;
-  --sidebar-primary: #9333ea;
+  --sidebar-primary: #7c3aed;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f3f0f7;
   --sidebar-accent-foreground: #1a1a1a;
@@ -232,16 +234,22 @@
   border-radius: 999px;
 }
 
-/* Primary button — purple with white text, subtle shadow */
+/* Primary button — gradient purple (#7C3AED → #A855F7) with white text */
 .qv-btn-primary {
-  background-color: var(--primary);
+  background: var(--primary-gradient);
+  background-size: 150% 150%;
   color: var(--primary-foreground);
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(147, 51, 234, 0.1);
-  transition: all 150ms ease;
+  box-shadow: 0 1px 3px 0 rgba(124, 58, 237, 0.3), 0 0 0 1px rgba(124, 58, 237, 0.1);
+  transition: all 200ms ease;
+  animation: qv-gradient-shift 6s ease-in-out infinite;
 }
 .qv-btn-primary:hover {
-  background-color: #7e22ce;
-  box-shadow: 0 2px 8px 0 rgba(147, 51, 234, 0.3), 0 0 0 1px rgba(147, 51, 234, 0.2);
+  background-size: 200% 200%;
+  box-shadow: 0 4px 16px 0 rgba(124, 58, 237, 0.4), 0 0 0 1px rgba(124, 58, 237, 0.2);
+  transform: translateY(-1px);
+}
+.qv-btn-primary:active {
+  transform: translateY(0);
 }
 
 /* Frosted-glass effect for the header */
@@ -371,3 +379,135 @@
 }
 .qv-dot:nth-child(2) { animation-delay: 0.18s; }
 .qv-dot:nth-child(3) { animation-delay: 0.36s; }
+
+/* ─── Premium landing page animations ───────────────────────────────── */
+
+@keyframes qv-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+
+@keyframes qv-hero-float {
+  0%, 100% { transform: translateY(0px); }
+  50%      { transform: translateY(-12px); }
+}
+
+@keyframes qv-hero-glow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.08); }
+}
+
+@keyframes qv-shimmer-sweep {
+  0%   { transform: translateX(-150%) skewX(-20deg); opacity: 0; }
+  50%  { opacity: 0.6; }
+  100% { transform: translateX(250%) skewX(-20deg); opacity: 0; }
+}
+
+@keyframes qv-fade-up-scroll {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes qv-stat-pop {
+  0%   { opacity: 0; transform: scale(0.8); }
+  60%  { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes qv-play-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.4); }
+  50%      { box-shadow: 0 0 0 12px rgba(255,255,255,0); }
+}
+
+@keyframes qv-zikr-pulse {
+  0%   { transform: scale(1); }
+  20%  { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Gradient text */
+.qv-gradient-text {
+  background: var(--primary-gradient);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: qv-gradient-shift 5s ease-in-out infinite;
+}
+
+/* Gradient border card */
+.qv-gradient-border {
+  position: relative;
+  background: var(--card);
+  border-radius: 1rem;
+}
+.qv-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: var(--primary-gradient);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+.qv-gradient-border:hover::before { opacity: 1; }
+
+/* Scroll-triggered fade-up */
+.qv-scroll-fade { animation: qv-fade-up-scroll 600ms ease-out both; }
+
+/* Card hover lift */
+.qv-hover-lift { transition: transform 300ms ease, box-shadow 300ms ease; }
+.qv-hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(124,58,237,0.12); }
+
+/* Phone mockup floating */
+.qv-phone-float { animation: qv-hero-float 4s ease-in-out infinite; }
+.qv-phone-glow { animation: qv-hero-glow 3s ease-in-out infinite; }
+.qv-shimmer-overlay { animation: qv-shimmer-sweep 2.5s ease-in-out infinite; }
+.qv-play-pulse { animation: qv-play-pulse 2s ease-in-out infinite; }
+.qv-stat-pop { animation: qv-stat-pop 500ms ease-out both; }
+
+/* Processing panel gradient bg */
+.qv-processing-panel {
+  background: linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(124,58,237,0.02) 30%, rgba(124,58,237,0.08) 60%, rgba(124,58,237,0.02) 100%);
+  background-size: 300% 300%;
+  animation: qv-gradient-shift 6s ease-in-out infinite;
+}
+
+/* Processing ring (spinning conic gradient) */
+.qv-processing-ring {
+  background: conic-gradient(from 0deg, transparent 0deg, var(--primary) 60deg, transparent 200deg, var(--primary) 300deg, transparent 360deg);
+  animation: qv-ring-spin 1.6s linear infinite;
+  mask: radial-gradient(circle, transparent 58%, black 60%, black 100%);
+  -webkit-mask: radial-gradient(circle, transparent 58%, black 60%, black 100%);
+}
+@keyframes qv-ring-spin { to { transform: rotate(360deg); } }
+
+/* Processing shimmer on progress bar */
+.qv-processing-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.45) 50%, transparent 100%);
+  animation: qv-shimmer-sweep 1.8s ease-in-out infinite;
+}
+
+/* Processing bar glow */
+.qv-processing-bar { animation: qv-bar-glow 2s ease-in-out infinite; }
+@keyframes qv-bar-glow {
+  0%, 100% { box-shadow: 0 0 8px 0 var(--primary); }
+  50%      { box-shadow: 0 0 18px 2px var(--primary); }
+}
+
+/* Phase label cross-fade */
+.qv-phase-label { animation: qv-fade-up-scroll 350ms ease-out; }
+
+/* Bouncing dots */
+.qv-dot { animation: qv-dot-bounce 1.4s ease-in-out infinite; }
+.qv-dot:nth-child(2) { animation-delay: 0.18s; }
+.qv-dot:nth-child(3) { animation-delay: 0.36s; }
+@keyframes qv-dot-bounce {
+  0%, 80%, 100% { transform: scale(0.5); opacity: 0.4; }
+  40%           { transform: scale(1);   opacity: 1; }
+}

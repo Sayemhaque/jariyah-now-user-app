@@ -67,13 +67,13 @@ const DEFAULT_SETTINGS: VideoSettings = {
   fontStyle: 'uthmani',
   arabicFont: 'uthmani',
   bengaliFont: 'sans',
+  useTajweed: false,
   showTranslation: true,
   showTransliteration: false,
   orientation: 'portrait',
   autoFitFonts: true,
   textWidth: 'wide',
   textSpacing: 'normal',
-  useTajweed: false,
 }
 
 /**

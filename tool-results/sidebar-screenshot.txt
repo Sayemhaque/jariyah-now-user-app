@@ -1,0 +1,32 @@
+JARIYAH NOW SIDEBAR — VLM ANALYSIS (Screenshot From 2026-07-07 16-50-15.png)
+
+The sidebar's Reciter section shows a card with a purple "MR" avatar, the name "Mishary Rashid Alafasy" in bold, the style "Murattal" in gray below it, and the Arabic name "مشاري راشد العفاسي" — i.e. avatar + name + style + Arabic name, confirming the user's complaint that it displays too much info instead of a simple select dropdown. The Translation section confirms the second complaint: it shows the language label "বাংলা — Bengali" plus "UmmahAPI Bengali edition" and then the full license description "Quran Bengali Translation — Bengali translation. Permitted for non-commercial use with attribution." along with a purple "NON-COMMERCIAL" badge, rather than just the edition name. Other visible UI elements include: an "Ayah Selection" header, a "SURAH" field showing "Al-Baqarah (The Cow — 286 ayats — Medinan)" with Arabic "البقرة", an "AYAT RANGE" with FROM/TO fields set to "Ayat 1" / "Ayat 3" and a "3 / 10" counter, the note "Al-Baqarah has 286 ayats.", and a purple "Load ayats" button at the bottom.
+
+RAW MODEL OUTPUT (glm-4.6v)
+===========================
+Based on the screenshot of the Jariyah Now app's sidebar (settings panel), here's a detailed breakdown:
+
+### 1. Reciter Section
+The 'Reciter' section appears as a card with a purple header icon (resembling a microphone or speaker symbol). It contains:
+- A purple circular avatar with "MR" initials
+- The name "Mishary Rashid Alafasy" in bold text
+- The style "Murattal" in smaller gray text below the name
+- The Arabic name "مشاري راشد العفاسي" (Mishary Rashid Alafasy) in Arabic script
+- A dropdown arrow on the right side
+- Below this is a second entry with the same information, but with a checkmark (✓) indicating the currently selected reciter
+
+### 2. Translation Section
+The 'Translation' section has a blue header icon (resembling a book or document symbol) and shows:
+- The language "বাংলা — Bengali" (Bengali in both Bengali script and English)
+- "UmmahAPI Bengali edition" in smaller gray text
+- Below this is the full license text: "Quran Bengali Translation" followed by "Bengali translation. Permitted for non-commercial use with attribution."
+- A purple "NON-COMMERCIAL" badge on the right side
+- A dropdown arrow on the right side
+
+### 3. Other UI Elements Visible
+- A purple "Load ayats" button at the bottom with a download icon
+- The section header "Ayah Selection" at the top
+- A "SURAH" section showing "Al-Baqarah" (The Cow - 286 ayats - Medinan) with Arabic name "البقرة" and a dropdown arrow
+- An "AYAT RANGE" section with "FROM" and "TO" fields showing "Ayat 1" and "Ayat 3" with dropdown arrows
+- A counter "3 / 10" in the top right of the ayat range section
+- Text stating "Al-Baqarah has 286 ayats."

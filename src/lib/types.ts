@@ -22,6 +22,8 @@ export interface AyatData {
   surahNumber: number
   ayatNumber: number
   arabicText: string
+  /** Color-coded Tajweed segments (when script=tajweed). */
+  tajweedSegments?: { text: string; color: string | null; class: string | null }[]
   translation: string
   words: WordTiming[]
   audioUrl: string
@@ -48,6 +50,8 @@ export interface AyatData {
 
 export interface AyatSlide {
   arabicText: string
+  /** Color-coded Tajweed segments (when script=tajweed). */
+  tajweedSegments?: { text: string; color: string | null; class: string | null }[]
   words: { text: string; startMs: number; endMs: number }[]
   translation: string
   transliteration?: string
@@ -145,6 +149,8 @@ export interface VideoSettings {
   /** Bengali font selection (3 options). Drives the .font-bengali-{key} class
    *  when the selected translation is Bengali. */
   bengaliFont: BengaliFont
+  /** When true, Arabic text is rendered with Tajweed color-coding. */
+  useTajweed: boolean
   showTranslation: boolean
   showTransliteration: boolean
   orientation: Orientation
@@ -154,10 +160,6 @@ export interface VideoSettings {
   textWidth: TextWidth
   /** Gap between Arabic text and translation. */
   textSpacing: TextSpacing
-  /** When true, fetch Tajweed HTML from the legacy quran.com API and stash
-   *  it on each AyatData (under `tajweedHtml`) so the renderer can color-code
-   *  Tajweed rules. Default false — adds an extra upstream request per ayat. */
-  useTajweed: boolean
 }
 
 export interface ExportOptions {

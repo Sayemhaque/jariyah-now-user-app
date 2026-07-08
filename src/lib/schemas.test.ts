@@ -21,11 +21,11 @@ const VALID_SETTINGS: VideoSettings = {
   fontStyle: 'uthmani',
   arabicFont: 'uthmani',
   bengaliFont: 'sans',
+  useTajweed: false,
   showTranslation: true,
   showTransliteration: false,
   orientation: 'portrait',
   autoFitFonts: true,
-  useTajweed: false,
 }
 
 const VALID_SLIDE: AyatSlide = {

@@ -595,7 +595,13 @@ export function VideoPreview() {
                           {w.text}
                         </span>
                       ))
-                    : current.arabicText}
+                    : current.tajweedSegments && current.tajweedSegments.length > 0
+                      ? current.tajweedSegments.map((seg, i) => (
+                          <span key={i} style={{ color: seg.color ?? settings.fontColor }}>
+                            {seg.text}
+                          </span>
+                        ))
+                      : current.arabicText}
                 </div>
 
                 {/* Tiny divider between Arabic and translation — only when

@@ -564,6 +564,7 @@ export function ExportModal({ open, onOpenChange, activeSplit }: ExportModalProp
     () =>
       ayatList.map((a) => ({
         arabicText: a.arabicText,
+        tajweedSegments: a.tajweedSegments,
         words: a.words.map((w) => ({
           text: w.text,
           startMs: w.startMs,
@@ -1535,40 +1536,80 @@ function drawFrame({
   ctx.shadowBlur = 0
   ctx.shadowOffsetY = 0
 
-  // Draw Arabic word-by-word — properly centered, RTL, no gaps
+  // Draw Arabic — if Tajweed segments available, render per-segment colors.
+  // Otherwise render word-by-word with RTL centering (original approach).
   ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   let y = cardY + cardPadY + arabicLineH / 2
-  let wordCounter = 0
-  for (const ln of lines) {
-    // Measure each word width
-    const widths = ln.map((w) => ctx.measureText(w).width)
-    // Total line width = sum of word widths + spaces between them
-    const totalLineW = widths.reduce((a, b) => a + b, 0) + spaceW * (ln.length - 1)
-    // Start x for RTL: center the entire line, then go right-to-left
-    // The center of the line is at W/2. The right edge is at W/2 + totalLineW/2.
-    // We draw each word centered at its position, moving leftward.
-    let xPos = W / 2 + totalLineW / 2 // right edge of the line
-    for (let i = 0; i < ln.length; i++) {
-      const w = ln[i]!
-      const ww = widths[i]!
-      xPos -= ww / 2 // move to the center of this word
-      const isHi = wordCounter === activeIdx
-      ctx.fillStyle = isHi ? settings.highlightColor : settings.fontColor
-      if (isHi) {
-        ctx.shadowColor = settings.highlightColor
-        ctx.shadowBlur = H * 0.028
-      } else {
+
+  if (slide.tajweedSegments && slide.tajweedSegments.length > 0) {
+    // ─── Tajweed color-coded rendering ─────────────────────────────
+    const wordsWithColor: { text: string; color: string | null }[] = []
+    for (const seg of slide.tajweedSegments) {
+      for (const sw of seg.text.split(/(\s+)/)) {
+        if (sw) wordsWithColor.push({ text: sw, color: seg.color })
+      }
+    }
+    // Build wrapped lines
+    const tajweedLines: { text: string; color: string | null }[][] = []
+    let curLine: { text: string; color: string | null }[] = []
+    let curLineW = 0
+    for (const wc of wordsWithColor) {
+      const ww = ctx.measureText(wc.text).width
+      if (curLineW + ww > innerMaxW && curLine.length > 0) {
+        tajweedLines.push(curLine)
+        curLine = []
+        curLineW = 0
+      }
+      curLine.push(wc)
+      curLineW += ww
+    }
+    if (curLine.length > 0) tajweedLines.push(curLine)
+
+    for (const lineSegs of tajweedLines) {
+      let totalW = 0
+      for (const seg of lineSegs) totalW += ctx.measureText(seg.text).width
+      let xPos = W / 2 + totalW / 2
+      for (const seg of lineSegs) {
+        const sw = ctx.measureText(seg.text).width
+        xPos -= sw / 2
+        ctx.fillStyle = seg.color ?? settings.fontColor
         ctx.shadowColor = 'rgba(0,0,0,0.9)'
         ctx.shadowBlur = H * 0.012
+        ctx.fillText(seg.text, xPos, y)
+        ctx.shadowBlur = 0
+        xPos -= sw / 2
       }
-      ctx.fillText(w, xPos, y)
-      ctx.shadowBlur = 0
-      xPos -= ww / 2 + spaceW // move past this word + space to the next word's right edge
-      wordCounter++
+      y += arabicLineH
     }
-    y += arabicLineH
+  } else {
+    // ─── Plain word-by-word rendering ──────────────────────────────
+    let wordCounter = 0
+    for (const ln of lines) {
+      const widths = ln.map((w) => ctx.measureText(w).width)
+      const totalLineW = widths.reduce((a, b) => a + b, 0) + spaceW * (ln.length - 1)
+      let xPos = W / 2 + totalLineW / 2
+      for (let i = 0; i < ln.length; i++) {
+        const w = ln[i]!
+        const ww = widths[i]!
+        xPos -= ww / 2
+        const isHi = wordCounter === activeIdx
+        ctx.fillStyle = isHi ? settings.highlightColor : settings.fontColor
+        if (isHi) {
+          ctx.shadowColor = settings.highlightColor
+          ctx.shadowBlur = H * 0.028
+        } else {
+          ctx.shadowColor = 'rgba(0,0,0,0.9)'
+          ctx.shadowBlur = H * 0.012
+        }
+        ctx.fillText(w, xPos, y)
+        ctx.shadowBlur = 0
+        xPos -= ww / 2 + spaceW
+        wordCounter++
+      }
+      y += arabicLineH
+    }
   }
 
   // After Arabic loop, y is at the bottom of the last Arabic line.

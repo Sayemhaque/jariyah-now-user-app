@@ -113,7 +113,7 @@ export default function LandingPage() {
             </div>
 
             {/* Tagline */}
-            <p className="text-base sm:text-lg font-semibold text-primary mb-3 tracking-wide">
+            <p className="text-base sm:text-lg font-semibold qv-gradient-text mb-3 tracking-wide">
               Share once, earn forever.
             </p>
 
@@ -121,7 +121,7 @@ export default function LandingPage() {
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
               Turn Quran verses into
               <br />
-              <span className="text-primary">shareable reels</span>
+              <span className="qv-gradient-text">shareable reels</span>
             </h1>
 
             {/* Subheadline */}
@@ -275,13 +275,13 @@ export default function LandingPage() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="qv-card rounded-2xl p-6 relative"
+                className="qv-card rounded-2xl p-6 relative qv-hover-lift qv-scroll-fade"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="grid place-items-center h-10 w-10 rounded-xl bg-primary/10 text-primary">
+                  <div className="grid place-items-center h-10 w-10 rounded-xl text-white" style={{ background: 'var(--primary-gradient)' }}>
                     <item.icon className="h-5 w-5" />
                   </div>
-                  <span className="text-3xl font-bold text-primary/30">
+                  <span className="text-3xl font-bold qv-gradient-text">
                     {item.step}
                   </span>
                 </div>
@@ -340,8 +340,8 @@ export default function LandingPage() {
                 desc: 'No software to install, no uploads, fully private — your video renders right on your device.',
               },
             ].map((f, i) => (
-              <div key={i} className="qv-card rounded-2xl p-6">
-                <div className="grid place-items-center h-11 w-11 rounded-xl bg-primary/10 text-primary mb-4">
+              <div key={i} className="qv-card rounded-2xl p-6 qv-hover-lift qv-scroll-fade">
+                <div className="grid place-items-center h-11 w-11 rounded-xl text-white mb-4" style={{ background: 'var(--primary-gradient)' }}>
                   <f.icon className="h-5 w-5" />
                 </div>
                 <h3 className="font-bold text-base mb-2">{f.title}</h3>
@@ -371,7 +371,7 @@ export default function LandingPage() {
             ongoing charity that keeps rewarding you — long after the original
             act. When someone benefits from a Quran reel you shared, you earn
             reward for every view, every heart, every share.{' '}
-            <span className="text-primary font-semibold">
+            <span className="qv-gradient-text font-semibold">
               Share once, earn forever.
             </span>{' '}
             That’s the mission behind Jariyah Now: make it effortless to turn
