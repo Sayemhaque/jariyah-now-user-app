@@ -1610,6 +1610,10 @@ function drawFrame({
       const numChunks = Math.ceil(tajweedLines.length / MAX_ARABIC_LINES)
       const chunkIdx = Math.min(numChunks - 1, Math.floor(progressRatio * numChunks))
       visibleTajweedLines = tajweedLines.slice(chunkIdx * MAX_ARABIC_LINES, (chunkIdx + 1) * MAX_ARABIC_LINES)
+      // Keep arabicPageInfo in sync with the Tajweed pagination so the
+      // "1 / N" page indicator below the translation reflects the actual
+      // Tajweed page being shown (not the plain-words page count).
+      arabicPageInfo = { current: chunkIdx + 1, total: numChunks }
     }
 
     for (const lineSegs of visibleTajweedLines) {

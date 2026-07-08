@@ -64,12 +64,57 @@ function getWordChunk(text: string, chunkIdx: number, totalChunks: number): stri
   return words.slice(start, end).join(' ')
 }
 
+// Decide how many "pages" the current ayah's text should be split into.
+// Arabic and translation are paginated IN SYNC — both use the same chunk
+// count so the viewer sees "page 2 of Arabic" together with "page 2 of
+// translation" at the same time. The chunk count is driven by whichever
+// side is longer, so a long translation with short Arabic (or vice versa)
+// still paginates correctly.
 function calcTotalChunks(arabicText: string, translation: string): number {
   const arWords = arabicText.split(/\s+/).filter(Boolean).length
   const transWords = translation.split(/\s+/).filter(Boolean).length
   const arChunks = arWords > 20 ? Math.ceil(arWords / 8) : 1
   const transChunks = transWords > 24 ? Math.ceil(transWords / 12) : 1
   return Math.max(arChunks, transChunks, 1)
+}
+
+// A flat list of renderable Arabic tokens — either individual words
+// (with optional highlight index) or color-coded Tajweed fragments.
+// Building this list once lets us paginate uniformly regardless of
+// whether the source is word timings, Tajweed segments, or plain text.
+interface ArabicToken {
+  text: string
+  color?: string | null // null = use default font color
+  wordIdx?: number // global word index (used for highlight matching)
+}
+
+function buildArabicTokens(current: {
+  words: { text: string }[]
+  tajweedSegments?: { text: string; color: string | null }[] | null
+  arabicText: string
+}): ArabicToken[] {
+  if (current.words.length > 0) {
+    return current.words.map((w, i) => ({ text: w.text, wordIdx: i }))
+  }
+  if (current.tajweedSegments && current.tajweedSegments.length > 0) {
+    // Flatten Tajweed segments into individual words while preserving
+    // the per-segment color. Splits on whitespace but keeps the color
+    // attached to each resulting word.
+    const tokens: ArabicToken[] = []
+    for (const seg of current.tajweedSegments) {
+      for (const part of seg.text.split(/\s+/)) {
+        if (part) tokens.push({ text: part, color: seg.color })
+      }
+    }
+    return tokens
+  }
+  if (current.arabicText) {
+    return current.arabicText
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((text, i) => ({ text, wordIdx: i }))
+  }
+  return []
 }
 
 const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
@@ -239,6 +284,7 @@ export function VideoPreview() {
       setCurrentIndex(idx)
       setActiveWord(null)
       setCurrentTimeMs(0)
+      setTextPage(0) // reset pagination when switching ayats
       audio.src = ayatList[idx]!.audioUrl
       audio.volume = volume
       audio.muted = muted
@@ -379,6 +425,7 @@ export function VideoPreview() {
     const into = target - (offsets[idx] || 0)
     if (idx !== currentIndex) {
       setCurrentIndex(idx)
+      setTextPage(0) // reset pagination when jumping to a different ayat
       const audio = audioRef.current!
       audio.src = ayatList[idx]!.audioUrl
       audio.currentTime = into / 1000
@@ -600,7 +647,7 @@ export function VideoPreview() {
                   boxShadow: '0 2cqw 6cqw rgba(0, 0, 0, 0.4)',
                 }}
               >
-                {/* Arabic — word-by-word highlight */}
+                {/* Arabic — word-by-word highlight, paginated for long ayats */}
                 <div
                   dir="rtl"
                   lang="ar"
@@ -613,38 +660,69 @@ export function VideoPreview() {
                     fontSize: arabicFontSizeCss,
                   }}
                 >
-                  {current.words.length > 0
-                    ? current.words.map((w, i) => (
+                  {(() => {
+                    if (!current) return null
+                    const tokens = buildArabicTokens(current)
+                    if (!tokens.length) return null
+
+                    const tc = calcTotalChunks(
+                      current.arabicText,
+                      current.translation,
+                    )
+                    // No pagination needed — render all tokens.
+                    if (tc <= 1) {
+                      return tokens.map((tok, i) => {
+                        const isHi =
+                          tok.wordIdx !== undefined &&
+                          tok.wordIdx === highlightedWordIdx
+                        return (
+                          <span
+                            key={i}
+                            className="qv-smooth inline-block mx-[1px]"
+                            style={{
+                              color: isHi
+                                ? settings.highlightColor
+                                : (tok.color ?? settings.fontColor),
+                              textShadow: isHi
+                                ? `0 0 18px ${settings.highlightColor}88, 0 1px 4px rgba(0,0,0,0.7)`
+                                : '0 1px 4px rgba(0,0,0,0.7)',
+                              transition: 'color 120ms ease',
+                            }}
+                          >
+                            {tok.text}
+                          </span>
+                        )
+                      })
+                    }
+
+                    // Paginate: show only the current page's tokens.
+                    const perChunk = Math.ceil(tokens.length / tc)
+                    const start = textPage * perChunk
+                    const end = start + perChunk
+                    const visible = tokens.slice(start, end)
+                    return visible.map((tok, i) => {
+                      const isHi =
+                        tok.wordIdx !== undefined &&
+                        tok.wordIdx === highlightedWordIdx
+                      return (
                         <span
                           key={i}
                           className="qv-smooth inline-block mx-[1px]"
                           style={{
-                            color:
-                              i === highlightedWordIdx
-                                ? settings.highlightColor
-                                : settings.fontColor,
-                            textShadow:
-                              i === highlightedWordIdx
-                                ? `0 0 18px ${settings.highlightColor}88, 0 1px 4px rgba(0,0,0,0.7)`
-                                : '0 1px 4px rgba(0,0,0,0.7)',
+                            color: isHi
+                              ? settings.highlightColor
+                              : (tok.color ?? settings.fontColor),
+                            textShadow: isHi
+                              ? `0 0 18px ${settings.highlightColor}88, 0 1px 4px rgba(0,0,0,0.7)`
+                              : '0 1px 4px rgba(0,0,0,0.7)',
                             transition: 'color 120ms ease',
                           }}
                         >
-                          {w.text}
+                          {tok.text}
                         </span>
-                      ))
-                    : current.tajweedSegments && current.tajweedSegments.length > 0
-                      ? current.tajweedSegments.map((seg, i) => (
-                          <span key={i} style={{ color: seg.color ?? settings.fontColor }}>
-                            {seg.text}
-                          </span>
-                        ))
-                      : current.arabicText
-                        ? (() => {
-                            const tc = calcTotalChunks(current.arabicText, current.translation)
-                            return getWordChunk(current.arabicText, textPage, tc)
-                          })()
-                        : ''}
+                      )
+                    })
+                  })()}
                 </div>
 
                 {/* Tiny divider between Arabic and translation — only when
