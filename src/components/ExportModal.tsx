@@ -28,6 +28,15 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import {
+  buildAudioSyncedChunks,
+  buildTimeProportionalPlan,
+  estimateChunkCount,
+  findChunkAtTime,
+  splitTranslationToChunks,
+  shouldPaginate,
+  type PaginationPlan,
+} from '@/lib/textPagination'
 
 const PLATFORM_PRESETS: {
   key: ExportOptions['platform']
@@ -1442,48 +1451,88 @@ function drawFrame({
     narrow: 0.60,
   }
   const innerMaxW = W * (TEXT_WIDTH_FRACTIONS[settings.textWidth] ?? 0.84)
-  const lines: string[][] = []
-  let line: string[] = []
-  let lineW = 0
-  for (let i = 0; i < wordsArr.length; i++) {
-    const w = wordsArr[i]!
-    const ww = ctx.measureText(w).width
-    if (lineW + ww > innerMaxW && line.length) {
-      lines.push(line)
-      line = []
-      lineW = 0
-    }
-    line.push(w)
-    lineW += ww + spaceW
-  }
-  if (line.length) lines.push(line)
 
   const arabicLineH = arabicFontSize * 1.8 // generous line height to prevent overlap
 
-  // ─── Text Pagination ───────────────────────────────────────────────
-  // When an ayah is very long (e.g. Ayat al-Kursi), the Arabic + translation
-  // would be cramped on one screen. We split them into chunks of MAX_LINES
-  // and cycle through them during the audio playback, like movie subtitles.
+  // ─── Audio-synced text pagination ────────────────────────────────────
+  // When an ayah is very long (e.g. Ayat al-Kursi ~50 words), showing
+  // the whole text at once makes it tiny and unreadable. We split it
+  // into chunks that cycle like movie subtitles.
   //
-  // The chunk index is calculated from the elapsed time (intoMs) relative
-  // to the total audio duration. Each chunk gets equal time.
-  const MAX_ARABIC_LINES = 3   // show max 3 lines of Arabic per page
-  const MAX_TRANS_LINES = 2    // show max 2 lines of translation per page
+  // CRITICAL: chunk boundaries are driven by the reciter's actual
+  // per-word timings, NOT by `totalDuration / numChunks`. Arabic
+  // recitation has variable word lengths (madd, pausal forms), so a
+  // clock-based split would jump AHEAD of the audio. Using word
+  // timings means chunk N switches the INSTANT the reciter finishes
+  // the last word in chunk N — perfect sync.
+  //
+  // The translation is split into the SAME number of chunks as the
+  // Arabic and switches at the same boundaries, so Arabic page 2 and
+  // translation page 2 always appear together.
+  const MAX_TRANS_LINES = 2    // hard cap on visual lines of translation per page
 
   const slideDurationMs = slide.audioDurationMs || 10000
-  const progressRatio = Math.min(1, intoMs / slideDurationMs)
 
-  // Paginate Arabic lines
-  let visibleArabicLines: string[][]
-  let arabicPageInfo: { current: number; total: number } | null = null
-  if (lines.length > MAX_ARABIC_LINES) {
-    const numChunks = Math.ceil(lines.length / MAX_ARABIC_LINES)
-    const chunkIdx = Math.min(numChunks - 1, Math.floor(progressRatio * numChunks))
-    visibleArabicLines = lines.slice(chunkIdx * MAX_ARABIC_LINES, (chunkIdx + 1) * MAX_ARABIC_LINES)
-    arabicPageInfo = { current: chunkIdx + 1, total: numChunks }
-  } else {
-    visibleArabicLines = lines
+  // Build the pagination plan — prefer audio-synced (uses word
+  // timings), fall back to time-proportional when timings are missing.
+  let paginationPlan: PaginationPlan = { chunks: [], total: 0 }
+  if (slide.words.length > 0 && shouldPaginate(slide.words)) {
+    paginationPlan = buildAudioSyncedChunks(slide.words)
   }
+  if (paginationPlan.total <= 1) {
+    // No usable word timings → fall back to word-count heuristic with
+    // time-proportional boundaries. Better than no pagination.
+    const n = estimateChunkCount(wordsArr.length)
+    if (n > 1) {
+      paginationPlan = buildTimeProportionalPlan(slideDurationMs, n)
+    }
+  }
+
+  // Pick the active chunk index for the current frame time.
+  let chunkIdx = -1
+  if (paginationPlan.total > 1) {
+    chunkIdx = findChunkAtTime(paginationPlan.chunks, intoMs)
+    if (chunkIdx < 0) chunkIdx = 0
+  }
+
+  // ─── Slice Arabic words for the current chunk ─────────────────────
+  // When paginating, only the words in the current chunk are wrapped
+  // and drawn. `visibleWordOffset` lets us keep the global word index
+  // for highlight matching (activeIdx is a global word index).
+  let visibleWordsArr: string[]
+  let visibleWordOffset = 0
+  if (chunkIdx >= 0 && paginationPlan.total > 1) {
+    const chunk = paginationPlan.chunks[chunkIdx]!
+    visibleWordOffset = chunk.wordStart
+    visibleWordsArr = wordsArr.slice(chunk.wordStart, chunk.wordEnd)
+  } else {
+    visibleWordsArr = wordsArr
+  }
+
+  // Wrap the visible Arabic words into visual lines (RTL centering
+  // happens at draw time, not here — this just decides line breaks).
+  const lines: string[][] = []
+  {
+    let ln: string[] = []
+    let lnW = 0
+    for (let i = 0; i < visibleWordsArr.length; i++) {
+      const w = visibleWordsArr[i]!
+      const ww = ctx.measureText(w).width
+      if (lnW + ww > innerMaxW && ln.length) {
+        lines.push(ln)
+        ln = []
+        lnW = 0
+      }
+      ln.push(w)
+      lnW += ww + spaceW
+    }
+    if (ln.length) lines.push(ln)
+  }
+  const visibleArabicLines: string[][] = lines
+  const arabicPageInfo: { current: number; total: number } | null =
+    paginationPlan.total > 1 && chunkIdx >= 0
+      ? { current: chunkIdx + 1, total: paginationPlan.total }
+      : null
   const arabicTotalH = visibleArabicLines.length * arabicLineH
 
   // Transliteration (one-line approximation)
@@ -1496,22 +1545,32 @@ function drawFrame({
   const transFontFamily = isBengali
     ? bengaliFontFamily
     : 'Inter, sans-serif'
-  let allTransLines: string[] = []
-  if (settings.showTranslation) {
-    ctx.font = `${transFontSize}px ${transFontFamily}`
-    allTransLines = wrapLines(ctx, slide.translation, innerMaxW)
+  ctx.font = `${transFontSize}px ${transFontFamily}`
+
+  // ─── Slice translation to match the Arabic chunk count ────────────
+  // Translation is split into N pieces (by word count) where N is the
+  // Arabic chunk count. The same `chunkIdx` selects which piece to
+  // show, so Arabic and translation advance in lockstep.
+  let transTextToShow = slide.translation
+  if (paginationPlan.total > 1 && chunkIdx >= 0) {
+    const pieces = splitTranslationToChunks(slide.translation, paginationPlan.total)
+    transTextToShow = pieces[chunkIdx] ?? ''
   }
 
-  // Paginate translation lines
-  let transLines: string[]
+  let allTransLines: string[] = []
+  if (settings.showTranslation && transTextToShow) {
+    allTransLines = wrapLines(ctx, transTextToShow, innerMaxW)
+  }
+
+  // If the wrapped translation STILL doesn't fit (very long single
+  // chunk), hard-cap it to MAX_TRANS_LINES so the layout doesn't break.
+  let transLines = allTransLines
   let transPageInfo: { current: number; total: number } | null = null
   if (allTransLines.length > MAX_TRANS_LINES) {
-    const numChunks = Math.ceil(allTransLines.length / MAX_TRANS_LINES)
-    const chunkIdx = Math.min(numChunks - 1, Math.floor(progressRatio * numChunks))
-    transLines = allTransLines.slice(chunkIdx * MAX_TRANS_LINES, (chunkIdx + 1) * MAX_TRANS_LINES)
-    transPageInfo = { current: chunkIdx + 1, total: numChunks }
-  } else {
-    transLines = allTransLines
+    transLines = allTransLines.slice(0, MAX_TRANS_LINES)
+  }
+  if (paginationPlan.total > 1 && chunkIdx >= 0) {
+    transPageInfo = { current: chunkIdx + 1, total: paginationPlan.total }
   }
   const transLineH = transFontSize * 1.4
   const transTotalH = transLines.length * transLineH
@@ -1582,17 +1641,31 @@ function drawFrame({
 
   if (slide.tajweedSegments && slide.tajweedSegments.length > 0) {
     // ─── Tajweed color-coded rendering ─────────────────────────────
+    // Flatten Tajweed segments into individual words with their colors.
     const wordsWithColor: { text: string; color: string | null }[] = []
     for (const seg of slide.tajweedSegments) {
       for (const sw of seg.text.split(/(\s+)/)) {
         if (sw) wordsWithColor.push({ text: sw, color: seg.color })
       }
     }
-    // Build wrapped lines
+
+    // ─── Apply the SAME audio-synced chunk slicing as plain Arabic ──
+    // The pagination plan was built above from `slide.words` timings.
+    // We use its `wordStart`/`wordEnd` to slice the Tajweed word list
+    // in lockstep with the plain-words path. This keeps Tajweed color
+    // rendering perfectly in sync with the audio AND with the
+    // translation pagination.
+    let visibleTajweedWords = wordsWithColor
+    if (chunkIdx >= 0 && paginationPlan.total > 1) {
+      const chunk = paginationPlan.chunks[chunkIdx]!
+      visibleTajweedWords = wordsWithColor.slice(chunk.wordStart, chunk.wordEnd)
+    }
+
+    // Build wrapped lines from the visible Tajweed words only.
     const tajweedLines: { text: string; color: string | null }[][] = []
     let curLine: { text: string; color: string | null }[] = []
     let curLineW = 0
-    for (const wc of wordsWithColor) {
+    for (const wc of visibleTajweedWords) {
       const ww = ctx.measureText(wc.text).width
       if (curLineW + ww > innerMaxW && curLine.length > 0) {
         tajweedLines.push(curLine)
@@ -1604,17 +1677,7 @@ function drawFrame({
     }
     if (curLine.length > 0) tajweedLines.push(curLine)
 
-    // Paginate Tajweed lines if too many
-    let visibleTajweedLines = tajweedLines
-    if (tajweedLines.length > MAX_ARABIC_LINES) {
-      const numChunks = Math.ceil(tajweedLines.length / MAX_ARABIC_LINES)
-      const chunkIdx = Math.min(numChunks - 1, Math.floor(progressRatio * numChunks))
-      visibleTajweedLines = tajweedLines.slice(chunkIdx * MAX_ARABIC_LINES, (chunkIdx + 1) * MAX_ARABIC_LINES)
-      // Keep arabicPageInfo in sync with the Tajweed pagination so the
-      // "1 / N" page indicator below the translation reflects the actual
-      // Tajweed page being shown (not the plain-words page count).
-      arabicPageInfo = { current: chunkIdx + 1, total: numChunks }
-    }
+    const visibleTajweedLines = tajweedLines
 
     for (const lineSegs of visibleTajweedLines) {
       let totalW = 0
@@ -1634,6 +1697,10 @@ function drawFrame({
     }
   } else {
     // ─── Plain word-by-word rendering ──────────────────────────────
+    // `visibleArabicLines` already contains only the current chunk's
+    // wrapped words. The highlight index `activeIdx` is a GLOBAL word
+    // index (into the full ayat), so we subtract `visibleWordOffset`
+    // to get the local index within the visible chunk.
     let wordCounter = 0
     for (const ln of visibleArabicLines) {
       const widths = ln.map((w) => ctx.measureText(w).width)
@@ -1643,7 +1710,13 @@ function drawFrame({
         const w = ln[i]!
         const ww = widths[i]!
         xPos -= ww / 2
-        const isHi = wordCounter === activeIdx
+        // `activeIdx` is a GLOBAL word index across the whole ayat.
+        // The visible chunk starts at `visibleWordOffset`, so the
+        // local position of the active word (if any) inside this
+        // chunk is `activeIdx - visibleWordOffset`. Only highlight
+        // when that matches the local counter.
+        const localActive = activeIdx - visibleWordOffset
+        const isHi = wordCounter === localActive
         ctx.fillStyle = isHi ? settings.highlightColor : settings.fontColor
         if (isHi) {
           ctx.shadowColor = settings.highlightColor

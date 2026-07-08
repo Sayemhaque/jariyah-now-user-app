@@ -17,6 +17,15 @@ import { overlayCssBackground } from '@/lib/overlay'
 import { getActiveWordIndex } from '@/lib/highlight'
 import { videoAttributionLine } from '@/lib/translations'
 import { formatStructural, getStructuralPairs } from '@/lib/structural'
+import {
+  buildAudioSyncedChunks,
+  buildTimeProportionalPlan,
+  estimateChunkCount,
+  findChunkAtTime,
+  splitTranslationToChunks,
+  shouldPaginate,
+  type PaginationPlan,
+} from '@/lib/textPagination'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -53,35 +62,13 @@ const BENGALI_FONT_CLASS: Record<string, string> = {
 }
 
 // ─── Text pagination helpers ─────────────────────────────────────────
-// Split a text into word chunks for pagination. Used when an ayah is
-// very long (e.g. Ayat al-Kursi) and the text would be cramped.
-function getWordChunk(text: string, chunkIdx: number, totalChunks: number): string {
-  const words = text.split(/\s+/).filter(Boolean)
-  if (totalChunks <= 1) return text
-  const perChunk = Math.ceil(words.length / totalChunks)
-  const start = chunkIdx * perChunk
-  const end = start + perChunk
-  return words.slice(start, end).join(' ')
-}
-
-// Decide how many "pages" the current ayah's text should be split into.
-// Arabic and translation are paginated IN SYNC — both use the same chunk
-// count so the viewer sees "page 2 of Arabic" together with "page 2 of
-// translation" at the same time. The chunk count is driven by whichever
-// side is longer, so a long translation with short Arabic (or vice versa)
-// still paginates correctly.
-function calcTotalChunks(arabicText: string, translation: string): number {
-  const arWords = arabicText.split(/\s+/).filter(Boolean).length
-  const transWords = translation.split(/\s+/).filter(Boolean).length
-  const arChunks = arWords > 20 ? Math.ceil(arWords / 8) : 1
-  const transChunks = transWords > 24 ? Math.ceil(transWords / 12) : 1
-  return Math.max(arChunks, transChunks, 1)
-}
+// The audio-synced pagination logic lives in `@/lib/textPagination`.
+// These helpers below are thin wrappers that build a per-ayat
+// PaginationPlan (cached via useMemo) and translate the active chunk
+// index into the visible slice of Arabic tokens + translation text.
 
 // A flat list of renderable Arabic tokens — either individual words
 // (with optional highlight index) or color-coded Tajweed fragments.
-// Building this list once lets us paginate uniformly regardless of
-// whether the source is word timings, Tajweed segments, or plain text.
 interface ArabicToken {
   text: string
   color?: string | null // null = use default font color
@@ -115,6 +102,32 @@ function buildArabicTokens(current: {
       .map((text, i) => ({ text, wordIdx: i }))
   }
   return []
+}
+
+/**
+ * Build the pagination plan for the current ayat. Prefers audio-synced
+ * chunks (built from per-word timings) and falls back to time-proportional
+ * when timings are missing. Returns a plan with `total <= 1` when the
+ * ayat is short enough to not need pagination.
+ */
+function buildPlanForAyat(current: {
+  words: { text: string; startMs: number; endMs: number }[]
+  arabicText: string
+  translation: string
+  audioDurationMs: number
+}): PaginationPlan {
+  // Audio-synced path — needs word timings AND enough words to paginate.
+  if (current.words.length > 0 && shouldPaginate(current.words)) {
+    const plan = buildAudioSyncedChunks(current.words)
+    if (plan.total > 1) return plan
+  }
+  // Fallback — time-proportional, word-count heuristic for chunk count.
+  const arWords = current.arabicText.split(/\s+/).filter(Boolean).length
+  const n = estimateChunkCount(arWords)
+  if (n > 1 && current.audioDurationMs > 0) {
+    return buildTimeProportionalPlan(current.audioDurationMs, n)
+  }
+  return { chunks: [], total: 0 }
 }
 
 const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
@@ -244,22 +257,29 @@ export function VideoPreview() {
       if (audio && c) {
         const tMs = audio.currentTime * 1000
         setCurrentTimeMs(tMs)
-        // Calculate text pagination page for long ayats
+        // ─── Audio-synced pagination ────────────────────────────────
+        // Build the chunk plan for this ayat (cheap; pure function of
+        // the ayat's word timings + duration). Then find which chunk
+        // is active at the current audio position.
+        //
+        // We DON'T memoize here because the tick runs every frame and
+        // we want zero stale closures — `buildPlanForAyat` is fast
+        // enough (a few hundred microseconds for a 50-word ayat).
         const dur = c.audioDurationMs || liveDurations[ci] || 0
-        if (dur > 0) {
-          const progress = Math.min(1, tMs / dur)
-          // Count words to determine if pagination is needed
-          const transWords = c.translation.split(/\s+/).filter(Boolean).length
-          const arWords = c.arabicText.split(/\s+/).filter(Boolean).length
-          const transChunks = transWords > 24 ? Math.ceil(transWords / 12) : 1
-          const arChunks = arWords > 20 ? Math.ceil(arWords / 8) : 1
-          const totalChunks = Math.max(transChunks, arChunks)
-          if (totalChunks > 1) {
-            const page = Math.min(totalChunks - 1, Math.floor(progress * totalChunks))
-            setTextPage(page)
-          } else {
-            setTextPage(0)
-          }
+        const plan = buildPlanForAyat({
+          words: c.words,
+          arabicText: c.arabicText,
+          translation: c.translation,
+          audioDurationMs: dur,
+        })
+        if (plan.total > 1) {
+          let page = findChunkAtTime(plan.chunks, tMs)
+          if (page < 0) page = 0
+          // Only update state when the page actually changes — avoids
+          // a needless React re-render every animation frame.
+          setTextPage((prev) => (prev === page ? prev : page))
+        } else if (plan.total <= 1) {
+          setTextPage((prev) => (prev === 0 ? prev : 0))
         }
         const foundIdx = getActiveWordIndex(c.words, tMs)
         if (foundIdx >= 0) {
@@ -508,6 +528,45 @@ export function VideoPreview() {
       ? activeWord.wordIndex
       : -1
 
+  // ─── Memoized audio-synced pagination plan for the CURRENT ayat ────
+  // Built once per ayat (or per duration change). The rAF tick uses
+  // the same plan to decide which chunk is active at `audio.currentTime`.
+  // This drives the live preview's text pagination — chunk N switches
+  // the instant the reciter finishes the last word in chunk N.
+  const paginationPlan = useMemo<PaginationPlan>(() => {
+    if (!current) return { chunks: [], total: 0 }
+    const dur = current.audioDurationMs || liveDurations[currentIndex] || 0
+    return buildPlanForAyat({
+      words: current.words,
+      arabicText: current.arabicText,
+      translation: current.translation,
+      audioDurationMs: dur,
+    })
+  }, [current, currentIndex, liveDurations])
+
+  // Translate the current `textPage` state into the visible slice of
+  // Arabic tokens + the matching translation piece. Both are derived
+  // from the SAME plan so they always advance in lockstep.
+  const visibleArabicRange = useMemo<{ start: number; end: number }>(() => {
+    if (paginationPlan.total <= 1 || textPage < 0) {
+      return { start: 0, end: -1 } // -1 = "all"
+    }
+    const chunk = paginationPlan.chunks[textPage]
+    return chunk
+      ? { start: chunk.wordStart, end: chunk.wordEnd }
+      : { start: 0, end: -1 }
+  }, [paginationPlan, textPage])
+
+  const visibleTranslation = useMemo<string>(() => {
+    if (!current) return ''
+    if (paginationPlan.total <= 1) return current.translation
+    const pieces = splitTranslationToChunks(
+      current.translation,
+      paginationPlan.total,
+    )
+    return pieces[textPage] ?? ''
+  }, [current, paginationPlan, textPage])
+
   // Font sizes scale with the ACTUAL preview frame width using CSS container
   // query units (cqw = 1% of the container's inline size). This way, the text
   // is always proportional to the preview, not the browser viewport — so a
@@ -665,41 +724,17 @@ export function VideoPreview() {
                     const tokens = buildArabicTokens(current)
                     if (!tokens.length) return null
 
-                    const tc = calcTotalChunks(
-                      current.arabicText,
-                      current.translation,
-                    )
-                    // No pagination needed — render all tokens.
-                    if (tc <= 1) {
-                      return tokens.map((tok, i) => {
-                        const isHi =
-                          tok.wordIdx !== undefined &&
-                          tok.wordIdx === highlightedWordIdx
-                        return (
-                          <span
-                            key={i}
-                            className="qv-smooth inline-block mx-[1px]"
-                            style={{
-                              color: isHi
-                                ? settings.highlightColor
-                                : (tok.color ?? settings.fontColor),
-                              textShadow: isHi
-                                ? `0 0 18px ${settings.highlightColor}88, 0 1px 4px rgba(0,0,0,0.7)`
-                                : '0 1px 4px rgba(0,0,0,0.7)',
-                              transition: 'color 120ms ease',
-                            }}
-                          >
-                            {tok.text}
-                          </span>
-                        )
-                      })
-                    }
+                    // Slice tokens to the current chunk's word range.
+                    // When not paginating, visibleArabicRange.end === -1
+                    // → show everything.
+                    const visible =
+                      visibleArabicRange.end < 0
+                        ? tokens
+                        : tokens.slice(
+                            visibleArabicRange.start,
+                            visibleArabicRange.end,
+                          )
 
-                    // Paginate: show only the current page's tokens.
-                    const perChunk = Math.ceil(tokens.length / tc)
-                    const start = textPage * perChunk
-                    const end = start + perChunk
-                    const visible = tokens.slice(start, end)
                     return visible.map((tok, i) => {
                       const isHi =
                         tok.wordIdx !== undefined &&
@@ -762,23 +797,17 @@ export function VideoPreview() {
                       maxWidth: '85cqw',
                     }}
                   >
-                    {(() => {
-                      const tc = calcTotalChunks(current.arabicText, current.translation)
-                      return getWordChunk(current.translation, textPage, tc)
-                    })()}
+                    {visibleTranslation}
                   </p>
                 )}
 
                 {/* Page indicator — shows "1 / 3" when text is paginated */}
-                {(() => {
-                  const tc = calcTotalChunks(current?.arabicText ?? '', current?.translation ?? '')
-                  if (tc <= 1 || !current) return null
-                  return (
-                    <div className="text-white/35 text-[1.4cqw] font-mono mt-1.5">
-                      {textPage + 1} / {tc}
-                    </div>
-                  )
-                })()}
+                {paginationPlan.total > 1 ? (
+                  <div className="text-white/35 text-[1.4cqw] font-mono mt-1.5">
+                    {Math.min(textPage + 1, paginationPlan.total)} /{' '}
+                    {paginationPlan.total}
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : (
