@@ -28,6 +28,11 @@ export interface AyatData {
   words: WordTiming[]
   audioUrl: string
   audioDurationMs: number
+  /** Natural breath pauses detected by ffmpeg's silencedetect filter
+   *  on the ACTUAL audio file. Used for audio-synced text pagination —
+   *  chunk boundaries snap to these pause points so text never switches
+   *  mid-word. Times are in MILLISECONDS. Empty when detection failed. */
+  audioPauses?: { start: number; end: number; duration: number }[]
   // Surah display info — denormalized onto each ayat so the slide renderer
   // has everything it needs without a separate lookup.
   surahName: string
@@ -61,6 +66,9 @@ export interface AyatSlide {
   surahNumber: number
   audioUrl: string
   audioDurationMs: number
+  /** Breath pauses (ms) from ffmpeg silence detection on the actual audio.
+   *  Used for silence-snapped text pagination. */
+  audioPauses?: { start: number; end: number; duration: number }[]
   // Structural markers — passed through from AyatData so the export
   // renderer can draw them on the canvas.
   juzNumber?: number

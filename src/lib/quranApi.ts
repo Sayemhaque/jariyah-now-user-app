@@ -451,6 +451,46 @@ export function getAudioDurationMs(url: string): Promise<number> {
 }
 
 /**
+ * Detect natural breath pauses in the actual audio file using ffmpeg's
+ * silencedetect filter (server-side via /api/silence-detect).
+ *
+ * This is the ONLY reliable way to get chunk boundaries that match the
+ * audio the user actually hears. The word-timing API approach doesn't
+ * work because:
+ *   1. Quran.com's recitation IDs don't match UmmahAPI's
+ *   2. Even if they did, quran.com no longer returns per-word segments
+ *   3. Isolated word MP3 durations ≠ continuous recitation timings
+ *
+ * Returns pause timestamps in MILLISECONDS. Empty array on failure.
+ */
+export async function fetchAudioPauses(
+  audioUrl: string,
+): Promise<{ start: number; end: number; duration: number }[]> {
+  try {
+    const res = await fetchWithTimeout('/api/silence-detect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audioUrl }),
+    })
+    if (!res.ok) return []
+    const json = (await res.json()) as { silences?: { start: number; end: number; duration: number }[] }
+    if (!json.silences) return []
+    // Convert seconds → milliseconds
+    return json.silences.map((s) => ({
+      start: s.start * 1000,
+      end: s.end * 1000,
+      duration: s.duration * 1000,
+    }))
+  } catch (err) {
+    logger.warn('fetchAudioPauses failed', {
+      audioUrl,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    return []
+  }
+}
+
+/**
  * Fetch Tajweed HTML for a single ayah from the legacy quran.com API.
  * Used when `useTajweed` is enabled — the response's `text_uthmani` field
  * contains the full Uthmani text with embedded Tajweed diacritics which

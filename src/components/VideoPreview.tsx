@@ -18,12 +18,11 @@ import { getActiveWordIndex } from '@/lib/highlight'
 import { videoAttributionLine } from '@/lib/translations'
 import { formatStructural, getStructuralPairs } from '@/lib/structural'
 import {
-  buildAudioSyncedChunks,
+  buildSilenceSnappedPlan,
   buildTimeProportionalPlan,
   estimateChunkCount,
   findChunkAtTime,
   splitTranslationToChunks,
-  shouldPaginate,
   type PaginationPlan,
 } from '@/lib/textPagination'
 import { cn } from '@/lib/utils'
@@ -105,29 +104,38 @@ function buildArabicTokens(current: {
 }
 
 /**
- * Build the pagination plan for the current ayat. Prefers audio-synced
- * chunks (built from per-word timings) and falls back to time-proportional
- * when timings are missing. Returns a plan with `total <= 1` when the
- * ayat is short enough to not need pagination.
+ * Build the pagination plan for the current ayat. Prefers silence-snapped
+ * boundaries (from ffmpeg pause detection on the ACTUAL audio) and falls
+ * back to time-proportional when pauses aren't available.
+ *
+ * We do NOT use the word-timing API (buildAudioSyncedChunks) because
+ * the reciter IDs don't match between UmmahAPI and quran.com, and
+ * even if they did, isolated word MP3 durations don't match continuous
+ * recitation timings.
  */
 function buildPlanForAyat(current: {
   words: { text: string; startMs: number; endMs: number }[]
   arabicText: string
   translation: string
   audioDurationMs: number
+  audioPauses?: { start: number; end: number; duration: number }[]
 }): PaginationPlan {
-  // Audio-synced path — needs word timings AND enough words to paginate.
-  if (current.words.length > 0 && shouldPaginate(current.words)) {
-    const plan = buildAudioSyncedChunks(current.words)
-    if (plan.total > 1) return plan
-  }
-  // Fallback — time-proportional, word-count heuristic for chunk count.
   const arWords = current.arabicText.split(/\s+/).filter(Boolean).length
   const n = estimateChunkCount(arWords)
-  if (n > 1 && current.audioDurationMs > 0) {
-    return buildTimeProportionalPlan(current.audioDurationMs, n)
+  if (n <= 1 || current.audioDurationMs <= 0) {
+    return { chunks: [], total: 0 }
   }
-  return { chunks: [], total: 0 }
+  // ✅ Best: silence-snapped from the real audio's breath pauses
+  if (current.audioPauses && current.audioPauses.length > 0) {
+    return buildSilenceSnappedPlan(
+      current.audioDurationMs,
+      n,
+      current.audioPauses,
+      arWords,
+    )
+  }
+  // Fallback: even time split
+  return buildTimeProportionalPlan(current.audioDurationMs, n)
 }
 
 const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
@@ -271,6 +279,7 @@ export function VideoPreview() {
           arabicText: c.arabicText,
           translation: c.translation,
           audioDurationMs: dur,
+          audioPauses: c.audioPauses,
         })
         if (plan.total > 1) {
           let page = findChunkAtTime(plan.chunks, tMs)
@@ -541,6 +550,7 @@ export function VideoPreview() {
       arabicText: current.arabicText,
       translation: current.translation,
       audioDurationMs: dur,
+      audioPauses: current.audioPauses,
     })
   }, [current, currentIndex, liveDurations])
 

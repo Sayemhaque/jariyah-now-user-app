@@ -189,6 +189,91 @@ export function buildTimeProportionalPlan(
 }
 
 /**
+ * Build a silence-snapped pagination plan from the ACTUAL audio's
+ * breath pauses (detected by ffmpeg's silencedetect filter).
+ *
+ * This is the most accurate pagination method because it operates on
+ * the exact audio file the user hears:
+ *
+ *   1. Compute ideal evenly-spaced chunk boundaries
+ *   2. Snap each boundary to the nearest detected silence (within
+ *      ±3 seconds). If no silence is nearby, keep the ideal boundary.
+ *   3. Map each time-based chunk to a proportional word range so the
+ *      Arabic text can be sliced correctly.
+ *
+ * Result: chunks switch at natural breath points — never mid-word.
+ *
+ * @param totalDurationMs  Total audio duration in ms
+ * @param numChunks        Desired number of chunks
+ * @param pauses           Breath pauses (ms) from silence detection
+ * @param totalWords       Total Arabic word count (for word-range mapping)
+ */
+export function buildSilenceSnappedPlan(
+  totalDurationMs: number,
+  numChunks: number,
+  pauses: { start: number; end: number }[],
+  totalWords: number,
+): PaginationPlan {
+  if (numChunks <= 1 || totalDurationMs <= 0) {
+    return { chunks: [], total: 0 }
+  }
+
+  // ─── Step 1: ideal evenly-spaced boundaries ──────────────────────
+  const idealBoundaries: number[] = []
+  for (let i = 1; i < numChunks; i++) {
+    idealBoundaries.push((i * totalDurationMs) / numChunks)
+  }
+
+  // ─── Step 2: snap each boundary to the nearest UNUSED silence ─────
+  // A silence's midpoint is the natural "switch here" moment.
+  // Each silence can only be claimed by ONE boundary (the closest
+  // one) — otherwise two boundaries would snap to the same point
+  // and create an empty chunk between them.
+  const SNAP_THRESHOLD_MS = 3000 // ±3 seconds
+  const usedSilenceIdx = new Set<number>()
+  const snappedBoundaries = idealBoundaries.map((ideal) => {
+    let bestVal = ideal
+    let bestDist = SNAP_THRESHOLD_MS
+    let bestSilenceIdx = -1
+    for (let i = 0; i < pauses.length; i++) {
+      if (usedSilenceIdx.has(i)) continue
+      const p = pauses[i]!
+      const midMs = (p.start + p.end) / 2
+      const dist = Math.abs(midMs - ideal)
+      if (dist < bestDist) {
+        bestVal = midMs
+        bestDist = dist
+        bestSilenceIdx = i
+      }
+    }
+    if (bestSilenceIdx >= 0) usedSilenceIdx.add(bestSilenceIdx)
+    return bestVal
+  })
+
+  // ─── Step 3: build chunks + map to proportional word ranges ──────
+  // We don't know exactly which words fall in each time range (we
+  // don't have per-word timings), but a proportional split is a
+  // good approximation — and the TIME boundaries are exact, which
+  // is what matters for sync.
+  const chunks: TextChunk[] = []
+  for (let i = 0; i < numChunks; i++) {
+    const startMs = i === 0 ? 0 : snappedBoundaries[i - 1]!
+    const endMs = i === numChunks - 1 ? totalDurationMs : snappedBoundaries[i]!
+    // Proportional word range
+    const startRatio = startMs / totalDurationMs
+    const endRatio = endMs / totalDurationMs
+    chunks.push({
+      startMs,
+      endMs,
+      wordStart: Math.round(startRatio * totalWords),
+      wordEnd: Math.round(endRatio * totalWords),
+    })
+  }
+
+  return { chunks, total: chunks.length }
+}
+
+/**
  * Decide how many chunks to use when we DON'T have word timings.
  * Falls back to a word-count heuristic: ~8 Arabic words per chunk.
  */

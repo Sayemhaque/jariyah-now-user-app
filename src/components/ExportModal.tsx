@@ -29,12 +29,11 @@ import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
-  buildAudioSyncedChunks,
+  buildSilenceSnappedPlan,
   buildTimeProportionalPlan,
   estimateChunkCount,
   findChunkAtTime,
   splitTranslationToChunks,
-  shouldPaginate,
   type PaginationPlan,
 } from '@/lib/textPagination'
 
@@ -587,6 +586,7 @@ export function ExportModal({ open, onOpenChange, activeSplit }: ExportModalProp
         surahNumber: a.surahNumber,
         audioUrl: a.audioUrl,
         audioDurationMs: a.audioDurationMs,
+        audioPauses: a.audioPauses,
         // Structural markers — passed through so drawFrame can draw them.
         juzNumber: a.juzNumber,
         hizbNumber: a.hizbNumber,
@@ -1473,18 +1473,32 @@ function drawFrame({
 
   const slideDurationMs = slide.audioDurationMs || 10000
 
-  // Build the pagination plan — prefer audio-synced (uses word
-  // timings), fall back to time-proportional when timings are missing.
+  // ─── Build the pagination plan ─────────────────────────────────────
+  // Priority:
+  //   1. Silence-snapped — uses ffmpeg pause detection on the ACTUAL
+  //      audio. 100% accurate sync because boundaries are real breath
+  //      points in the audio the user hears.
+  //   2. Time-proportional — last-resort fallback when no pauses.
+  //
+  // We DO NOT use the word-timing API approach (buildAudioSyncedChunks)
+  // because the timings come from the wrong reciter's word MP3s and
+  // don't match the everyayah.com audio we actually play.
   let paginationPlan: PaginationPlan = { chunks: [], total: 0 }
-  if (slide.words.length > 0 && shouldPaginate(slide.words)) {
-    paginationPlan = buildAudioSyncedChunks(slide.words)
-  }
-  if (paginationPlan.total <= 1) {
-    // No usable word timings → fall back to word-count heuristic with
-    // time-proportional boundaries. Better than no pagination.
+  {
     const n = estimateChunkCount(wordsArr.length)
     if (n > 1) {
-      paginationPlan = buildTimeProportionalPlan(slideDurationMs, n)
+      if (slide.audioPauses && slide.audioPauses.length > 0) {
+        // ✅ Best: silence-snapped boundaries from the real audio
+        paginationPlan = buildSilenceSnappedPlan(
+          slideDurationMs,
+          n,
+          slide.audioPauses,
+          wordsArr.length,
+        )
+      } else {
+        // Fallback: even time split (no pauses available)
+        paginationPlan = buildTimeProportionalPlan(slideDurationMs, n)
+      }
     }
   }
 

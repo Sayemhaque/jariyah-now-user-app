@@ -9,7 +9,7 @@ import type {
   Orientation,
 } from './types'
 import { RECITERS, DEFAULT_RECITER_ID } from './reciters'
-import { fetchSurahs, fetchAyatData, getAudioDurationMs } from './quranApi'
+import { fetchSurahs, fetchAyatData, getAudioDurationMs, fetchAudioPauses } from './quranApi'
 import { validateAyatRange } from './validation'
 import { AUTO_FONT_SIZES } from './types'
 import { DEFAULT_TRANSLATION_KEY } from './translations'
@@ -271,9 +271,13 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
             useTajweed,
           )
           if (data) {
-            // resolve audio duration (best effort)
-            const dur = await getAudioDurationMs(data.audioUrl)
+            // resolve audio duration (best effort) + breath pauses in parallel
+            const [dur, pauses] = await Promise.all([
+              getAudioDurationMs(data.audioUrl),
+              fetchAudioPauses(data.audioUrl),
+            ])
             data.audioDurationMs = dur
+            if (pauses.length) data.audioPauses = pauses
             // `data!` is needed because TypeScript can't narrow `let` inside
             // the set() closure — even though we just checked `if (data)`.
             set((s) => ({
