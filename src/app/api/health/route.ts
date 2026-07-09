@@ -4,6 +4,8 @@ import { fetchWithTimeout } from '@/lib/fetchWithTimeout'
 import { ummahHeaders } from '@/lib/quranApi'
 import { logger } from '@/lib/logger'
 
+export const runtime = 'nodejs'
+
 /**
  * GET /api/health
  *

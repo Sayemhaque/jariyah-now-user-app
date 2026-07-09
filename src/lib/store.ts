@@ -9,7 +9,6 @@ import type {
   Orientation,
 } from './types'
 import { RECITERS, DEFAULT_RECITER_ID } from './reciters'
-import { fetchSurahs, fetchAyatData, getAudioDurationMs, fetchAudioPauses } from './quranApi'
 import { validateAyatRange } from './validation'
 import { AUTO_FONT_SIZES } from './types'
 import { DEFAULT_TRANSLATION_KEY } from './translations'
@@ -18,8 +17,6 @@ import { SURAHS_FALLBACK } from './surahs-fallback'
 interface BuilderState {
   // data
   surahs: Surah[]
-  surahsLoading: boolean
-  surahsError: string | null
   selectedSurahNumber: number | null
   fromAyat: number
   toAyat: number
@@ -28,14 +25,12 @@ interface BuilderState {
   translationKey: string
   settings: VideoSettings
 
-  // fetched ayat data — keyed by "surah:ayat:translationKey"
-  ayatCache: Record<string, AyatData>
   ayatList: AyatData[]
   loadingAyats: boolean
   ayatError: string | null
 
   // actions
-  loadSurahs: () => Promise<void>
+  setSurahs: (surahs: Surah[]) => void
   setSurah: (number: number) => void
   setFromAyat: (n: number) => void
   setToAyat: (n: number) => void
@@ -47,7 +42,9 @@ interface BuilderState {
   /** Toggle the auto-fit flag. When turning on, immediately applies the
    *  auto font sizes for the current orientation. */
   setAutoFitFonts: (on: boolean) => void
-  fetchRange: () => Promise<void>
+  setAyatLoading: (loading: boolean) => void
+  setAyatError: (error: string | null) => void
+  setAyatList: (list: AyatData[]) => void
   getReciter: () => Reciter
   getSelectedSurah: () => Surah | undefined
   getValidation: () => ReturnType<typeof validateAyatRange>
@@ -99,13 +96,11 @@ function pickBgForOrientation(
 
 export const useBuilderStore = create<BuilderState>((set, get) => ({
   // Initialize with the bundled fallback so the dropdown is immediately
-  // populated on first render — no loading spinner. loadSurahs() will
-  // try to fetch the live list from UmmahAPI and update if it's
+  // populated on first render — no loading spinner. TanStack Query will
+  // fetch the live list from UmmahAPI and update it if it's
   // richer (e.g. slightly different Arabic names), but the UI is already
   // interactive before that resolves.
   surahs: SURAHS_FALLBACK,
-  surahsLoading: false,
-  surahsError: null,
   selectedSurahNumber: null,
   fromAyat: 1,
   toAyat: 3,
@@ -113,24 +108,11 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   translationKey: DEFAULT_TRANSLATION_KEY,
   settings: DEFAULT_SETTINGS,
 
-  ayatCache: {},
   ayatList: [],
   loadingAyats: false,
   ayatError: null,
 
-  loadSurahs: async () => {
-    if (get().surahs.length) return
-    set({ surahsLoading: true, surahsError: null })
-    try {
-      const surahs = await fetchSurahs()
-      set({ surahs, surahsLoading: false })
-    } catch (err) {
-      set({
-        surahsLoading: false,
-        surahsError: err instanceof Error ? err.message : 'Failed to load surahs',
-      })
-    }
-  },
+  setSurahs: (surahs) => set({ surahs }),
 
   setSurah: (number) => {
     const surah = get().surahs.find((s) => s.number === number)
@@ -145,12 +127,11 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   setFromAyat: (n) => set({ fromAyat: n }),
   setToAyat: (n) => set({ toAyat: n }),
   setReciter: (id) => {
-    // changing reciter invalidates cached word timings + audio urls
-    set({ reciterId: id, ayatList: [], ayatCache: {} })
+    set({ reciterId: id, ayatList: [] })
   },
   setTranslation: (key) => {
-    // changing translation invalidates the cache (the translation text differs
-    // per edition) but keeps the reciter (audio + word timings are unaffected)
+    // Changing translation clears the current list so the next TanStack Query
+    // load uses the newly selected edition.
     set({ translationKey: key, ayatList: [] })
   },
 
@@ -212,6 +193,10 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     set((s) => ({ settings: { ...s.settings, ...patch } }))
   },
 
+  setAyatLoading: (loading) => set({ loadingAyats: loading }),
+  setAyatError: (error) => set({ ayatError: error }),
+  setAyatList: (list) => set({ ayatList: list }),
+
   getReciter: () => {
     const id = get().reciterId
     return RECITERS.find((r) => r.id === id) ?? RECITERS[0]
@@ -231,82 +216,5 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
   getEstimatedDurationMs: () => {
     const list = get().ayatList
     return list.reduce((sum, a) => sum + (a.audioDurationMs || 0), 0)
-  },
-
-  fetchRange: async () => {
-    const state = get()
-    const surah = state.getSelectedSurah()
-    if (!surah) {
-      set({ ayatError: 'Please select a surah first' })
-      return
-    }
-    const v = validateAyatRange(state.fromAyat, state.toAyat, surah)
-    if (!v.ok) {
-      set({ ayatError: v.error ?? 'Invalid ayat range' })
-      return
-    }
-    const reciter = state.getReciter()
-    const translationKey = state.translationKey
-    const useTajweed = state.settings.useTajweed
-    set({ loadingAyats: true, ayatError: null, ayatList: [] })
-
-    try {
-      const list: AyatData[] = []
-      for (let ayat = state.fromAyat; ayat <= state.toAyat; ayat++) {
-        // Cache key includes the translation edition + the useTajweed flag
-        // so switching editions OR toggling Tajweed re-fetches with the new
-        // parameters, while still benefiting from the cache for repeated
-        // loads of the same configuration.
-        const key = `${surah.number}:${ayat}:${translationKey}:tajweed=${useTajweed ? 1 : 0}`
-        let data: AyatData | null = state.ayatCache[key] ?? null
-        if (!data) {
-          data = await fetchAyatData(
-            surah.number,
-            ayat,
-            reciter.recitationId,
-            reciter.audioKey,
-            surah.name,
-            surah.arabicName,
-            translationKey,
-            useTajweed,
-          )
-          if (data) {
-            // resolve audio duration (best effort) + energy breakpoints
-            // in parallel. Request enough breakpoints for pagination:
-            // ~1 per 8 Arabic words (matching MAX_WORDS_PER_CHUNK).
-            const arWordCount = data.arabicText.split(/\s+/).filter(Boolean).length
-            const numBreakpoints = arWordCount > 20 ? Math.ceil(arWordCount / 8) - 1 : 0
-            const [dur, pauses] = await Promise.all([
-              getAudioDurationMs(data.audioUrl),
-              numBreakpoints > 0
-                ? fetchAudioPauses(data.audioUrl, numBreakpoints)
-                : Promise.resolve([]),
-            ])
-            data.audioDurationMs = dur
-            if (pauses.length) data.audioPauses = pauses
-            // `data!` is needed because TypeScript can't narrow `let` inside
-            // the set() closure — even though we just checked `if (data)`.
-            set((s) => ({
-              ayatCache: { ...s.ayatCache, [key]: data! },
-            }))
-          }
-        }
-        if (data) list.push(data)
-      }
-      if (!list.length) {
-        set({
-          loadingAyats: false,
-          ayatError: 'Could not load ayat data. Check your connection and try again.',
-        })
-        return
-      }
-      set({ ayatList: list, loadingAyats: false })
-    } catch (err) {
-      set({
-        loadingAyats: false,
-        ayatError:
-          err instanceof Error ? err.message : 'Failed to load ayat data',
-      })
-    }
   },
 }))

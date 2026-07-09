@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import NextImage from 'next/image'
 import { Download, Film, X, CheckCircle2, AlertCircle, Play, Pause, Volume2, VolumeX } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
@@ -307,9 +308,11 @@ function ProcessingPanel({
         <div className="qv-processing-ring absolute inset-0 rounded-full" />
         {/* Center logo */}
         <div className="relative grid place-items-center h-20 w-20 rounded-full bg-card shadow-lg">
-          <img
+          <NextImage
             src="/logo.png"
             alt=""
+            width={40}
+            height={40}
             className="h-10 w-10 object-contain"
           />
         </div>

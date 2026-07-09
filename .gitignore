@@ -63,3 +63,16 @@ vitest-results.json
 
 # Scripts directory (dev-only scratch space)
 /scripts/
+
+# Cleaned up — AI agent artifacts & unused scaffolds
+/tool-results/
+/screens/
+/agent-ctx/
+/download/
+/mini-services/
+/examples/
+/db/
+/.zscripts/
+worklog.md
+bun.lock
+NOTICES

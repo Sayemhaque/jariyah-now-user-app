@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
@@ -106,9 +107,11 @@ export default function TemplatesPage() {
       <header className="sticky top-0 z-30 qv-frosted border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <img
+            <Image
               src="/logo.png"
               alt="Jariyah Now logo"
+              width={40}
+              height={40}
               className="h-10 w-10 rounded-xl object-contain"
             />
             <span className="text-lg font-bold tracking-tight">Jariyah Now</span>
@@ -374,9 +377,11 @@ export default function TemplatesPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <img
+              <Image
                 src="/logo.png"
                 alt="Jariyah Now logo"
+                width={36}
+                height={36}
                 className="h-9 w-9 rounded-xl object-contain"
               />
               <div>

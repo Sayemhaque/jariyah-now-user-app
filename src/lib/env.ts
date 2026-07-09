@@ -50,7 +50,7 @@ const envSchema = z.object({
   // --- External fetch timeout (ms) ---
   // Applied to every call to UmmahAPI / quran.com / the audio CDN so a slow
   // upstream never blocks a request indefinitely.
-  EXTERNAL_FETCH_TIMEOUT_MS: z.coerce.number().int().positive().default(5_000),
+  EXTERNAL_FETCH_TIMEOUT_MS: z.coerce.number().int().positive().default(30_000),
 
   // --- Upstash Redis (optional — used for distributed rate limiting in prod) ---
   // When both are set, the rate limiter uses Redis so limits are shared across

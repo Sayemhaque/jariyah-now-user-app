@@ -182,6 +182,44 @@ const surahCache: { list?: Surah[]; byNumber: Map<number, Surah> } = {
 }
 
 /**
+ * Parse UmmahAPI surah list responses into our internal Surah shape.
+ */
+export function parseUmmahSurahsResponse(json: UmmahSurahsResponse): Surah[] {
+  const raw: UmmahSurah[] = Array.isArray(json.data)
+    ? json.data
+    : Array.isArray(json.surahs)
+      ? json.surahs
+      : Array.isArray(json.data?.surahs)
+        ? json.data.surahs
+        : []
+
+  return raw.map((s) => {
+    const rev = (
+      s.revelation_place ??
+      s.revelationType ??
+      s.revelation_type ??
+      ''
+    )
+      .toString()
+      .toLowerCase()
+    return {
+      number: s.number ?? s.id ?? 0,
+      name: s.name_english ?? s.englishName ?? s.english_name ?? s.name ?? '',
+      englishName:
+        s.name_translation ??
+        s.englishNameTranslation ??
+        s.translated_name ??
+        s.name_english ??
+        '',
+      arabicName: s.name_arabic ?? s.arabicName ?? s.arabic_name ?? s.name ?? '',
+      numberOfAyahs: s.verses_count ?? s.numberOfAyahs ?? s.ayah_count ?? 0,
+      revelationType:
+        rev === 'madinah' || rev === 'medinan' ? 'Medinan' : 'Meccan',
+    }
+  })
+}
+
+/**
  * Fetch the list of all 114 surahs from UmmahAPI. Falls back to the bundled
  * list on error so the UI never blocks — users can still pick a surah even
  * if the live API is down or the API key is missing/invalid.
@@ -189,52 +227,32 @@ const surahCache: { list?: Surah[]; byNumber: Map<number, Surah> } = {
 export async function fetchSurahs(): Promise<Surah[]> {
   if (surahCache.list) return surahCache.list
 
+  const isBrowser = typeof window !== 'undefined'
+
   try {
-    const res = await fetchWithTimeout(`${UMMAHAPI_BASE}/quran/surahs`, {
-      headers: ummahHeaders(),
-      cache: 'force-cache',
-      // Next.js revalidate tag — surah metadata never changes, cache for 24h.
-      next: { revalidate: 86_400 },
-    })
+    const res = await fetchWithTimeout(
+      isBrowser ? '/api/surahs' : `${UMMAHAPI_BASE}/quran/surahs`,
+      {
+        headers: isBrowser ? { Accept: 'application/json' } : ummahHeaders(),
+        cache: 'force-cache',
+        next: { revalidate: 86_400 },
+      },
+    )
     if (!res.ok) {
-      throw new Error(`UmmahAPI /quran/surahs returned ${res.status}`)
+      throw new Error(`Surah list request returned ${res.status}`)
     }
+
+    if (isBrowser) {
+      const json = (await res.json()) as { surahs?: Surah[] }
+      const list = json.surahs ?? []
+      if (!list.length) throw new Error('empty surah list')
+      surahCache.list = list
+      list.forEach((s) => surahCache.byNumber.set(s.number, s))
+      return list
+    }
+
     const json = (await res.json()) as UmmahSurahsResponse
-
-    // Defensive: handle multiple response shapes — top-level array, nested
-    // `data` array, or `data.surahs` array.
-    const raw: UmmahSurah[] = Array.isArray(json.data)
-      ? (json.data as UmmahSurah[])
-      : Array.isArray(json.surahs)
-        ? json.surahs
-        : Array.isArray(json.data?.surahs)
-          ? json.data.surahs
-          : []
-
-    const list: Surah[] = raw.map((s) => {
-      const rev = (
-        s.revelation_place ??
-        s.revelationType ??
-        s.revelation_type ??
-        ''
-      )
-        .toString()
-        .toLowerCase()
-      return {
-        number: s.number ?? s.id ?? 0,
-        name: s.name_english ?? s.englishName ?? s.english_name ?? s.name ?? '',
-        englishName:
-          s.name_translation ??
-          s.englishNameTranslation ??
-          s.translated_name ??
-          s.name_english ??
-          '',
-        arabicName: s.name_arabic ?? s.arabicName ?? s.arabic_name ?? s.name ?? '',
-        numberOfAyahs: s.verses_count ?? s.numberOfAyahs ?? s.ayah_count ?? 0,
-        revelationType:
-          rev === 'madinah' || rev === 'medinan' ? 'Medinan' : 'Meccan',
-      }
-    })
+    const list = parseUmmahSurahsResponse(json)
     if (!list.length) throw new Error('empty surah list')
     surahCache.list = list
     list.forEach((s) => surahCache.byNumber.set(s.number, s))
@@ -350,14 +368,18 @@ export async function fetchWordTimings(
     //   1. The browser can play the MP3s directly via <audio>
     //   2. We can parallelize the duration probes
     //   3. The durations are cached in-memory for the session
+    const durationEntries = await Promise.all(
+      extracted.map(async (w) => ({
+        word: w,
+        durMs: w.audioUrl ? await getWordAudioDurationMs(w.audioUrl) : 0,
+      })),
+    )
+
     const words: WordTiming[] = []
     let cumMs = 0
-    for (const w of extracted) {
-      const durMs = w.audioUrl
-        ? await getWordAudioDurationMs(w.audioUrl)
-        : 0
+    for (const { word: w, durMs } of durationEntries) {
       words.push({
-        text: w.text!,
+        text: w.text ?? '',
         position: w.position ?? 0,
         startMs: cumMs,
         endMs: cumMs + durMs,
@@ -582,16 +604,20 @@ export async function fetchAyatData(
   translationEdition: string = 'bengali',
   useTajweed: boolean = false,
 ): Promise<AyatData | null> {
-  const ayahUrl = `${UMMAHAPI_BASE}/quran/surah/${surah}/ayah/${ayat}?translation=${encodeURIComponent(
-    translationEdition,
-  )}&script=uthmani`
+  const isBrowser = typeof window !== 'undefined'
+  const ayahUrl = isBrowser
+    ? `/api/ayat?surah=${surah}&ayat=${ayat}&translation=${encodeURIComponent(
+        translationEdition,
+      )}&script=uthmani`
+    : `${UMMAHAPI_BASE}/quran/surah/${surah}/ayah/${ayat}?translation=${encodeURIComponent(
+        translationEdition,
+      )}&script=uthmani`
 
-  // Kick off all independent fetches in parallel.
   const [ayahRes, timingsResult, tajweedHtml] = await Promise.all([
     fetchWithTimeout(ayahUrl, {
-      headers: ummahHeaders(),
+      headers: isBrowser ? { Accept: 'application/json' } : ummahHeaders(),
       cache: 'force-cache',
-      next: { revalidate: 604_800 }, // 7 days — verse text + translation are stable
+      next: { revalidate: 604_800 },
     }).catch((err) => {
       logger.warn('fetchAyatData: UmmahAPI ayah fetch failed', {
         surah,

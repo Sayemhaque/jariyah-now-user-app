@@ -8,7 +8,7 @@
 // 5s default — matches the server-side env default. Reading env directly
 // here would pull the env validator into client bundles, so we hardcode the
 // fallback and only override on the server.
-const DEFAULT_TIMEOUT_MS = 5000
+const DEFAULT_TIMEOUT_MS = 30000
 
 export interface FetchWithOptions extends RequestInit {
   /** Per-call timeout override in ms. Defaults to 5s. */
@@ -26,7 +26,7 @@ export async function fetchWithTimeout(
     return await fetch(url, { ...init, signal: controller.signal })
   } finally {
     clearTimeout(timer)
-  }
+  } 
 }
 
 /**

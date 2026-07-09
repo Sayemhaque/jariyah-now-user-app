@@ -78,10 +78,8 @@ const nextConfig: NextConfig = {
   // Raise the body size limit for API routes that accept large uploads.
   // The default is 1MB which is far too small for video files — the
   // /api/convert-mp4 endpoint accepts WebM blobs up to 100MB.
-  experimental: {
-    serverActions: {
-      bodySizeLimit: "100mb",
-    },
+  turbopack: {
+    root: "/home/sayem/Desktop/jariyah-now-user-app",
   },
   allowedDevOrigins: [
     "*.space-z.ai",

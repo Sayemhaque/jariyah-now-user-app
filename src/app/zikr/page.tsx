@@ -1,6 +1,7 @@
 'use client'
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import NextImage from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
@@ -57,11 +58,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import {
-  checkExportCapabilities,
-  pickSupportedMimeType,
-} from '@/lib/exportCapabilities'
-import { canConvertToMp4, webmToMp4 } from '@/lib/videoConverter'
 import type { ArabicFont, OverlayStyle } from '@/lib/types'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -549,6 +545,14 @@ function ZikrPage() {
     setIsMp4(false)
 
     try {
+      const [
+        { checkExportCapabilities, pickSupportedMimeType },
+        { canConvertToMp4, webmToMp4 },
+      ] = await Promise.all([
+        import('@/lib/exportCapabilities'),
+        import('@/lib/videoConverter'),
+      ])
+
       const caps = checkExportCapabilities()
       if (!caps.ok) {
         throw new Error(caps.reason || 'Export not supported in this browser.')
@@ -765,9 +769,11 @@ function ZikrPage() {
       <header className="border-b border-border qv-frosted shrink-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">
-            <img
+            <NextImage
               src="/logo.png"
               alt="Jariyah Now logo"
+              width={36}
+              height={36}
               className="h-9 w-9 rounded-xl object-contain"
             />
             <div className="flex items-baseline gap-2">
@@ -1006,17 +1012,18 @@ function ZikrPage() {
               )}
 
               {/* Watermark */}
-              <img
+              <NextImage
                 src="/watermark.png"
                 alt=""
-                aria-hidden="true"
-                className="absolute pointer-events-none select-none"
+                aria-hidden
+                width={120}
+                height={34}
+                sizes="6cqw"
+                className="absolute pointer-events-none select-none h-[6cqw] w-auto"
                 style={{
                   top: '4cqw',
                   left: '50%',
                   transform: 'translateX(-50%)',
-                  height: '6cqw',
-                  width: 'auto',
                   opacity: 0.85,
                   filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
                 }}
@@ -1277,10 +1284,12 @@ function ZikrPage() {
                           preload="metadata"
                         />
                       ) : (
-                        <img
+                        <NextImage
                           src={p.url}
                           alt={p.label}
-                          className="absolute inset-0 h-full w-full object-cover"
+                          fill
+                          sizes="(max-width: 768px) 33vw, 200px"
+                          className="object-cover"
                         />
                       )}
                       <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[9px] font-medium py-0.5 px-1 text-center truncate">
@@ -1496,7 +1505,7 @@ function ZikrExportModal({
               />
               <div className="qv-processing-ring absolute inset-0 rounded-full" />
               <div className="relative grid place-items-center h-20 w-20 rounded-full bg-card shadow-lg">
-                <img src="/logo.png" alt="" className="h-10 w-10 object-contain" />
+                <NextImage src="/logo.png" alt="" width={40} height={40} className="h-10 w-10 object-contain" />
               </div>
             </div>
 

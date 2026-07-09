@@ -19,6 +19,8 @@ import {
 } from '@/lib/jobStore'
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout'
 
+export const runtime = 'nodejs'
+
 /**
  * POST /api/render
  *

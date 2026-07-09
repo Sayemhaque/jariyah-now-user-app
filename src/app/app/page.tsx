@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   Film,
@@ -16,6 +17,8 @@ import {
   Scissors,
 } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
+import { useAyatRangeQuery, useSurahsQuery } from '@/lib/queries/builder'
+import { RECITERS } from '@/lib/reciters'
 import { validateAyatRange } from '@/lib/validation'
 import { SurahSelector } from '@/components/SurahSelector'
 import { AyatRangePicker } from '@/components/AyatRangePicker'
@@ -43,14 +46,18 @@ const ExportModal = dynamic(
 )
 
 export default function Home() {
-  const loadSurahs = useBuilderStore((s) => s.loadSurahs)
-  const fetchRange = useBuilderStore((s) => s.fetchRange)
-  const loading = useBuilderStore((s) => s.loadingAyats)
-  const ayatList = useBuilderStore((s) => s.ayatList)
   const surahs = useBuilderStore((s) => s.surahs)
+  const setSurahs = useBuilderStore((s) => s.setSurahs)
+  const ayatList = useBuilderStore((s) => s.ayatList)
+  const setAyatList = useBuilderStore((s) => s.setAyatList)
+  const setAyatLoading = useBuilderStore((s) => s.setAyatLoading)
+  const setAyatError = useBuilderStore((s) => s.setAyatError)
   const selectedSurahNumber = useBuilderStore((s) => s.selectedSurahNumber)
   const fromAyat = useBuilderStore((s) => s.fromAyat)
   const toAyat = useBuilderStore((s) => s.toAyat)
+  const reciterId = useBuilderStore((s) => s.reciterId)
+  const translationKey = useBuilderStore((s) => s.translationKey)
+  const useTajweed = useBuilderStore((s) => s.settings.useTajweed)
 
   const selectedSurah = useMemo(
     () => surahs.find((s) => s.number === selectedSurahNumber),
@@ -61,6 +68,29 @@ export default function Home() {
     [fromAyat, toAyat, selectedSurah],
   )
 
+  const reciter = useMemo(
+    () => RECITERS.find((item) => item.id === reciterId) ?? RECITERS[0],
+    [reciterId],
+  )
+
+  const surahsQuery = useSurahsQuery()
+  const ayatRangeParams = useMemo(
+    () =>
+      selectedSurah
+        ? {
+            surah: selectedSurah,
+            fromAyat,
+            toAyat,
+            recitationId: reciter.recitationId,
+            audioKey: reciter.audioKey,
+            translationKey,
+            useTajweed,
+          }
+        : null,
+    [selectedSurah, fromAyat, toAyat, reciter, translationKey, useTajweed],
+  )
+  const ayatRangeQuery = useAyatRangeQuery(ayatRangeParams, false)
+
   const [exportOpen, setExportOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileTab, setMobileTab] = useState<MobileTab>('settings')
@@ -68,8 +98,38 @@ export default function Home() {
   const [activeSplit, setActiveSplit] = useState<AyatSplit | null>(null)
 
   useEffect(() => {
-    loadSurahs()
-  }, [loadSurahs])
+    if (surahsQuery.data?.length) {
+      setSurahs(surahsQuery.data)
+    }
+  }, [surahsQuery.data, setSurahs])
+
+  useEffect(() => {
+    setAyatLoading(ayatRangeQuery.isFetching)
+  }, [ayatRangeQuery.isFetching, setAyatLoading])
+
+  useEffect(() => {
+    if (!ayatRangeQuery.isSuccess) return
+
+    if (!ayatRangeQuery.data.length) {
+      setAyatList([])
+      setAyatError('Could not load ayat data. Check your connection and try again.')
+      return
+    }
+
+    setAyatError(null)
+    setAyatList(ayatRangeQuery.data)
+  }, [ayatRangeQuery.data, ayatRangeQuery.isSuccess, setAyatError, setAyatList])
+
+  useEffect(() => {
+    if (!ayatRangeQuery.error) return
+
+    setAyatList([])
+    setAyatError(
+      ayatRangeQuery.error instanceof Error
+        ? ayatRangeQuery.error.message
+        : 'Failed to load ayat data',
+    )
+  }, [ayatRangeQuery.error, setAyatError, setAyatList])
 
   const onLoadAyats = async () => {
     if (!selectedSurah) {
@@ -80,7 +140,23 @@ export default function Home() {
       toast.error(validation.error ?? 'Invalid ayat range')
       return
     }
-    await fetchRange()
+    setAyatError(null)
+    setAyatList([])
+
+    const result = await ayatRangeQuery.refetch()
+    if (result.error) {
+      toast.error(
+        result.error instanceof Error
+          ? result.error.message
+          : 'Failed to load ayat data',
+      )
+      return
+    }
+    if (!result.data?.length) {
+      toast.error('Could not load ayat data. Check your connection and try again.')
+      return
+    }
+
     toast.success('Ayat data loaded — press play in the preview.')
   }
 
@@ -92,9 +168,11 @@ export default function Home() {
       <header className="border-b border-border qv-frosted shrink-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">
-            <img
+            <Image
               src="/logo.png"
               alt="Jariyah Now logo"
+              width={36}
+              height={36}
               className="h-9 w-9 rounded-xl object-contain"
             />
             <span className="text-[15px] font-bold tracking-tight">Jariyah Now</span>
@@ -193,11 +271,11 @@ export default function Home() {
 
               <Button
                 onClick={onLoadAyats}
-                disabled={loading || !selectedSurah || !validation.ok}
+                disabled={ayatRangeQuery.isFetching || !selectedSurah || !validation.ok}
                 className="w-full qv-btn-primary font-semibold"
                 size="default"
               >
-                {loading ? (
+                {ayatRangeQuery.isFetching ? (
                   <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Loading ayats…</>
                 ) : ayatList.length ? (
                   <><RefreshCw className="h-4 w-4 mr-1.5" />Reload ayats</>

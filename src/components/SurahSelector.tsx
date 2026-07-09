@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Search, BookOpen } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
+import { useSurahsQuery } from '@/lib/queries/builder'
 import {
   Select,
   SelectContent,
@@ -17,17 +18,18 @@ import { Badge } from '@/components/ui/badge'
 
 export function SurahSelector() {
   const surahs = useBuilderStore((s) => s.surahs)
-  const loading = useBuilderStore((s) => s.surahsLoading)
-  const error = useBuilderStore((s) => s.surahsError)
-  const loadSurahs = useBuilderStore((s) => s.loadSurahs)
+  const setSurahs = useBuilderStore((s) => s.setSurahs)
   const selected = useBuilderStore((s) => s.selectedSurahNumber)
   const setSurah = useBuilderStore((s) => s.setSurah)
+  const surahsQuery = useSurahsQuery()
 
   const [query, setQuery] = useState('')
 
   useEffect(() => {
-    loadSurahs()
-  }, [loadSurahs])
+    if (surahsQuery.data?.length) {
+      setSurahs(surahsQuery.data)
+    }
+  }, [surahsQuery.data, setSurahs])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -52,12 +54,12 @@ export function SurahSelector() {
       <Select
         value={selected ? String(selected) : ''}
         onValueChange={(v) => setSurah(Number(v))}
-        disabled={loading && surahs.length === 0}
+        disabled={surahsQuery.isLoading && surahs.length === 0}
       >
         <SelectTrigger className="w-full bg-card h-9 text-sm">
           <SelectValue
             placeholder={
-              loading && surahs.length === 0
+              surahsQuery.isLoading && surahs.length === 0
                 ? 'Loading surahs…'
                 : 'Choose a surah'
             }
@@ -116,7 +118,13 @@ export function SurahSelector() {
         </SelectContent>
       </Select>
 
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {surahsQuery.error && (
+        <p className="text-xs text-destructive">
+          {surahsQuery.error instanceof Error
+            ? surahsQuery.error.message
+            : 'Failed to load surahs'}
+        </p>
+      )}
       {selectedSurah && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground pt-0.5">
           <Badge

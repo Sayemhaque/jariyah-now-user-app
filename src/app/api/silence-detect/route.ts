@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { spawn } from 'child_process'
+import { unlink, writeFile } from 'fs/promises'
 import { logger } from '@/lib/logger'
 
 /**
@@ -18,6 +19,102 @@ export const runtime = 'nodejs'
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
+const FFMPEG_TIMEOUT_MS = 30_000
+
+async function removeTempFile(path: string): Promise<void> {
+  await unlink(path).catch(() => {})
+}
+
+function parseSilences(stderr: string): { start: number; end: number; duration: number }[] {
+  const silences: { start: number; end: number; duration: number }[] = []
+  const startRegex = /silence_start:\s*([\d.]+)/g
+  const endRegex = /silence_end:\s*([\d.]+)\s*\|\s*silence_duration:\s*([\d.]+)/g
+
+  const starts: number[] = []
+  const ends: { end: number; duration: number }[] = []
+
+  let match: RegExpExecArray | null = startRegex.exec(stderr)
+  while (match) {
+    starts.push(parseFloat(match[1] ?? '0'))
+    match = startRegex.exec(stderr)
+  }
+
+  match = endRegex.exec(stderr)
+  while (match) {
+    ends.push({
+      end: parseFloat(match[1] ?? '0'),
+      duration: parseFloat(match[2] ?? '0'),
+    })
+    match = endRegex.exec(stderr)
+  }
+
+  for (let i = 0; i < Math.min(starts.length, ends.length); i++) {
+    const start = starts[i]
+    const endEntry = ends[i]
+    if (start === undefined || endEntry === undefined) continue
+    silences.push({
+      start,
+      end: endEntry.end,
+      duration: endEntry.duration,
+    })
+  }
+
+  return silences
+}
+
+function runSilenceDetect(
+  tmpFile: string,
+  requestId: string,
+): Promise<Response> {
+  return new Promise((resolve) => {
+    let settled = false
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+    const settle = (response: Response) => {
+      if (settled) return
+      settled = true
+      if (timeoutId !== undefined) clearTimeout(timeoutId)
+      resolve(response)
+    }
+
+    const proc = spawn('ffmpeg', [
+      '-i', tmpFile,
+      '-af', 'silencedetect=noise=-30dB:d=0.3',
+      '-f', 'null',
+      '-',
+    ], { stdio: ['ignore', 'pipe', 'pipe'] })
+
+    let stderr = ''
+    proc.stderr.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString('utf8')
+    })
+
+    proc.on('close', (code) => {
+      if (code !== 0 && !stderr.includes('silencedetect')) {
+        logger.error('silence-detect ffmpeg failed', { requestId, code })
+        settle(NextResponse.json({ error: 'ffmpeg failed' }, { status: 500 }))
+        return
+      }
+
+      const silences = parseSilences(stderr)
+      logger.info('silence-detect complete', {
+        requestId,
+        silenceCount: silences.length,
+      })
+      settle(NextResponse.json({ silences }))
+    })
+
+    proc.on('error', () => {
+      settle(NextResponse.json({ error: 'Failed to run ffmpeg' }, { status: 500 }))
+    })
+
+    timeoutId = setTimeout(() => {
+      proc.kill('SIGKILL')
+      settle(NextResponse.json({ error: 'ffmpeg timed out' }, { status: 504 }))
+    }, FFMPEG_TIMEOUT_MS)
+  })
+}
+
 export async function POST(req: NextRequest) {
   const requestId = req.headers.get('x-request-id') ?? `req_${Date.now().toString(36)}`
 
@@ -32,8 +129,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  // Download the audio file to a temp location
   const tmpFile = `/tmp/silence_${Date.now()}.mp3`
+
   try {
     const dlRes = await fetch(audioUrl)
     if (!dlRes.ok) {
@@ -43,7 +140,6 @@ export async function POST(req: NextRequest) {
       )
     }
     const buf = Buffer.from(await dlRes.arrayBuffer())
-    const { writeFile, unlink } = await import('fs/promises')
     await writeFile(tmpFile, buf)
   } catch (err) {
     logger.error('silence-detect download failed', {
@@ -53,75 +149,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to download audio' }, { status: 502 })
   }
 
-  // Run ffmpeg's silencedetect filter
-  return new Promise<Response>((resolve) => {
-    const proc = spawn('ffmpeg', [
-      '-i', tmpFile,
-      '-af', 'silencedetect=noise=-30dB:d=0.3',
-      '-f', 'null',
-      '-',
-    ], { stdio: ['ignore', 'pipe', 'pipe'] })
-
-    let stderr = ''
-    proc.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString('utf8')
-    })
-
-    proc.on('close', (code) => {
-      // Clean up temp file
-      import('fs/promises').then(({ unlink }) => unlink(tmpFile).catch(() => {}))
-
-      if (code !== 0 && !stderr.includes('silencedetect')) {
-        logger.error('silence-detect ffmpeg failed', { requestId, code })
-        resolve(NextResponse.json({ error: 'ffmpeg failed' }, { status: 500 }))
-        return
-      }
-
-      // Parse silencedetect output from stderr
-      // Format: [silencedetect @ 0x...] silence_start: 3.234
-      //         [silencedetect @ 0x...] silence_end: 3.5 | silence_duration: 0.266
-      const silences: { start: number; end: number; duration: number }[] = []
-      const startRegex = /silence_start:\s*([\d.]+)/g
-      const endRegex = /silence_end:\s*([\d.]+)\s*\|\s*silence_duration:\s*([\d.]+)/g
-
-      const starts: number[] = []
-      const ends: { end: number; duration: number }[] = []
-
-      let match: RegExpExecArray | null
-      while ((match = startRegex.exec(stderr)) !== null) {
-        starts.push(parseFloat(match[1]!))
-      }
-      while ((match = endRegex.exec(stderr)) !== null) {
-        ends.push({ end: parseFloat(match[1]!), duration: parseFloat(match[2]!) })
-      }
-
-      // Pair starts with ends
-      for (let i = 0; i < Math.min(starts.length, ends.length); i++) {
-        silences.push({
-          start: starts[i]!,
-          end: ends[i]!.end,
-          duration: ends[i]!.duration,
-        })
-      }
-
-      logger.info('silence-detect complete', {
-        requestId,
-        silenceCount: silences.length,
-      })
-
-      resolve(NextResponse.json({ silences }))
-    })
-
-    proc.on('error', () => {
-      import('fs/promises').then(({ unlink }) => unlink(tmpFile).catch(() => {}))
-      resolve(NextResponse.json({ error: 'Failed to run ffmpeg' }, { status: 500 }))
-    })
-
-    // Timeout after 30 seconds
-    setTimeout(() => {
-      proc.kill('SIGKILL')
-      import('fs/promises').then(({ unlink }) => unlink(tmpFile).catch(() => {}))
-      resolve(NextResponse.json({ error: 'ffmpeg timed out' }, { status: 504 }))
-    }, 30000)
-  })
+  try {
+    return await runSilenceDetect(tmpFile, requestId)
+  } finally {
+    await removeTempFile(tmpFile)
+  }
 }

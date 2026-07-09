@@ -13,6 +13,7 @@ import {
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { Providers } from "@/components/Providers";
 
 // ─── UI font ─────────────────────────────────────────────────────────
 const inter = Inter({
@@ -152,9 +153,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${amiri.variable} ${scheherazade.variable} ${notoNaskhArabic.variable} ${reemKufi.variable} ${cairo.variable} ${notoBengali.variable} ${notoSerifBengali.variable} ${hindSiliguri.variable} antialiased bg-background text-foreground`}
       >
-        {children}
-        <Toaster />
-        <SonnerToaster />
+        <Providers>
+          {children}
+          <Toaster />
+          <SonnerToaster />
+        </Providers>
       </body>
     </html>
   );

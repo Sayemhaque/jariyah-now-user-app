@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 import {
   Sparkles,
@@ -53,9 +54,12 @@ export default function LandingPage() {
       <header className="sticky top-0 z-30 qv-frosted border-b border-border">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <img
+            <Image
               src="/logo.png"
               alt="Jariyah Now logo"
+              width={40}
+              height={40}
+              priority
               className="h-10 w-10 rounded-xl object-contain"
             />
             <span className="text-lg font-bold tracking-tight">Jariyah Now</span>
@@ -108,7 +112,7 @@ export default function LandingPage() {
           <div className="max-w-3xl">
             {/* Badge */}
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6">
-              <img src="/logo.png" alt="" className="h-3.5 w-3.5 rounded-sm" />
+              <Image src="/logo.png" alt="" width={14} height={14} className="h-3.5 w-3.5 rounded-sm" />
               Free • No account required
             </div>
 
@@ -210,9 +214,12 @@ export default function LandingPage() {
                   </div>
                 </div>
                 {/* Screenshot */}
-                <img
+                <Image
                   src="/landing/app-desktop.png"
                   alt="Jariyah Now app — desktop view"
+                  width={1440}
+                  height={900}
+                  sizes="(max-width: 1024px) 100vw, 960px"
                   className="w-full h-auto block"
                 />
               </div>
@@ -222,9 +229,12 @@ export default function LandingPage() {
             <div className="hidden lg:block w-[200px] shrink-0">
               <div className="rounded-[2rem] border-[6px] border-foreground/80 bg-foreground/80 p-1 shadow-2xl">
                 <div className="rounded-[1.5rem] overflow-hidden bg-background">
-                  <img
+                  <Image
                     src="/landing/app-mobile.png"
                     alt="Jariyah Now app — mobile view"
+                    width={390}
+                    height={844}
+                    sizes="200px"
                     className="w-full h-auto block"
                   />
                 </div>
@@ -388,9 +398,11 @@ export default function LandingPage() {
             {/* Decorative bg */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] bg-primary/5 rounded-full blur-3xl -z-10" />
 
-            <img
+            <Image
               src="/logo.png"
               alt="Jariyah Now logo"
+              width={56}
+              height={56}
               className="h-14 w-14 rounded-2xl object-contain mx-auto mb-6"
             />
 
@@ -419,9 +431,11 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <img
+              <Image
                 src="/logo.png"
                 alt="Jariyah Now logo"
+                width={36}
+                height={36}
                 className="h-9 w-9 rounded-xl object-contain"
               />
               <div>

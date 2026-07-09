@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { spawn } from 'child_process'
+import { unlink, writeFile } from 'fs/promises'
 import { logger } from '@/lib/logger'
 
 /**
@@ -30,6 +31,53 @@ export const runtime = 'nodejs'
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
+const FFMPEG_TIMEOUT_MS = 30_000
+
+async function removeTempFile(path: string): Promise<void> {
+  await unlink(path).catch(() => {})
+}
+
+function extractPcmBuffer(tmpFile: string): Promise<Buffer | null> {
+  return new Promise((resolve) => {
+    let settled = false
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    const chunks: Buffer[] = []
+
+    const settle = (value: Buffer | null) => {
+      if (settled) return
+      settled = true
+      if (timeoutId !== undefined) clearTimeout(timeoutId)
+      resolve(value)
+    }
+
+    const proc = spawn('ffmpeg', [
+      '-i', tmpFile,
+      '-ar', '8000',
+      '-ac', '1',
+      '-f', 'f32le',
+      'pipe:1',
+    ], { stdio: ['ignore', 'pipe', 'pipe'] })
+
+    proc.stdout.on('data', (chunk: Buffer) => chunks.push(chunk))
+    proc.stderr.on('data', () => {})
+
+    proc.on('close', (code) => {
+      if (code !== 0 && chunks.length === 0) {
+        settle(null)
+        return
+      }
+      settle(Buffer.concat(chunks))
+    })
+
+    proc.on('error', () => settle(null))
+
+    timeoutId = setTimeout(() => {
+      proc.kill('SIGKILL')
+      settle(null)
+    }, FFMPEG_TIMEOUT_MS)
+  })
+}
+
 export async function POST(req: NextRequest) {
   const requestId = req.headers.get('x-request-id') ?? `req_${Date.now().toString(36)}`
 
@@ -49,6 +97,7 @@ export async function POST(req: NextRequest) {
 
   // ─── Download audio ───────────────────────────────────────────────
   const tmpFile = `/tmp/bp_${Date.now()}.mp3`
+
   try {
     const dlRes = await fetch(audioUrl)
     if (!dlRes.ok) {
@@ -58,7 +107,6 @@ export async function POST(req: NextRequest) {
       )
     }
     const buf = Buffer.from(await dlRes.arrayBuffer())
-    const { writeFile, unlink } = await import('fs/promises')
     await writeFile(tmpFile, buf)
   } catch (err) {
     logger.error('audio-breakpoints download failed', {
@@ -68,41 +116,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to download audio' }, { status: 502 })
   }
 
-  // ─── Extract raw PCM via ffmpeg ───────────────────────────────────
-  // -ar 8000:  8kHz sample rate (enough resolution for speech)
-  // -ac 1:     mono (mix down stereo)
-  // -f f32le:  32-bit float little-endian PCM
-  const pcmBuffer = await new Promise<Buffer | null>((resolve) => {
-    const chunks: Buffer[] = []
-    const proc = spawn('ffmpeg', [
-      '-i', tmpFile,
-      '-ar', '8000',
-      '-ac', '1',
-      '-f', 'f32le',
-      'pipe:1',
-    ], { stdio: ['ignore', 'pipe', 'pipe'] })
-
-    proc.stdout.on('data', (chunk: Buffer) => chunks.push(chunk))
-    proc.stderr.on('data', () => { /* swallow ffmpeg progress */ })
-
-    proc.on('close', (code) => {
-      if (code !== 0 && chunks.length === 0) {
-        resolve(null)
-      } else {
-        resolve(Buffer.concat(chunks))
-      }
-    })
-
-    proc.on('error', () => resolve(null))
-
-    setTimeout(() => {
-      proc.kill('SIGKILL')
-      resolve(null)
-    }, 30000)
-  })
-
-  // Clean up temp file
-  import('fs/promises').then(({ unlink }) => unlink(tmpFile).catch(() => {}))
+  let pcmBuffer: Buffer | null = null
+  try {
+    pcmBuffer = await extractPcmBuffer(tmpFile)
+  } finally {
+    await removeTempFile(tmpFile)
+  }
 
   if (!pcmBuffer || pcmBuffer.length < 4) {
     logger.error('audio-breakpoints ffmpeg extraction failed', { requestId })

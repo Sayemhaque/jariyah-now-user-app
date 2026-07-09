@@ -3,6 +3,8 @@ import { renderStatusQuerySchema } from '@/lib/schemas'
 import { getRenderJob, verifyJobOwnership } from '@/lib/jobStore'
 import { logger } from '@/lib/logger'
 
+export const runtime = 'nodejs'
+
 /**
  * GET /api/render-status?jobId=xxx
  *   → Returns { status: 'rendering' | 'done' | 'error', progress, downloadUrl }

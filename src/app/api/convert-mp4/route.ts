@@ -32,7 +32,7 @@ export const dynamic = 'force-dynamic'
 
 // Allow the Python binary to be overridden (e.g. python3.12 vs python).
 const PYTHON_BIN = process.env.PYTHON_BIN || 'python3'
-const CONVERTER_SCRIPT = path.join(process.cwd(), 'scripts', 'webm_to_mp4.py')
+const CONVERTER_SCRIPT = path.join(/*turbopackIgnore: true*/ process.cwd(), 'scripts', 'webm_to_mp4.py')
 
 // Body-size + timeout limits. 100 MB is generous: a 720p30 10-ayat reel at
 // 6 Mbps is ~75 MB max. The ffmpeg timeout (4 min) is well under the route

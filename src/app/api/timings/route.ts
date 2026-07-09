@@ -5,6 +5,8 @@ import { consumeRateLimit, getClientIp } from '@/lib/rateLimit'
 import { logger } from '@/lib/logger'
 import { timingsQuerySchema } from '@/lib/schemas'
 
+export const runtime = 'nodejs'
+
 /**
  * Proxy for the Quran.com word-timing API. The browser cannot call
  * api.quran.com directly because of CORS, so we re-issue the request

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import Image from 'next/image'
 import {
   Play,
   Pause,
@@ -163,6 +164,25 @@ interface ActiveWord {
   wordIndex: number
 }
 
+const AUDIO_HANDOFF_BUFFER_MS = 120
+
+function getAyatSpokenEndMs(
+  ayat: {
+    words: { endMs: number }[]
+    audioDurationMs: number
+  } | null | undefined,
+  liveDurationMs: number,
+): number {
+  if (!ayat) return 0
+
+  const fileDurationMs = ayat.audioDurationMs || liveDurationMs || 0
+  const lastWordEndMs = ayat.words[ayat.words.length - 1]?.endMs ?? 0
+
+  if (lastWordEndMs <= 0) return fileDurationMs
+
+  return Math.min(fileDurationMs || lastWordEndMs, lastWordEndMs + AUDIO_HANDOFF_BUFFER_MS)
+}
+
 export function VideoPreview() {
   const ayatList = useBuilderStore((s) => s.ayatList)
   const loading = useBuilderStore((s) => s.loadingAyats)
@@ -187,6 +207,8 @@ export function VideoPreview() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const rafRef = useRef<number | null>(null)
+  const lastUiSyncRef = useRef(0)
+  const autoAdvancedAyatRef = useRef<number | null>(null)
   // Preloader: a hidden Audio() object that fetches + decodes the NEXT
   // ayat's MP3 while the current one plays. When `onEnded` fires, we
   // swap the preloaded src into the main audio element so playback
@@ -243,66 +265,40 @@ export function VideoPreview() {
     return arr
   }, [ayatList, liveDurations])
 
+  const paginationPlan = useMemo<PaginationPlan>(() => {
+    if (!current) return { chunks: [], total: 0 }
+    const dur = current.audioDurationMs || liveDurations[currentIndex] || 0
+    return buildPlanForAyat({
+      words: current.words,
+      arabicText: current.arabicText,
+      translation: current.translation,
+      audioDurationMs: dur,
+      audioPauses: current.audioPauses,
+    })
+  }, [current, currentIndex, liveDurations])
+
   // -- per-ayat word highlight, driven by audio.currentTime -------------
   const [activeWord, setActiveWord] = useState<ActiveWord | null>(null)
 
   // Use a ref to break the recursive self-reference inside `tick` — this
   // also lets us always read the latest `current`/`currentIndex` without
   // re-creating the rAF loop on every state change.
-  const stateRef = useRef({ current, currentIndex })
+  const stateRef = useRef({
+    current,
+    currentIndex,
+    paginationPlan,
+    liveDurations,
+    ayatListLength: ayatList.length,
+  })
   useEffect(() => {
-    stateRef.current = { current, currentIndex }
-  }, [current, currentIndex])
-
-  useEffect(() => {
-    if (!isPlaying) return
-    let cancelled = false
-
-    const tick = () => {
-      if (cancelled) return
-      const audio = audioRef.current
-      const { current: c, currentIndex: ci } = stateRef.current
-      if (audio && c) {
-        const tMs = audio.currentTime * 1000
-        setCurrentTimeMs(tMs)
-        // ─── Audio-synced pagination ────────────────────────────────
-        // Build the chunk plan for this ayat (cheap; pure function of
-        // the ayat's word timings + duration). Then find which chunk
-        // is active at the current audio position.
-        //
-        // We DON'T memoize here because the tick runs every frame and
-        // we want zero stale closures — `buildPlanForAyat` is fast
-        // enough (a few hundred microseconds for a 50-word ayat).
-        const dur = c.audioDurationMs || liveDurations[ci] || 0
-        const plan = buildPlanForAyat({
-          words: c.words,
-          arabicText: c.arabicText,
-          translation: c.translation,
-          audioDurationMs: dur,
-          audioPauses: c.audioPauses,
-        })
-        if (plan.total > 1) {
-          let page = findChunkAtTime(plan.chunks, tMs)
-          if (page < 0) page = 0
-          // Only update state when the page actually changes — avoids
-          // a needless React re-render every animation frame.
-          setTextPage((prev) => (prev === page ? prev : page))
-        } else if (plan.total <= 1) {
-          setTextPage((prev) => (prev === 0 ? prev : 0))
-        }
-        const foundIdx = getActiveWordIndex(c.words, tMs)
-        if (foundIdx >= 0) {
-          setActiveWord({ ayatIndex: ci, wordIndex: foundIdx })
-        }
-      }
-      rafRef.current = requestAnimationFrame(tick)
+    stateRef.current = {
+      current,
+      currentIndex,
+      paginationPlan,
+      liveDurations,
+      ayatListLength: ayatList.length,
     }
-    rafRef.current = requestAnimationFrame(tick)
-    return () => {
-      cancelled = true
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    }
-  }, [isPlaying])
+  }, [current, currentIndex, paginationPlan, liveDurations, ayatList.length])
 
   // -- playback controls -------------------------------------------------
   const playAyat = useCallback(
@@ -310,6 +306,7 @@ export function VideoPreview() {
       if (!ayatList[idx]) return
       const audio = audioRef.current
       if (!audio) return
+      autoAdvancedAyatRef.current = null
       setCurrentIndex(idx)
       setActiveWord(null)
       setCurrentTimeMs(0)
@@ -324,6 +321,68 @@ export function VideoPreview() {
     },
     [ayatList, volume, muted],
   )
+
+  useEffect(() => {
+    if (!isPlaying) return
+    let cancelled = false
+
+    const tick = () => {
+      if (cancelled) return
+      const audio = audioRef.current
+      const {
+        current: c,
+        currentIndex: ci,
+        paginationPlan: plan,
+        liveDurations: durations,
+        ayatListLength,
+      } = stateRef.current
+      if (audio && c) {
+        const tMs = audio.currentTime * 1000
+        const now = performance.now()
+        if (now - lastUiSyncRef.current >= 100) {
+          setCurrentTimeMs(tMs)
+          lastUiSyncRef.current = now
+        }
+
+        const spokenEndMs = getAyatSpokenEndMs(c, durations[ci] || 0)
+        if (
+          spokenEndMs > 0 &&
+          ci < ayatListLength - 1 &&
+          tMs >= spokenEndMs &&
+          autoAdvancedAyatRef.current !== ci
+        ) {
+          autoAdvancedAyatRef.current = ci
+          playAyat(ci + 1)
+          return
+        }
+
+        if (plan.total > 1) {
+          let page = findChunkAtTime(plan.chunks, tMs)
+          if (page < 0) page = 0
+          setTextPage((prev) => (prev === page ? prev : page))
+        } else {
+          setTextPage((prev) => (prev === 0 ? prev : 0))
+        }
+
+        const foundIdx = getActiveWordIndex(c.words, tMs)
+        if (foundIdx >= 0) {
+          setActiveWord((prev) =>
+            prev?.ayatIndex === ci && prev.wordIndex === foundIdx
+              ? prev
+              : { ayatIndex: ci, wordIndex: foundIdx },
+          )
+        } else {
+          setActiveWord((prev) => (prev?.ayatIndex === ci ? null : prev))
+        }
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    }
+    rafRef.current = requestAnimationFrame(tick)
+    return () => {
+      cancelled = true
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
+    }
+  }, [isPlaying, playAyat])
 
   // ─── Preload the NEXT ayat's MP3 in parallel ─────────────────────────
   // Whenever currentIndex changes, kick off a hidden Audio() download of
@@ -453,6 +512,7 @@ export function VideoPreview() {
     }
     const into = target - (offsets[idx] || 0)
     if (idx !== currentIndex) {
+      autoAdvancedAyatRef.current = null
       setCurrentIndex(idx)
       setTextPage(0) // reset pagination when jumping to a different ayat
       const audio = audioRef.current!
@@ -483,10 +543,10 @@ export function VideoPreview() {
   useEffect(() => {
     if (prevListRef.current === ayatList) return
     prevListRef.current = ayatList
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCurrentIndex(0)
     setIsPlaying(false)
     setActiveWord(null)
+    autoAdvancedAyatRef.current = null
     setCurrentTimeMs(0)
     setLiveDurations({})
     if (audioRef.current) {
@@ -538,23 +598,6 @@ export function VideoPreview() {
       : -1
 
   // ─── Memoized audio-synced pagination plan for the CURRENT ayat ────
-  // Built once per ayat (or per duration change). The rAF tick uses
-  // the same plan to decide which chunk is active at `audio.currentTime`.
-  // This drives the live preview's text pagination — chunk N switches
-  // the instant the reciter finishes the last word in chunk N.
-  const paginationPlan = useMemo<PaginationPlan>(() => {
-    if (!current) return { chunks: [], total: 0 }
-    const dur = current.audioDurationMs || liveDurations[currentIndex] || 0
-    return buildPlanForAyat({
-      words: current.words,
-      arabicText: current.arabicText,
-      translation: current.translation,
-      audioDurationMs: dur,
-      audioPauses: current.audioPauses,
-    })
-  }, [current, currentIndex, liveDurations])
-
-  // Translate the current `textPage` state into the visible slice of
   // Arabic tokens + the matching translation piece. Both are derived
   // from the SAME plan so they always advance in lockstep.
   const visibleArabicRange = useMemo<{ start: number; end: number }>(() => {
@@ -893,17 +936,18 @@ export function VideoPreview() {
               gets baked into the exported MP4 by ExportModal.drawFrame,
               so the user sees the same branding in the live preview as
               they will in the final video. */}
-          <img
+          <Image
             src="/watermark.png"
             alt=""
-            aria-hidden="true"
-            className="absolute pointer-events-none select-none"
+            aria-hidden
+            width={200}
+            height={56}
+            sizes="14cqw"
+            className="absolute pointer-events-none select-none h-[14cqw] w-auto"
             style={{
               top: '4cqw',
               left: '50%',
               transform: 'translateX(-50%)',
-              height: '14cqw',
-              width: 'auto',
               opacity: 0.9,
               filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
             }}
