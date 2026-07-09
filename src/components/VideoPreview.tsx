@@ -15,36 +15,11 @@ import {
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { overlayCssBackground } from '@/lib/overlay'
-import { getActiveWordIndex } from '@/lib/highlight'
 import { videoAttributionLine } from '@/lib/translations'
-import { formatStructural, getStructuralPairs } from '@/lib/structural'
-import {
-  buildSilenceSnappedPlan,
-  buildTimeProportionalPlan,
-  estimateChunkCount,
-  findChunkAtTime,
-  splitTranslationToChunks,
-  type PaginationPlan,
-} from '@/lib/textPagination'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 
-// Quick helper: returns true if the ayat has ANY structural markers to show.
-// Used to conditionally render the bottom metadata strip.
-function hasStructuralInfo(a: {
-  juzNumber?: number
-  hizbNumber?: number
-  rubElHizbNumber?: number
-  rukuNumber?: number
-  manzilNumber?: number
-  pageNumber?: number
-}): boolean {
-  return getStructuralPairs(a).length > 0
-}
-
-// Map the arabicFont setting to its CSS class. Falls back to Amiri if
-// an unknown value slips through (shouldn't happen, but defensive).
 const ARABIC_FONT_CLASS: Record<string, string> = {
   uthmani: 'font-arabic-uthmani',
   amiri: 'font-arabic-uthmani',
@@ -54,89 +29,15 @@ const ARABIC_FONT_CLASS: Record<string, string> = {
   cairo: 'font-arabic-cairo',
 }
 
-// Map the bengaliFont setting to its CSS class.
 const BENGALI_FONT_CLASS: Record<string, string> = {
   sans: 'font-bengali-sans',
   serif: 'font-bengali-serif',
   hind: 'font-bengali-hind',
 }
 
-// ─── Text pagination helpers ─────────────────────────────────────────
-// The audio-synced pagination logic lives in `@/lib/textPagination`.
-// These helpers below are thin wrappers that build a per-ayat
-// PaginationPlan (cached via useMemo) and translate the active chunk
-// index into the visible slice of Arabic tokens + translation text.
-
-// A flat list of renderable Arabic tokens — either individual words
-// (with optional highlight index) or color-coded Tajweed fragments.
-interface ArabicToken {
-  text: string
-  color?: string | null // null = use default font color
-  wordIdx?: number // global word index (used for highlight matching)
-}
-
-function buildArabicTokens(current: {
-  words: { text: string }[]
-  tajweedSegments?: { text: string; color: string | null }[] | null
-  arabicText: string
-}): ArabicToken[] {
-  if (current.words.length > 0) {
-    return current.words.map((w, i) => ({ text: w.text, wordIdx: i }))
-  }
-  if (current.tajweedSegments && current.tajweedSegments.length > 0) {
-    // Flatten Tajweed segments into individual words while preserving
-    // the per-segment color. Splits on whitespace but keeps the color
-    // attached to each resulting word.
-    const tokens: ArabicToken[] = []
-    for (const seg of current.tajweedSegments) {
-      for (const part of seg.text.split(/\s+/)) {
-        if (part) tokens.push({ text: part, color: seg.color })
-      }
-    }
-    return tokens
-  }
-  if (current.arabicText) {
-    return current.arabicText
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((text, i) => ({ text, wordIdx: i }))
-  }
-  return []
-}
-
-/**
- * Build the pagination plan for the current ayat. Prefers silence-snapped
- * boundaries (from ffmpeg pause detection on the ACTUAL audio) and falls
- * back to time-proportional when pauses aren't available.
- *
- * We do NOT use the word-timing API (buildAudioSyncedChunks) because
- * the reciter IDs don't match between UmmahAPI and quran.com, and
- * even if they did, isolated word MP3 durations don't match continuous
- * recitation timings.
- */
-function buildPlanForAyat(current: {
-  words: { text: string; startMs: number; endMs: number }[]
-  arabicText: string
-  translation: string
-  audioDurationMs: number
-  audioPauses?: { start: number; end: number; duration: number }[]
-}): PaginationPlan {
-  const arWords = current.arabicText.split(/\s+/).filter(Boolean).length
-  const n = estimateChunkCount(arWords)
-  if (n <= 1 || current.audioDurationMs <= 0) {
-    return { chunks: [], total: 0 }
-  }
-  // ✅ Best: silence-snapped from the real audio's breath pauses
-  if (current.audioPauses && current.audioPauses.length > 0) {
-    return buildSilenceSnappedPlan(
-      current.audioDurationMs,
-      n,
-      current.audioPauses,
-      arWords,
-    )
-  }
-  // Fallback: even time split
-  return buildTimeProportionalPlan(current.audioDurationMs, n)
+function buildArabicTokens(arabicText: string): string[] {
+  if (!arabicText) return []
+  return arabicText.split(/\s+/).filter(Boolean)
 }
 
 const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
@@ -144,7 +45,6 @@ const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
   portrait: { w: 720, h: 1280, ratio: '9 / 16' },
 }
 
-// Map textWidth setting → CSS max-width in cqw (container query units)
 const TEXT_WIDTH_MAP: Record<string, string> = {
   full: '94cqw',
   wide: '82cqw',
@@ -152,35 +52,35 @@ const TEXT_WIDTH_MAP: Record<string, string> = {
   narrow: '58cqw',
 }
 
-// Map textSpacing setting → CSS margin-top in cqw for the translation
 const TEXT_SPACING_MAP: Record<string, string> = {
   compact: '1cqw',
   normal: '3cqw',
   spacious: '6cqw',
 }
 
-interface ActiveWord {
-  ayatIndex: number
-  wordIndex: number
-}
+const AUDIO_HANDOFF_BUFFER_MS = 80
 
-const AUDIO_HANDOFF_BUFFER_MS = 120
-
-function getAyatSpokenEndMs(
+function getAdvanceAtMs(
   ayat: {
-    words: { endMs: number }[]
     audioDurationMs: number
+    audioPauses?: { start: number; end: number; duration: number }[]
   } | null | undefined,
   liveDurationMs: number,
 ): number {
   if (!ayat) return 0
 
-  const fileDurationMs = ayat.audioDurationMs || liveDurationMs || 0
-  const lastWordEndMs = ayat.words[ayat.words.length - 1]?.endMs ?? 0
+  const totalMs = ayat.audioDurationMs || liveDurationMs || 0
+  if (totalMs <= 0) return 0
 
-  if (lastWordEndMs <= 0) return fileDurationMs
+  const trailingPause = ayat.audioPauses?.[ayat.audioPauses.length - 1]
+  if (!trailingPause) return totalMs
 
-  return Math.min(fileDurationMs || lastWordEndMs, lastWordEndMs + AUDIO_HANDOFF_BUFFER_MS)
+  const remainingMs = totalMs - trailingPause.end
+  if (remainingMs >= 120 && remainingMs <= 1500) {
+    return Math.max(0, Math.min(totalMs, trailingPause.end + AUDIO_HANDOFF_BUFFER_MS))
+  }
+
+  return totalMs
 }
 
 export function VideoPreview() {
@@ -195,7 +95,6 @@ export function VideoPreview() {
   const fromAyat = useBuilderStore((s) => s.fromAyat)
   const toAyat = useBuilderStore((s) => s.toAyat)
 
-  // Derive surah + reciter from raw state with stable references.
   const surah = useMemo(
     () => surahs.find((s) => s.number === selectedSurahNumber),
     [surahs, selectedSurahNumber],
@@ -207,54 +106,33 @@ export function VideoPreview() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const rafRef = useRef<number | null>(null)
-  const lastUiSyncRef = useRef(0)
   const autoAdvancedAyatRef = useRef<number | null>(null)
-  // Preloader: a hidden Audio() object that fetches + decodes the NEXT
-  // ayat's MP3 while the current one plays. When `onEnded` fires, we
-  // swap the preloaded src into the main audio element so playback
-  // resumes within ~50ms instead of the ~1000ms gap caused by fetching
-  // + decoding on demand.
   const nextAudioRef = useRef<HTMLAudioElement | null>(null)
 
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [currentTimeMs, setCurrentTimeMs] = useState(0)
   const [liveDurations, setLiveDurations] = useState<Record<number, number>>({})
-  const [textPage, setTextPage] = useState(0) // current pagination page for long text
   const [volume, setVolume] = useState(0.9)
   const [muted, setMuted] = useState(false)
 
   const current = ayatList[currentIndex]
-
-  // Attribution line for the selected translation edition. Empty for
-  // public-domain editions (no attribution needed). For permissive/personal
-  // editions, shown at the bottom-left of the preview + export.
   const attributionLine = useMemo(
     () => videoAttributionLine(translationKey),
     [translationKey],
   )
-
-  // Detect if the selected translation is Bengali — use the Bengali font
-  // for the translation text in the preview.
   const isBengaliTranslation = translationKey.startsWith('bn.')
-
   const aspect = ASPECT[settings.orientation]
 
-  // Total duration — use the probed audioDurationMs, or fall back to the
-  // live duration captured from the actual <audio> element's loadedmetadata.
-  // This handles the case where the probe returned 0 (COEP blocking the
-  // separate Audio() element) but the real audio element in the page loads fine.
   const totalMs = useMemo(
     () =>
       ayatList.reduce(
-        (sum, a, i) =>
-          sum + (a.audioDurationMs || liveDurations[i] || 0),
+        (sum, a, i) => sum + (a.audioDurationMs || liveDurations[i] || 0),
         0,
       ),
     [ayatList, liveDurations],
   )
 
-  // Cumulative offsets so the seek bar spans the whole range.
   const offsets = useMemo(() => {
     const arr: number[] = []
     let acc = 0
@@ -265,42 +143,6 @@ export function VideoPreview() {
     return arr
   }, [ayatList, liveDurations])
 
-  const paginationPlan = useMemo<PaginationPlan>(() => {
-    if (!current) return { chunks: [], total: 0 }
-    const dur = current.audioDurationMs || liveDurations[currentIndex] || 0
-    return buildPlanForAyat({
-      words: current.words,
-      arabicText: current.arabicText,
-      translation: current.translation,
-      audioDurationMs: dur,
-      audioPauses: current.audioPauses,
-    })
-  }, [current, currentIndex, liveDurations])
-
-  // -- per-ayat word highlight, driven by audio.currentTime -------------
-  const [activeWord, setActiveWord] = useState<ActiveWord | null>(null)
-
-  // Use a ref to break the recursive self-reference inside `tick` — this
-  // also lets us always read the latest `current`/`currentIndex` without
-  // re-creating the rAF loop on every state change.
-  const stateRef = useRef({
-    current,
-    currentIndex,
-    paginationPlan,
-    liveDurations,
-    ayatListLength: ayatList.length,
-  })
-  useEffect(() => {
-    stateRef.current = {
-      current,
-      currentIndex,
-      paginationPlan,
-      liveDurations,
-      ayatListLength: ayatList.length,
-    }
-  }, [current, currentIndex, paginationPlan, liveDurations, ayatList.length])
-
-  // -- playback controls -------------------------------------------------
   const playAyat = useCallback(
     (idx: number) => {
       if (!ayatList[idx]) return
@@ -308,14 +150,11 @@ export function VideoPreview() {
       if (!audio) return
       autoAdvancedAyatRef.current = null
       setCurrentIndex(idx)
-      setActiveWord(null)
       setCurrentTimeMs(0)
-      setTextPage(0) // reset pagination when switching ayats
       audio.src = ayatList[idx]!.audioUrl
       audio.volume = volume
       audio.muted = muted
       audio.play().then(() => setIsPlaying(true)).catch(() => {
-        // Autoplay can fail; show paused state and let the user retry.
         setIsPlaying(false)
       })
     },
@@ -329,87 +168,50 @@ export function VideoPreview() {
     const tick = () => {
       if (cancelled) return
       const audio = audioRef.current
-      const {
-        current: c,
-        currentIndex: ci,
-        paginationPlan: plan,
-        liveDurations: durations,
-        ayatListLength,
-      } = stateRef.current
-      if (audio && c) {
-        const tMs = audio.currentTime * 1000
-        const now = performance.now()
-        if (now - lastUiSyncRef.current >= 100) {
-          setCurrentTimeMs(tMs)
-          lastUiSyncRef.current = now
-        }
+      const currentAyat = ayatList[currentIndex]
 
-        const spokenEndMs = getAyatSpokenEndMs(c, durations[ci] || 0)
+      if (audio && currentAyat) {
+        const tMs = audio.currentTime * 1000
+        setCurrentTimeMs(tMs)
+
+        const advanceAtMs = getAdvanceAtMs(currentAyat, liveDurations[currentIndex] || 0)
         if (
-          spokenEndMs > 0 &&
-          ci < ayatListLength - 1 &&
-          tMs >= spokenEndMs &&
-          autoAdvancedAyatRef.current !== ci
+          currentIndex < ayatList.length - 1 &&
+          advanceAtMs > 0 &&
+          tMs >= advanceAtMs &&
+          autoAdvancedAyatRef.current !== currentIndex
         ) {
-          autoAdvancedAyatRef.current = ci
-          playAyat(ci + 1)
+          autoAdvancedAyatRef.current = currentIndex
+          playAyat(currentIndex + 1)
           return
         }
-
-        if (plan.total > 1) {
-          let page = findChunkAtTime(plan.chunks, tMs)
-          if (page < 0) page = 0
-          setTextPage((prev) => (prev === page ? prev : page))
-        } else {
-          setTextPage((prev) => (prev === 0 ? prev : 0))
-        }
-
-        const foundIdx = getActiveWordIndex(c.words, tMs)
-        if (foundIdx >= 0) {
-          setActiveWord((prev) =>
-            prev?.ayatIndex === ci && prev.wordIndex === foundIdx
-              ? prev
-              : { ayatIndex: ci, wordIndex: foundIdx },
-          )
-        } else {
-          setActiveWord((prev) => (prev?.ayatIndex === ci ? null : prev))
-        }
       }
+
       rafRef.current = requestAnimationFrame(tick)
     }
+
     rafRef.current = requestAnimationFrame(tick)
     return () => {
       cancelled = true
       if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
-  }, [isPlaying, playAyat])
+  }, [isPlaying, ayatList, currentIndex, liveDurations, playAyat])
 
-  // ─── Preload the NEXT ayat's MP3 in parallel ─────────────────────────
-  // Whenever currentIndex changes, kick off a hidden Audio() download of
-  // the next ayat's MP3. The browser fetches + decodes it in the
-  // background. When the current ayat ends, we swap the preloaded src
-  // into the main audio element — playback resumes in ~50ms instead of
-  // the ~1000ms gap caused by fetching on demand.
   useEffect(() => {
     if (!ayatList.length) return
     const nextIdx = currentIndex + 1
-    if (nextIdx >= ayatList.length) return // last ayat — nothing to preload
+    if (nextIdx >= ayatList.length) return
     const nextUrl = ayatList[nextIdx]?.audioUrl
     if (!nextUrl) return
 
-    // Reuse the same hidden Audio() instance, just swap the src.
-    // `preload='auto'` tells the browser to fetch + buffer aggressively.
     if (!nextAudioRef.current) {
       nextAudioRef.current = new Audio()
     }
+
     const nextAudio = nextAudioRef.current
-    // Skip if already preloading/loaded this exact URL (avoid re-fetch).
     if (nextAudio.src !== nextUrl) {
       nextAudio.src = nextUrl
       nextAudio.preload = 'auto'
-      // Some browsers won't actually fetch until play() is called.
-      // Calling play() then immediately pausing forces the preload
-      // without producing audible sound.
       nextAudio.muted = true
       nextAudio.volume = 0
       nextAudio.play().then(() => {
@@ -418,16 +220,12 @@ export function VideoPreview() {
         nextAudio.muted = false
         nextAudio.volume = 1
       }).catch(() => {
-        // Autoplay policy blocked the preload — fall back to setting
-        // preload='auto' and letting the browser fetch metadata-only.
         nextAudio.muted = false
         nextAudio.volume = 1
       })
     }
   }, [currentIndex, ayatList])
 
-  // Cleanup: release the preloader Audio() when the component unmounts
-  // so it doesn't keep a network connection open in the background.
   useEffect(() => {
     return () => {
       if (nextAudioRef.current) {
@@ -437,30 +235,21 @@ export function VideoPreview() {
     }
   }, [])
 
-  // Auto-advance on ended
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
+
     const onEnded = () => {
       if (currentIndex < ayatList.length - 1) {
         playAyat(currentIndex + 1)
       } else {
-        // Last ayat just finished — pin the seek bar to the very end so it
-        // visually shows 100% completion (instead of jumping back to the
-        // start of the last ayat, which is what resetting currentTimeMs to
-        // 0 would do).
         setIsPlaying(false)
-        setActiveWord(null)
         const lastAyat = ayatList[currentIndex]
         const lastDur = lastAyat?.audioDurationMs ?? 0
         setCurrentTimeMs(lastDur)
       }
     }
-    audio.addEventListener('ended', onEnded)
 
-    // Capture the duration from the real audio element when it loads.
-    // This is the fallback for when the probe (getAudioDurationMs) returned 0
-    // because COEP blocked the separate Audio() element.
     const onMeta = () => {
       const d = audio.duration
       if (isFinite(d) && d > 0) {
@@ -470,6 +259,8 @@ export function VideoPreview() {
         })
       }
     }
+
+    audio.addEventListener('ended', onEnded)
     audio.addEventListener('loadedmetadata', onMeta)
     audio.addEventListener('durationchange', onMeta)
 
@@ -478,28 +269,28 @@ export function VideoPreview() {
       audio.removeEventListener('loadedmetadata', onMeta)
       audio.removeEventListener('durationchange', onMeta)
     }
-  }, [currentIndex, ayatList.length, ayatList, playAyat])
+  }, [currentIndex, ayatList, playAyat])
 
   const togglePlay = () => {
     const audio = audioRef.current
-    if (!audio) return
-    if (!ayatList.length) return
+    if (!audio || !ayatList.length) return
+
     if (isPlaying) {
       audio.pause()
       setIsPlaying(false)
-    } else {
-      // If audio is empty (first play), load current ayat
-      if (!audio.src || audio.src === window.location.href) {
-        playAyat(currentIndex)
-      } else {
-        audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
-      }
+      return
     }
+
+    if (!audio.src || audio.src === window.location.href) {
+      playAyat(currentIndex)
+      return
+    }
+
+    audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
   }
 
   const onSeek = (v: number[]) => {
     const target = v[0]!
-    // find which ayat this falls into
     let idx = 0
     for (let i = 0; i < offsets.length; i++) {
       const start = offsets[i]!
@@ -510,11 +301,11 @@ export function VideoPreview() {
       }
       if (i === offsets.length - 1) idx = i
     }
+
     const into = target - (offsets[idx] || 0)
     if (idx !== currentIndex) {
       autoAdvancedAyatRef.current = null
       setCurrentIndex(idx)
-      setTextPage(0) // reset pagination when jumping to a different ayat
       const audio = audioRef.current!
       audio.src = ayatList[idx]!.audioUrl
       audio.currentTime = into / 1000
@@ -535,17 +326,12 @@ export function VideoPreview() {
     }
   }, [volume, muted])
 
-  // Reset when the ayat list changes. This is the documented React
-  // "reset all state when a prop changes" pattern — we can't use a `key`
-  // here because the player owns the audio element. The setState calls
-  // only fire when ayatList identity changes, so there's no cascading.
   const prevListRef = useRef(ayatList)
   useEffect(() => {
     if (prevListRef.current === ayatList) return
     prevListRef.current = ayatList
     setCurrentIndex(0)
     setIsPlaying(false)
-    setActiveWord(null)
     autoAdvancedAyatRef.current = null
     setCurrentTimeMs(0)
     setLiveDurations({})
@@ -555,15 +341,11 @@ export function VideoPreview() {
     }
   }, [ayatList])
 
-  // Pre-probe audio durations for all ayats when the list loads.
-  // The store's getAudioDurationMs may return 0 under COEP — this is a
-  // second attempt using the actual audio element in the DOM. We load each
-  // ayat's audio URL silently (muted, not playing) just to get the metadata.
   useEffect(() => {
     if (!ayatList.length) return
     const probes: HTMLAudioElement[] = []
     ayatList.forEach((ayat, i) => {
-      if (ayat.audioDurationMs > 0) return // already have it
+      if (ayat.audioDurationMs > 0) return
       const a = new Audio()
       a.preload = 'metadata'
       a.crossOrigin = 'anonymous'
@@ -577,57 +359,15 @@ export function VideoPreview() {
       probes.push(a)
     })
     return () => {
-      probes.forEach((a) => { a.src = '' })
+      probes.forEach((a) => {
+        a.src = ''
+      })
     }
   }, [ayatList])
 
-  // Build the overlay background expression from the user's chosen preset.
   const overlayBg = overlayCssBackground(settings)
-
-  // Detect if the selected background is a looping MP4 video. The preset
-  // URL ends with `.mp4` (e.g. /backgrounds/videos/rain.mp4). When true,
-  // we render a <video> element behind the content instead of using CSS
-  // `background-image`. The export pipeline (ExportModal.tsx) detects the
-  // same condition and seeks the video frame-by-frame onto the canvas.
   const isVideoBg = settings.backgroundImage.endsWith('.mp4')
 
-  // Find the word to highlight in the current ayat
-  const highlightedWordIdx =
-    activeWord && activeWord.ayatIndex === currentIndex
-      ? activeWord.wordIndex
-      : -1
-
-  // ─── Memoized audio-synced pagination plan for the CURRENT ayat ────
-  // Arabic tokens + the matching translation piece. Both are derived
-  // from the SAME plan so they always advance in lockstep.
-  const visibleArabicRange = useMemo<{ start: number; end: number }>(() => {
-    if (paginationPlan.total <= 1 || textPage < 0) {
-      return { start: 0, end: -1 } // -1 = "all"
-    }
-    const chunk = paginationPlan.chunks[textPage]
-    return chunk
-      ? { start: chunk.wordStart, end: chunk.wordEnd }
-      : { start: 0, end: -1 }
-  }, [paginationPlan, textPage])
-
-  const visibleTranslation = useMemo<string>(() => {
-    if (!current) return ''
-    if (paginationPlan.total <= 1) return current.translation
-    const pieces = splitTranslationToChunks(
-      current.translation,
-      paginationPlan.total,
-    )
-    return pieces[textPage] ?? ''
-  }, [current, paginationPlan, textPage])
-
-  // Font sizes scale with the ACTUAL preview frame width using CSS container
-  // query units (cqw = 1% of the container's inline size). This way, the text
-  // is always proportional to the preview, not the browser viewport — so a
-  // narrow portrait reel gets smaller text and a wide landscape preview gets
-  // larger text, automatically.
-  //
-  // The user's font-size slider acts as a multiplier on top of the base
-  // percentage. Reference sizes match AUTO_FONT_SIZES.
   const orientationFontBase: Record<string, { ar: number; tr: number; arRef: number; trRef: number }> = {
     portrait: { ar: 7.0, tr: 2.8, arRef: 30, trRef: 14 },
     landscape: { ar: 4.5, tr: 1.8, arRef: 34, trRef: 15 },
@@ -640,38 +380,23 @@ export function VideoPreview() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Hidden audio element drives playback + word timing */}
       <audio ref={audioRef} preload="auto" crossOrigin="anonymous" />
 
-      {/* Preview frame — sized so portrait fills the available height (reel-like)
-          and landscape fills the available width. The frame is also a CSS
-          container so cqw units inside it scale with its actual width. */}
       <div className="flex-1 min-h-0 grid place-items-center p-3 sm:p-6">
         <div
           className="qv-smooth relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10"
           style={{
             aspectRatio: aspect.ratio,
-            // Portrait: fill the height, derive width from aspect-ratio.
-            // Landscape: fill the width, cap height so it never overflows.
             ...(settings.orientation === 'portrait'
               ? { height: '100%', width: 'auto', maxWidth: '100%' }
               : { width: '100%', maxHeight: '100%', height: 'auto' }),
             containerType: 'inline-size',
-            // For image backgrounds, the cover-fit image is set via CSS
-            // `background-image`. For video backgrounds, we render a
-            // <video> element behind the content (see below) and leave
-            // the CSS background empty so the video shows through.
-            backgroundImage: isVideoBg
-              ? undefined
-              : `url(${settings.backgroundImage})`,
+            backgroundImage: isVideoBg ? undefined : `url(${settings.backgroundImage})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundColor: isVideoBg ? '#0a0a14' : undefined,
           }}
         >
-          {/* Looping video background — played muted behind the content.
-              Covers the frame (object-cover) so it always fills the
-              aspect ratio cleanly. Auto-plays + loops infinitely. */}
           {isVideoBg && (
             <video
               key={settings.backgroundImage}
@@ -685,7 +410,6 @@ export function VideoPreview() {
             />
           )}
 
-          {/* Overlay (rendered using the user's selected preset shape) */}
           {overlayBg && (
             <div
               className="absolute inset-0 pointer-events-none"
@@ -693,8 +417,6 @@ export function VideoPreview() {
             />
           )}
 
-          {/* Subtle top + bottom gradient for legibility (always on, regardless
-              of overlay preset — guarantees the header + watermark stay readable) */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -703,7 +425,6 @@ export function VideoPreview() {
             }}
           />
 
-          {/* Top header bar — surah name + ayat indicator (scales with frame) */}
           {surah && current && (
             <div
               className="absolute top-0 inset-x-0 flex items-start justify-between text-white"
@@ -741,9 +462,6 @@ export function VideoPreview() {
             </div>
           )}
 
-          {/* Center content — Arabic + transliteration + translation grouped
-              tightly into one visual block. No card border (per spec).
-              Padding scales with the frame so it stays proportional. */}
           {current ? (
             <div
               className="absolute inset-0 flex flex-col items-center justify-center"
@@ -759,7 +477,6 @@ export function VideoPreview() {
                   boxShadow: '0 2cqw 6cqw rgba(0, 0, 0, 0.4)',
                 }}
               >
-                {/* Arabic — word-by-word highlight, paginated for long ayats */}
                 <div
                   dir="rtl"
                   lang="ar"
@@ -772,75 +489,38 @@ export function VideoPreview() {
                     fontSize: arabicFontSizeCss,
                   }}
                 >
-                  {(() => {
-                    if (!current) return null
-                    const tokens = buildArabicTokens(current)
-                    if (!tokens.length) return null
-
-                    // Slice tokens to the current chunk's word range.
-                    // When not paginating, visibleArabicRange.end === -1
-                    // → show everything.
-                    const visible =
-                      visibleArabicRange.end < 0
-                        ? tokens
-                        : tokens.slice(
-                            visibleArabicRange.start,
-                            visibleArabicRange.end,
-                          )
-
-                    return visible.map((tok, i) => {
-                      const isHi =
-                        tok.wordIdx !== undefined &&
-                        tok.wordIdx === highlightedWordIdx
-                      return (
-                        <span
-                          key={i}
-                          className="qv-smooth inline-block mx-[1px]"
-                          style={{
-                            color: isHi
-                              ? settings.highlightColor
-                              : (tok.color ?? settings.fontColor),
-                            textShadow: isHi
-                              ? `0 0 18px ${settings.highlightColor}88, 0 1px 4px rgba(0,0,0,0.7)`
-                              : '0 1px 4px rgba(0,0,0,0.7)',
-                            transition: 'color 120ms ease',
-                          }}
-                        >
-                          {tok.text}
-                        </span>
-                      )
-                    })
-                  })()}
+                  {buildArabicTokens(current.arabicText).map((tok, i) => (
+                    <span
+                      key={i}
+                      className="qv-smooth inline-block mx-[1px]"
+                      style={{
+                        color: settings.fontColor,
+                        textShadow: '0 1px 4px rgba(0,0,0,0.7)',
+                      }}
+                    >
+                      {tok}
+                    </span>
+                  ))}
                 </div>
 
-                {/* Tiny divider between Arabic and translation — only when
-                    both are visible. */}
                 {settings.showTranslation &&
                   settings.showTransliteration &&
-                  current.words.length > 0 && (
+                  current.arabicText && (
                     <div
                       className="my-2 h-px opacity-40"
                       style={{ backgroundColor: settings.fontColor, width: '12cqw' }}
                     />
                   )}
 
-                {/* Transliteration — sits right under Arabic (scales with frame) */}
-                {settings.showTransliteration && current.words.length > 0 && (
+                {settings.showTransliteration && current.transliteration && (
                   <div
                     className="qv-smooth text-center italic text-white/70 leading-snug"
                     style={{ fontSize: '2.4cqw', maxWidth: '80cqw' }}
                   >
-                    {current.words
-                      .map((w) => w.transliteration || '')
-                      .filter(Boolean)
-                      .join(' ')}
+                    {current.transliteration}
                   </div>
                 )}
 
-                {/* Translation — sits right under Arabic (or transliteration).
-                    Tight gap, scales with frame. Uses the selected Bengali
-                    font when the translation is Bengali, otherwise the
-                    default UI font (Inter). */}
                 {settings.showTranslation && (
                   <p
                     className={`qv-smooth text-white/85 mx-auto leading-snug drop-shadow text-center ${isBengaliTranslation ? (BENGALI_FONT_CLASS[settings.bengaliFont] ?? 'font-bengali-sans') : ''}`}
@@ -850,17 +530,9 @@ export function VideoPreview() {
                       maxWidth: '85cqw',
                     }}
                   >
-                    {visibleTranslation}
+                    {current.translation}
                   </p>
                 )}
-
-                {/* Page indicator — shows "1 / 3" when text is paginated */}
-                {paginationPlan.total > 1 ? (
-                  <div className="text-white/35 text-[1.4cqw] font-mono mt-1.5">
-                    {Math.min(textPage + 1, paginationPlan.total)} /{' '}
-                    {paginationPlan.total}
-                  </div>
-                ) : null}
               </div>
             </div>
           ) : (
@@ -886,7 +558,7 @@ export function VideoPreview() {
                     <p className="text-xs text-white/55 leading-relaxed">
                       Pick a surah and ayat range, choose a reciter, then click{' '}
                       <span className="text-primary font-medium">Load ayats</span>{' '}
-                      to preview with word-by-word highlighting.
+                      to preview the recitation.
                     </p>
                   </div>
                 </div>
@@ -894,9 +566,6 @@ export function VideoPreview() {
             </div>
           )}
 
-          {/* Attribution block — bottom-left. Shows the translation attribution
-              line (when the edition requires it) + the reciter credit (always).
-              Stacked vertically so both are visible. */}
           {(attributionLine || ayatList.length > 0) && (
             <div
               className="absolute text-white/55 font-sans leading-tight max-w-[55%] space-y-0.5"
@@ -907,35 +576,10 @@ export function VideoPreview() {
               }}
             >
               {attributionLine && <div>{attributionLine}</div>}
-              {ayatList.length > 0 && (
-                <div>Recited by {reciter.name}</div>
-              )}
+              {ayatList.length > 0 && <div>Recited by {reciter.name}</div>}
             </div>
           )}
 
-          {/* Structural Quran markers — Juz, Hizb, Rubʿ al-Hizb, Ruku,
-              Manzil, Page. Sourced from the quran.com API. Shown at the
-              bottom-center of the frame, just above the attribution block,
-              so users can see which part of the Quran the current ayat
-              belongs to. Only shows fields that are actually present. */}
-          {current && hasStructuralInfo(current) && (
-            <div
-              className="absolute left-1/2 -translate-x-1/2 text-white/55 font-sans tracking-[0.08em] whitespace-nowrap"
-              style={{
-                bottom: '2.8cqw',
-                fontSize: '1.7cqw',
-                textShadow: '0 1px 4px rgba(0,0,0,0.6)',
-              }}
-            >
-              {formatStructural(current, false)}
-            </div>
-          )}
-
-          {/* Top-center watermark — the Jariyah Now brand mark (cleaned
-              transparent PNG at /public/watermark.png). Mirrors what
-              gets baked into the exported MP4 by ExportModal.drawFrame,
-              so the user sees the same branding in the live preview as
-              they will in the final video. */}
           <Image
             src="/watermark.png"
             alt=""
@@ -955,9 +599,7 @@ export function VideoPreview() {
         </div>
       </div>
 
-      {/* Controls bar — light theme, responsive: 1 row on desktop, 2 rows on mobile */}
       <div className="border-t border-border bg-card px-3 sm:px-5 py-2.5 sm:py-3 space-y-2">
-        {/* Row 1: transport buttons + seek bar + volume (desktop) / transport + seek (mobile) */}
         <div className="flex items-center gap-2 sm:gap-2.5">
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <Button
@@ -998,15 +640,9 @@ export function VideoPreview() {
             </Button>
           </div>
 
-          {/* Seek bar — flex-1 so it fills available space on all screens */}
           <div className="flex-1 flex items-center gap-2 sm:gap-3 min-w-0">
             <Slider
-              value={[
-                Math.min(
-                  totalMs,
-                  (offsets[currentIndex] || 0) + currentTimeMs,
-                ),
-              ]}
+              value={[Math.min(totalMs, (offsets[currentIndex] || 0) + currentTimeMs)]}
               max={Math.max(1, totalMs)}
               step={100}
               onValueChange={onSeek}
@@ -1014,12 +650,10 @@ export function VideoPreview() {
               className="flex-1 min-w-0"
             />
             <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap tabular-nums shrink-0">
-              {formatMs((offsets[currentIndex] || 0) + currentTimeMs)} /{' '}
-              {formatMs(totalMs)}
+              {formatMs((offsets[currentIndex] || 0) + currentTimeMs)} / {formatMs(totalMs)}
             </span>
           </div>
 
-          {/* Volume — hidden on mobile (use device volume), shown on sm+ */}
           <div className="hidden sm:flex items-center gap-1.5 shrink-0">
             <Button
               variant="ghost"
@@ -1029,11 +663,7 @@ export function VideoPreview() {
               title={muted ? 'Unmute' : 'Mute'}
               aria-label={muted ? 'Unmute' : 'Mute'}
             >
-              {muted || volume === 0 ? (
-                <VolumeX className="h-4 w-4" />
-              ) : (
-                <Volume2 className="h-4 w-4" />
-              )}
+              {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
             </Button>
             <Slider
               value={[muted ? 0 : volume * 100]}
@@ -1047,7 +677,6 @@ export function VideoPreview() {
             />
           </div>
 
-          {/* Mute-only on mobile */}
           <Button
             variant="ghost"
             size="icon"
@@ -1056,15 +685,10 @@ export function VideoPreview() {
             title={muted ? 'Unmute' : 'Mute'}
             aria-label={muted ? 'Unmute' : 'Mute'}
           >
-            {muted || volume === 0 ? (
-              <VolumeX className="h-4 w-4" />
-            ) : (
-              <Volume2 className="h-4 w-4" />
-            )}
+            {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
           </Button>
         </div>
 
-        {/* Row 2: status line */}
         {ayatList.length > 0 && (
           <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
             <span className="flex items-center gap-2 min-w-0">

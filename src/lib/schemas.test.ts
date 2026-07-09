@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import {
-  timingsQuerySchema,
   renderBodySchema,
   renderUpdateBodySchema,
   renderStatusQuerySchema,
@@ -26,11 +25,12 @@ const VALID_SETTINGS: VideoSettings = {
   showTransliteration: false,
   orientation: 'portrait',
   autoFitFonts: true,
+  textWidth: 'wide',
+  textSpacing: 'normal',
 }
 
 const VALID_SLIDE: AyatSlide = {
   arabicText: 'بسم الله',
-  words: [{ text: 'بسم', startMs: 0, endMs: 500 }],
   translation: 'In the name of God',
   transliteration: 'Bismillah',
   surahName: 'Al-Fatihah',
@@ -40,44 +40,6 @@ const VALID_SLIDE: AyatSlide = {
   audioUrl: 'https://everyayah.com/data/Alafasy_128kbps/001001.mp3',
   audioDurationMs: 5000,
 }
-
-describe('timingsQuerySchema', () => {
-  it('accepts valid input', () => {
-    const parsed = timingsQuerySchema.safeParse({
-      surah: 1,
-      ayat: 1,
-      recitationId: 7,
-    })
-    expect(parsed.success).toBe(true)
-  })
-
-  it('rejects surah = 0', () => {
-    const parsed = timingsQuerySchema.safeParse({
-      surah: 0,
-      ayat: 1,
-      recitationId: 7,
-    })
-    expect(parsed.success).toBe(false)
-  })
-
-  it('rejects surah = 115', () => {
-    const parsed = timingsQuerySchema.safeParse({
-      surah: 115,
-      ayat: 1,
-      recitationId: 7,
-    })
-    expect(parsed.success).toBe(false)
-  })
-
-  it('rejects non-integer ayat', () => {
-    const parsed = timingsQuerySchema.safeParse({
-      surah: 1,
-      ayat: 1.5,
-      recitationId: 7,
-    })
-    expect(parsed.success).toBe(false)
-  })
-})
 
 describe('renderBodySchema', () => {
   function validBody() {

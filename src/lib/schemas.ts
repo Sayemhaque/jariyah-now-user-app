@@ -26,40 +26,12 @@ export const ayatNumberSchema = z
   .int('Ayat number must be an integer')
   .min(1, 'Ayat number must be at least 1')
 
-export const recitationIdSchema = z
-  .number()
-  .int()
-  .positive()
-// The Quran.com recitation IDs in use are 1, 2, 5, 6, 7 — but we don't
-// hard-restrict the range here because new reciters may be added upstream.
-
-// --- GET /api/timings --------------------------------------------------
-
-export const timingsQuerySchema = z.object({
-  surah: surahNumberSchema,
-  ayat: ayatNumberSchema,
-  recitationId: recitationIdSchema,
-})
-
-export type TimingsQuery = z.infer<typeof timingsQuerySchema>
-
 // --- POST /api/render ---------------------------------------------------
 
 const MAX_AYATS_PER_VIDEO = 10
 
-/**
- * A single word's timing data, as sent by the client. We validate the shape
- * but trust the values (they originate from the Quran.com API via the client).
- */
-const wordSchema = z.object({
-  text: z.string().min(1),
-  startMs: z.number().min(0),
-  endMs: z.number().min(0),
-})
-
 const slideSchema = z.object({
   arabicText: z.string().min(1),
-  words: z.array(wordSchema),
   translation: z.string(),
   transliteration: z.string().optional().default(''),
   surahName: z.string(),
@@ -106,10 +78,15 @@ const settingsSchema = z.object({
   arabicFontSize: z.number().min(24).max(72),
   translationFontSize: z.number().min(14).max(32),
   fontStyle: fontStyleSchema,
+  arabicFont: z.enum(['uthmani', 'scheherazade', 'naskh', 'kufi', 'cairo', 'amiri']),
+  bengaliFont: z.enum(['sans', 'serif', 'hind']),
+  useTajweed: z.boolean(),
   showTranslation: z.boolean(),
   showTransliteration: z.boolean(),
   orientation: orientationSchema,
   autoFitFonts: z.boolean(),
+  textWidth: z.enum(['full', 'wide', 'medium', 'narrow']),
+  textSpacing: z.enum(['compact', 'normal', 'spacious']),
 })
 
 export const renderBodySchema = z.object({
@@ -135,6 +112,16 @@ export const renderUpdateBodySchema = z.object({
 })
 
 export type RenderUpdateBody = z.infer<typeof renderUpdateBodySchema>
+
+// --- GET /api/timings --------------------------------------------------
+
+export const timingsQuerySchema = z.object({
+  surah: surahNumberSchema,
+  ayat: ayatNumberSchema,
+  recitationId: z.number().int().positive(),
+})
+
+export type TimingsQuery = z.infer<typeof timingsQuerySchema>
 
 // --- GET /api/render-status --------------------------------------------
 

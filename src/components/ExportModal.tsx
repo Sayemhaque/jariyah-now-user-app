@@ -6,9 +6,7 @@ import { Download, Film, X, CheckCircle2, AlertCircle, Play, Pause, Volume2, Vol
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { paintOverlayOnCanvas } from '@/lib/overlay'
-import { getActiveWordIndex } from '@/lib/highlight'
 import { videoAttributionLine } from '@/lib/translations'
-import { formatStructural, getStructuralPairs } from '@/lib/structural'
 import {
   checkExportCapabilities,
   pickSupportedMimeType,
@@ -29,14 +27,6 @@ import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import {
-  buildSilenceSnappedPlan,
-  buildTimeProportionalPlan,
-  estimateChunkCount,
-  findChunkAtTime,
-  splitTranslationToChunks,
-  type PaginationPlan,
-} from '@/lib/textPagination'
 
 const PLATFORM_PRESETS: {
   key: ExportOptions['platform']
@@ -61,8 +51,6 @@ type RenderStatus = 'idle' | 'processing' | 'done' | 'error'
 interface ExportModalProps {
   open: boolean
   onOpenChange: (o: boolean) => void
-  /** Active split data — when set, the export renders sub-clips with "Part X/N" captions. */
-  activeSplit?: import('@/lib/ayatSplitter').AyatSplit | null
 }
 
 /**
@@ -489,7 +477,7 @@ function DonePanel({
   )
 }
 
-export function ExportModal({ open, onOpenChange, activeSplit }: ExportModalProps) {
+export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const ayatList = useBuilderStore((s) => s.ayatList)
   const surahs = useBuilderStore((s) => s.surahs)
   const selectedSurahNumber = useBuilderStore((s) => s.selectedSurahNumber)
@@ -575,28 +563,14 @@ export function ExportModal({ open, onOpenChange, activeSplit }: ExportModalProp
     () =>
       ayatList.map((a) => ({
         arabicText: a.arabicText,
-        tajweedSegments: a.tajweedSegments,
-        words: a.words.map((w) => ({
-          text: w.text,
-          startMs: w.startMs,
-          endMs: w.endMs,
-        })),
         translation: a.translation,
-        transliteration: a.words.map((w) => w.transliteration || '').filter(Boolean).join(' '),
+        transliteration: a.transliteration || '',
         surahName: surah?.name ?? '',
         surahNameArabic: surah?.arabicName ?? '',
         ayatNumber: a.ayatNumber,
         surahNumber: a.surahNumber,
         audioUrl: a.audioUrl,
         audioDurationMs: a.audioDurationMs,
-        audioPauses: a.audioPauses,
-        // Structural markers — passed through so drawFrame can draw them.
-        juzNumber: a.juzNumber,
-        hizbNumber: a.hizbNumber,
-        rubElHizbNumber: a.rubElHizbNumber,
-        rukuNumber: a.rukuNumber,
-        manzilNumber: a.manzilNumber,
-        pageNumber: a.pageNumber,
       })),
     [ayatList, surah],
   )
@@ -670,7 +644,6 @@ export function ExportModal({ open, onOpenChange, activeSplit }: ExportModalProp
         quality,
         attributionLine: videoAttributionLine(translationKey),
         reciterName: reciter.name,
-        activeSplit,
         onProgress: (p) => {
           // Scale 0–1 → 0–0.6
           const combined = p * 0.6
@@ -973,8 +946,6 @@ interface RenderArgs {
   /** Reciter name for the "Recited by" credit (always shown). */
   reciterName: string
   onProgress: (p: number) => void
-  /** Active split data — when set, draws "Part X/N" badges. */
-  activeSplit?: import('@/lib/ayatSplitter').AyatSplit | null
 }
 
 async function renderVideoToWebm({
@@ -986,7 +957,6 @@ async function renderVideoToWebm({
   attributionLine,
   reciterName,
   onProgress,
-  activeSplit,
 }: RenderArgs): Promise<{ url: string; blob: Blob }> {
   const base = RES[orientation]
   const scale = RENDER_QUALITY_SCALE[quality]
@@ -1152,9 +1122,6 @@ async function renderVideoToWebm({
         attributionLine,
         reciterName,
         watermarkImg,
-        splitPart: activeSplit && activeSplit.segments.length > 0
-          ? { partNumber: idx + 1, totalParts: activeSplit.segments.length }
-          : null,
       })
 
       onProgress(Math.min(1, elapsedSec / totalSec))
@@ -1266,8 +1233,6 @@ interface DrawArgs {
   /** Pre-loaded watermark image (transparent PNG). Null while loading or if
    *  the watermark file is missing — in that case we fall back to text. */
   watermarkImg: HTMLImageElement | null
-  /** When set, draws a "Part X/N" badge on the frame. */
-  splitPart?: { partNumber: number; totalParts: number } | null
 }
 
 function drawFrame({
@@ -1284,7 +1249,6 @@ function drawFrame({
   attributionLine,
   reciterName,
   watermarkImg,
-  splitPart,
 }: DrawArgs) {
   // ---- Background (cover-fit) -----------------------------------------
   // For image backgrounds: draw the loaded <img> cover-fit.
@@ -1353,43 +1317,7 @@ function drawFrame({
     H * 0.045 + H * 0.045,
   )
 
-  // ---- Split part badge (top-center) ----------------------------------
-  // When an ayah is split, draw "Part X/N" as a badge at the top-center
-  // of the frame so viewers know which part they're watching.
-  if (splitPart) {
-    const badgeText = `PART ${splitPart.partNumber} / ${splitPart.totalParts}`
-    const badgeFontSize = Math.round(H * 0.014)
-    ctx.save()
-    ctx.font = `600 ${badgeFontSize}px Inter, sans-serif`
-    ctx.fillStyle = 'rgba(124, 58, 237, 0.9)' // primary gradient color
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'top'
-    ctx.shadowColor = 'rgba(0,0,0,0.6)'
-    ctx.shadowBlur = 4
-    // Draw a pill background
-    const textW = ctx.measureText(badgeText).width
-    const pillW = textW + badgeFontSize * 1.5
-    const pillH = badgeFontSize * 1.8
-    const pillX = W / 2 - pillW / 2
-    const pillY = H * 0.04
-    // Pill background
-    ctx.fillStyle = 'rgba(124, 58, 237, 0.85)'
-    ctx.beginPath()
-    if (typeof ctx.roundRect === 'function') {
-      ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2)
-    } else {
-      ctx.rect(pillX, pillY, pillW, pillH)
-    }
-    ctx.fill()
-    // Text
-    ctx.fillStyle = '#ffffff'
-    ctx.fillText(badgeText, W / 2, pillY + badgeFontSize * 0.4)
-    ctx.restore()
-  }
-
   // ---- Center content card --------------------------------------------
-  // Find the currently-active word first so we can size the card to fit.
-
   // Map the arabicFont setting → CSS font-family string for canvas.
   // The fonts are loaded via next/font in layout.tsx and are available
   // to the canvas as long as they've been rendered at least once on the
@@ -1433,16 +1361,12 @@ function drawFrame({
   const transFontSize = settings.translationFontSize * fontScale * 1.4
   const translitFontSize = Math.max(11, minDim * 0.018 * 1.4)
 
-  const activeIdx = getActiveWordIndex(slide.words, intoMs)
-
   // Layout Arabic words centered, RTL, with line-wrapping.
   ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  const wordsArr = slide.words.length
-    ? slide.words.map((w) => w.text)
-    : slide.arabicText.split(/\s+/)
+  const wordsArr = slide.arabicText.split(/\s+/)
   // Use a proportional space width — Arabic fonts often return a tiny
   // space width from measureText(' '). Use 0.3 * fontSize for a natural gap.
   const spaceW = arabicFontSize * 0.3
@@ -1457,83 +1381,14 @@ function drawFrame({
 
   const arabicLineH = arabicFontSize * 1.8 // generous line height to prevent overlap
 
-  // ─── Audio-synced text pagination ────────────────────────────────────
-  // When an ayah is very long (e.g. Ayat al-Kursi ~50 words), showing
-  // the whole text at once makes it tiny and unreadable. We split it
-  // into chunks that cycle like movie subtitles.
-  //
-  // CRITICAL: chunk boundaries are driven by the reciter's actual
-  // per-word timings, NOT by `totalDuration / numChunks`. Arabic
-  // recitation has variable word lengths (madd, pausal forms), so a
-  // clock-based split would jump AHEAD of the audio. Using word
-  // timings means chunk N switches the INSTANT the reciter finishes
-  // the last word in chunk N — perfect sync.
-  //
-  // The translation is split into the SAME number of chunks as the
-  // Arabic and switches at the same boundaries, so Arabic page 2 and
-  // translation page 2 always appear together.
-  const MAX_TRANS_LINES = 2    // hard cap on visual lines of translation per page
-
-  const slideDurationMs = slide.audioDurationMs || 10000
-
-  // ─── Build the pagination plan ─────────────────────────────────────
-  // Priority:
-  //   1. Silence-snapped — uses ffmpeg pause detection on the ACTUAL
-  //      audio. 100% accurate sync because boundaries are real breath
-  //      points in the audio the user hears.
-  //   2. Time-proportional — last-resort fallback when no pauses.
-  //
-  // We DO NOT use the word-timing API approach (buildAudioSyncedChunks)
-  // because the timings come from the wrong reciter's word MP3s and
-  // don't match the everyayah.com audio we actually play.
-  let paginationPlan: PaginationPlan = { chunks: [], total: 0 }
-  {
-    const n = estimateChunkCount(wordsArr.length)
-    if (n > 1) {
-      if (slide.audioPauses && slide.audioPauses.length > 0) {
-        // ✅ Best: silence-snapped boundaries from the real audio
-        paginationPlan = buildSilenceSnappedPlan(
-          slideDurationMs,
-          n,
-          slide.audioPauses,
-          wordsArr.length,
-        )
-      } else {
-        // Fallback: even time split (no pauses available)
-        paginationPlan = buildTimeProportionalPlan(slideDurationMs, n)
-      }
-    }
-  }
-
-  // Pick the active chunk index for the current frame time.
-  let chunkIdx = -1
-  if (paginationPlan.total > 1) {
-    chunkIdx = findChunkAtTime(paginationPlan.chunks, intoMs)
-    if (chunkIdx < 0) chunkIdx = 0
-  }
-
-  // ─── Slice Arabic words for the current chunk ─────────────────────
-  // When paginating, only the words in the current chunk are wrapped
-  // and drawn. `visibleWordOffset` lets us keep the global word index
-  // for highlight matching (activeIdx is a global word index).
-  let visibleWordsArr: string[]
-  let visibleWordOffset = 0
-  if (chunkIdx >= 0 && paginationPlan.total > 1) {
-    const chunk = paginationPlan.chunks[chunkIdx]!
-    visibleWordOffset = chunk.wordStart
-    visibleWordsArr = wordsArr.slice(chunk.wordStart, chunk.wordEnd)
-  } else {
-    visibleWordsArr = wordsArr
-  }
-
-  // Wrap the visible Arabic words into visual lines (RTL centering
-  // happens at draw time, not here — this just decides line breaks).
+  // Wrap the Arabic words into visual lines (RTL centering happens at
+  // draw time, not here — this just decides line breaks).
   const lines: string[][] = []
   {
     let ln: string[] = []
     let lnW = 0
-    for (let i = 0; i < visibleWordsArr.length; i++) {
-      const w = visibleWordsArr[i]!
+    for (let i = 0; i < wordsArr.length; i++) {
+      const w = wordsArr[i]!
       const ww = ctx.measureText(w).width
       if (lnW + ww > innerMaxW && ln.length) {
         lines.push(ln)
@@ -1546,10 +1401,6 @@ function drawFrame({
     if (ln.length) lines.push(ln)
   }
   const visibleArabicLines: string[][] = lines
-  const arabicPageInfo: { current: number; total: number } | null =
-    paginationPlan.total > 1 && chunkIdx >= 0
-      ? { current: chunkIdx + 1, total: paginationPlan.total }
-      : null
   const arabicTotalH = visibleArabicLines.length * arabicLineH
 
   // Transliteration (one-line approximation)
@@ -1564,30 +1415,9 @@ function drawFrame({
     : 'Inter, sans-serif'
   ctx.font = `${transFontSize}px ${transFontFamily}`
 
-  // ─── Slice translation to match the Arabic chunk count ────────────
-  // Translation is split into N pieces (by word count) where N is the
-  // Arabic chunk count. The same `chunkIdx` selects which piece to
-  // show, so Arabic and translation advance in lockstep.
-  let transTextToShow = slide.translation
-  if (paginationPlan.total > 1 && chunkIdx >= 0) {
-    const pieces = splitTranslationToChunks(slide.translation, paginationPlan.total)
-    transTextToShow = pieces[chunkIdx] ?? ''
-  }
-
-  let allTransLines: string[] = []
-  if (settings.showTranslation && transTextToShow) {
-    allTransLines = wrapLines(ctx, transTextToShow, innerMaxW)
-  }
-
-  // If the wrapped translation STILL doesn't fit (very long single
-  // chunk), hard-cap it to MAX_TRANS_LINES so the layout doesn't break.
-  let transLines = allTransLines
-  let transPageInfo: { current: number; total: number } | null = null
-  if (allTransLines.length > MAX_TRANS_LINES) {
-    transLines = allTransLines.slice(0, MAX_TRANS_LINES)
-  }
-  if (paginationPlan.total > 1 && chunkIdx >= 0) {
-    transPageInfo = { current: chunkIdx + 1, total: paginationPlan.total }
+  let transLines: string[] = []
+  if (settings.showTranslation && slide.translation) {
+    transLines = wrapLines(ctx, slide.translation, innerMaxW)
   }
   const transLineH = transFontSize * 1.4
   const transTotalH = transLines.length * transLineH
@@ -1649,106 +1479,28 @@ function drawFrame({
   ctx.shadowBlur = 0
   ctx.shadowOffsetY = 0
 
-  // Draw Arabic — if Tajweed segments available, render per-segment colors.
-  // Otherwise render word-by-word with RTL centering (original approach).
+  // Draw Arabic — plain word-by-word rendering with RTL centering.
   ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   let y = cardY + cardPadY + arabicLineH / 2
 
-  if (slide.tajweedSegments && slide.tajweedSegments.length > 0) {
-    // ─── Tajweed color-coded rendering ─────────────────────────────
-    // Flatten Tajweed segments into individual words with their colors.
-    const wordsWithColor: { text: string; color: string | null }[] = []
-    for (const seg of slide.tajweedSegments) {
-      for (const sw of seg.text.split(/(\s+)/)) {
-        if (sw) wordsWithColor.push({ text: sw, color: seg.color })
-      }
+  for (const ln of visibleArabicLines) {
+    const widths = ln.map((w) => ctx.measureText(w).width)
+    const totalLineW = widths.reduce((a, b) => a + b, 0) + spaceW * (ln.length - 1)
+    let xPos = W / 2 + totalLineW / 2
+    for (let i = 0; i < ln.length; i++) {
+      const w = ln[i]!
+      const ww = widths[i]!
+      xPos -= ww / 2
+      ctx.fillStyle = settings.fontColor
+      ctx.shadowColor = 'rgba(0,0,0,0.9)'
+      ctx.shadowBlur = H * 0.012
+      ctx.fillText(w, xPos, y)
+      ctx.shadowBlur = 0
+      xPos -= ww / 2 + spaceW
     }
-
-    // ─── Apply the SAME audio-synced chunk slicing as plain Arabic ──
-    // The pagination plan was built above from `slide.words` timings.
-    // We use its `wordStart`/`wordEnd` to slice the Tajweed word list
-    // in lockstep with the plain-words path. This keeps Tajweed color
-    // rendering perfectly in sync with the audio AND with the
-    // translation pagination.
-    let visibleTajweedWords = wordsWithColor
-    if (chunkIdx >= 0 && paginationPlan.total > 1) {
-      const chunk = paginationPlan.chunks[chunkIdx]!
-      visibleTajweedWords = wordsWithColor.slice(chunk.wordStart, chunk.wordEnd)
-    }
-
-    // Build wrapped lines from the visible Tajweed words only.
-    const tajweedLines: { text: string; color: string | null }[][] = []
-    let curLine: { text: string; color: string | null }[] = []
-    let curLineW = 0
-    for (const wc of visibleTajweedWords) {
-      const ww = ctx.measureText(wc.text).width
-      if (curLineW + ww > innerMaxW && curLine.length > 0) {
-        tajweedLines.push(curLine)
-        curLine = []
-        curLineW = 0
-      }
-      curLine.push(wc)
-      curLineW += ww
-    }
-    if (curLine.length > 0) tajweedLines.push(curLine)
-
-    const visibleTajweedLines = tajweedLines
-
-    for (const lineSegs of visibleTajweedLines) {
-      let totalW = 0
-      for (const seg of lineSegs) totalW += ctx.measureText(seg.text).width
-      let xPos = W / 2 + totalW / 2
-      for (const seg of lineSegs) {
-        const sw = ctx.measureText(seg.text).width
-        xPos -= sw / 2
-        ctx.fillStyle = seg.color ?? settings.fontColor
-        ctx.shadowColor = 'rgba(0,0,0,0.9)'
-        ctx.shadowBlur = H * 0.012
-        ctx.fillText(seg.text, xPos, y)
-        ctx.shadowBlur = 0
-        xPos -= sw / 2
-      }
-      y += arabicLineH
-    }
-  } else {
-    // ─── Plain word-by-word rendering ──────────────────────────────
-    // `visibleArabicLines` already contains only the current chunk's
-    // wrapped words. The highlight index `activeIdx` is a GLOBAL word
-    // index (into the full ayat), so we subtract `visibleWordOffset`
-    // to get the local index within the visible chunk.
-    let wordCounter = 0
-    for (const ln of visibleArabicLines) {
-      const widths = ln.map((w) => ctx.measureText(w).width)
-      const totalLineW = widths.reduce((a, b) => a + b, 0) + spaceW * (ln.length - 1)
-      let xPos = W / 2 + totalLineW / 2
-      for (let i = 0; i < ln.length; i++) {
-        const w = ln[i]!
-        const ww = widths[i]!
-        xPos -= ww / 2
-        // `activeIdx` is a GLOBAL word index across the whole ayat.
-        // The visible chunk starts at `visibleWordOffset`, so the
-        // local position of the active word (if any) inside this
-        // chunk is `activeIdx - visibleWordOffset`. Only highlight
-        // when that matches the local counter.
-        const localActive = activeIdx - visibleWordOffset
-        const isHi = wordCounter === localActive
-        ctx.fillStyle = isHi ? settings.highlightColor : settings.fontColor
-        if (isHi) {
-          ctx.shadowColor = settings.highlightColor
-          ctx.shadowBlur = H * 0.028
-        } else {
-          ctx.shadowColor = 'rgba(0,0,0,0.9)'
-          ctx.shadowBlur = H * 0.012
-        }
-        ctx.fillText(w, xPos, y)
-        ctx.shadowBlur = 0
-        xPos -= ww / 2 + spaceW
-        wordCounter++
-      }
-      y += arabicLineH
-    }
+    y += arabicLineH
   }
 
   // After Arabic loop, y is at the bottom of the last Arabic line.
@@ -1794,20 +1546,6 @@ function drawFrame({
     ctx.shadowBlur = 0
   }
 
-  // ─── Page indicator ───────────────────────────────────────────────
-  // If either Arabic or translation is paginated, show a small "1/3" indicator
-  // below the translation so viewers know there's more text coming.
-  if (arabicPageInfo || transPageInfo) {
-    const pageInfo = transPageInfo || arabicPageInfo!
-    const indicatorFontSize = Math.round(H * 0.012)
-    ctx.font = `${indicatorFontSize}px Inter, sans-serif`
-    ctx.fillStyle = 'rgba(255,255,255,0.35)'
-    ctx.textAlign = 'center'
-    ctx.textBaseline = 'middle'
-    const indicatorY = yAfterArabic + transTotalH + Math.round(H * 0.015)
-    ctx.fillText(`${pageInfo.current} / ${pageInfo.total}`, W / 2, indicatorY)
-  }
-
   // ---- Attribution block (bottom-left) --------------------------------
   // Shows the translation attribution (when required) + the reciter credit
   // (always). Stacked vertically so both are visible.
@@ -1836,37 +1574,6 @@ function drawFrame({
   }
   if (attributionLine) {
     ctx.fillText(truncateAttr(attributionLine), W * 0.03, attrBottom - attrLineH)
-  }
-
-  // ---- Structural Quran markers (Juz / Hizb / Rubʿ / Ruku / Manzil / Page) ----
-  // Drawn at the bottom-center of the frame, just above the attribution
-  // block. Only shows fields that are actually present on the verse.
-  // Matches the live preview's formatting so WYSIWYG.
-  {
-    const pairs = getStructuralPairs(slide)
-    if (pairs.length > 0) {
-      const structText = formatStructural(slide, true) // uppercase for export
-      const structFontSize = Math.round(H * 0.014)
-      ctx.save()
-      ctx.font = `500 ${structFontSize}px Inter, sans-serif`
-      ctx.fillStyle = 'rgba(255,255,255,0.55)'
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'bottom'
-      ctx.shadowColor = 'rgba(0,0,0,0.6)'
-      ctx.shadowBlur = Math.max(1, Math.round(structFontSize * 0.2))
-      // Letter-spacing for the uppercase tracking look — guarded for Safari.
-      type CtxWithLs = CanvasRenderingContext2D & { letterSpacing?: string }
-      const ctxLs = ctx as CtxWithLs
-      if (typeof ctxLs.letterSpacing === 'string') {
-        try {
-          ctxLs.letterSpacing = `${Math.round(structFontSize * 0.08)}px`
-        } catch {
-          // ignore
-        }
-      }
-      ctx.fillText(structText, W / 2, H * 0.965)
-      ctx.restore()
-    }
   }
 
   // ---- Top-center watermark: Jariyah Now brand mark -------------------

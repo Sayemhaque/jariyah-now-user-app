@@ -1,0 +1,1960 @@
+     1→'use client'
+     2→
+     3→import { useEffect, useMemo, useRef, useState } from 'react'
+     4→import { Download, Film, X, CheckCircle2, AlertCircle, Play, Pause, Volume2, VolumeX } from 'lucide-react'
+     5→import { useBuilderStore } from '@/lib/store'
+     6→import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
+     7→import { paintOverlayOnCanvas } from '@/lib/overlay'
+     8→import { getActiveWordIndex } from '@/lib/highlight'
+     9→import { videoAttributionLine } from '@/lib/translations'
+    10→import { formatStructural, getStructuralPairs } from '@/lib/structural'
+    11→import {
+    12→  checkExportCapabilities,
+    13→  pickSupportedMimeType,
+    14→} from '@/lib/exportCapabilities'
+    15→import { webmToMp4, canConvertToMp4 } from '@/lib/videoConverter'
+    16→import { InstagramIcon, YouTubeIcon, YouTubeShortsIcon } from '@/components/PlatformIcons'
+    17→import type { AyatSlide, ExportOptions, Orientation } from '@/lib/types'
+    18→import {
+    19→  Dialog,
+    20→  DialogContent,
+    21→  DialogDescription,
+    22→  DialogHeader,
+    23→  DialogTitle,
+    24→  DialogFooter,
+    25→} from '@/components/ui/dialog'
+    26→import { Button } from '@/components/ui/button'
+    27→import { Label } from '@/components/ui/label'
+    28→import { Slider } from '@/components/ui/slider'
+    29→import { cn } from '@/lib/utils'
+    30→import { toast } from 'sonner'
+    31→import {
+    32→  buildSilenceSnappedPlan,
+    33→  buildTimeProportionalPlan,
+    34→  estimateChunkCount,
+    35→  findChunkAtTime,
+    36→  splitTranslationToChunks,
+    37→  type PaginationPlan,
+    38→} from '@/lib/textPagination'
+    39→
+    40→const PLATFORM_PRESETS: {
+    41→  key: ExportOptions['platform']
+    42→  label: string
+    43→  hint: string
+    44→  orientation: Orientation
+    45→  icon: React.ComponentType<{ className?: string }>
+    46→  color: string
+    47→}[] = [
+    48→  { key: 'reel', label: 'Instagram Reel', hint: '1080×1920 · portrait · convert to MP4', orientation: 'portrait', icon: InstagramIcon, color: '#e1306c' },
+    49→  { key: 'shorts', label: 'YouTube Shorts', hint: '1080×1920 · portrait · WebM ok', orientation: 'portrait', icon: YouTubeShortsIcon, color: '#ff0000' },
+    50→  { key: 'youtube', label: 'YouTube', hint: '1920×1080 · landscape · WebM ok', orientation: 'landscape', icon: YouTubeIcon, color: '#ff0000' },
+    51→]
+    52→
+    53→const RES: Record<Orientation, { w: number; h: number }> = {
+    54→  landscape: { w: 1280, h: 720 },
+    55→  portrait: { w: 720, h: 1280 },
+    56→}
+    57→
+    58→type RenderStatus = 'idle' | 'processing' | 'done' | 'error'
+    59→
+    60→interface ExportModalProps {
+    61→  open: boolean
+    62→  onOpenChange: (o: boolean) => void
+    63→  /** Active split data — when set, the export renders sub-clips with "Part X/N" captions. */
+    64→  activeSplit?: import('@/lib/ayatSplitter').AyatSplit | null
+    65→}
+    66→
+    67→/**
+    68→ * Custom video preview player with proper controls (play/pause, seek bar,
+    69→ * time display, volume). Replaces the bare <video controls> which showed
+    70→ * 0:00 / 0:00 until metadata loaded and had no visible duration.
+    71→ */
+    72→function VideoPreviewPlayer({
+    73→  src,
+    74→  orientation,
+    75→  filename,
+    76→  isMp4,
+    77→}: {
+    78→  src: string
+    79→  orientation: Orientation
+    80→  filename: string
+    81→  isMp4: boolean
+    82→}) {
+    83→  const videoRef = useRef<HTMLVideoElement | null>(null)
+    84→  const [isPlaying, setIsPlaying] = useState(false)
+    85→  const [currentTime, setCurrentTime] = useState(0)
+    86→  const [duration, setDuration] = useState(0)
+    87→  const [volume, setVolume] = useState(1)
+    88→  const [muted, setMuted] = useState(false)
+    89→
+    90→  useEffect(() => {
+    91→    const v = videoRef.current
+    92→    if (!v) return
+    93→    const onTime = () => setCurrentTime(v.currentTime)
+    94→    const onDur = () => setDuration(v.duration || 0)
+    95→    const onPlay = () => setIsPlaying(true)
+    96→    const onPause = () => setIsPlaying(false)
+    97→    v.addEventListener('timeupdate', onTime)
+    98→    v.addEventListener('loadedmetadata', onDur)
+    99→    v.addEventListener('durationchange', onDur)
+   100→    v.addEventListener('play', onPlay)
+   101→    v.addEventListener('pause', onPause)
+   102→    // Auto-play muted on load so the user sees motion immediately
+   103→    v.muted = true
+   104→    v.play().catch(() => {})
+   105→    return () => {
+   106→      v.removeEventListener('timeupdate', onTime)
+   107→      v.removeEventListener('loadedmetadata', onDur)
+   108→      v.removeEventListener('durationchange', onDur)
+   109→      v.removeEventListener('play', onPlay)
+   110→      v.removeEventListener('pause', onPause)
+   111→    }
+   112→  }, [src])
+   113→
+   114→  const togglePlay = () => {
+   115→    const v = videoRef.current
+   116→    if (!v) return
+   117→    if (v.paused) v.play()
+   118→    else v.pause()
+   119→  }
+   120→
+   121→  const onSeek = (val: number[]) => {
+   122→    const v = videoRef.current
+   123→    if (!v || !duration) return
+   124→    v.currentTime = (val[0]! / 100) * duration
+   125→    setCurrentTime(v.currentTime)
+   126→  }
+   127→
+   128→  const onVol = (val: number[]) => {
+   129→    const v = videoRef.current
+   130→    if (!v) return
+   131→    const vol = val[0]! / 100
+   132→    v.volume = vol
+   133→    v.muted = vol === 0
+   134→    setVolume(vol)
+   135→    setMuted(vol === 0)
+   136→  }
+   137→
+   138→  const toggleMute = () => {
+   139→    const v = videoRef.current
+   140→    if (!v) return
+   141→    v.muted = !v.muted
+   142→    setMuted(v.muted)
+   143→  }
+   144→
+   145→  const pct = duration > 0 ? (currentTime / duration) * 100 : 0
+   146→
+   147→  return (
+   148→    <div className="space-y-3">
+   149→      <div className="flex items-center gap-2 text-sm text-primary px-1">
+   150→        <CheckCircle2 className="h-5 w-5" />
+   151→        <span className="font-medium">Video ready!</span>
+   152→        <span className="text-xs text-muted-foreground ml-auto font-mono">
+   153→          {formatMs(duration * 1000)}
+   154→        </span>
+   155→      </div>
+   156→
+   157→      {/* Video + custom controls overlay */}
+   158→      <div className="relative rounded-xl overflow-hidden bg-black">
+   159→        <video
+   160→          ref={videoRef}
+   161→          preload="auto"
+   162→          playsInline
+   163→          loop
+   164→          onClick={togglePlay}
+   165→          className={`w-full block ${orientation === 'portrait' ? 'aspect-[9/16]' : 'aspect-video'}`}
+   166→        >
+   167→          <source
+   168→            src={src}
+   169→            type={
+   170→              isMp4
+   171→                ? 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
+   172→                : 'video/webm'
+   173→            }
+   174→          />
+   175→        </video>
+   176→
+   177→        {/* Center play/pause button overlay */}
+   178→        {!isPlaying && (
+   179→          <button
+   180→            onClick={togglePlay}
+   181→            className="absolute inset-0 grid place-items-center bg-black/30 transition"
+   182→            aria-label="Play"
+   183→          >
+   184→            <div className="grid place-items-center h-14 w-14 rounded-full bg-primary/90 text-primary-foreground shadow-lg">
+   185→              <Play className="h-7 w-7 translate-x-0.5" />
+   186→            </div>
+   187→          </button>
+   188→        )}
+   189→      </div>
+   190→
+   191→      {/* Custom controls bar */}
+   192→      <div className="flex items-center gap-2 px-1">
+   193→        <button
+   194→          onClick={togglePlay}
+   195→          className="grid place-items-center h-8 w-8 rounded-lg hover:bg-muted shrink-0"
+   196→          aria-label={isPlaying ? 'Pause' : 'Play'}
+   197→        >
+   198→          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-0.5" />}
+   199→        </button>
+   200→
+   201→        {/* Seek bar */}
+   202→        <Slider
+   203→          value={[pct]}
+   204→          max={100}
+   205→          step={0.1}
+   206→          onValueChange={onSeek}
+   207→          className="flex-1"
+   208→        />
+   209→
+   210→        {/* Time display */}
+   211→        <span className="text-xs font-mono tabular-nums text-muted-foreground whitespace-nowrap shrink-0">
+   212→          {formatMs(currentTime * 1000)} / {formatMs(duration * 1000)}
+   213→        </span>
+   214→
+   215→        {/* Volume */}
+   216→        <button
+   217→          onClick={toggleMute}
+   218→          className="grid place-items-center h-8 w-8 rounded-lg hover:bg-muted shrink-0"
+   219→          aria-label={muted ? 'Unmute' : 'Mute'}
+   220→        >
+   221→          {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+   222→        </button>
+   223→        <Slider
+   224→          value={[muted ? 0 : volume * 100]}
+   225→          max={100}
+   226→          step={1}
+   227→          onValueChange={onVol}
+   228→          className="w-16 shrink-0"
+   229→        />
+   230→      </div>
+   231→
+   232→      {/* Download button */}
+   233→      <a
+   234→        href={src}
+   235→        download={filename}
+   236→        className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl qv-btn-primary text-sm font-semibold"
+   237→      >
+   238→        <Download className="h-4 w-4" />
+   239→        Download {filename}
+   240→      </a>
+   241→    </div>
+   242→  )
+   243→}
+   244→
+   245→// ──────────────────────────────────────────────────────────────────────
+   246→// ProcessingPanel — premium animated processing state
+   247→// ──────────────────────────────────────────────────────────────────────
+   248→// Shown during the entire WebM render + MP4 conversion pipeline.
+   249→// ONE unified 0–100% progress bar (no reset between phases).
+   250→// The sub-phase label cross-fades between stages so the user always
+   251→// knows what's happening. Heavy use of CSS animations defined in
+   252→// globals.css: gradient pan, ring spin, pulse glow, shimmer, bar glow.
+   253→
+   254→type ProcessingPhase = 'composing' | 'uploading' | 'encoding' | 'finalizing'
+   255→
+   256→const PHASE_LABELS: Record<ProcessingPhase, { title: string; subtitle: string }> = {
+   257→  composing: {
+   258→    title: 'Composing frames',
+   259→    subtitle: 'Rendering the canvas, frame by frame',
+   260→  },
+   261→  uploading: {
+   262→    title: 'Preparing for conversion',
+   263→    subtitle: 'Sending to the Python + ffmpeg encoder',
+   264→  },
+   265→  encoding: {
+   266→    title: 'Encoding to MP4',
+   267→    subtitle: 'H.264 + AAC, optimized for every platform',
+   268→  },
+   269→  finalizing: {
+   270→    title: 'Finalizing',
+   271→    subtitle: 'Almost done — preparing your download',
+   272→  },
+   273→}
+   274→
+   275→function ProcessingPanel({
+   276→  progress,
+   277→  phase,
+   278→  isMp4,
+   279→}: {
+   280→  progress: number
+   281→  phase: ProcessingPhase
+   282→  isMp4: boolean
+   283→}) {
+   284→  const pct = Math.min(100, Math.max(0, Math.round(progress * 100)))
+   285→  const { title, subtitle } = PHASE_LABELS[phase]
+   286→
+   287→  return (
+   288→    <div className="qv-processing-panel relative rounded-2xl border border-primary/20 overflow-hidden min-h-[320px] flex flex-col justify-center p-6 sm:p-8">
+   289→      {/* Decorative top-left + bottom-right gradient blobs for depth */}
+   290→      <div
+   291→        aria-hidden
+   292→        className="absolute -top-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-3xl"
+   293→      />
+   294→      <div
+   295→        aria-hidden
+   296→        className="absolute -bottom-16 -right-12 h-48 w-48 rounded-full bg-primary/15 blur-3xl"
+   297→      />
+   298→
+   299→      {/* ─── Top: spinning ring + pulsing logo ─── */}
+   300→      <div className="relative mx-auto mb-6">
+   301→        {/* Pulsing glow halo */}
+   302→        <div
+   303→          aria-hidden
+   304→          className="qv-processing-glow absolute inset-0 rounded-full bg-primary/30 blur-xl"
+   305→        />
+   306→        {/* Spinning conic ring */}
+   307→        <div className="qv-processing-ring absolute inset-0 rounded-full" />
+   308→        {/* Center logo */}
+   309→        <div className="relative grid place-items-center h-20 w-20 rounded-full bg-card shadow-lg">
+   310→          <img
+   311→            src="/logo.png"
+   312→            alt=""
+   313→            className="h-10 w-10 object-contain"
+   314→          />
+   315→        </div>
+   316→      </div>
+   317→
+   318→      {/* ─── Phase label (cross-fades on change) ─── */}
+   319→      <div className="text-center mb-5 min-h-[44px]">
+   320→        <p
+   321→          key={phase}
+   322→          className="qv-phase-label font-semibold text-base text-foreground"
+   323→        >
+   324→          {title}
+   325→          <span className="inline-flex ml-1.5 align-middle">
+   326→            <span className="qv-dot inline-block h-1.5 w-1.5 rounded-full bg-primary mx-0.5" />
+   327→            <span className="qv-dot inline-block h-1.5 w-1.5 rounded-full bg-primary mx-0.5" />
+   328→            <span className="qv-dot inline-block h-1.5 w-1.5 rounded-full bg-primary mx-0.5" />
+   329→          </span>
+   330→        </p>
+   331→        <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+   332→      </div>
+   333→
+   334→      {/* ─── Unified progress bar ─── */}
+   335→      <div className="space-y-2">
+   336→        <div className="flex justify-between items-baseline">
+   337→          <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
+   338→            {isMp4 ? 'MP4' : 'WebM'} · Processing
+   339→          </span>
+   340→          <span
+   341→            className="font-mono font-bold text-lg text-primary tabular-nums"
+   342→            style={{ textShadow: '0 0 12px hsl(var(--primary) / 0.4)' }}
+   343→          >
+   344→            {pct}%
+   345→          </span>
+   346→        </div>
+   347→
+   348→        {/* Track */}
+   349→        <div className="relative h-2.5 rounded-full bg-muted/80 overflow-hidden ring-1 ring-inset ring-border">
+   350→          {/* Fill */}
+   351→          <div
+   352→            className="qv-processing-bar relative h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/80 transition-[width] duration-300 ease-out"
+   353→            style={{ width: `${pct}%` }}
+   354→          >
+   355→            {/* Shimmer overlay */}
+   356→            <div
+   357→              aria-hidden
+   358→              className="qv-processing-shimmer absolute inset-0 rounded-full"
+   359→            />
+   360→          </div>
+   361→        </div>
+   362→
+   363→        {/* Phase dots — 4 stages, current one highlighted */}
+   364→        <div className="flex items-center justify-between pt-1.5">
+   365→          {(['composing', 'uploading', 'encoding', 'finalizing'] as const).map(
+   366→            (p, i) => {
+   367→              const phaseOrder: ProcessingPhase[] = [
+   368→                'composing',
+   369→                'uploading',
+   370→                'encoding',
+   371→                'finalizing',
+   372→              ]
+   373→              const currentIdx = phaseOrder.indexOf(phase)
+   374→              const isPast = i < currentIdx
+   375→              const isCurrent = i === currentIdx
+   376→              return (
+   377→                <div key={p} className="flex items-center">
+   378→                  <div
+   379→                    className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
+   380→                      isCurrent
+   381→                        ? 'bg-primary scale-150 shadow-[0_0_8px_var(--primary)]'
+   382→                        : isPast
+   383→                          ? 'bg-primary/60'
+   384→                          : 'bg-muted-foreground/30'
+   385→                    }`}
+   386→                  />
+   387→                  {i < 3 && (
+   388→                    <div
+   389→                      className={`h-px w-6 transition-colors duration-300 ${
+   390→                        i < currentIdx ? 'bg-primary/40' : 'bg-border'
+   391→                      }`}
+   392→                    />
+   393→                  )}
+   394→                </div>
+   395→              )
+   396→            },
+   397→          )}
+   398→        </div>
+   399→      </div>
+   400→
+   401→      {/* ─── Footer note ─── */}
+   402→      <p className="text-center text-[10px] text-muted-foreground/70 mt-5">
+   403→        Do not close this tab while processing
+   404→      </p>
+   405→    </div>
+   406→  )
+   407→}
+   408→
+   409→// ──────────────────────────────────────────────────────────────────────
+   410→// DonePanel — clean success state with just a download button
+   411→// ──────────────────────────────────────────────────────────────────────
+   412→// Replaces the old VideoPreviewPlayer in the done state. No big video
+   413→// preview — the user already saw the video in the live preview, so the
+   414→// modal's job here is just to hand them the file. Compact, focused,
+   415→// with a prominent download button.
+   416→
+   417→function DonePanel({
+   418→  downloadUrl,
+   419→  filename,
+   420→  isMp4,
+   421→  orientation,
+   422→}: {
+   423→  downloadUrl: string
+   424→  filename: string
+   425→  isMp4: boolean
+   426→  orientation: Orientation
+   427→}) {
+   428→  return (
+   429→    <div className="qv-processing-panel relative rounded-2xl border border-primary/20 overflow-hidden min-h-[280px] flex flex-col justify-center p-6 sm:p-8 text-center">
+   430→      {/* Decorative blobs */}
+   431→      <div
+   432→        aria-hidden
+   433→        className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-500/15 blur-3xl"
+   434→      />
+   435→      <div
+   436→        aria-hidden
+   437→        className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/15 blur-3xl"
+   438→      />
+   439→
+   440→      {/* Success checkmark with pulse */}
+   441→      <div className="relative mx-auto mb-5">
+   442→        <div
+   443→          aria-hidden
+   444→          className="absolute inset-0 rounded-full bg-emerald-500/30 blur-xl qv-processing-glow"
+   445→        />
+   446→        <div className="relative grid place-items-center h-16 w-16 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/30">
+   447→          <CheckCircle2 className="h-9 w-9 text-white" />
+   448→        </div>
+   449→      </div>
+   450→
+   451→      <div className="relative space-y-1.5 mb-6">
+   452→        <p className="font-bold text-lg text-foreground">Video ready!</p>
+   453→        <p className="text-xs text-muted-foreground">
+   454→          Your video has been processed as {isMp4 ? 'MP4' : 'WebM'} ·{' '}
+   455→          {orientation === 'portrait'
+   456→            ? 'Portrait 9:16'
+   457→            : orientation === 'landscape'
+   458→              ? 'Landscape 16:9'
+   459→              : 'Square 1:1'}
+   460→        </p>
+   461→      </div>
+   462→
+   463→      {/* Download button — the primary CTA */}
+   464→      <a
+   465→        href={downloadUrl}
+   466→        download={filename}
+   467→        className="qv-btn-primary relative inline-flex items-center justify-center gap-2 w-full h-12 rounded-xl text-base font-semibold"
+   468→      >
+   469→        <Download className="h-5 w-5" />
+   470→        Download {filename}
+   471→      </a>
+   472→
+   473→      {/* Format badge */}
+   474→      <div className="relative flex items-center justify-center gap-2 mt-4">
+   475→        <span
+   476→          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+   477→            isMp4
+   478→              ? 'bg-emerald-500/15 text-emerald-600 border border-emerald-500/30'
+   479→              : 'bg-amber-500/15 text-amber-600 border border-amber-500/30'
+   480→          }`}
+   481→        >
+   482→          {isMp4 ? 'MP4 · H.264' : 'WebM fallback'}
+   483→        </span>
+   484→      </div>
+   485→    </div>
+   486→  )
+   487→}
+   488→
+   489→export function ExportModal({ open, onOpenChange, activeSplit }: ExportModalProps) {
+   490→  const ayatList = useBuilderStore((s) => s.ayatList)
+   491→  const surahs = useBuilderStore((s) => s.surahs)
+   492→  const selectedSurahNumber = useBuilderStore((s) => s.selectedSurahNumber)
+   493→  const reciterId = useBuilderStore((s) => s.reciterId)
+   494→  const translationKey = useBuilderStore((s) => s.translationKey)
+   495→  const settings = useBuilderStore((s) => s.settings)
+   496→  const fromAyat = useBuilderStore((s) => s.fromAyat)
+   497→  const toAyat = useBuilderStore((s) => s.toAyat)
+   498→
+   499→  // Derive surah + reciter with stable references.
+   500→  const surah = useMemo(
+   501→    () => surahs.find((s) => s.number === selectedSurahNumber),
+   502→    [surahs, selectedSurahNumber],
+   503→  )
+   504→  const reciter = useMemo(
+   505→    () => RECITERS_LIST.find((r) => r.id === reciterId) ?? RECITERS_LIST[0]!,
+   506→    [reciterId],
+   507→  )
+   508→
+   509→  const [platform, setPlatform] = useState<ExportOptions['platform']>('reel')
+   510→  const [quality, setQuality] = useState<ExportOptions['quality']>('720p')
+   511→  const [status, setStatus] = useState<RenderStatus>('idle')
+   512→  const [progress, setProgress] = useState(0)
+   513→  const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
+   514→  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+   515→  // Tracks whether the final downloadable file is MP4 (true) or WebM
+   516→  // (false, only when MP4 conversion fails). Drives the format badge in
+   517→  // the processing UI + the download filename extension.
+   518→  const [isMp4, setIsMp4] = useState(true)
+   519→  // Sub-phase of the unified "processing" state, so the UI can show a
+   520→  // contextual label ("Composing frames…" / "Encoding to MP4…") without
+   521→  // splitting the progress bar.
+   522→  const [processingPhase, setProcessingPhase] = useState<
+   523→    'composing' | 'uploading' | 'encoding' | 'finalizing'
+   524→  >('composing')
+   525→
+   526→  // Pre-flight check: does this browser support MediaRecorder + Canvas
+   527→  // capture + AudioContext? If not, we show a clear message instead of
+   528→  // letting the render crash mid-way with a generic "Render failed" toast.
+   529→  const capabilities = useMemo(() => checkExportCapabilities(), [])
+   530→
+   531→  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+   532→  const stopRef = useRef<(() => void) | null>(null)
+   533→  const jobIdRef = useRef<string | null>(null)
+   534→
+   535→  // When platform changes, also update the global orientation so the
+   536→  // export resolution matches what the user just picked.
+   537→  useEffect(() => {
+   538→    if (!open) return
+   539→    const preset = PLATFORM_PRESETS.find((p) => p.key === platform)
+   540→    if (preset && preset.orientation !== settings.orientation) {
+   541→      useBuilderStore.getState().updateSettings({ orientation: preset.orientation })
+   542→    }
+   543→  }, [platform, open, settings.orientation])
+   544→
+   545→  const totalMs = useMemo(
+   546→    () => ayatList.reduce((s, a) => s + (a.audioDurationMs || 0), 0),
+   547→    [ayatList],
+   548→  )
+   549→
+   550→  const filename = useMemo(() => {
+   551→    const s = surah?.number ?? 0
+   552→    const ext = isMp4 ? 'mp4' : 'webm'
+   553→    return `quran-${s}-ayat-${fromAyat}-${toAyat}-${reciter.id}.${ext}`
+   554→  }, [surah, fromAyat, toAyat, reciter.id, isMp4])
+   555→
+   556→  // Reset when modal closes
+   557→  useEffect(() => {
+   558→    if (!open) {
+   559→      if (stopRef.current) stopRef.current()
+   560→      // eslint-disable-next-line react-hooks/set-state-in-effect
+   561→      setStatus('idle')
+   562→      setProgress(0)
+   563→      setDownloadUrl(null)
+   564→      setErrorMsg(null)
+   565→      setProcessingPhase('composing')
+   566→      jobIdRef.current = null
+   567→    }
+   568→  }, [open])
+   569→
+   570→  // Build AyatSlide[] for the renderer
+   571→  const slides: AyatSlide[] = useMemo(
+   572→    () =>
+   573→      ayatList.map((a) => ({
+   574→        arabicText: a.arabicText,
+   575→        tajweedSegments: a.tajweedSegments,
+   576→        words: a.words.map((w) => ({
+   577→          text: w.text,
+   578→          startMs: w.startMs,
+   579→          endMs: w.endMs,
+   580→        })),
+   581→        translation: a.translation,
+   582→        transliteration: a.words.map((w) => w.transliteration || '').filter(Boolean).join(' '),
+   583→        surahName: surah?.name ?? '',
+   584→        surahNameArabic: surah?.arabicName ?? '',
+   585→        ayatNumber: a.ayatNumber,
+   586→        surahNumber: a.surahNumber,
+   587→        audioUrl: a.audioUrl,
+   588→        audioDurationMs: a.audioDurationMs,
+   589→        audioPauses: a.audioPauses,
+   590→        // Structural markers — passed through so drawFrame can draw them.
+   591→        juzNumber: a.juzNumber,
+   592→        hizbNumber: a.hizbNumber,
+   593→        rubElHizbNumber: a.rubElHizbNumber,
+   594→        rukuNumber: a.rukuNumber,
+   595→        manzilNumber: a.manzilNumber,
+   596→        pageNumber: a.pageNumber,
+   597→      })),
+   598→    [ayatList, surah],
+   599→  )
+   600→
+   601→  // ----------------- PROCESS -----------------
+   602→  // The whole pipeline (WebM render + MP4 conversion) is exposed to the
+   603→  // user as a SINGLE "processing" state with one unified 0–100% progress
+   604→  // bar. The WebM render fills 0–60%, the MP4 conversion fills 60–100%.
+   605→  // The sub-phase (`processingPhase`) drives the label only — it does
+   606→  // NOT split the progress.
+   607→  const startRender = async () => {
+   608→    if (!slides.length) return
+   609→    setStatus('processing')
+   610→    setProcessingPhase('composing')
+   611→    setProgress(0)
+   612→    setErrorMsg(null)
+   613→    setDownloadUrl(null)
+   614→    setIsMp4(true)
+   615→
+   616→    // 1) hit POST /api/render (validates + HEAD-checks MP3s + creates job)
+   617→    // This is best-effort — if the API is rate-limited or unreachable,
+   618→    // we still proceed with the client-side render. The API is just for
+   619→    // job tracking, not for the actual rendering.
+   620→    let jobId: string | null = null
+   621→    let ownerToken: string | null = null
+   622→    try {
+   623→      const r = await fetch('/api/render', {
+   624→        method: 'POST',
+   625→        headers: { 'Content-Type': 'application/json' },
+   626→        body: JSON.stringify({
+   627→          slides,
+   628→          reciterKey: reciter.audioKey,
+   629→          settings,
+   630→          orientation: settings.orientation,
+   631→        }),
+   632→      })
+   633→      if (r.ok) {
+   634→        const okBody = (await r.json()) as { jobId: string; ownerToken: string }
+   635→        jobId = okBody.jobId
+   636→        ownerToken = okBody.ownerToken
+   637→        jobIdRef.current = jobId
+   638→      }
+   639→      // If the API returns an error (e.g. rate limit 429), we don't throw —
+   640→      // we just skip the job tracking and proceed with the render.
+   641→    } catch {
+   642→      // Network error — proceed without job tracking.
+   643→    }
+   644→
+   645→    // Helper: send a PUT update with the ownerToken. Best-effort — if the
+   646→    // server is unreachable the render still succeeds client-side.
+   647→    const sendUpdate = (payload: Record<string, unknown>) => {
+   648→      if (!jobId || !ownerToken) return
+   649→      fetch('/api/render', {
+   650→        method: 'PUT',
+   651→        headers: {
+   652→          'Content-Type': 'application/json',
+   653→          'x-owner-token': ownerToken,
+   654→        },
+   655→        body: JSON.stringify({ jobId, ...payload }),
+   656→      }).catch(() => {})
+   657→    }
+   658→
+   659→    // 2) Client-side canvas + MediaRecorder render (produces WebM).
+   660→    //    Scaled to 0–60% of the unified progress bar.
+   661→    try {
+   662→      const { url: webmUrl, blob: webmBlob } = await renderVideoToWebm({
+   663→        canvas: canvasRef.current!,
+   664→        slides,
+   665→        settings,
+   666→        orientation: settings.orientation,
+   667→        quality,
+   668→        attributionLine: videoAttributionLine(translationKey),
+   669→        reciterName: reciter.name,
+   670→        activeSplit,
+   671→        onProgress: (p) => {
+   672→          // Scale 0–1 → 0–0.6
+   673→          const combined = p * 0.6
+   674→          setProgress(combined)
+   675→          sendUpdate({ progress: combined, status: 'processing' })
+   676→        },
+   677→      })
+   678→
+   679→      setProgress(0.6)
+   680→      sendUpdate({ progress: 0.6, status: 'processing' })
+   681→
+   682→      // 3) Convert WebM → MP4 server-side (Python + ffmpeg).
+   683→      //    Scaled to 60–100% of the unified progress bar.
+   684→      //    No status change — we stay in 'processing' the whole time so
+   685→      //    the user sees one continuous bar from 0% to 100%.
+   686→      setProcessingPhase('uploading')
+   687→      try {
+   688→        const mp4Blob = await webmToMp4(webmBlob, {
+   689→          onProgress: (p) => {
+   690→            // p is 0–1 within the conversion phase. Map to 0.6–1.0.
+   691→            // Also nudge the sub-phase label based on the conversion's
+   692→            // internal progress so the label reflects reality.
+   693→            if (p < 0.5) setProcessingPhase('uploading')
+   694→            else if (p < 0.95) setProcessingPhase('encoding')
+   695→            else setProcessingPhase('finalizing')
+   696→            const combined = 0.6 + p * 0.4
+   697→            setProgress(combined)
+   698→          },
+   699→        })
+   700→
+   701→        URL.revokeObjectURL(webmUrl)
+   702→
+   703→        const mp4Url = URL.createObjectURL(mp4Blob)
+   704→        setDownloadUrl(mp4Url)
+   705→        setIsMp4(true)
+   706→        setStatus('done')
+   707→        setProgress(1)
+   708→        sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
+   709→        toast.success('Video ready as MP4!')
+   710→      } catch (convErr) {
+   711→        // Conversion failed — fall back to the WebM URL so the user still
+   712→        // has a downloadable video. Mark it clearly as a fallback.
+   713→        console.warn('MP4 conversion failed, falling back to WebM', convErr)
+   714→        setDownloadUrl(webmUrl)
+   715→        setIsMp4(false)
+   716→        setStatus('done')
+   717→        setProgress(1)
+   718→        sendUpdate({ status: 'done', progress: 1, downloadUrl: 'client' })
+   719→        toast.error('MP4 conversion failed — downloaded as WebM instead. You can re-export to retry.')
+   720→      }
+   721→    } catch (err) {
+   722→      const msg = err instanceof Error ? err.message : 'Processing failed'
+   723→      setStatus('error')
+   724→      setErrorMsg(msg)
+   725→      toast.error(msg)
+   726→      sendUpdate({ status: 'error', error: msg })
+   727→    }
+   728→  }
+   729→
+   730→  const estimatedDuration = formatMs(totalMs)
+   731→
+   732→  return (
+   733→    <Dialog open={open} onOpenChange={onOpenChange}>
+   734→      <DialogContent className="!max-w-6xl w-[95vw] h-[90vh] bg-card border-border shadow-xl sm:rounded-2xl p-0 max-sm:h-[100dvh] max-sm:w-screen max-sm:max-w-none max-sm:rounded-none flex flex-col overflow-hidden gap-0">
+   735→        {/* Header — full width */}
+   736→        <div className="px-6 pt-6 shrink-0">
+   737→          <DialogHeader className="mb-2">
+   738→            <DialogTitle className="flex items-center gap-2 text-lg">
+   739→              <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/15 text-primary shrink-0">
+   740→                <Film className="h-4 w-4" />
+   741→              </div>
+   742→              Export video
+   743→            </DialogTitle>
+   744→            <DialogDescription className="text-[13px]">
+   745→              Pick a platform preset, choose quality, then render.
+   746→            </DialogDescription>
+   747→          </DialogHeader>
+   748→        </div>
+   749→
+   750→        <canvas ref={canvasRef} className="hidden" />
+   751→
+   752→        {/* Browser support warning — full width */}
+   753→        {!capabilities.ok && (
+   754→          <div className="mx-6 mb-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 flex items-start gap-3 text-sm text-amber-600 dark:text-amber-400">
+   755→            <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+   756→            <div className="space-y-1">
+   757→              <p className="font-medium">Browser not supported</p>
+   758→              <p className="text-xs leading-relaxed">{capabilities.reason}</p>
+   759→            </div>
+   760→          </div>
+   761→        )}
+   762→
+   763→        {/* Two-column body on desktop, single column on mobile */}
+   764→        <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-4">
+   765→          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+   766→
+   767→            {/* ─── LEFT: Settings ─── */}
+   768→            <div className="space-y-4">
+   769→              {/* Platform */}
+   770→              <div className="space-y-2">
+   771→                <Label className="qv-section-title !mb-0">Platform</Label>
+   772→                <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
+   773→                  {PLATFORM_PRESETS.map((p) => {
+   774→                    const Icon = p.icon
+   775→                    return (
+   776→                      <button
+   777→                        key={p.key}
+   778→                        onClick={() => setPlatform(p.key)}
+   779→                        className={cn(
+   780→                          'flex items-center gap-2.5 rounded-xl border p-2.5 sm:p-3 text-left transition',
+   781→                          platform === p.key
+   782→                            ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
+   783→                            : 'border-border bg-card hover:border-foreground/30',
+   784→                        )}
+   785→                      >
+   786→                        <div
+   787→                          className="grid place-items-center h-8 w-8 rounded-lg shrink-0"
+   788→                          style={{ backgroundColor: `${p.color}15`, color: p.color }}
+   789→                        >
+   790→                          <Icon className="h-5 w-5" />
+   791→                        </div>
+   792→                        <div className="flex-1 min-w-0">
+   793→                          <div className="text-xs sm:text-sm font-medium leading-tight">{p.label}</div>
+   794→                          <div className="text-[9px] sm:text-[10px] text-muted-foreground tabular-nums leading-tight mt-0.5">
+   795→                            {p.hint}
+   796→                          </div>
+   797→                        </div>
+   798→                      </button>
+   799→                    )
+   800→                  })}
+   801→                </div>
+   802→              </div>
+   803→
+   804→              {/* Quality */}
+   805→              <div className="space-y-2">
+   806→                <Label className="qv-section-title !mb-0">Quality</Label>
+   807→                <div className="grid grid-cols-2 gap-2">
+   808→                  {(['720p', '1080p'] as const).map((q) => (
+   809→                    <button
+   810→                      key={q}
+   811→                      onClick={() => setQuality(q)}
+   812→                      className={cn(
+   813→                        'rounded-xl border p-2.5 sm:p-3 text-sm font-medium transition',
+   814→                        quality === q
+   815→                          ? 'border-primary bg-primary/10 text-primary shadow-sm shadow-primary/20'
+   816→                          : 'border-border bg-card hover:border-foreground/30',
+   817→                      )}
+   818→                    >
+   819→                      {q}
+   820→                      {q === '1080p' && (
+   821→                        <span className="ml-2 text-[10px] uppercase tracking-wider opacity-70">
+   822→                          HD
+   823→                        </span>
+   824→                      )}
+   825→                    </button>
+   826→                  ))}
+   827→                </div>
+   828→              </div>
+   829→
+   830→              {/* Summary */}
+   831→              <div className="qv-card rounded-xl p-3 sm:p-3.5 text-[13px]">
+   832→                <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+   833→                  <div className="col-span-2 flex justify-between items-center gap-2 pb-2 border-b border-border">
+   834→                    <span className="text-muted-foreground text-xs">Filename</span>
+   835→                    <span className="font-mono text-[11px] text-foreground/85 truncate max-w-[60%]">
+   836→                      {filename}
+   837→                    </span>
+   838→                  </div>
+   839→                  <div className="flex justify-between items-center">
+   840→                    <span className="text-muted-foreground text-xs">Duration</span>
+   841→                    <span className="font-mono tabular-nums text-xs">{estimatedDuration}</span>
+   842→                  </div>
+   843→                  <div className="flex justify-between items-center">
+   844→                    <span className="text-muted-foreground text-xs">Ayats</span>
+   845→                    <span className="tabular-nums text-xs">{slides.length}</span>
+   846→                  </div>
+   847→                  <div className="flex justify-between items-center">
+   848→                    <span className="text-muted-foreground text-xs">Resolution</span>
+   849→                    <span className="font-mono tabular-nums text-xs">
+   850→                      {RES[settings.orientation].w * (quality === '1080p' ? 1.5 : 1)} ×{' '}
+   851→                      {RES[settings.orientation].h * (quality === '1080p' ? 1.5 : 1)}
+   852→                    </span>
+   853→                  </div>
+   854→                  <div className="flex justify-between items-center">
+   855→                    <span className="text-muted-foreground text-xs">Format</span>
+   856→                    <span className="font-mono tabular-nums text-xs">
+   857→                      {isMp4 ? 'MP4' : 'WebM'}
+   858→                    </span>
+   859→                  </div>
+   860→                </div>
+   861→              </div>
+   862→            </div>
+   863→
+   864→            {/* ─── RIGHT: Output / Processing / Download ─── */}
+   865→            <div className="space-y-4">
+   866→              {/* Idle state — show a placeholder */}
+   867→              {status === 'idle' && (
+   868→                <div className="qv-card rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[280px] gap-3">
+   869→                  <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 text-primary">
+   870→                    <Film className="h-7 w-7" />
+   871→                  </div>
+   872→                  <div>
+   873→                    <p className="font-medium text-sm">Ready to process</p>
+   874→                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[240px]">
+   875→                      Pick your settings on the left, then hit{' '}
+   876→                      <span className="font-medium text-foreground">Process video</span>{' '}
+   877→                      to start.
+   878→                    </p>
+   879→                  </div>
+   880→                </div>
+   881→              )}
+   882→
+   883→              {/* Processing state — premium animated UI.
+   884→                  A SINGLE unified 0–100% progress bar spans the WebM render
+   885→                  (0–60%) AND the MP4 conversion (60–100%). The sub-phase
+   886→                  label cross-fades between stages so the user always knows
+   887→                  what's happening, without splitting the progress bar. */}
+   888→              {status === 'processing' && (
+   889→                <ProcessingPanel
+   890→                  progress={progress}
+   891→                  phase={processingPhase}
+   892→                  isMp4={isMp4}
+   893→                />
+   894→              )}
+   895→
+   896→              {/* Done state — success panel + download button.
+   897→                  No big video preview — just a clean success state with
+   898→                  a prominent download button. The user already saw the
+   899→                  video in the live preview; the modal's job here is to
+   900→                  hand them the file. */}
+   901→              {status === 'done' && downloadUrl && (
+   902→                <DonePanel
+   903→                  downloadUrl={downloadUrl}
+   904→                  filename={filename}
+   905→                  isMp4={isMp4}
+   906→                  orientation={settings.orientation}
+   907→                />
+   908→              )}
+   909→
+   910→              {/* Error state */}
+   911→              {status === 'error' && (
+   912→                <div className="qv-card rounded-xl p-5 min-h-[280px] flex flex-col justify-center">
+   913→                  <div className="flex items-start gap-3 text-sm text-destructive">
+   914→                    <AlertCircle className="h-6 w-6 mt-0.5 shrink-0" />
+   915→                    <div className="space-y-1">
+   916→                      <p className="font-medium">Processing failed</p>
+   917→                      <p className="text-xs leading-relaxed text-muted-foreground">{errorMsg}</p>
+   918→                    </div>
+   919→                  </div>
+   920→                </div>
+   921→              )}
+   922→            </div>
+   923→
+   924→          </div>
+   925→        </div>
+   926→
+   927→        {/* Sticky footer */}
+   928→        <div className="border-t border-border bg-card px-6 py-3 flex gap-2 shrink-0">
+   929→          <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
+   930→            <X className="h-4 w-4 mr-1.5" />
+   931→            Close
+   932→          </Button>
+   933→          {status !== 'processing' && (
+   934→            <Button
+   935→              onClick={startRender}
+   936→              disabled={!slides.length || !capabilities.ok}
+   937→              className="qv-btn-primary flex-1"
+   938→            >
+   939→              <Film className="h-4 w-4 mr-1.5" />
+   940→              {status === 'done' ? 'Process again' : 'Process video'}
+   941→            </Button>
+   942→          )}
+   943→        </div>
+   944→      </DialogContent>
+   945→    </Dialog>
+   946→  )
+   947→}
+   948→
+   949→// ---------------------------------------------------------------------
+   950→// Client-side canvas + MediaRecorder video renderer
+   951→// ---------------------------------------------------------------------
+   952→
+   953→// Named constants — no magic numbers scattered through the render code.
+   954→const RENDER_FPS = 30
+   955→const RENDER_VIDEO_BITRATE = 6_000_000 // 6 Mbps — high quality for 720p/1080p
+   956→const RENDER_AUDIO_LEAD_MS = 100 // schedule audio 100ms ahead to avoid first-frame glitches
+   957→const RENDER_QUALITY_SCALE: Record<ExportOptions['quality'], number> = {
+   958→  '720p': 1,
+   959→  '1080p': 1.5,
+   960→}
+   961→
+   962→interface RenderArgs {
+   963→  canvas: HTMLCanvasElement
+   964→  slides: AyatSlide[]
+   965→  settings: ReturnType<typeof useBuilderStore.getState>['settings']
+   966→  orientation: Orientation
+   967→  quality: ExportOptions['quality']
+   968→  /** Attribution line for the translation edition (empty for public-domain). */
+   969→  attributionLine: string
+   970→  /** Reciter name for the "Recited by" credit (always shown). */
+   971→  reciterName: string
+   972→  onProgress: (p: number) => void
+   973→  /** Active split data — when set, draws "Part X/N" badges. */
+   974→  activeSplit?: import('@/lib/ayatSplitter').AyatSplit | null
+   975→}
+   976→
+   977→async function renderVideoToWebm({
+   978→  canvas,
+   979→  slides,
+   980→  settings,
+   981→  orientation,
+   982→  quality,
+   983→  attributionLine,
+   984→  reciterName,
+   985→  onProgress,
+   986→  activeSplit,
+   987→}: RenderArgs): Promise<{ url: string; blob: Blob }> {
+   988→  const base = RES[orientation]
+   989→  const scale = RENDER_QUALITY_SCALE[quality]
+   990→  const W = Math.round(base.w * scale)
+   991→  const H = Math.round(base.h * scale)
+   992→  canvas.width = W
+   993→  canvas.height = H
+   994→  const ctx = canvas.getContext('2d')!
+   995→  if (!ctx) throw new Error('Canvas 2D context unavailable')
+   996→
+   997→  // Load the background — for an MP4 video background we use a separate
+   998→  // <video> element that we'll seek frame-by-frame in the render loop;
+   999→  // for an image we use a regular <img>. Either way, `bgImg`/`bgVideo`
+  1000→  // carries the loaded media (the other is null).
+  1001→  const isVideoBg = settings.backgroundImage.endsWith('.mp4')
+  1002→  const bgImg = isVideoBg
+  1003→    ? null
+  1004→    : await loadImage(settings.backgroundImage).catch(() => null)
+  1005→  const bgVideo = isVideoBg
+  1006→    ? await loadVideo(settings.backgroundImage).catch(() => null)
+  1007→    : null
+  1008→
+  1009→  // Load the watermark image once.
+  1010→  const watermarkImg = await loadImage('/watermark.png').catch(() => null)
+  1011→
+  1012→  // Pre-load all ayat audio as AudioBuffers via Web Audio API so we can
+  1013→  // schedule them precisely on a single MediaRecorder timeline.
+  1014→  // Safari < 14 ships AudioContext as webkitAudioContext. The capabilities
+  1015→  // check at the top of the modal should prevent us reaching this code path
+  1016→  // on a browser with neither variant, but we guard defensively anyway —
+  1017→  // throwing a clear error is better than a non-null-assertion crash.
+  1018→  type AudioContextCtor = typeof AudioContext
+  1019→  const win = window as unknown as {
+  1020→    AudioContext?: AudioContextCtor
+  1021→    webkitAudioContext?: AudioContextCtor
+  1022→  }
+  1023→  const AudioCtx = win.AudioContext ?? win.webkitAudioContext
+  1024→  if (!AudioCtx) {
+  1025→    throw new Error(
+  1026→      'Web Audio API is not available in this browser. Try Chrome, Edge, or Firefox on desktop.',
+  1027→    )
+  1028→  }
+  1029→  const audioCtx = new AudioCtx()
+  1030→  const buffers: AudioBuffer[] = []
+  1031→  for (const s of slides) {
+  1032→    const buf = await fetchAudioBuffer(s.audioUrl, audioCtx)
+  1033→    buffers.push(buf)
+  1034→  }
+  1035→  const totalMs = slides.reduce(
+  1036→    (sum, s, i) => sum + (buffers[i]?.duration ?? s.audioDurationMs / 1000) * 1000,
+  1037→    0,
+  1038→  )
+  1039→  if (totalMs <= 0) {
+  1040→    throw new Error('No audio could be loaded for the selected range.')
+  1041→  }
+  1042→
+  1043→  // Set up MediaRecorder on a canvas.captureStream() track.
+  1044→  const stream = canvas.captureStream(RENDER_FPS)
+  1045→  // Create a MediaStreamDestination to mix the audio into the recording.
+  1046→  // Try to add audio tracks, but don't fail if it doesn't work.
+  1047→  let dest: MediaStreamAudioDestinationNode | null = null
+  1048→  try {
+  1049→    dest = audioCtx.createMediaStreamDestination()
+  1050→    for (const tr of dest.stream.getAudioTracks()) {
+  1051→      stream.addTrack(tr)
+  1052→    }
+  1053→  } catch {
+  1054→    // Audio mixing failed — record video only (silent video)
+  1055→  }
+  1056→
+  1057→  // Pick a supported MIME type. Uses the shared picker so the pre-flight
+  1058→  // check and the actual render agree on what's supported.
+  1059→  const mime = pickSupportedMimeType()
+  1060→  const recorder = new MediaRecorder(
+  1061→    stream,
+  1062→    mime
+  1063→      ? { mimeType: mime, videoBitsPerSecond: RENDER_VIDEO_BITRATE }
+  1064→      : undefined,
+  1065→  )
+  1066→
+  1067→  const chunks: BlobPart[] = []
+  1068→  recorder.ondataavailable = (e) => {
+  1069→    if (e.data.size > 0) chunks.push(e.data)
+  1070→  }
+  1071→
+  1072→  const stopped = new Promise<void>((resolve) => {
+  1073→    recorder.onstop = () => resolve()
+  1074→  })
+  1075→
+  1076→  // Schedule all audio buffers back-to-back, starting a little ahead of "now"
+  1077→  // so the first sample doesn't get clipped by the recorder's startup latency.
+  1078→  const sources: AudioBufferSourceNode[] = []
+  1079→  const leadSec = RENDER_AUDIO_LEAD_MS / 1000
+  1080→  const startTime = audioCtx.currentTime + leadSec
+  1081→  let t0 = startTime
+  1082→  const startTimes: number[] = [] // audioCtx-time at which each ayat begins
+  1083→  buffers.forEach((b) => {
+  1084→    const src = audioCtx.createBufferSource()
+  1085→    src.buffer = b
+  1086→    if (dest) src.connect(dest)
+  1087→    src.start(t0)
+  1088→    startTimes.push(t0)
+  1089→    sources.push(src)
+  1090→    t0 += b.duration
+  1091→  })
+  1092→  const totalSec = t0 - startTime
+  1093→
+  1094→  recorder.start() // collect all data at stop() — faster than timeslice
+  1095→
+  1096→  // Drawing loop
+  1097→  const startWall = performance.now()
+  1098→  await new Promise<void>((resolve) => {
+  1099→    const draw = () => {
+  1100→      const elapsedSec = (performance.now() - startWall) / 1000
+  1101→      // figure out which slide we're on
+  1102→      let acc = 0
+  1103→      let idx = 0
+  1104→      let intoMs = 0
+  1105→      for (let i = 0; i < slides.length; i++) {
+  1106→        const dur = (buffers[i]?.duration ?? 0) * 1000
+  1107→        if (elapsedSec * 1000 < acc + dur) {
+  1108→          idx = i
+  1109→          intoMs = elapsedSec * 1000 - acc
+  1110→          break
+  1111→        }
+  1112→        acc += dur
+  1113→        if (i === slides.length - 1) {
+  1114→          idx = i
+  1115→          intoMs = dur
+  1116→        }
+  1117→      }
+  1118→
+  1119→      // ── Seek the background video to the current frame ───────────────
+  1120→      // The video loops every `bgDurationSec` seconds. We seek to
+  1121→      // `elapsedSec % bgDurationSec` so the background animation stays
+  1122→      // in sync with the recitation timeline. Seeking is async, but
+  1123→      // for short clips (<10s) the browser usually has the frame ready
+  1124→      // by the next rAF tick; we draw whatever frame is currently
+  1125→      // visible (which may be the previous frame for one tick).
+  1126→      if (bgVideo) {
+  1127→        const bgDur = bgVideo.duration
+  1128→        if (Number.isFinite(bgDur) && bgDur > 0) {
+  1129→          const targetT = elapsedSec % bgDur
+  1130→          // Only seek if we're more than ~1 frame off — avoids excessive
+  1131→          // re-seeking that can stall the video element.
+  1132→          if (Math.abs(bgVideo.currentTime - targetT) > 1 / RENDER_FPS) {
+  1133→            try { bgVideo.currentTime = targetT } catch { /* seeking can throw if not ready */ }
+  1134→          }
+  1135→        }
+  1136→      }
+  1137→
+  1138→      drawFrame({
+  1139→        ctx,
+  1140→        W,
+  1141→        H,
+  1142→        slide: slides[idx]!,
+  1143→        intoMs,
+  1144→        settings,
+  1145→        bgImg,
+  1146→        bgVideo,
+  1147→        ayatIndex: idx,
+  1148→        total: slides.length,
+  1149→        attributionLine,
+  1150→        reciterName,
+  1151→        watermarkImg,
+  1152→        splitPart: activeSplit && activeSplit.segments.length > 0
+  1153→          ? { partNumber: idx + 1, totalParts: activeSplit.segments.length }
+  1154→          : null,
+  1155→      })
+  1156→
+  1157→      onProgress(Math.min(1, elapsedSec / totalSec))
+  1158→
+  1159→      if (elapsedSec >= totalSec) {
+  1160→        resolve()
+  1161→        return
+  1162→      }
+  1163→      requestAnimationFrame(draw)
+  1164→    }
+  1165→    requestAnimationFrame(draw)
+  1166→  })
+  1167→
+  1168→  // Stop everything
+  1169→  sources.forEach((s) => {
+  1170→    try { s.stop() } catch {}
+  1171→  })
+  1172→  recorder.stop()
+  1173→  await stopped
+  1174→  audioCtx.close()
+  1175→
+  1176→  const blob = new Blob(chunks, { type: mime || 'video/webm' })
+  1177→  const url = URL.createObjectURL(blob)
+  1178→  return { url, blob }
+  1179→}
+  1180→
+  1181→function loadImage(src: string): Promise<HTMLImageElement> {
+  1182→  return new Promise((resolve, reject) => {
+  1183→    const img = new Image()
+  1184→    img.crossOrigin = 'anonymous'
+  1185→    img.onload = () => resolve(img)
+  1186→    img.onerror = reject
+  1187→    img.src = src
+  1188→  })
+  1189→}
+  1190→
+  1191→/**
+  1192→ * Load a video file and wait until it has metadata + at least one frame
+  1193→ * ready to draw. Used by the export pipeline to render MP4 video
+  1194→ * backgrounds frame-by-frame onto the canvas. The video is muted and
+  1195→ * paused — we drive it manually via `currentTime` seeking in the render
+  1196→ * loop. `playsInline` is set so iOS Safari allows the metadata load
+  1197→ * without a user gesture.
+  1198→ */
+  1199→function loadVideo(src: string): Promise<HTMLVideoElement> {
+  1200→  return new Promise((resolve, reject) => {
+  1201→    const v = document.createElement('video')
+  1202→    v.src = src
+  1203→    v.muted = true
+  1204→    v.playsInline = true
+  1205→    v.preload = 'auto'
+  1206→    v.crossOrigin = 'anonymous'
+  1207→    // Some browsers won't decode frames until the video starts playing
+  1208→    // or at least has been "loadeddata". We wait for `loadeddata` (one
+  1209→    // frame is available for drawing).
+  1210→    v.onloadeddata = () => {
+  1211→      // Try to start playback so the decoder actually decodes frames —
+  1212→      // we immediately pause so there's no audible sound. This is the
+  1213→      // most reliable cross-browser way to ensure `drawImage(video)`
+  1214→      // produces a non-blank frame.
+  1215→      v.play()
+  1216→        .then(() => {
+  1217→          v.pause()
+  1218→          resolve(v)
+  1219→        })
+  1220→        .catch(() => {
+  1221→          // Autoplay was blocked — fall back to a seeked-frame approach.
+  1222→          // The video element should still be drawable after loadeddata
+  1223→          // on most browsers (Chrome, Firefox, Safari desktop).
+  1224→          resolve(v)
+  1225→        })
+  1226→    }
+  1227→    v.onerror = () => reject(new Error(`Failed to load video: ${src}`))
+  1228→    // Trigger the metadata load.
+  1229→    v.load()
+  1230→  })
+  1231→}
+  1232→
+  1233→async function fetchAudioBuffer(url: string, ctx: AudioContext): Promise<AudioBuffer> {
+  1234→  const res = await fetch(url)
+  1235→  if (!res.ok) throw new Error(`Failed to fetch audio ${url}: ${res.status}`)
+  1236→  const arr = await res.arrayBuffer()
+  1237→  return await ctx.decodeAudioData(arr)
+  1238→}
+  1239→
+  1240→// ---------------------------------------------------------------------
+  1241→// Per-frame drawing
+  1242→// ---------------------------------------------------------------------
+  1243→
+  1244→interface DrawArgs {
+  1245→  ctx: CanvasRenderingContext2D
+  1246→  W: number
+  1247→  H: number
+  1248→  slide: AyatSlide
+  1249→  intoMs: number
+  1250→  settings: RenderArgs['settings']
+  1251→  bgImg: HTMLImageElement | null
+  1252→  /** When the background is an MP4 video, this carries the loaded
+  1253→   *  <video> element. The render loop seeks it to the correct frame
+  1254→   *  before calling drawFrame; here we just `drawImage` its current
+  1255→   *  frame onto the canvas (cover-fit, same as bgImg). */
+  1256→  bgVideo: HTMLVideoElement | null
+  1257→  ayatIndex: number
+  1258→  total: number
+  1259→  /** Attribution line for the translation edition (empty for public-domain). */
+  1260→  attributionLine: string
+  1261→  /** Reciter name for the "Recited by" credit (always shown). */
+  1262→  reciterName: string
+  1263→  /** Pre-loaded watermark image (transparent PNG). Null while loading or if
+  1264→   *  the watermark file is missing — in that case we fall back to text. */
+  1265→  watermarkImg: HTMLImageElement | null
+  1266→  /** When set, draws a "Part X/N" badge on the frame. */
+  1267→  splitPart?: { partNumber: number; totalParts: number } | null
+  1268→}
+  1269→
+  1270→function drawFrame({
+  1271→  ctx,
+  1272→  W,
+  1273→  H,
+  1274→  slide,
+  1275→  intoMs,
+  1276→  settings,
+  1277→  bgImg,
+  1278→  bgVideo,
+  1279→  ayatIndex,
+  1280→  total,
+  1281→  attributionLine,
+  1282→  reciterName,
+  1283→  watermarkImg,
+  1284→  splitPart,
+  1285→}: DrawArgs) {
+  1286→  // ---- Background (cover-fit) -----------------------------------------
+  1287→  // For image backgrounds: draw the loaded <img> cover-fit.
+  1288→  // For video backgrounds: draw the current frame of the loaded <video>
+  1289→  //   (the render loop has already seeked it to the right time).
+  1290→  // Fallback: solid dark color if neither is available.
+  1291→  if (bgImg) {
+  1292→    const ratio = Math.max(W / bgImg.width, H / bgImg.height)
+  1293→    const dw = bgImg.width * ratio
+  1294→    const dh = bgImg.height * ratio
+  1295→    ctx.drawImage(bgImg, (W - dw) / 2, (H - dh) / 2, dw, dh)
+  1296→  } else if (bgVideo && bgVideo.videoWidth > 0) {
+  1297→    // Cover-fit: scale so the video fills the canvas, cropping overflow.
+  1298→    const vw = bgVideo.videoWidth
+  1299→    const vh = bgVideo.videoHeight
+  1300→    const ratio = Math.max(W / vw, H / vh)
+  1301→    const dw = vw * ratio
+  1302→    const dh = vh * ratio
+  1303→    ctx.drawImage(bgVideo, (W - dw) / 2, (H - dh) / 2, dw, dh)
+  1304→  } else {
+  1305→    ctx.fillStyle = '#0a0f1a'
+  1306→    ctx.fillRect(0, 0, W, H)
+  1307→  }
+  1308→
+  1309→  // ---- User overlay (using the selected preset shape) -----------------
+  1310→  paintOverlayOnCanvas(ctx, W, H, settings)
+  1311→
+  1312→  // ---- Subtle top + bottom gradient for legibility (always on) --------
+  1313→  const grad = ctx.createLinearGradient(0, 0, 0, H)
+  1314→  grad.addColorStop(0, 'rgba(0,0,0,0.22)')
+  1315→  grad.addColorStop(0.18, 'rgba(0,0,0,0)')
+  1316→  grad.addColorStop(0.78, 'rgba(0,0,0,0)')
+  1317→  grad.addColorStop(1, 'rgba(0,0,0,0.30)')
+  1318→  ctx.fillStyle = grad
+  1319→  ctx.fillRect(0, 0, W, H)
+  1320→
+  1321→  // ---- Top header: Arabic surah name + English + ayat indicator -------
+  1322→  ctx.textBaseline = 'top'
+  1323→  ctx.fillStyle = '#ffffff'
+  1324→  ctx.font = `${Math.round(H * 0.030)}px "Amiri Quran", "Amiri", serif`
+  1325→  ctx.textAlign = 'left'
+  1326→  ctx.shadowColor = 'rgba(0,0,0,0.6)'
+  1327→  ctx.shadowBlur = H * 0.008
+  1328→  ctx.fillText(slide.surahNameArabic, W * 0.045, H * 0.045)
+  1329→  ctx.shadowBlur = 0
+  1330→  ctx.font = `${Math.round(H * 0.017)}px Inter, sans-serif`
+  1331→  ctx.fillStyle = 'rgba(255,255,255,0.75)'
+  1332→  ctx.fillText(
+  1333→    slide.surahName.toUpperCase(),
+  1334→    W * 0.045,
+  1335→    H * 0.045 + H * 0.045,
+  1336→  )
+  1337→
+  1338→  ctx.textAlign = 'right'
+  1339→  ctx.fillStyle = '#ffffff'
+  1340→  ctx.font = `${Math.round(H * 0.026)}px "Amiri Quran", "Amiri", serif`
+  1341→  ctx.shadowColor = 'rgba(0,0,0,0.6)'
+  1342→  ctx.shadowBlur = H * 0.008
+  1343→  ctx.fillText(`${slide.surahNumber}:${slide.ayatNumber}`, W * 0.955, H * 0.045)
+  1344→  ctx.shadowBlur = 0
+  1345→  ctx.fillStyle = 'rgba(255,255,255,0.65)'
+  1346→  ctx.font = `${Math.round(H * 0.013)}px Inter, sans-serif`
+  1347→  ctx.fillText(
+  1348→    `AYAT ${ayatIndex + 1} OF ${total}`.toUpperCase(),
+  1349→    W * 0.955,
+  1350→    H * 0.045 + H * 0.045,
+  1351→  )
+  1352→
+  1353→  // ---- Split part badge (top-center) ----------------------------------
+  1354→  // When an ayah is split, draw "Part X/N" as a badge at the top-center
+  1355→  // of the frame so viewers know which part they're watching.
+  1356→  if (splitPart) {
+  1357→    const badgeText = `PART ${splitPart.partNumber} / ${splitPart.totalParts}`
+  1358→    const badgeFontSize = Math.round(H * 0.014)
+  1359→    ctx.save()
+  1360→    ctx.font = `600 ${badgeFontSize}px Inter, sans-serif`
+  1361→    ctx.fillStyle = 'rgba(124, 58, 237, 0.9)' // primary gradient color
+  1362→    ctx.textAlign = 'center'
+  1363→    ctx.textBaseline = 'top'
+  1364→    ctx.shadowColor = 'rgba(0,0,0,0.6)'
+  1365→    ctx.shadowBlur = 4
+  1366→    // Draw a pill background
+  1367→    const textW = ctx.measureText(badgeText).width
+  1368→    const pillW = textW + badgeFontSize * 1.5
+  1369→    const pillH = badgeFontSize * 1.8
+  1370→    const pillX = W / 2 - pillW / 2
+  1371→    const pillY = H * 0.04
+  1372→    // Pill background
+  1373→    ctx.fillStyle = 'rgba(124, 58, 237, 0.85)'
+  1374→    ctx.beginPath()
+  1375→    if (typeof ctx.roundRect === 'function') {
+  1376→      ctx.roundRect(pillX, pillY, pillW, pillH, pillH / 2)
+  1377→    } else {
+  1378→      ctx.rect(pillX, pillY, pillW, pillH)
+  1379→    }
+  1380→    ctx.fill()
+  1381→    // Text
+  1382→    ctx.fillStyle = '#ffffff'
+  1383→    ctx.fillText(badgeText, W / 2, pillY + badgeFontSize * 0.4)
+  1384→    ctx.restore()
+  1385→  }
+  1386→
+  1387→  // ---- Center content card --------------------------------------------
+  1388→  // Find the currently-active word first so we can size the card to fit.
+  1389→
+  1390→  // Map the arabicFont setting → CSS font-family string for canvas.
+  1391→  // The fonts are loaded via next/font in layout.tsx and are available
+  1392→  // to the canvas as long as they've been rendered at least once on the
+  1393→  // page (which they have, since the CustomizationPanel previews them).
+  1394→  const ARABIC_FONT_FAMILY: Record<string, string> = {
+  1395→    uthmani: '"Amiri Quran", "Amiri", serif',
+  1396→    amiri: '"Amiri Quran", "Amiri", serif',
+  1397→    scheherazade: '"Scheherazade New", "Scheherazade", serif',
+  1398→    naskh: '"Noto Naskh Arabic", "Noto Naskh", serif',
+  1399→    kufi: '"Reem Kufi", "Reem", sans-serif',
+  1400→    cairo: '"Cairo", sans-serif',
+  1401→  }
+  1402→  const arabicFontFamily =
+  1403→    ARABIC_FONT_FAMILY[settings.arabicFont] ?? ARABIC_FONT_FAMILY.uthmani
+  1404→
+  1405→  // Bengali font family — used when the translation is Bengali.
+  1406→  const BENGALI_FONT_FAMILY: Record<string, string> = {
+  1407→    sans: '"Noto Sans Bengali", "Noto Sans", sans-serif',
+  1408→    serif: '"Noto Serif Bengali", "Noto Serif", serif',
+  1409→    hind: '"Hind Siliguri", "Hind", sans-serif',
+  1410→  }
+  1411→  // Detect if the translation is Bengali by checking the translationKey
+  1412→  // (passed via the attribution line helper, but we can also sniff the
+  1413→  // slide's translation text for Bengali Unicode range). For canvas
+  1414→  // rendering we use the bengaliFont setting only when the translation
+  1415→  // contains Bengali characters.
+  1416→  const isBengaliTranslation = /[\u0980-\u09FF]/.test(slide.translation)
+  1417→  const bengaliFontFamily = isBengaliTranslation
+  1418→    ? BENGALI_FONT_FAMILY[settings.bengaliFont] ?? BENGALI_FONT_FAMILY.sans
+  1419→    : 'Inter, sans-serif'
+  1420→
+  1421→  // Scale font by the SHORTER dimension (min of W, H) so text never
+  1422→  // overflows on narrow portrait frames. Previously we scaled by H alone,
+  1423→  // which made Arabic text enormous on portrait (H=1280 → 1.78x scale).
+  1424→  // Using min(W,H) keeps the text proportional to the smaller dimension.
+  1425→  const minDim = Math.min(W, H)
+  1426→  const fontScale = minDim / 720
+  1427→  // Boost font sizes: multiply by 1.4x so text is clearly readable on
+  1428→  // mobile screens after Facebook/Instagram compression.
+  1429→  const arabicFontSize = settings.arabicFontSize * fontScale * 1.4
+  1430→  const transFontSize = settings.translationFontSize * fontScale * 1.4
+  1431→  const translitFontSize = Math.max(11, minDim * 0.018 * 1.4)
+  1432→
+  1433→  const activeIdx = getActiveWordIndex(slide.words, intoMs)
+  1434→
+  1435→  // Layout Arabic words centered, RTL, with line-wrapping.
+  1436→  ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
+  1437→  ctx.textAlign = 'center'
+  1438→  ctx.textBaseline = 'middle'
+  1439→
+  1440→  const wordsArr = slide.words.length
+  1441→    ? slide.words.map((w) => w.text)
+  1442→    : slide.arabicText.split(/\s+/)
+  1443→  // Use a proportional space width — Arabic fonts often return a tiny
+  1444→  // space width from measureText(' '). Use 0.3 * fontSize for a natural gap.
+  1445→  const spaceW = arabicFontSize * 0.3
+  1446→  // Text width: maps the user's textWidth setting to a fraction of W
+  1447→  const TEXT_WIDTH_FRACTIONS: Record<string, number> = {
+  1448→    full: 0.94,
+  1449→    wide: 0.84,
+  1450→    medium: 0.72,
+  1451→    narrow: 0.60,
+  1452→  }
+  1453→  const innerMaxW = W * (TEXT_WIDTH_FRACTIONS[settings.textWidth] ?? 0.84)
+  1454→
+  1455→  const arabicLineH = arabicFontSize * 1.8 // generous line height to prevent overlap
+  1456→
+  1457→  // ─── Audio-synced text pagination ────────────────────────────────────
+  1458→  // When an ayah is very long (e.g. Ayat al-Kursi ~50 words), showing
+  1459→  // the whole text at once makes it tiny and unreadable. We split it
+  1460→  // into chunks that cycle like movie subtitles.
+  1461→  //
+  1462→  // CRITICAL: chunk boundaries are driven by the reciter's actual
+  1463→  // per-word timings, NOT by `totalDuration / numChunks`. Arabic
+  1464→  // recitation has variable word lengths (madd, pausal forms), so a
+  1465→  // clock-based split would jump AHEAD of the audio. Using word
+  1466→  // timings means chunk N switches the INSTANT the reciter finishes
+  1467→  // the last word in chunk N — perfect sync.
+  1468→  //
+  1469→  // The translation is split into the SAME number of chunks as the
+  1470→  // Arabic and switches at the same boundaries, so Arabic page 2 and
+  1471→  // translation page 2 always appear together.
+  1472→  const MAX_TRANS_LINES = 2    // hard cap on visual lines of translation per page
+  1473→
+  1474→  const slideDurationMs = slide.audioDurationMs || 10000
+  1475→
+  1476→  // ─── Build the pagination plan ─────────────────────────────────────
+  1477→  // Priority:
+  1478→  //   1. Silence-snapped — uses ffmpeg pause detection on the ACTUAL
+  1479→  //      audio. 100% accurate sync because boundaries are real breath
+  1480→  //      points in the audio the user hears.
+  1481→  //   2. Time-proportional — last-resort fallback when no pauses.
+  1482→  //
+  1483→  // We DO NOT use the word-timing API approach (buildAudioSyncedChunks)
+  1484→  // because the timings come from the wrong reciter's word MP3s and
+  1485→  // don't match the everyayah.com audio we actually play.
+  1486→  let paginationPlan: PaginationPlan = { chunks: [], total: 0 }
+  1487→  {
+  1488→    const n = estimateChunkCount(wordsArr.length)
+  1489→    if (n > 1) {
+  1490→      if (slide.audioPauses && slide.audioPauses.length > 0) {
+  1491→        // ✅ Best: silence-snapped boundaries from the real audio
+  1492→        paginationPlan = buildSilenceSnappedPlan(
+  1493→          slideDurationMs,
+  1494→          n,
+  1495→          slide.audioPauses,
+  1496→          wordsArr.length,
+  1497→        )
+  1498→      } else {
+  1499→        // Fallback: even time split (no pauses available)
+  1500→        paginationPlan = buildTimeProportionalPlan(slideDurationMs, n)
+  1501→      }
+  1502→    }
+  1503→  }
+  1504→
+  1505→  // Pick the active chunk index for the current frame time.
+  1506→  let chunkIdx = -1
+  1507→  if (paginationPlan.total > 1) {
+  1508→    chunkIdx = findChunkAtTime(paginationPlan.chunks, intoMs)
+  1509→    if (chunkIdx < 0) chunkIdx = 0
+  1510→  }
+  1511→
+  1512→  // ─── Slice Arabic words for the current chunk ─────────────────────
+  1513→  // When paginating, only the words in the current chunk are wrapped
+  1514→  // and drawn. `visibleWordOffset` lets us keep the global word index
+  1515→  // for highlight matching (activeIdx is a global word index).
+  1516→  let visibleWordsArr: string[]
+  1517→  let visibleWordOffset = 0
+  1518→  if (chunkIdx >= 0 && paginationPlan.total > 1) {
+  1519→    const chunk = paginationPlan.chunks[chunkIdx]!
+  1520→    visibleWordOffset = chunk.wordStart
+  1521→    visibleWordsArr = wordsArr.slice(chunk.wordStart, chunk.wordEnd)
+  1522→  } else {
+  1523→    visibleWordsArr = wordsArr
+  1524→  }
+  1525→
+  1526→  // Wrap the visible Arabic words into visual lines (RTL centering
+  1527→  // happens at draw time, not here — this just decides line breaks).
+  1528→  const lines: string[][] = []
+  1529→  {
+  1530→    let ln: string[] = []
+  1531→    let lnW = 0
+  1532→    for (let i = 0; i < visibleWordsArr.length; i++) {
+  1533→      const w = visibleWordsArr[i]!
+  1534→      const ww = ctx.measureText(w).width
+  1535→      if (lnW + ww > innerMaxW && ln.length) {
+  1536→        lines.push(ln)
+  1537→        ln = []
+  1538→        lnW = 0
+  1539→      }
+  1540→      ln.push(w)
+  1541→      lnW += ww + spaceW
+  1542→    }
+  1543→    if (ln.length) lines.push(ln)
+  1544→  }
+  1545→  const visibleArabicLines: string[][] = lines
+  1546→  const arabicPageInfo: { current: number; total: number } | null =
+  1547→    paginationPlan.total > 1 && chunkIdx >= 0
+  1548→      ? { current: chunkIdx + 1, total: paginationPlan.total }
+  1549→      : null
+  1550→  const arabicTotalH = visibleArabicLines.length * arabicLineH
+  1551→
+  1552→  // Transliteration (one-line approximation)
+  1553→  const translit = settings.showTransliteration ? slide.transliteration : ''
+  1554→  const translitH = translit ? translitFontSize * 1.45 : 0
+  1555→
+  1556→  // Translation wrapped — detect Bengali text and use the user-selected
+  1557→  // Bengali font (sans/serif/hind). For non-Bengali translations, use Inter.
+  1558→  const isBengali = /[\u0980-\u09FF]/.test(slide.translation)
+  1559→  const transFontFamily = isBengali
+  1560→    ? bengaliFontFamily
+  1561→    : 'Inter, sans-serif'
+  1562→  ctx.font = `${transFontSize}px ${transFontFamily}`
+  1563→
+  1564→  // ─── Slice translation to match the Arabic chunk count ────────────
+  1565→  // Translation is split into N pieces (by word count) where N is the
+  1566→  // Arabic chunk count. The same `chunkIdx` selects which piece to
+  1567→  // show, so Arabic and translation advance in lockstep.
+  1568→  let transTextToShow = slide.translation
+  1569→  if (paginationPlan.total > 1 && chunkIdx >= 0) {
+  1570→    const pieces = splitTranslationToChunks(slide.translation, paginationPlan.total)
+  1571→    transTextToShow = pieces[chunkIdx] ?? ''
+  1572→  }
+  1573→
+  1574→  let allTransLines: string[] = []
+  1575→  if (settings.showTranslation && transTextToShow) {
+  1576→    allTransLines = wrapLines(ctx, transTextToShow, innerMaxW)
+  1577→  }
+  1578→
+  1579→  // If the wrapped translation STILL doesn't fit (very long single
+  1580→  // chunk), hard-cap it to MAX_TRANS_LINES so the layout doesn't break.
+  1581→  let transLines = allTransLines
+  1582→  let transPageInfo: { current: number; total: number } | null = null
+  1583→  if (allTransLines.length > MAX_TRANS_LINES) {
+  1584→    transLines = allTransLines.slice(0, MAX_TRANS_LINES)
+  1585→  }
+  1586→  if (paginationPlan.total > 1 && chunkIdx >= 0) {
+  1587→    transPageInfo = { current: chunkIdx + 1, total: paginationPlan.total }
+  1588→  }
+  1589→  const transLineH = transFontSize * 1.4
+  1590→  const transTotalH = transLines.length * transLineH
+  1591→
+  1592→  // Small divider (only when both translit and translation are shown)
+  1593→  const dividerGap =
+  1594→    translit && transLines.length ? Math.round(H * 0.015) + 1 : 0
+  1595→  // Gap between Arabic and translation — controlled by textSpacing setting
+  1596→  const TEXT_SPACING_FRACTIONS: Record<string, number> = {
+  1597→    compact: 0.015,
+  1598→    normal: 0.035,
+  1599→    spacious: 0.060,
+  1600→  }
+  1601→  const arabicToTransGap = transLines.length
+  1602→    ? Math.round(H * (TEXT_SPACING_FRACTIONS[settings.textSpacing] ?? 0.035))
+  1603→    : 0
+  1604→  const arabicToTranslitGap = translit ? Math.round(H * 0.020) : 0
+  1605→
+  1606→  const cardPadX = Math.round(W * 0.05)
+  1607→  const cardPadY = Math.round(H * 0.04)
+  1608→  const cardW = innerMaxW + cardPadX * 2
+  1609→  const cardContentH =
+  1610→    arabicTotalH +
+  1611→    arabicToTranslitGap +
+  1612→    translitH +
+  1613→    dividerGap +
+  1614→    arabicToTransGap +
+  1615→    transTotalH
+  1616→  const cardH = cardContentH + cardPadY * 2
+  1617→  const cardX = (W - cardW) / 2
+  1618→  const cardY = (H - cardH) / 2
+  1619→
+  1620→  // No card border / scrim — text floats directly on the background per the
+  1621→  // spec ("do not need the card border"). The cardX/Y/W/H math is still used
+  1622→  // to position the text block centered vertically.
+  1623→
+  1624→  // Draw a dark rounded card behind the text — matches the reference design:
+  1625→  // deep charcoal, ~60% opacity, large rounded corners, soft drop shadow.
+  1626→  const bgPadX = Math.round(W * 0.06)
+  1627→  const bgPadY = Math.round(H * 0.03)
+  1628→  const bgX = cardX - bgPadX
+  1629→  const bgY = cardY - bgPadY
+  1630→  const bgW = cardW + bgPadX * 2
+  1631→  const bgH = cardH + bgPadY * 2
+  1632→  const bgRadius = Math.round(minDim * 0.04)
+  1633→
+  1634→  // Soft drop shadow
+  1635→  ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'
+  1636→  ctx.shadowBlur = Math.round(minDim * 0.03)
+  1637→  ctx.shadowOffsetY = Math.round(minDim * 0.005)
+  1638→
+  1639→  // Dark card background — deep charcoal at ~60% opacity
+  1640→  ctx.fillStyle = 'rgba(15, 15, 20, 0.6)'
+  1641→  roundedRect(ctx, bgX, bgY, bgW, bgH, bgRadius)
+  1642→  ctx.fill()
+  1643→
+  1644→  // Reset shadow for text
+  1645→  ctx.shadowColor = 'rgba(0, 0, 0, 0.9)'
+  1646→  ctx.shadowBlur = 0
+  1647→  ctx.shadowOffsetY = 0
+  1648→
+  1649→  // Draw Arabic — if Tajweed segments available, render per-segment colors.
+  1650→  // Otherwise render word-by-word with RTL centering (original approach).
+  1651→  ctx.font = `${arabicFontSize}px ${arabicFontFamily}`
+  1652→  ctx.textAlign = 'center'
+  1653→  ctx.textBaseline = 'middle'
+  1654→  let y = cardY + cardPadY + arabicLineH / 2
+  1655→
+  1656→  if (slide.tajweedSegments && slide.tajweedSegments.length > 0) {
+  1657→    // ─── Tajweed color-coded rendering ─────────────────────────────
+  1658→    // Flatten Tajweed segments into individual words with their colors.
+  1659→    const wordsWithColor: { text: string; color: string | null }[] = []
+  1660→    for (const seg of slide.tajweedSegments) {
+  1661→      for (const sw of seg.text.split(/(\s+)/)) {
+  1662→        if (sw) wordsWithColor.push({ text: sw, color: seg.color })
+  1663→      }
+  1664→    }
+  1665→
+  1666→    // ─── Apply the SAME audio-synced chunk slicing as plain Arabic ──
+  1667→    // The pagination plan was built above from `slide.words` timings.
+  1668→    // We use its `wordStart`/`wordEnd` to slice the Tajweed word list
+  1669→    // in lockstep with the plain-words path. This keeps Tajweed color
+  1670→    // rendering perfectly in sync with the audio AND with the
+  1671→    // translation pagination.
+  1672→    let visibleTajweedWords = wordsWithColor
+  1673→    if (chunkIdx >= 0 && paginationPlan.total > 1) {
+  1674→      const chunk = paginationPlan.chunks[chunkIdx]!
+  1675→      visibleTajweedWords = wordsWithColor.slice(chunk.wordStart, chunk.wordEnd)
+  1676→    }
+  1677→
+  1678→    // Build wrapped lines from the visible Tajweed words only.
+  1679→    const tajweedLines: { text: string; color: string | null }[][] = []
+  1680→    let curLine: { text: string; color: string | null }[] = []
+  1681→    let curLineW = 0
+  1682→    for (const wc of visibleTajweedWords) {
+  1683→      const ww = ctx.measureText(wc.text).width
+  1684→      if (curLineW + ww > innerMaxW && curLine.length > 0) {
+  1685→        tajweedLines.push(curLine)
+  1686→        curLine = []
+  1687→        curLineW = 0
+  1688→      }
+  1689→      curLine.push(wc)
+  1690→      curLineW += ww
+  1691→    }
+  1692→    if (curLine.length > 0) tajweedLines.push(curLine)
+  1693→
+  1694→    const visibleTajweedLines = tajweedLines
+  1695→
+  1696→    for (const lineSegs of visibleTajweedLines) {
+  1697→      let totalW = 0
+  1698→      for (const seg of lineSegs) totalW += ctx.measureText(seg.text).width
+  1699→      let xPos = W / 2 + totalW / 2
+  1700→      for (const seg of lineSegs) {
+  1701→        const sw = ctx.measureText(seg.text).width
+  1702→        xPos -= sw / 2
+  1703→        ctx.fillStyle = seg.color ?? settings.fontColor
+  1704→        ctx.shadowColor = 'rgba(0,0,0,0.9)'
+  1705→        ctx.shadowBlur = H * 0.012
+  1706→        ctx.fillText(seg.text, xPos, y)
+  1707→        ctx.shadowBlur = 0
+  1708→        xPos -= sw / 2
+  1709→      }
+  1710→      y += arabicLineH
+  1711→    }
+  1712→  } else {
+  1713→    // ─── Plain word-by-word rendering ──────────────────────────────
+  1714→    // `visibleArabicLines` already contains only the current chunk's
+  1715→    // wrapped words. The highlight index `activeIdx` is a GLOBAL word
+  1716→    // index (into the full ayat), so we subtract `visibleWordOffset`
+  1717→    // to get the local index within the visible chunk.
+  1718→    let wordCounter = 0
+  1719→    for (const ln of visibleArabicLines) {
+  1720→      const widths = ln.map((w) => ctx.measureText(w).width)
+  1721→      const totalLineW = widths.reduce((a, b) => a + b, 0) + spaceW * (ln.length - 1)
+  1722→      let xPos = W / 2 + totalLineW / 2
+  1723→      for (let i = 0; i < ln.length; i++) {
+  1724→        const w = ln[i]!
+  1725→        const ww = widths[i]!
+  1726→        xPos -= ww / 2
+  1727→        // `activeIdx` is a GLOBAL word index across the whole ayat.
+  1728→        // The visible chunk starts at `visibleWordOffset`, so the
+  1729→        // local position of the active word (if any) inside this
+  1730→        // chunk is `activeIdx - visibleWordOffset`. Only highlight
+  1731→        // when that matches the local counter.
+  1732→        const localActive = activeIdx - visibleWordOffset
+  1733→        const isHi = wordCounter === localActive
+  1734→        ctx.fillStyle = isHi ? settings.highlightColor : settings.fontColor
+  1735→        if (isHi) {
+  1736→          ctx.shadowColor = settings.highlightColor
+  1737→          ctx.shadowBlur = H * 0.028
+  1738→        } else {
+  1739→          ctx.shadowColor = 'rgba(0,0,0,0.9)'
+  1740→          ctx.shadowBlur = H * 0.012
+  1741→        }
+  1742→        ctx.fillText(w, xPos, y)
+  1743→        ctx.shadowBlur = 0
+  1744→        xPos -= ww / 2 + spaceW
+  1745→        wordCounter++
+  1746→      }
+  1747→      y += arabicLineH
+  1748→    }
+  1749→  }
+  1750→
+  1751→  // After Arabic loop, y is at the bottom of the last Arabic line.
+  1752→  // Reset y to a clean position based on the card layout, not the loop variable.
+  1753→  // This prevents overlap when the Arabic loop's y drifts.
+  1754→
+  1755→  // Transliteration
+  1756→  let yAfterArabic = cardY + cardPadY + arabicTotalH
+  1757→  if (translit) {
+  1758→    yAfterArabic += arabicToTranslitGap
+  1759→    ctx.font = `italic ${translitFontSize}px Inter, sans-serif`
+  1760→    ctx.fillStyle = 'rgba(255,255,255,0.72)'
+  1761→    ctx.textAlign = 'center'
+  1762→    ctx.textBaseline = 'middle'
+  1763→    ctx.fillText(translit, W / 2, yAfterArabic + translitFontSize / 2)
+  1764→    yAfterArabic += translitH
+  1765→  }
+  1766→
+  1767→  // Divider
+  1768→  if (dividerGap) {
+  1769→    yAfterArabic += Math.round(H * 0.008)
+  1770→    ctx.strokeStyle = hexWithAlpha(settings.fontColor, 0.4)
+  1771→    ctx.lineWidth = 1
+  1772→    ctx.beginPath()
+  1773→    ctx.moveTo(W / 2 - W * 0.03, yAfterArabic)
+  1774→    ctx.lineTo(W / 2 + W * 0.03, yAfterArabic)
+  1775→    ctx.stroke()
+  1776→    yAfterArabic += Math.round(H * 0.008)
+  1777→  }
+  1778→
+  1779→  // Translation — use the clean yAfterArabic position, not the loop's y
+  1780→  if (transLines.length) {
+  1781→    if (!dividerGap) yAfterArabic += arabicToTransGap
+  1782→    ctx.font = `${transFontSize}px ${transFontFamily}`
+  1783→    ctx.fillStyle = 'rgba(255,255,255,0.88)'
+  1784→    ctx.textAlign = 'center'
+  1785→    ctx.textBaseline = 'middle'
+  1786→    ctx.shadowColor = 'rgba(0,0,0,0.9)'
+  1787→    ctx.shadowBlur = H * 0.008
+  1788→    for (let i = 0; i < transLines.length; i++) {
+  1789→      ctx.fillText(transLines[i]!, W / 2, yAfterArabic + transLineH / 2 + i * transLineH)
+  1790→    }
+  1791→    ctx.shadowBlur = 0
+  1792→  }
+  1793→
+  1794→  // ─── Page indicator ───────────────────────────────────────────────
+  1795→  // If either Arabic or translation is paginated, show a small "1/3" indicator
+  1796→  // below the translation so viewers know there's more text coming.
+  1797→  if (arabicPageInfo || transPageInfo) {
+  1798→    const pageInfo = transPageInfo || arabicPageInfo!
+  1799→    const indicatorFontSize = Math.round(H * 0.012)
+  1800→    ctx.font = `${indicatorFontSize}px Inter, sans-serif`
+  1801→    ctx.fillStyle = 'rgba(255,255,255,0.35)'
+  1802→    ctx.textAlign = 'center'
+  1803→    ctx.textBaseline = 'middle'
+  1804→    const indicatorY = yAfterArabic + transTotalH + Math.round(H * 0.015)
+  1805→    ctx.fillText(`${pageInfo.current} / ${pageInfo.total}`, W / 2, indicatorY)
+  1806→  }
+  1807→
+  1808→  // ---- Attribution block (bottom-left) --------------------------------
+  1809→  // Shows the translation attribution (when required) + the reciter credit
+  1810→  // (always). Stacked vertically so both are visible.
+  1811→  const attrFontSize = Math.round(H * 0.016)
+  1812→  const attrLineH = attrFontSize * 1.35
+  1813→  const attrBottom = H * 0.985
+  1814→  const maxAttrW = W * 0.55
+  1815→
+  1816→  // Helper: truncate text to fit within maxAttrW
+  1817→  function truncateAttr(text: string): string {
+  1818→    let t = text
+  1819→    while (ctx.measureText(t).width > maxAttrW && t.length > 10) {
+  1820→      t = t.slice(0, -2) + '…'
+  1821→    }
+  1822→    return t
+  1823→  }
+  1824→
+  1825→  ctx.font = `${attrFontSize}px Inter, sans-serif`
+  1826→  ctx.fillStyle = 'rgba(255,255,255,0.45)'
+  1827→  ctx.textAlign = 'left'
+  1828→  ctx.textBaseline = 'bottom'
+  1829→
+  1830→  // Draw reciter credit first (lower), then translation attribution (above it)
+  1831→  if (reciterName) {
+  1832→    ctx.fillText(`Recited by ${reciterName}`, W * 0.03, attrBottom)
+  1833→  }
+  1834→  if (attributionLine) {
+  1835→    ctx.fillText(truncateAttr(attributionLine), W * 0.03, attrBottom - attrLineH)
+  1836→  }
+  1837→
+  1838→  // ---- Structural Quran markers (Juz / Hizb / Rubʿ / Ruku / Manzil / Page) ----
+  1839→  // Drawn at the bottom-center of the frame, just above the attribution
+  1840→  // block. Only shows fields that are actually present on the verse.
+  1841→  // Matches the live preview's formatting so WYSIWYG.
+  1842→  {
+  1843→    const pairs = getStructuralPairs(slide)
+  1844→    if (pairs.length > 0) {
+  1845→      const structText = formatStructural(slide, true) // uppercase for export
+  1846→      const structFontSize = Math.round(H * 0.014)
+  1847→      ctx.save()
+  1848→      ctx.font = `500 ${structFontSize}px Inter, sans-serif`
+  1849→      ctx.fillStyle = 'rgba(255,255,255,0.55)'
+  1850→      ctx.textAlign = 'center'
+  1851→      ctx.textBaseline = 'bottom'
+  1852→      ctx.shadowColor = 'rgba(0,0,0,0.6)'
+  1853→      ctx.shadowBlur = Math.max(1, Math.round(structFontSize * 0.2))
+  1854→      // Letter-spacing for the uppercase tracking look — guarded for Safari.
+  1855→      type CtxWithLs = CanvasRenderingContext2D & { letterSpacing?: string }
+  1856→      const ctxLs = ctx as CtxWithLs
+  1857→      if (typeof ctxLs.letterSpacing === 'string') {
+  1858→        try {
+  1859→          ctxLs.letterSpacing = `${Math.round(structFontSize * 0.08)}px`
+  1860→        } catch {
+  1861→          // ignore
+  1862→        }
+  1863→      }
+  1864→      ctx.fillText(structText, W / 2, H * 0.965)
+  1865→      ctx.restore()
+  1866→    }
+  1867→  }
+  1868→
+  1869→  // ---- Top-center watermark: Jariyah Now brand mark -------------------
+  1870→  // Rendered at the TOP LEVEL of the composition (inside drawFrame, so it
+  1871→  // appears on every frame, not tied to any single ayat's sequence).
+  1872→  {
+  1873→    const minDim = Math.min(W, H)
+  1874→    const wmY = H * 0.04 // top: 4% from top edge
+  1875→
+  1876→    if (watermarkImg && watermarkImg.complete && watermarkImg.naturalWidth > 0) {
+  1877→      // Image watermark — scale to a target height proportional to the canvas size.
+  1878→      // 112px @ 720p (clearly visible but not overpowering), scales to ~168px @ 1080p.
+  1879→      const targetH = Math.round((minDim / 720) * 112)
+  1880→      const scale = targetH / watermarkImg.naturalHeight
+  1881→      const targetW = Math.round(watermarkImg.naturalWidth * scale)
+  1882→      const x = Math.round((W - targetW) / 2) // horizontally centered
+  1883→
+  1884→      ctx.save()
+  1885→      ctx.globalAlpha = 0.9
+  1886→      ctx.drawImage(watermarkImg, x, wmY, targetW, targetH)
+  1887→      ctx.restore()
+  1888→    } else {
+  1889→      // Text fallback — used only if the watermark PNG hasn't loaded yet.
+  1890→      const wmFontSize = Math.round((minDim / 720) * 14)
+  1891→      ctx.save()
+  1892→      ctx.font = `500 ${wmFontSize}px Inter, sans-serif`
+  1893→      ctx.fillStyle = 'rgba(255, 255, 255, 0.75)'
+  1894→      ctx.textAlign = 'center'
+  1895→      ctx.textBaseline = 'top'
+  1896→      ctx.shadowColor = 'rgba(0, 0, 0, 0.6)'
+  1897→      ctx.shadowOffsetX = 0
+  1898→      ctx.shadowOffsetY = Math.max(1, Math.round(wmFontSize * 0.07))
+  1899→      ctx.shadowBlur = Math.round(wmFontSize * 0.28)
+  1900→      ctx.fillText('Made with Jariyah Now', W / 2, wmY)
+  1901→      ctx.restore()
+  1902→    }
+  1903→  }
+  1904→}
+  1905→
+  1906→function wrapLines(
+  1907→  ctx: CanvasRenderingContext2D,
+  1908→  text: string,
+  1909→  maxW: number,
+  1910→): string[] {
+  1911→  const words = text.split(/\s+/)
+  1912→  const lines: string[] = []
+  1913→  let line = ''
+  1914→  for (const w of words) {
+  1915→    const test = line ? line + ' ' + w : w
+  1916→    if (ctx.measureText(test).width > maxW && line) {
+  1917→      lines.push(line)
+  1918→      line = w
+  1919→    } else {
+  1920→      line = test
+  1921→    }
+  1922→  }
+  1923→  if (line) lines.push(line)
+  1924→  return lines
+  1925→}
+  1926→
+  1927→function hexWithAlpha(hex: string, alpha: number): string {
+  1928→  const h = hex.replace('#', '')
+  1929→  const r = parseInt(h.slice(0, 2), 16)
+  1930→  const g = parseInt(h.slice(2, 4), 16)
+  1931→  const b = parseInt(h.slice(4, 6), 16)
+  1932→  return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  1933→}
+  1934→
+  1935→function roundedRect(
+  1936→  ctx: CanvasRenderingContext2D,
+  1937→  x: number,
+  1938→  y: number,
+  1939→  w: number,
+  1940→  h: number,
+  1941→  r: number,
+  1942→) {
+  1943→  const radius = Math.min(r, w / 2, h / 2)
+  1944→  ctx.beginPath()
+  1945→  ctx.moveTo(x + radius, y)
+  1946→  ctx.arcTo(x + w, y, x + w, y + h, radius)
+  1947→  ctx.arcTo(x + w, y + h, x, y + h, radius)
+  1948→  ctx.arcTo(x, y + h, x, y, radius)
+  1949→  ctx.arcTo(x, y, x + w, y, radius)
+  1950→  ctx.closePath()
+  1951→}
+  1952→
+  1953→function formatMs(ms: number): string {
+  1954→  if (!Number.isFinite(ms) || ms <= 0) return '0:00'
+  1955→  const total = Math.floor(ms / 1000)
+  1956→  const m = Math.floor(total / 60)
+  1957→  const s = total % 60
+  1958→  return `${m}:${String(s).padStart(2, '0')}`
+  1959→}
+  1960→

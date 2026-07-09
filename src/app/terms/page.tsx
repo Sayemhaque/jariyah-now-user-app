@@ -20,7 +20,7 @@ export default function TermsPage() {
       <p>
         Jariyah Now is a free tool that lets you select a passage of the
         Quran, choose a reciter, customize the visual style, and export a
-        short video with word-by-word highlighting and an English
+        short video with Arabic text and an English
         translation. The Service fetches Quran text, translations,
         reciter audio, and timing data from third-party APIs at runtime
         and renders the video in your browser.
