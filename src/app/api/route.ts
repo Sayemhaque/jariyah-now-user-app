@@ -12,9 +12,9 @@ export async function GET() {
     version: '1.0.0',
     endpoints: {
       health: '/api/health',
-      timings: '/api/timings',
       render: '/api/render',
       renderStatus: '/api/render-status',
+      convertMp4: '/api/convert-mp4',
     },
     docs: '/about',
   })

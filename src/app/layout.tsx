@@ -93,7 +93,7 @@ export const metadata: Metadata = {
     "Quran video generator",
     "Quran recitation",
     "Islamic content creator",
-    "word-by-word highlight",
+    "Arabic text + translation",
     "Quran translation",
   ],
   icons: {

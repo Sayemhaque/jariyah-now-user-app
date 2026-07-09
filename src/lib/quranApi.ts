@@ -1,18 +1,4 @@
-import type { Surah, WordTiming, AyatData } from './types'
-
-/**
- * Structural Quran markers for a verse — sourced from the quran.com API's
- * `fields` query param. All fields are optional because some verses don't
- * have all markers (e.g. the very first verses don't have a Ruku number).
- */
-export interface AyatStructuralInfo {
-  juzNumber?: number
-  hizbNumber?: number
-  rubElHizbNumber?: number
-  rukuNumber?: number
-  manzilNumber?: number
-  pageNumber?: number
-}
+import type { Surah, AyatData } from './types'
 import { buildAyatAudioUrl } from './reciters'
 import { SURAHS_FALLBACK } from './surahs-fallback'
 import { fetchWithTimeout, isFetchAbort } from './fetchWithTimeout'
@@ -20,17 +6,11 @@ import { logger } from './logger'
 
 // --- API base URLs -----------------------------------------------------
 // UmmahAPI is the primary upstream for surah metadata + ayat text +
-// translation + reciter audio URLs. The legacy quran.com API is still used
-// for word-level timings (via our /api/timings proxy) and for optional
-// Tajweed HTML when `useTajweed` is enabled.
+// translation + reciter audio URLs.
 const UMMAHAPI_BASE =
   typeof process !== 'undefined' && process.env?.UMMAHAPI_BASE_URL
     ? process.env.UMMAHAPI_BASE_URL
     : 'https://ummahapi.com/api'
-const QURAN_COM_BASE =
-  typeof process !== 'undefined' && process.env?.QURAN_COM_API_BASE_URL
-    ? process.env.QURAN_COM_API_BASE_URL
-    : 'https://api.quran.com/api/v4'
 
 /**
  * Build the standard headers for an UmmahAPI request. The X-API-Key is
@@ -51,128 +31,62 @@ export function ummahHeaders(): HeadersInit {
 }
 
 // --- types for the upstream API responses ------------------------------
-// We define these locally because UmmahAPI / quran.com don't publish
-// TypeScript types. Keeping them narrow lets the compiler catch any drift
-// if the response shape changes.
-
 interface UmmahSurah {
-  id?: number
   number?: number
+  id?: number
   name?: string
-  // Arabic name — UmmahAPI uses `name_arabic`, some forks use `arabic_name`
-  name_arabic?: string
-  arabic_name?: string
-  arabicName?: string
-  // English name — UmmahAPI uses `name_english`, some forks use `english_name`
   name_english?: string
-  english_name?: string
   englishName?: string
-  // English translation of the name — UmmahAPI uses `name_translation`
+  english_name?: string
   name_translation?: string
-  name_complex?: string
-  translated_name?: string
   englishNameTranslation?: string
-  // Ayah count — UmmahAPI uses `verses_count`
+  translated_name?: string
+  name_arabic?: string
+  arabicName?: string
+  arabic_name?: string
   verses_count?: number
-  ayah_count?: number
   numberOfAyahs?: number
-  // Revelation place — UmmahAPI uses `revelation_place` ("makkah"/"madinah")
-  revelation_place?: 'makkah' | 'madinah' | 'Meccan' | 'Medinan' | 'meccan' | 'medinan'
-  revelation_type?: 'Meccan' | 'Medinan' | 'meccan' | 'medinan'
-  revelationType?: 'Meccan' | 'Medinan' | 'meccan' | 'medinan'
+  ayah_count?: number
+  revelation_place?: string
+  revelationType?: string
+  revelation_type?: string
 }
 
 interface UmmahSurahsResponse {
-  success?: boolean
-  data?: UmmahSurah[] | { surahs?: UmmahSurah[]; total?: number }
+  data?: UmmahSurah[] | { surahs?: UmmahSurah[] }
   surahs?: UmmahSurah[]
 }
 
 interface UmmahAudioItem {
   reciter_id?: number
   reciterId?: number
-  /** Per-ayah MP3 URL — UmmahAPI field name is `ayah_audio`. */
-  ayah_audio?: string
-  /** Full-surah MP3 URL — UmmahAPI field name is `surah_audio`. */
+  reciter?: string
+  style?: string
   surah_audio?: string
-  /** Generic fallback field names (older API shapes). */
+  ayah_audio?: string
   url?: string
   audio_url?: string
 }
 
 interface UmmahAyahResponse {
-  success?: boolean
-  data?: UmmahAyah | { verse?: UmmahAyah; surah?: unknown }
+  data?: UmmahAyah | { verse?: UmmahAyah }
   verse?: UmmahAyah
 }
 
 interface UmmahAyah {
-  surah?: number
-  surah_number?: number
-  ayah?: number
-  ayah_number?: number
-  number_in_surah?: number
-  verse_key?: string
-  // Arabic text (Uthmani script) — UmmahAPI uses `arabic`
   arabic?: string
-  text?: string
   text_uthmani?: string
   uthmani?: string
-  // Transliteration (Latin) — UmmahAPI returns a plain string
-  transliteration?: string | { text?: string; romanized?: string }
-  romanized?: string
-  // Primary translation (depends on the ?translation= query param).
-  // UmmahAPI doesn't currently populate this; translations live in the map.
+  text?: string
   translation?: string
   translated_text?: string
-  // Map of translation keys → text. UmmahAPI always returns all 12 here.
   translations?: Record<string, string>
+  transliteration?: { text?: string; romanized?: string } | string
+  romanized?: string
   // Reciter audio URLs (one per reciter). UmmahAPI returns an array of
   // { reciter_id, reciter, style, surah_audio, ayah_audio } objects.
   audio?: UmmahAudioItem[]
   audio_urls?: UmmahAudioItem[]
-}
-
-interface QuranComWord {
-  text_uthmani?: string
-  text?: string
-  position?: number
-  /** Per-word MP3 path (e.g. "wbw/001_001_001.mp3"). Used as a fallback
-   *  for timing computation when the API doesn't return audio_segment. */
-  audio_url?: string | null
-  audio_segment?: {
-    timestamp_ms?: number
-    duration_ms?: number
-    start_time?: number
-    duration?: number
-  }
-  segment?: {
-    timestamp_ms?: number
-    duration_ms?: number
-    start_time?: number
-    duration?: number
-  }
-  /** Some API responses embed transliteration as an object. */
-  transliteration?: { text?: string } | string
-}
-
-interface QuranComVerse {
-  words?: QuranComWord[]
-  text_uthmani?: string
-  // Structural markers (requested via `fields=` query param).
-  juz_number?: number
-  hizb_number?: number
-  rub_el_hizb_number?: number
-  ruku_number?: number
-  manzil_number?: number
-  page_number?: number
-}
-
-interface QuranComResponse {
-  /** /verses/by_key/{key} returns a single verse object under `verse`. */
-  verse?: QuranComVerse
-  /** /verses/by_keys/{keys} returns an array under `verses`. */
-  verses?: QuranComVerse[]
 }
 
 // --- in-memory cache ----------------------------------------------------
@@ -260,174 +174,6 @@ export function getSurahFromCache(number: number): Surah | undefined {
 }
 
 /**
- * Fetch word-level timing data via our own /api/timings proxy (avoids CORS).
- * Returns an empty word list if the request fails — the caller can still
- * render the ayat without word-level highlighting. This is the graceful
- * degradation path called out in the production spec.
- *
- * The quran.com API has two response shapes:
- *   - `/verses/by_key/{key}` returns `{ verse: { words: [...] } }` (singular)
- *   - `/verses/by_keys/{keys}` returns `{ verses: [{ words: [...] }] }` (plural)
- * We handle both.
- *
- * The API USED to return `audio_segment.timestamp_ms` + `duration_ms` per
- * word, but as of 2025 it no longer does. We now compute timings by
- * fetching each word's per-word MP3 (`wbw/NNN_NNN_NNN.mp3` on
- * audio.qurancdn.com), measuring its duration via the browser's <audio>
- * element, and concatenating. This is slower but reliable.
- */
-export async function fetchWordTimings(
-  surah: number,
-  ayat: number,
-  recitationId: number,
-): Promise<{ words: WordTiming[]; structural: AyatStructuralInfo }> {
-  const emptyResult = { words: [], structural: {} }
-  try {
-    const url = `/api/timings?surah=${surah}&ayat=${ayat}&recitationId=${recitationId}`
-    const res = await fetchWithTimeout(url, { next: { revalidate: 86_400 } })
-    if (!res.ok) return emptyResult
-    const json = (await res.json()) as QuranComResponse
-
-    // Handle BOTH response shapes: `verse.words` (by_key) and
-    // `verses[0].words` (by_keys). The old code only checked `verses`,
-    // which silently broke word highlighting when the proxy started
-    // hitting the by_key endpoint.
-    const verseObj = json?.verse ?? json?.verses?.[0] ?? undefined
-    const wordsRaw = verseObj?.words
-    if (!wordsRaw || !wordsRaw.length) return emptyResult
-
-    // Extract structural markers from the verse object.
-    const structural: AyatStructuralInfo = {
-      juzNumber: verseObj?.juz_number,
-      hizbNumber: verseObj?.hizb_number,
-      rubElHizbNumber: verseObj?.rub_el_hizb_number,
-      rukuNumber: verseObj?.ruku_number,
-      manzilNumber: verseObj?.manzil_number,
-      pageNumber: verseObj?.page_number,
-    }
-
-    // First pass: extract text + position + transliteration + any
-    // embedded segment data (if the API ever brings it back).
-    const extracted = wordsRaw
-      .map((w): Partial<WordTiming> & { audioUrl?: string | null } => {
-        const seg = w.audio_segment ?? w.segment
-        const startMs = seg?.timestamp_ms ?? seg?.start_time ?? null
-        const durMs = seg?.duration_ms ?? seg?.duration ?? null
-        const text = w.text_uthmani ?? w.text ?? ''
-        // transliteration can be either a string or { text: string }
-        const translit =
-          typeof w.transliteration === 'object'
-            ? w.transliteration?.text
-            : (w.transliteration as string | undefined)
-        return {
-          text,
-          position: w.position ?? 0,
-          startMs: typeof startMs === 'number' ? startMs : 0,
-          endMs:
-            typeof startMs === 'number' && typeof durMs === 'number'
-              ? startMs + durMs
-              : 0,
-          transliteration: translit,
-          audioUrl: w.audio_url ?? null,
-        }
-      })
-      .filter((w) => Boolean(w.text))
-
-    if (!extracted.length) return { words: [], structural }
-
-    // If the API returned segment data, use it directly.
-    const hasSegments = extracted.every(
-      (w) => (w.startMs ?? 0) > 0 && (w.endMs ?? 0) > 0,
-    )
-    if (hasSegments) {
-      return { words: extracted as WordTiming[], structural }
-    }
-
-    // Fallback: compute timings by fetching each word's per-word MP3
-    // duration and concatenating. The audio_url is a relative path like
-    // "wbw/001_001_001.mp3" — we resolve it against audio.qurancdn.com.
-    // We do this in the BROWSER (not the API route) because:
-    //   1. The browser can play the MP3s directly via <audio>
-    //   2. We can parallelize the duration probes
-    //   3. The durations are cached in-memory for the session
-    const words: WordTiming[] = []
-    let cumMs = 0
-    for (const w of extracted) {
-      const durMs = w.audioUrl
-        ? await getWordAudioDurationMs(w.audioUrl)
-        : 0
-      words.push({
-        text: w.text!,
-        position: w.position ?? 0,
-        startMs: cumMs,
-        endMs: cumMs + durMs,
-        transliteration: w.transliteration,
-      })
-      cumMs += durMs
-    }
-
-    return { words, structural }
-  } catch (err) {
-    logger.warn('fetchWordTimings failed', {
-      surah,
-      ayat,
-      recitationId,
-      error: err instanceof Error ? err.message : String(err),
-    })
-    return emptyResult
-  }
-}
-
-// --- per-word audio duration cache (session-only) ----------------------
-// Fetching each word's MP3 to measure duration is expensive (one network
-// request per word). We cache the results in-memory for the session so
-// re-loading the same ayat is instant. Cleared on page refresh.
-const wordDurationCache = new Map<string, number>()
-
-/**
- * Resolve a relative word audio URL (e.g. "wbw/001_001_001.mp3") against
- * the Quran.com audio CDN and measure its duration in milliseconds via
- * an <audio> element. Returns 0 if the duration can't be determined.
- *
- * Browsers cache the MP3 binary, so repeated calls for the same word
- * across different ayats are fast.
- */
-function getWordAudioDurationMs(audioUrl: string): Promise<number> {
-  // Check cache first
-  const cached = wordDurationCache.get(audioUrl)
-  if (cached !== undefined) return Promise.resolve(cached)
-
-  // Resolve relative URL
-  const fullUrl = audioUrl.startsWith('http')
-    ? audioUrl
-    : `https://audio.qurancdn.com/${audioUrl}`
-
-  return new Promise<number>((resolve) => {
-    if (typeof Audio === 'undefined') {
-      resolve(0)
-      return
-    }
-    const audio = new Audio()
-    audio.preload = 'metadata'
-    let settled = false
-    const done = (val: number) => {
-      if (settled) return
-      settled = true
-      wordDurationCache.set(audioUrl, val)
-      resolve(val)
-    }
-    audio.onloadedmetadata = () => {
-      const d = audio.duration
-      done(isFinite(d) ? d * 1000 : 0)
-    }
-    audio.onerror = () => done(0)
-    // Safety timeout — if the MP3 hangs (rare), don't block the render
-    setTimeout(() => done(0), 5000)
-    audio.src = fullUrl
-  })
-}
-
-/**
  * Resolve audio duration by loading the MP3 metadata via an <audio> element
  * in the browser. Returns 0 if the duration can't be determined (the caller
  * treats 0 as "unknown" and the seek bar still works, just without a precise
@@ -448,87 +194,6 @@ export function getAudioDurationMs(url: string): Promise<number> {
     audio.onerror = () => resolve(0)
     audio.src = url
   })
-}
-
-/**
- * Detect natural phrase boundaries in the actual audio file using
- * energy-based analysis (server-side via /api/audio-breakpoints).
- *
- * Unlike silence detection (which looks for ABSOLUTE silence and
- * fails on continuous recitation), this finds RELATIVE energy dips
- * — the slight quiet moments between phrases that every reciter
- * has, even in Murattal style.
- *
- * Returns boundary timestamps in MILLISECONDS. Empty array on failure.
- */
-export async function fetchAudioPauses(
-  audioUrl: string,
-  numBreakpoints?: number,
-): Promise<{ start: number; end: number; duration: number }[]> {
-  try {
-    const res = await fetchWithTimeout('/api/audio-breakpoints', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ audioUrl, numBreakpoints }),
-    })
-    if (!res.ok) return []
-    const json = (await res.json()) as {
-      breakpoints?: number[]
-      duration?: number
-    }
-    if (!json.breakpoints || !json.breakpoints.length) return []
-
-    // Convert breakpoint timestamps (seconds) → pause objects (ms).
-    // Each breakpoint is a single timestamp (the dip's center). We
-    // create a small synthetic pause window around it (±100ms) so
-    // the snapping logic has a range to work with.
-    return json.breakpoints.map((t) => ({
-      start: t * 1000 - 100,
-      end: t * 1000 + 100,
-      duration: 200,
-    }))
-  } catch (err) {
-    logger.warn('fetchAudioPauses failed', {
-      audioUrl,
-      error: err instanceof Error ? err.message : String(err),
-    })
-    return []
-  }
-}
-
-/**
- * Fetch Tajweed HTML for a single ayah from the legacy quran.com API.
- * Used when `useTajweed` is enabled — the response's `text_uthmani` field
- * contains the full Uthmani text with embedded Tajweed diacritics which
- * the client can color-code using the quran.com Tajweed rules palette.
- *
- * Returns null if the request fails so the caller can fall back to the
- * plain Arabic text from UmmahAPI.
- */
-async function fetchTajweedHtml(
-  surah: number,
-  ayat: number,
-): Promise<string | null> {
-  const verseKey = `${surah}:${ayat}`
-  try {
-    const url = `${QURAN_COM_BASE}/verses/by_key/${verseKey}?fields=text_uthmani&words=true&word_fields=text_uthmani`
-    const res = await fetchWithTimeout(url, {
-      headers: { Accept: 'application/json' },
-      next: { revalidate: 604_800 }, // 7 days — Tajweed markup is stable
-    })
-    if (!res.ok) return null
-    const json = (await res.json()) as QuranComResponse
-    const verseObj = json?.verse ?? json?.verses?.[0]
-    return verseObj?.text_uthmani ?? null
-  } catch (err) {
-    if (!isFetchAbort(err)) {
-      logger.warn('fetchTajweedHtml failed', {
-        verseKey,
-        error: err instanceof Error ? err.message : String(err),
-      })
-    }
-    return null
-  }
 }
 
 /**
@@ -555,8 +220,7 @@ function findAudioUrlForReciter(
 
 /**
  * Fetch full data for a single ayat: Arabic text, translation,
- * transliteration, audio URL, and (optionally) Tajweed HTML + word-level
- * timings. All upstream calls happen in parallel where possible.
+ * transliteration, and audio URL. All from UmmahAPI.
  *
  * @param surah            Surah number (1..114)
  * @param ayat             Ayat number within the surah
@@ -568,9 +232,6 @@ function findAudioUrlForReciter(
  * @param surahName        English surah name (denormalized onto the slide)
  * @param surahNameArabic  Arabic surah name (denormalized onto the slide)
  * @param translationEdition  UmmahAPI translation key (e.g. "bengali")
- * @param useTajweed       When true, also fetch Tajweed HTML from the
- *                         legacy quran.com API and stash it on the result
- *                         (under `tajweedHtml`). Default false.
  */
 export async function fetchAyatData(
   surah: number,
@@ -580,30 +241,27 @@ export async function fetchAyatData(
   surahName: string,
   surahNameArabic: string,
   translationEdition: string = 'bengali',
-  useTajweed: boolean = false,
 ): Promise<AyatData | null> {
   const ayahUrl = `${UMMAHAPI_BASE}/quran/surah/${surah}/ayah/${ayat}?translation=${encodeURIComponent(
     translationEdition,
   )}&script=uthmani`
 
-  // Kick off all independent fetches in parallel.
-  const [ayahRes, timingsResult, tajweedHtml] = await Promise.all([
-    fetchWithTimeout(ayahUrl, {
+  let ayahRes: Response | null = null
+  try {
+    ayahRes = await fetchWithTimeout(ayahUrl, {
       headers: ummahHeaders(),
       cache: 'force-cache',
       next: { revalidate: 604_800 }, // 7 days — verse text + translation are stable
-    }).catch((err) => {
-      logger.warn('fetchAyatData: UmmahAPI ayah fetch failed', {
-        surah,
-        ayat,
-        translationEdition,
-        error: err instanceof Error ? err.message : String(err),
-      })
-      return null
-    }),
-    fetchWordTimings(surah, ayat, recitationId),
-    useTajweed ? fetchTajweedHtml(surah, ayat) : Promise.resolve(null),
-  ])
+    })
+  } catch (err) {
+    logger.warn('fetchAyatData: UmmahAPI ayah fetch failed', {
+      surah,
+      ayat,
+      translationEdition,
+      error: err instanceof Error ? err.message : String(err),
+    })
+    return null
+  }
 
   if (!ayahRes || !ayahRes.ok) {
     return null
@@ -670,14 +328,10 @@ export async function fetchAyatData(
     ayatNumber: ayat,
     arabicText,
     translation,
-    words: timingsResult.words,
+    transliteration,
     audioUrl,
     audioDurationMs: 0, // filled in later by the store
     surahName,
     surahNameArabic,
-    // Optional Tajweed HTML — only populated when useTajweed is true.
-    ...(tajweedHtml ? { tajweedHtml } : {}),
-    // Structural markers — pass through from the timings API response.
-    ...timingsResult.structural,
   }
 }

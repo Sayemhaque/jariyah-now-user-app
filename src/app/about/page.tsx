@@ -19,7 +19,7 @@ export default function AboutPage() {
         Every reel you publish and share becomes a source of continuous
         reward: each view, each heart, each reshare counts. Pick a surah and
         ayat range, choose a reciter, customize the look, and export a video
-        with word-by-word highlighting and a translation — ready to share.
+        with Arabic text and a translation — ready to share.
       </p>
 
       <h2>Data sources</h2>
@@ -40,7 +40,7 @@ export default function AboutPage() {
             quran.com
           </a>{' '}
           — Word-level timing data used to synchronize the
-          word-by-word highlighting with the reciter audio. Also used
+          Arabic text with the reciter audio. Also used
           (optionally) for Tajweed HTML.
         </li>
         <li>

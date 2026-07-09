@@ -9,7 +9,7 @@ import type {
   Orientation,
 } from './types'
 import { RECITERS, DEFAULT_RECITER_ID } from './reciters'
-import { fetchSurahs, fetchAyatData, getAudioDurationMs, fetchAudioPauses } from './quranApi'
+import { fetchSurahs, fetchAyatData, getAudioDurationMs } from './quranApi'
 import { validateAyatRange } from './validation'
 import { AUTO_FONT_SIZES } from './types'
 import { DEFAULT_TRANSLATION_KEY } from './translations'
@@ -67,7 +67,6 @@ const DEFAULT_SETTINGS: VideoSettings = {
   fontStyle: 'uthmani',
   arabicFont: 'uthmani',
   bengaliFont: 'sans',
-  useTajweed: false,
   showTranslation: true,
   showTransliteration: false,
   orientation: 'portrait',
@@ -247,17 +246,15 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
     }
     const reciter = state.getReciter()
     const translationKey = state.translationKey
-    const useTajweed = state.settings.useTajweed
     set({ loadingAyats: true, ayatError: null, ayatList: [] })
 
     try {
       const list: AyatData[] = []
       for (let ayat = state.fromAyat; ayat <= state.toAyat; ayat++) {
-        // Cache key includes the translation edition + the useTajweed flag
-        // so switching editions OR toggling Tajweed re-fetches with the new
-        // parameters, while still benefiting from the cache for repeated
+        // Cache key includes the translation edition so switching editions
+        // re-fetches while still benefiting from the cache for repeated
         // loads of the same configuration.
-        const key = `${surah.number}:${ayat}:${translationKey}:tajweed=${useTajweed ? 1 : 0}`
+        const key = `${surah.number}:${ayat}:${translationKey}`
         let data: AyatData | null = state.ayatCache[key] ?? null
         if (!data) {
           data = await fetchAyatData(
@@ -268,22 +265,11 @@ export const useBuilderStore = create<BuilderState>((set, get) => ({
             surah.name,
             surah.arabicName,
             translationKey,
-            useTajweed,
           )
           if (data) {
-            // resolve audio duration (best effort) + energy breakpoints
-            // in parallel. Request enough breakpoints for pagination:
-            // ~1 per 8 Arabic words (matching MAX_WORDS_PER_CHUNK).
-            const arWordCount = data.arabicText.split(/\s+/).filter(Boolean).length
-            const numBreakpoints = arWordCount > 20 ? Math.ceil(arWordCount / 8) - 1 : 0
-            const [dur, pauses] = await Promise.all([
-              getAudioDurationMs(data.audioUrl),
-              numBreakpoints > 0
-                ? fetchAudioPauses(data.audioUrl, numBreakpoints)
-                : Promise.resolve([]),
-            ])
+            // resolve audio duration (best effort)
+            const dur = await getAudioDurationMs(data.audioUrl)
             data.audioDurationMs = dur
-            if (pauses.length) data.audioPauses = pauses
             // `data!` is needed because TypeScript can't narrow `let` inside
             // the set() closure — even though we just checked `if (data)`.
             set((s) => ({

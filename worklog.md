@@ -1378,3 +1378,115 @@ Stage Summary:
 - The legacy quran.com API is still used for word-level timings (via /api/timings proxy) and optionally for Tajweed HTML (via the new useTajweed setting).
 - The Python+ffmpeg MP4 conversion pipeline is back (the script was missing after the session reset).
 - All build/lint/test checks pass cleanly. 182 tests, 13 pages, 0 errors.
+
+---
+Task ID: 6
+Agent: sub-agent (general-purpose)
+Task: Clean up ExportModal.tsx by removing ALL references to removed features (Ayat Split, word-by-word highlight, text pagination, Tajweed, structural markers, audioPauses).
+
+Work Log:
+- Read worklog.md and ExportModal.tsx (1959 lines) to understand the scope.
+- Confirmed baseline TS errors matched the cleanup targets (24 errors, all from removed features referencing missing modules/fields).
+- Verified types.ts: AyatSlide now has only {arabicText, translation, transliteration?, surahName, surahNameArabic, ayatNumber, surahNumber, audioUrl, audioDurationMs} — no words/tajweedSegments/audioPauses/structural fields.
+- Applied all required edits in a single MultiEdit operation:
+
+A) Imports (lines 7-38): Removed `import { getActiveWordIndex } from '@/lib/highlight'`, `import { formatStructural, getStructuralPairs } from '@/lib/structural'`, and the entire `import { buildSilenceSnappedPlan, buildTimeProportionalPlan, estimateChunkCount, findChunkAtTime, splitTranslationToChunks, type PaginationPlan } from '@/lib/textPagination'` block. Left `canConvertToMp4` import untouched (out of scope).
+
+B) ExportModalProps interface: Removed `activeSplit?: import('@/lib/ayatSplitter').AyatSplit | null` and its doc comment.
+
+C) ExportModal function signature: `export function ExportModal({ open, onOpenChange }: ExportModalProps)` — dropped `activeSplit` parameter.
+
+D) Slides builder: Now maps ayatList → minimal AyatSlide (arabicText, translation, transliteration: `a.transliteration || ''`, surah display fields, audio fields). Removed `tajweedSegments`, `words.map(...)`, `audioPauses`, and all structural marker fields (juzNumber, hizbNumber, rubElHizbNumber, rukuNumber, manzilNumber, pageNumber) which were never on AyatSlide/AyatData anyway.
+
+E) renderVideoToWebm call args: Dropped `activeSplit,`. RenderArgs interface: dropped `activeSplit?` field and its doc comment. renderVideoToWebm function signature: dropped `activeSplit,` from destructure.
+
+F) drawFrame call: Dropped the entire `splitPart: activeSplit && activeSplit.segments.length > 0 ? { partNumber: idx + 1, totalParts: activeSplit.segments.length } : null,` calculation.
+
+G) DrawArgs interface: Dropped `splitPart?: { partNumber: number; totalParts: number } | null` field and its doc comment. drawFrame function signature: dropped `splitPart,` from destructure.
+
+H) "PART X/N" badge drawing: Removed the entire 32-line `if (splitPart) { ... }` block (pill background, text, save/restore).
+
+I) drawFrame function cleanup:
+- Removed `const activeIdx = getActiveWordIndex(slide.words, intoMs)`.
+- `wordsArr` now just `slide.arabicText.split(/\s+/)` (removed the `slide.words.length ? ... : ...` ternary).
+- Removed the entire pagination plan block: `MAX_TRANS_LINES`, `slideDurationMs`, `let paginationPlan = ...` (with buildSilenceSnappedPlan/buildTimeProportionalPlan), `let chunkIdx = ...` (with findChunkAtTime), `visibleWordsArr`/`visibleWordOffset` slicing.
+- Wrap loop now iterates `wordsArr` directly (no chunk slicing).
+- Removed `arabicPageInfo` and `transPageInfo` (no pagination indicator).
+- Translation now uses `slide.translation` directly with `wrapLines` — removed `splitTranslationToChunks` call and `MAX_TRANS_LINES` cap.
+- Removed the entire Tajweed `if (slide.tajweedSegments ...) { ... } else { ... }` branch — kept ONLY the plain word-by-word rendering loop, and inside it removed the `localActive`/`isHi`/`wordCounter` highlight logic. Each word is now rendered with `settings.fontColor` and a static text shadow.
+- Removed the page indicator block (`if (arabicPageInfo || transPageInfo) { ... }`).
+- Removed the structural marker drawing block (`getStructuralPairs(slide)` + `formatStructural(slide, true)` + the letterSpacing save/restore).
+
+J) Kept untouched: background drawing, overlay, top/bottom gradient, header (surah name + ayat indicator), center card layout math (cardY/cardH/dark card bg), transliteration rendering, divider, translation rendering, attribution block, watermark (image + text fallback), MP4 conversion pipeline, ProcessingPanel/DonePanel.
+
+- Cleaned up one stale comment ("Find the currently-active word first so we can size the card to fit.") that was a lead-in to the removed activeIdx logic.
+- File shrank from 1959 → 1667 lines (~292 lines removed).
+- Final TS check: `npx tsc --noEmit 2>&1 | grep ExportModal | head -30` → ZERO errors. All 24 baseline errors resolved.
+- Verified no leftover references via ripgrep for: activeSplit, splitPart, tajweedSegments, audioPauses, getActiveWordIndex, formatStructural, getStructuralPairs, textPagination, ayatSplitter, buildSilenceSnappedPlan, buildTimeProportionalPlan, splitTranslationToChunks, estimateChunkCount, findChunkAtTime, PaginationPlan, chunkIdx, paginationPlan, visibleWordOffset, localActive, activeIdx, slide.words. (Only benign match was a UI comment about "current phase highlighted" in ProcessingPanel — unrelated to word highlighting.)
+- Did NOT modify any other files (only ExportModal.tsx was edited, plus this worklog append).
+
+Next Actions:
+- None required for this task. The ExportModal is now in sync with the trimmed-down AyatSlide/AyatData types and renders plain Arabic (all words, no highlight, no pagination) + translation + transliteration + attribution + watermark on the chosen background/overlay.
+
+---
+Task ID: 7
+Agent: sub-agent (general-purpose)
+Task: Clean up VideoPreview.tsx by removing ALL references to removed features (word-by-word highlight, text pagination, Tajweed, structural markers, audioPauses).
+
+Work Log:
+- Read worklog.md (last entry: Task 6 — ExportModal.tsx cleanup, same pattern) and VideoPreview.tsx (1055 lines).
+- Confirmed types.ts: AyatData has only {surahNumber, ayatNumber, arabicText, translation, transliteration, audioUrl, audioDurationMs, surahName, surahNameArabic}. No `words`, `tajweedSegments`, `audioPauses`, or structural marker fields.
+- Captured baseline TS errors for VideoPreview.tsx: 13 errors total — 3 missing-module errors (`@/lib/highlight`, `@/lib/structural`, `@/lib/textPagination`) + 10 type errors from `current.words` / `current.audioPauses` / `hasStructuralInfo(current)` / `buildArabicTokens(current)` arg-shape mismatch.
+
+Applied all required edits in a single MultiEdit operation, plus a small follow-up cleanup:
+
+A) Imports (lines 14-20 of cleaned file): Removed `import { getActiveWordIndex } from '@/lib/highlight'`, `import { formatStructural, getStructuralPairs } from '@/lib/structural'`, and the entire `import { buildSilenceSnappedPlan, buildTimeProportionalPlan, estimateChunkCount, findChunkAtTime, splitTranslationToChunks, type PaginationPlan } from '@/lib/textPagination'` block. Left `overlayCssBackground`, `videoAttributionLine`, `cn`, `Button`, `Slider` imports intact.
+
+B) Removed `hasStructuralInfo` helper function (was lines 32-43).
+
+C) Replaced the `ArabicToken` interface + 40-line `buildArabicTokens` function (which had `words`, `tajweedSegments`, and `arabicText` branches plus a `wordIdx` field per token) with a 4-line `buildArabicTokens(arabicText: string): string[]` that just `split(/\s+/).filter(Boolean)`. Removed the `ArabicToken` interface entirely.
+
+D) Removed `buildPlanForAyat` local helper function (was lines 106-139) — it referenced `PaginationPlan`, `buildSilenceSnappedPlan`, `buildTimeProportionalPlan`, `estimateChunkCount`, `current.audioPauses`, `current.words`. All callers are removed below.
+
+E) Removed `ActiveWord` interface (was lines 161-164).
+
+F) Removed state:
+- `const [textPage, setTextPage] = useState(0)` (was line 201)
+- `const [activeWord, setActiveWord] = useState<ActiveWord | null>(null)` (was line 247)
+- The `stateRef` ref + its sync useEffect became dead code after the tick was simplified, so removed both for cleanliness (was lines 249-255).
+
+G) Simplified the rAF tick `useEffect` — removed the entire pagination block (`buildPlanForAyat` + `findChunkAtTime` + `setTextPage`) and the `getActiveWordIndex` + `setActiveWord` block. Tick body is now just `if (audio) setCurrentTimeMs(audio.currentTime * 1000)`. Updated the comment to "rAF loop — keeps `currentTimeMs` in sync with the audio element so the seek bar advances smoothly while playing."
+
+H) In `playAyat`: removed `setActiveWord(null)` + `setTextPage(0)` calls. In `onEnded`: removed `setActiveWord(null)`. In `onSeek`: removed `setTextPage(0) // reset pagination when jumping to a different ayat`. In the ayat-list reset effect: removed `setActiveWord(null)`.
+
+I) Removed `highlightedWordIdx` calculation (was lines 534-538).
+
+J) Removed all three pagination useMemo hooks: `paginationPlan`, `visibleArabicRange`, `visibleTranslation` (was lines 540-578) — along with their multi-line doc comments.
+
+K) Simplified the Arabic rendering JSX (was lines 719-771): removed the `visibleArabicRange` slice, the `isHi` highlight check, the conditional `settings.highlightColor` color + glow text-shadow, and the `color: tok.color ?? settings.fontColor` fallback. Each token is now a plain `<span>` with `color: settings.fontColor` and a static `0 1px 4px rgba(0,0,0,0.7)` text-shadow. `.map((tok, i) => ...)` now returns `tok` directly (string) instead of `tok.text`.
+
+L) Translation rendering: `{visibleTranslation}` → `{current.translation}`.
+
+M) Removed the page indicator block (`paginationPlan.total > 1 ? ... : null`).
+
+N) Removed the entire structural-marker strip JSX block (`current && hasStructuralInfo(current) && (...)` with `formatStructural(current, false)` — was lines 873-889).
+
+O) Divider check: `current.words.length > 0` → `current.arabicText`.
+
+P) Transliteration rendering: replaced `settings.showTransliteration && current.words.length > 0` guard with `settings.showTransliteration && current.transliteration`, and replaced the `current.words.map((w) => w.transliteration || '').filter(Boolean).join(' ')` body with just `{current.transliteration}`.
+
+Bonus cleanup (kept consistent with the removed features):
+- Updated the stale comment "Hidden audio element drives playback + word timing" → "Hidden audio element drives playback" (word timing is no longer tracked).
+- Updated the empty-state helper text "to preview with word-by-word highlighting." → "to preview the recitation." (no more word-by-word highlight to advertise).
+
+File shrank from 1055 → 813 lines (~242 lines removed).
+
+Final TS check: `cd /home/z/my-project && npx tsc --noEmit 2>&1 | grep VideoPreview | head -30` → ZERO output (no VideoPreview errors). All 13 baseline errors resolved.
+
+Verified no leftover references via ripgrep for: getActiveWordIndex, formatStructural, getStructuralPairs, textPagination, buildSilenceSnappedPlan, buildTimeProportionalPlan, splitTranslationToChunks, estimateChunkCount, findChunkAtTime, PaginationPlan, buildPlanForAyat, paginationPlan, visibleArabicRange, visibleTranslation, ArabicToken, ActiveWord, activeWord, setActiveWord, textPage, setTextPage, highlightedWordIdx, isHi, hasStructuralInfo, tajweedSegments, audioPauses, current.words, word-by-word. (Zero matches.)
+
+Did NOT modify any other files (only VideoPreview.tsx was edited, plus this worklog append).
+
+Next Actions:
+- None required for this task. VideoPreview.tsx is now in sync with the trimmed-down AyatData/AyatSlide types: renders plain Arabic (all words, no highlight, no pagination) + transliteration (from `current.transliteration`) + translation (from `current.translation`) + attribution + watermark on the chosen background/overlay, with a seek-bar sync rAF loop. Audio playback, preload, auto-advance, and reset-on-list-change behaviors are all preserved.
+- Note (out of scope): `src/lib/schemas.test.ts` still references `useTajweed` (removed from VideoSettings) and `words` (removed from AyatSlide). Pre-existing test drift from prior cleanup tasks; not in scope for Task 7.

@@ -129,7 +129,7 @@ export default function LandingPage() {
               Every reel you publish is Sadaqah Jariyah — ongoing charity that
               keeps earning reward long after you hit share. Pick a Surah,
               choose a reciter, customize the look, and export a perfectly
-              synced video with word-by-word highlighting and translation.
+              synced video with Arabic text and translation.
               Built for Instagram Reels, TikTok, and YouTube Shorts.
             </p>
 
@@ -160,15 +160,15 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-primary" />
-                5 reciters
+                13 reciters
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-primary" />
-                Word-by-word highlight
+                Video backgrounds
               </div>
               <div className="flex items-center gap-2">
                 <Check className="h-4 w-4 text-primary" />
-                6 translations
+                12 translations
               </div>
             </div>
           </div>
@@ -311,8 +311,8 @@ export default function LandingPage() {
             {[
               {
                 icon: Sparkles,
-                title: 'Word-by-word highlighting',
-                desc: 'Each word lights up in sync with the recitation, so viewers can follow along effortlessly.',
+                title: 'Beautiful Arabic typography',
+                desc: 'Premium Arabic fonts with smooth RTL rendering, perfectly centered for reels and shorts.',
               },
               {
                 icon: Mic2,

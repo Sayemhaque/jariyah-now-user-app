@@ -9,55 +9,22 @@ export interface Surah {
   revelationType: 'Meccan' | 'Medinan'
 }
 
-export interface WordTiming {
-  text: string
-  position: number
-  startMs: number
-  endMs: number
-  // transliteration from the API when available
-  transliteration?: string
-}
-
 export interface AyatData {
   surahNumber: number
   ayatNumber: number
   arabicText: string
-  /** Color-coded Tajweed segments (when script=tajweed). */
-  tajweedSegments?: { text: string; color: string | null; class: string | null }[]
   translation: string
-  words: WordTiming[]
+  transliteration: string
   audioUrl: string
   audioDurationMs: number
-  /** Natural breath pauses detected by ffmpeg's silencedetect filter
-   *  on the ACTUAL audio file. Used for audio-synced text pagination —
-   *  chunk boundaries snap to these pause points so text never switches
-   *  mid-word. Times are in MILLISECONDS. Empty when detection failed. */
-  audioPauses?: { start: number; end: number; duration: number }[]
   // Surah display info — denormalized onto each ayat so the slide renderer
   // has everything it needs without a separate lookup.
   surahName: string
   surahNameArabic: string
-  // ─── Structural Quran markers (Juz / Hizb / Rubʿ al-Hizb / Ruku / Manzil / Page) ───
-  // Sourced from api.quran.com's `fields` query param. All optional because
-  // older cached responses may not include them.
-  juzNumber?: number
-  hizbNumber?: number
-  rubElHizbNumber?: number
-  rukuNumber?: number
-  manzilNumber?: number
-  pageNumber?: number
-  // ─── Tajweed HTML (optional) ───
-  // Populated only when `useTajweed` is enabled. Sourced from the legacy
-  // quran.com API; contains the Uthmani text with embedded Tajweed diacritics
-  // that the client can color-code using the quran.com Tajweed rules palette.
-  tajweedHtml?: string
 }
 
 export interface AyatSlide {
   arabicText: string
-  /** Color-coded Tajweed segments (when script=tajweed). */
-  tajweedSegments?: { text: string; color: string | null; class: string | null }[]
-  words: { text: string; startMs: number; endMs: number }[]
   translation: string
   transliteration?: string
   surahName: string
@@ -66,19 +33,6 @@ export interface AyatSlide {
   surahNumber: number
   audioUrl: string
   audioDurationMs: number
-  /** Breath pauses (ms) from ffmpeg silence detection on the actual audio.
-   *  Used for silence-snapped text pagination. */
-  audioPauses?: { start: number; end: number; duration: number }[]
-  // Structural markers — passed through from AyatData so the export
-  // renderer can draw them on the canvas.
-  juzNumber?: number
-  hizbNumber?: number
-  rubElHizbNumber?: number
-  rukuNumber?: number
-  manzilNumber?: number
-  pageNumber?: number
-  // Tajweed HTML — passed through from AyatData when useTajweed is enabled.
-  tajweedHtml?: string
 }
 
 export interface Reciter {
@@ -88,7 +42,7 @@ export interface Reciter {
   style: string
   // Used to build verses.quran.com audio URL: https://verses.quran.com/{audioKey}/{surah}{ayat}.mp3
   audioKey: string
-  // Used to query word timings from api.quran.com
+  // UmmahAPI reciter ID (1..13) — used to look up audio URL in API response
   recitationId: number
   avatarColor: string  // used as a fallback avatar background
 }
@@ -157,8 +111,6 @@ export interface VideoSettings {
   /** Bengali font selection (3 options). Drives the .font-bengali-{key} class
    *  when the selected translation is Bengali. */
   bengaliFont: BengaliFont
-  /** When true, Arabic text is rendered with Tajweed color-coding. */
-  useTajweed: boolean
   showTranslation: boolean
   showTransliteration: boolean
   orientation: Orientation
