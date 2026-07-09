@@ -3,6 +3,7 @@ import {
   Inter,
   Amiri,
   Scheherazade_New,
+  Markazi_Text,
   Noto_Naskh_Arabic,
   Reem_Kufi,
   Cairo,
@@ -21,7 +22,7 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-// ─── Arabic fonts (6 total) ──────────────────────────────────────────
+// ─── Arabic fonts (7 total) ──────────────────────────────────────────
 // Curated selection spanning classical calligraphic → modern sans-serif
 // so users can match the visual tone of their video.
 const amiri = Amiri({
@@ -34,6 +35,12 @@ const scheherazade = Scheherazade_New({
   variable: "--font-scheherazade",
   subsets: ["arabic", "latin"],
   weight: ["400", "700"],
+});
+
+const markazi = Markazi_Text({
+  variable: "--font-markazi-text",
+  subsets: ["arabic", "latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const notoNaskhArabic = Noto_Naskh_Arabic({
@@ -151,7 +158,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${amiri.variable} ${scheherazade.variable} ${notoNaskhArabic.variable} ${reemKufi.variable} ${cairo.variable} ${notoBengali.variable} ${notoSerifBengali.variable} ${hindSiliguri.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${amiri.variable} ${scheherazade.variable} ${markazi.variable} ${notoNaskhArabic.variable} ${reemKufi.variable} ${cairo.variable} ${notoBengali.variable} ${notoSerifBengali.variable} ${hindSiliguri.variable} antialiased bg-background text-foreground`}
       >
         <Providers>
           {children}

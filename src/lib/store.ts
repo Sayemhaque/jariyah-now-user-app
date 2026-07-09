@@ -1,6 +1,14 @@
 'use client'
 
-import { create } from 'zustand'
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react'
 import type {
   Surah,
   AyatData,
@@ -14,22 +22,17 @@ import { AUTO_FONT_SIZES } from './types'
 import { DEFAULT_TRANSLATION_KEY } from './translations'
 import { SURAHS_FALLBACK } from './surahs-fallback'
 
-interface BuilderState {
-  // data
+export interface BuilderState {
   surahs: Surah[]
   selectedSurahNumber: number | null
   fromAyat: number
   toAyat: number
   reciterId: string
-  /** UmmahAPI translation key (e.g. bengali). See lib/translations.ts. */
   translationKey: string
   settings: VideoSettings
-
   ayatList: AyatData[]
   loadingAyats: boolean
   ayatError: string | null
-
-  // actions
   setSurahs: (surahs: Surah[]) => void
   setSurah: (number: number) => void
   setFromAyat: (n: number) => void
@@ -37,10 +40,7 @@ interface BuilderState {
   setReciter: (id: string) => void
   setTranslation: (key: string) => void
   updateSettings: (patch: Partial<VideoSettings>) => void
-  /** Convenience: change orientation (and auto-fit fonts when enabled). */
   setOrientation: (o: Orientation) => void
-  /** Toggle the auto-fit flag. When turning on, immediately applies the
-   *  auto font sizes for the current orientation. */
   setAutoFitFonts: (on: boolean) => void
   setAyatLoading: (loading: boolean) => void
   setAyatError: (error: string | null) => void
@@ -73,12 +73,6 @@ const DEFAULT_SETTINGS: VideoSettings = {
   textSpacing: 'normal',
 }
 
-/**
- * The Twilight Mosque brand theme has 3 orientation-specific variants.
- * When the user has the Twilight Mosque preset selected and switches
- * orientation, we auto-swap to the matching variant so the background
- * always fits the composition cleanly.
- */
 const TWILIGHT_MOSQUE_URLS: Record<string, string> = {
   portrait: '/backgrounds/twilight-mosque-portrait.png',
   landscape: '/backgrounds/twilight-mosque.png',
@@ -94,127 +88,164 @@ function pickBgForOrientation(
   return TWILIGHT_MOSQUE_URLS[newOrientation] ?? currentBg
 }
 
-export const useBuilderStore = create<BuilderState>((set, get) => ({
-  // Initialize with the bundled fallback so the dropdown is immediately
-  // populated on first render — no loading spinner. TanStack Query will
-  // fetch the live list from UmmahAPI and update it if it's
-  // richer (e.g. slightly different Arabic names), but the UI is already
-  // interactive before that resolves.
-  surahs: SURAHS_FALLBACK,
-  selectedSurahNumber: null,
-  fromAyat: 1,
-  toAyat: 3,
-  reciterId: DEFAULT_RECITER_ID,
-  translationKey: DEFAULT_TRANSLATION_KEY,
-  settings: DEFAULT_SETTINGS,
+const BuilderContext = createContext<BuilderState | null>(null)
 
-  ayatList: [],
-  loadingAyats: false,
-  ayatError: null,
+export function BuilderProvider({ children }: { children: ReactNode }) {
+  const [surahs, setSurahs] = useState<Surah[]>(SURAHS_FALLBACK)
+  const [selectedSurahNumber, setSelectedSurahNumber] = useState<number | null>(null)
+  const [fromAyat, setFromAyat] = useState(1)
+  const [toAyat, setToAyat] = useState(3)
+  const [reciterId, setReciterId] = useState(DEFAULT_RECITER_ID)
+  const [translationKey, setTranslationKey] = useState(DEFAULT_TRANSLATION_KEY)
+  const [settings, setSettings] = useState<VideoSettings>(DEFAULT_SETTINGS)
+  const [ayatList, setAyatList] = useState<AyatData[]>([])
+  const [loadingAyats, setAyatLoading] = useState(false)
+  const [ayatError, setAyatError] = useState<string | null>(null)
 
-  setSurahs: (surahs) => set({ surahs }),
+  const setSurah = useCallback((number: number) => {
+    const surah = surahs.find((s) => s.number === number)
+    setSelectedSurahNumber(number)
+    setFromAyat(1)
+    setToAyat(Math.min(3, surah?.numberOfAyahs ?? 3))
+    setAyatList([])
+  }, [surahs])
 
-  setSurah: (number) => {
-    const surah = get().surahs.find((s) => s.number === number)
-    set({
-      selectedSurahNumber: number,
-      fromAyat: 1,
-      toAyat: Math.min(3, surah?.numberOfAyahs ?? 3),
-      ayatList: [],
-    })
-  },
+  const setReciter = useCallback((id: string) => {
+    setReciterId(id)
+    setAyatList([])
+  }, [])
 
-  setFromAyat: (n) => set({ fromAyat: n }),
-  setToAyat: (n) => set({ toAyat: n }),
-  setReciter: (id) => {
-    set({ reciterId: id, ayatList: [] })
-  },
-  setTranslation: (key) => {
-    // Changing translation clears the current list so the next TanStack Query
-    // load uses the newly selected edition.
-    set({ translationKey: key, ayatList: [] })
-  },
+  const setTranslation = useCallback((key: string) => {
+    setTranslationKey(key)
+    setAyatList([])
+  }, [])
 
-  updateSettings: (patch) =>
-    set((state) => {
-      // If the orientation is changing AND auto-fit is on, also apply the
-      // auto font sizes for the new orientation. This is what makes the
-      // fonts "auto responsive" when the user picks a different layout.
-      const next: VideoSettings = { ...state.settings, ...patch }
+  const updateSettings = useCallback((patch: Partial<VideoSettings>) => {
+    setSettings((current) => {
+      const next: VideoSettings = { ...current, ...patch }
       if (
         patch.orientation &&
-        patch.orientation !== state.settings.orientation &&
-        state.settings.autoFitFonts
+        patch.orientation !== current.orientation &&
+        current.autoFitFonts
       ) {
         const auto = AUTO_FONT_SIZES[patch.orientation]
         next.arabicFontSize = auto.arabic
         next.translationFontSize = auto.translation
       }
-      // When the orientation changes, also swap to the matching Twilight
-      // Mosque variant (if that preset is selected) so the background always
-      // fits the new aspect ratio cleanly.
       if (patch.orientation) {
         next.backgroundImage = pickBgForOrientation(
-          state.settings.backgroundPreset,
-          state.settings.backgroundImage,
+          current.backgroundPreset,
+          current.backgroundImage,
           patch.orientation,
         )
       }
-      return { settings: next }
-    }),
+      return next
+    })
+  }, [])
 
-  setOrientation: (o) => {
-    const state = get()
-    const patch: Partial<VideoSettings> = { orientation: o }
-    if (state.settings.autoFitFonts) {
-      const auto = AUTO_FONT_SIZES[o]
-      patch.arabicFontSize = auto.arabic
-      patch.translationFontSize = auto.translation
-    }
-    // Swap to the matching Twilight Mosque variant (if that preset is
-    // selected) so the background always fits the new aspect ratio cleanly.
-    patch.backgroundImage = pickBgForOrientation(
-      state.settings.backgroundPreset,
-      state.settings.backgroundImage,
-      o,
-    )
-    set((s) => ({ settings: { ...s.settings, ...patch } }))
-  },
+  const setOrientation = useCallback((o: Orientation) => {
+    setSettings((current) => {
+      const patch: Partial<VideoSettings> = { orientation: o }
+      if (current.autoFitFonts) {
+        const auto = AUTO_FONT_SIZES[o]
+        patch.arabicFontSize = auto.arabic
+        patch.translationFontSize = auto.translation
+      }
+      patch.backgroundImage = pickBgForOrientation(
+        current.backgroundPreset,
+        current.backgroundImage,
+        o,
+      )
+      return { ...current, ...patch }
+    })
+  }, [])
 
-  setAutoFitFonts: (on) => {
-    const state = get()
-    const patch: Partial<VideoSettings> = { autoFitFonts: on }
-    if (on) {
-      // Immediately apply the auto font sizes for the current orientation.
-      const auto = AUTO_FONT_SIZES[state.settings.orientation]
-      patch.arabicFontSize = auto.arabic
-      patch.translationFontSize = auto.translation
-    }
-    set((s) => ({ settings: { ...s.settings, ...patch } }))
-  },
+  const setAutoFitFonts = useCallback((on: boolean) => {
+    setSettings((current) => {
+      const patch: Partial<VideoSettings> = { autoFitFonts: on }
+      if (on) {
+        const auto = AUTO_FONT_SIZES[current.orientation]
+        patch.arabicFontSize = auto.arabic
+        patch.translationFontSize = auto.translation
+      }
+      return { ...current, ...patch }
+    })
+  }, [])
 
-  setAyatLoading: (loading) => set({ loadingAyats: loading }),
-  setAyatError: (error) => set({ ayatError: error }),
-  setAyatList: (list) => set({ ayatList: list }),
+  const getReciter = useCallback(() => {
+    return RECITERS.find((r) => r.id === reciterId) ?? RECITERS[0]
+  }, [reciterId])
 
-  getReciter: () => {
-    const id = get().reciterId
-    return RECITERS.find((r) => r.id === id) ?? RECITERS[0]
-  },
+  const getSelectedSurah = useCallback(() => {
+    if (selectedSurahNumber == null) return undefined
+    return surahs.find((s) => s.number === selectedSurahNumber)
+  }, [selectedSurahNumber, surahs])
 
-  getSelectedSurah: () => {
-    const n = get().selectedSurahNumber
-    if (n == null) return undefined
-    return get().surahs.find((s) => s.number === n)
-  },
+  const getValidation = useCallback(() => {
+    return validateAyatRange(fromAyat, toAyat, getSelectedSurah())
+  }, [fromAyat, toAyat, getSelectedSurah])
 
-  getValidation: () => {
-    const surah = get().getSelectedSurah()
-    return validateAyatRange(get().fromAyat, get().toAyat, surah)
-  },
+  const getEstimatedDurationMs = useCallback(() => {
+    return ayatList.reduce((sum, a) => sum + (a.audioDurationMs || 0), 0)
+  }, [ayatList])
 
-  getEstimatedDurationMs: () => {
-    const list = get().ayatList
-    return list.reduce((sum, a) => sum + (a.audioDurationMs || 0), 0)
-  },
-}))
+  const value = useMemo<BuilderState>(() => ({
+    surahs,
+    selectedSurahNumber,
+    fromAyat,
+    toAyat,
+    reciterId,
+    translationKey,
+    settings,
+    ayatList,
+    loadingAyats,
+    ayatError,
+    setSurahs,
+    setSurah,
+    setFromAyat,
+    setToAyat,
+    setReciter,
+    setTranslation,
+    updateSettings,
+    setOrientation,
+    setAutoFitFonts,
+    setAyatLoading,
+    setAyatError,
+    setAyatList,
+    getReciter,
+    getSelectedSurah,
+    getValidation,
+    getEstimatedDurationMs,
+  }), [
+    surahs,
+    selectedSurahNumber,
+    fromAyat,
+    toAyat,
+    reciterId,
+    translationKey,
+    settings,
+    ayatList,
+    loadingAyats,
+    ayatError,
+    setSurah,
+    setReciter,
+    setTranslation,
+    updateSettings,
+    setOrientation,
+    setAutoFitFonts,
+    getReciter,
+    getSelectedSurah,
+    getValidation,
+    getEstimatedDurationMs,
+  ])
+
+  return createElement(BuilderContext.Provider, { value }, children)
+}
+
+export function useBuilderStore<T>(selector: (state: BuilderState) => T): T {
+  const context = useContext(BuilderContext)
+  if (!context) {
+    throw new Error('useBuilderStore must be used within BuilderProvider')
+  }
+  return selector(context)
+}

@@ -52,13 +52,14 @@ export interface Reciter {
 export type Orientation = 'landscape' | 'portrait'
 
 /**
- * Arabic font choices — 6 fonts spanning classical calligraphic → modern
+ * Arabic font choices — 7 fonts spanning classical calligraphic → modern
  * sans-serif. The class names in globals.css match these keys
  * (`.font-arabic-{key}`).
  */
 export type ArabicFont =
   | 'uthmani'        // Amiri — classical Uthmani, calligraphic
   | 'scheherazade'   // Scheherazade New — traditional Naskh
+  | 'markazi'        // Markazi Text — classical editorial Naskh
   | 'naskh'          // Noto Naskh Arabic — clean modern Naskh
   | 'kufi'           // Reem Kufi — geometric Kufi, contemporary
   | 'cairo'          // Cairo — modern sans-serif Arabic
@@ -108,7 +109,7 @@ export interface VideoSettings {
   arabicFontSize: number       // 24–72
   translationFontSize: number  // 14–32
   fontStyle: FontStyle
-  /** Arabic font selection (6 options). Drives the .font-arabic-{key} class. */
+  /** Arabic font selection (7 options). Drives the .font-arabic-{key} class. */
   arabicFont: ArabicFont
   /** Bengali font selection (3 options). Drives the .font-bengali-{key} class
    *  when the selected translation is Bengali. */

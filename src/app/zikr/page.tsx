@@ -66,6 +66,7 @@ const ARABIC_FONT_CLASS: Record<string, string> = {
   uthmani: 'font-arabic-uthmani',
   amiri: 'font-arabic-uthmani',
   scheherazade: 'font-arabic-scheherazade',
+  markazi: 'font-arabic-markazi',
   naskh: 'font-arabic-naskh',
   kufi: 'font-arabic-kufi',
   cairo: 'font-arabic-cairo',
@@ -76,6 +77,7 @@ const ARABIC_FONT_FAMILY: Record<string, string> = {
   uthmani: '"Amiri Quran", "Amiri", serif',
   amiri: '"Amiri Quran", "Amiri", serif',
   scheherazade: '"Scheherazade New", "Scheherazade", serif',
+  markazi: '"Markazi Text", serif',
   naskh: '"Noto Naskh Arabic", "Noto Naskh", serif',
   kufi: '"Reem Kufi", "Reem", sans-serif',
   cairo: '"Cairo", sans-serif',
@@ -1316,6 +1318,9 @@ function ZikrPage() {
                     </SelectItem>
                     <SelectItem value="scheherazade">
                       <span className="font-arabic-scheherazade">سبحان — Scheherazade</span>
+                    </SelectItem>
+                    <SelectItem value="markazi">
+                      <span className="font-arabic-markazi">سبحان — Markazi</span>
                     </SelectItem>
                     <SelectItem value="naskh">
                       <span className="font-arabic-naskh">سبحان — Noto Naskh</span>

@@ -8,9 +8,10 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
-  /* Arabic fonts (6 total) */
+  /* Arabic fonts (7 total) */
   --font-arabic-amiri: var(--font-amiri);
   --font-arabic-scheherazade: var(--font-scheherazade);
+  --font-arabic-markazi: var(--font-markazi-text);
   --font-arabic-naskh: var(--font-noto-naskh-arabic);
   --font-arabic-kufi: var(--font-reem-kufi);
   --font-arabic-cairo: var(--font-cairo);
@@ -132,7 +133,7 @@
   }
 }
 
-/* Arabic font helpers — 6 fonts spanning classical → modern.
+/* Arabic font helpers — 7 fonts spanning classical → modern.
    The class names match the ArabicFont type in src/lib/types.ts. */
 .font-arabic-uthmani {
   font-family: var(--font-amiri), "Amiri Quran", serif;
@@ -140,6 +141,10 @@
 }
 .font-arabic-scheherazade {
   font-family: var(--font-scheherazade), "Scheherazade New", serif;
+  font-feature-settings: "calt", "liga";
+}
+.font-arabic-markazi {
+  font-family: var(--font-markazi-text), "Markazi Text", serif;
   font-feature-settings: "calt", "liga";
 }
 .font-arabic-naskh {

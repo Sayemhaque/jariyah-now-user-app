@@ -44,9 +44,9 @@ const VALID_SLIDE: AyatSlide = {
 describe('renderBodySchema', () => {
   function validBody() {
     return {
-      slides: [VALID_SLIDE],
+      slides: [{ ...VALID_SLIDE }],
       reciterKey: 'Alafasy_128kbps',
-      settings: VALID_SETTINGS,
+      settings: { ...VALID_SETTINGS },
       orientation: 'portrait' as const,
     }
   }
@@ -92,6 +92,13 @@ describe('renderBodySchema', () => {
     const body = validBody()
     body.slides[0]!.audioUrl = 'not-a-url'
     expect(renderBodySchema.safeParse(body).success).toBe(false)
+  })
+
+  it('accepts the new markazi arabic font', () => {
+    const body = validBody()
+    body.settings.arabicFont = 'markazi'
+    body.settings.fontStyle = 'markazi'
+    expect(renderBodySchema.safeParse(body).success).toBe(true)
   })
 
   it('rejects an invalid overlayStyle', () => {

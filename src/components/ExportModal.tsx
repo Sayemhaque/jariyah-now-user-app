@@ -13,7 +13,7 @@ import {
 } from '@/lib/exportCapabilities'
 import { webmToMp4, canConvertToMp4 } from '@/lib/videoConverter'
 import { InstagramIcon, YouTubeIcon, YouTubeShortsIcon } from '@/components/PlatformIcons'
-import type { AyatSlide, ExportOptions, Orientation } from '@/lib/types'
+import type { AyatSlide, ExportOptions, Orientation, VideoSettings } from '@/lib/types'
 import {
   Dialog,
   DialogContent,
@@ -484,6 +484,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const reciterId = useBuilderStore((s) => s.reciterId)
   const translationKey = useBuilderStore((s) => s.translationKey)
   const settings = useBuilderStore((s) => s.settings)
+  const updateSettings = useBuilderStore((s) => s.updateSettings)
   const fromAyat = useBuilderStore((s) => s.fromAyat)
   const toAyat = useBuilderStore((s) => s.toAyat)
 
@@ -529,9 +530,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     if (!open) return
     const preset = PLATFORM_PRESETS.find((p) => p.key === platform)
     if (preset && preset.orientation !== settings.orientation) {
-      useBuilderStore.getState().updateSettings({ orientation: preset.orientation })
+      updateSettings({ orientation: preset.orientation })
     }
-  }, [platform, open, settings.orientation])
+  }, [platform, open, settings.orientation, updateSettings])
 
   const totalMs = useMemo(
     () => ayatList.reduce((s, a) => s + (a.audioDurationMs || 0), 0),
@@ -938,7 +939,7 @@ const RENDER_QUALITY_SCALE: Record<ExportOptions['quality'], number> = {
 interface RenderArgs {
   canvas: HTMLCanvasElement
   slides: AyatSlide[]
-  settings: ReturnType<typeof useBuilderStore.getState>['settings']
+  settings: VideoSettings
   orientation: Orientation
   quality: ExportOptions['quality']
   /** Attribution line for the translation edition (empty for public-domain). */
@@ -1326,6 +1327,7 @@ function drawFrame({
     uthmani: '"Amiri Quran", "Amiri", serif',
     amiri: '"Amiri Quran", "Amiri", serif',
     scheherazade: '"Scheherazade New", "Scheherazade", serif',
+    markazi: '"Markazi Text", serif',
     naskh: '"Noto Naskh Arabic", "Noto Naskh", serif',
     kufi: '"Reem Kufi", "Reem", sans-serif',
     cairo: '"Cairo", sans-serif',

@@ -24,6 +24,7 @@ const ARABIC_FONT_CLASS: Record<string, string> = {
   uthmani: 'font-arabic-uthmani',
   amiri: 'font-arabic-uthmani',
   scheherazade: 'font-arabic-scheherazade',
+  markazi: 'font-arabic-markazi',
   naskh: 'font-arabic-naskh',
   kufi: 'font-arabic-kufi',
   cairo: 'font-arabic-cairo',

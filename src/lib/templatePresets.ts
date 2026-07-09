@@ -27,7 +27,7 @@ export interface QuranTemplateConfig {
   /** Suggested background preset key (matches BG_PRESETS[].key). */
   backgroundPreset?: string
   /** Suggested Arabic font. */
-  arabicFont?: 'uthmani' | 'scheherazade' | 'naskh' | 'kufi' | 'cairo'
+  arabicFont?: 'uthmani' | 'scheherazade' | 'markazi' | 'naskh' | 'kufi' | 'cairo'
   /** Suggested highlight color (hex). */
   highlightColor?: string
 }

@@ -59,7 +59,17 @@ const overlayStyleSchema = z.enum([
 
 const orientationSchema = z.enum(['landscape', 'portrait'])
 
-const fontStyleSchema = z.enum(['uthmani', 'naskh'])
+const arabicFontSchema = z.enum([
+  'uthmani',
+  'scheherazade',
+  'markazi',
+  'naskh',
+  'kufi',
+  'cairo',
+  'amiri',
+])
+
+const fontStyleSchema = arabicFontSchema
 
 const settingsSchema = z.object({
   backgroundImage: z.string().min(1),
@@ -78,7 +88,7 @@ const settingsSchema = z.object({
   arabicFontSize: z.number().min(24).max(72),
   translationFontSize: z.number().min(14).max(32),
   fontStyle: fontStyleSchema,
-  arabicFont: z.enum(['uthmani', 'scheherazade', 'naskh', 'kufi', 'cairo', 'amiri']),
+  arabicFont: arabicFontSchema,
   bengaliFont: z.enum(['sans', 'serif', 'hind']),
   useTajweed: z.boolean(),
   showTranslation: z.boolean(),

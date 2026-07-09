@@ -377,7 +377,7 @@ export function CustomizationPanel() {
           </p>
         )}
 
-        {/* Arabic font selector — 6 fonts spanning classical → modern.
+        {/* Arabic font selector — 7 fonts spanning classical → modern.
             Each option is rendered in its own typeface so the user can
             see what the font looks like before selecting it. */}
         <div className="flex items-center justify-between">
@@ -395,6 +395,9 @@ export function CustomizationPanel() {
               </SelectItem>
               <SelectItem value="scheherazade">
                 <span className="font-arabic-scheherazade">بِسْمِ ٱللَّهِ — Scheherazade</span>
+              </SelectItem>
+              <SelectItem value="markazi">
+                <span className="font-arabic-markazi">بِسْمِ ٱللَّهِ — Markazi</span>
               </SelectItem>
               <SelectItem value="naskh">
                 <span className="font-arabic-naskh">بِسْمِ ٱللَّهِ — Noto Naskh</span>
