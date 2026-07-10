@@ -10,6 +10,7 @@ import {
   Download,
   RefreshCw,
   Menu,
+  X,
 } from 'lucide-react'
 import { Drawer } from 'vaul'
 import { useBuilderStore } from '@/lib/store'
@@ -281,8 +282,15 @@ export default function Home() {
         <Drawer.Portal>
           <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
           <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 outline-none">
-            <div className="bg-card rounded-t-xl border-t border-border">
+            <div className="relative bg-card rounded-t-xl border-t border-border">
               <Drawer.Handle />
+              <button
+                type="button"
+                onClick={() => setSettingsDrawerOpen(false)}
+                className="absolute top-3 right-3 h-7 w-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors z-10"
+              >
+                <X className="h-4 w-4" />
+              </button>
               <div className="overflow-y-auto max-h-[85vh] p-4">
                 {settingsContent}
               </div>

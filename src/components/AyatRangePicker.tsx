@@ -30,13 +30,13 @@ export function AyatRangePicker() {
   const maxAyat = surah?.numberOfAyahs ?? 0
 
   const fromOptions = useMemo(
-    () => Array.from({ length: toAyat }, (_, i) => i + 1),
-    [toAyat],
+    () => Array.from({ length: maxAyat }, (_, i) => i + 1),
+    [maxAyat],
   )
 
   const toOptions = useMemo(
-    () => Array.from({ length: maxAyat - fromAyat + 1 }, (_, i) => fromAyat + i),
-    [maxAyat, fromAyat],
+    () => Array.from({ length: maxAyat }, (_, i) => i + 1),
+    [maxAyat],
   )
 
   const validation = useMemo(
