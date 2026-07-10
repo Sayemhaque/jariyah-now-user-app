@@ -41,7 +41,7 @@ type MobileTab = 'preview' | 'settings'
 
 const ExportModal = dynamic(
   () => import('@/components/ExportModal').then((m) => m.ExportModal),
-  { ssr: false },
+  { ssr: false, loading: () => null },
 )
 
 export default function Home() {

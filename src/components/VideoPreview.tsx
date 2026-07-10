@@ -77,7 +77,11 @@ function getAdvanceAtMs(
   if (!trailingPause) return totalMs
 
   const remainingMs = totalMs - trailingPause.end
-  if (remainingMs >= 120 && remainingMs <= 1500) {
+  const remainingFraction = remainingMs / totalMs
+  // Only advance early if:
+  // 1. The remaining time is between 120ms and 1500ms (not a real verse gap)
+  // 2. The remaining time is less than 8% of total duration (not a mid-ayah pause near end)
+  if (remainingMs >= 120 && remainingMs <= 1500 && remainingFraction < 0.08) {
     return Math.max(0, Math.min(totalMs, trailingPause.end + AUDIO_HANDOFF_BUFFER_MS))
   }
 
@@ -246,7 +250,7 @@ export function VideoPreview() {
       } else {
         setIsPlaying(false)
         const lastAyat = ayatList[currentIndex]
-        const lastDur = lastAyat?.audioDurationMs ?? 0
+        const lastDur = lastAyat?.audioDurationMs || liveDurations[currentIndex] || 0
         setCurrentTimeMs(lastDur)
       }
     }
@@ -295,7 +299,7 @@ export function VideoPreview() {
     let idx = 0
     for (let i = 0; i < offsets.length; i++) {
       const start = offsets[i]!
-      const end = start + (ayatList[i]?.audioDurationMs || 0)
+      const end = start + (ayatList[i]?.audioDurationMs || liveDurations[i] || 0)
       if (target >= start && target < end) {
         idx = i
         break
@@ -349,7 +353,6 @@ export function VideoPreview() {
       if (ayat.audioDurationMs > 0) return
       const a = new Audio()
       a.preload = 'metadata'
-      a.crossOrigin = 'anonymous'
       a.onloadedmetadata = () => {
         const d = a.duration
         if (isFinite(d) && d > 0) {
@@ -381,7 +384,7 @@ export function VideoPreview() {
 
   return (
     <div className="flex flex-col h-full">
-      <audio ref={audioRef} preload="auto" crossOrigin="anonymous" />
+      <audio ref={audioRef} preload="auto" />
 
       <div className="flex-1 min-h-0 grid place-items-center p-3 sm:p-6">
         <div

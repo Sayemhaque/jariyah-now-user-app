@@ -2,11 +2,17 @@
 
 import { useMemo } from 'react'
 import { AlertTriangle } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useBuilderStore } from '@/lib/store'
 import { validateAyatRange, MAX_AYATS_PER_VIDEO } from '@/lib/validation'
 import { cn } from '@/lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export function AyatRangePicker() {
   const fromAyat = useBuilderStore((s) => s.fromAyat)
@@ -21,14 +27,17 @@ export function AyatRangePicker() {
     [surahs, selectedSurahNumber],
   )
 
-  const onBlurFrom = () => {
-    if (fromAyat < 1) setFromAyat(1)
-    if (surah && fromAyat > surah.numberOfAyahs) setFromAyat(surah.numberOfAyahs)
-  }
-  const onBlurTo = () => {
-    if (toAyat < 1) setToAyat(1)
-    if (surah && toAyat > surah.numberOfAyahs) setToAyat(surah.numberOfAyahs)
-  }
+  const maxAyat = surah?.numberOfAyahs ?? 0
+
+  const fromOptions = useMemo(
+    () => Array.from({ length: toAyat }, (_, i) => i + 1),
+    [toAyat],
+  )
+
+  const toOptions = useMemo(
+    () => Array.from({ length: maxAyat - fromAyat + 1 }, (_, i) => fromAyat + i),
+    [maxAyat, fromAyat],
+  )
 
   const validation = useMemo(
     () => validateAyatRange(fromAyat, toAyat, surah),
@@ -54,40 +63,46 @@ export function AyatRangePicker() {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-1.5">
-          <Label
-            htmlFor="from-ayat"
-            className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground"
-          >
+          <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
             From
           </Label>
-          <Input
-            id="from-ayat"
-            type="number"
-            min={1}
-            max={surah?.numberOfAyahs ?? undefined}
-            value={Number.isFinite(fromAyat) ? fromAyat : ''}
-            onChange={(e) => setFromAyat(Number(e.target.value))}
-            onBlur={onBlurFrom}
-            className="bg-card h-9 tabular-nums text-sm"
-          />
+          <Select
+            value={String(fromAyat)}
+            onValueChange={(v) => setFromAyat(Number(v))}
+            disabled={!surah}
+          >
+            <SelectTrigger className="w-full bg-card h-9 text-sm">
+              <SelectValue placeholder="From" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[220px] bg-popover">
+              {fromOptions.map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
-          <Label
-            htmlFor="to-ayat"
-            className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground"
-          >
+          <Label className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
             To
           </Label>
-          <Input
-            id="to-ayat"
-            type="number"
-            min={1}
-            max={surah?.numberOfAyahs ?? undefined}
-            value={Number.isFinite(toAyat) ? toAyat : ''}
-            onChange={(e) => setToAyat(Number(e.target.value))}
-            onBlur={onBlurTo}
-            className="bg-card h-9 tabular-nums text-sm"
-          />
+          <Select
+            value={String(toAyat)}
+            onValueChange={(v) => setToAyat(Number(v))}
+            disabled={!surah}
+          >
+            <SelectTrigger className="w-full bg-card h-9 text-sm">
+              <SelectValue placeholder="To" />
+            </SelectTrigger>
+            <SelectContent className="max-h-[220px] bg-popover">
+              {toOptions.map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

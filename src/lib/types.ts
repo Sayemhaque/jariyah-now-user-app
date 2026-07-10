@@ -128,7 +128,7 @@ export interface VideoSettings {
 
 export interface ExportOptions {
   platform: 'reel' | 'shorts' | 'youtube'
-  quality: '720p' | '1080p'
+  quality: '480p' | '720p' | '1080p'
   filename: string
 }
 

@@ -75,11 +75,11 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: true,
-  // Raise the body size limit for API routes that accept large uploads.
-  // The default is 1MB which is far too small for video files — the
-  // /api/convert-mp4 endpoint accepts WebM blobs up to 100MB.
+  // Point turbopack at the project root explicitly — Next.js auto-detection
+  // picks the wrong directory when multiple lockfiles exist elsewhere on the
+  // filesystem (e.g. /home/user/package-lock.json).
   turbopack: {
-    root: "/home/sayem/Desktop/jariyah-now-user-app",
+    root: process.cwd(),
   },
   allowedDevOrigins: [
     "*.space-z.ai",

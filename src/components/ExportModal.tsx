@@ -498,8 +498,16 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     [reciterId],
   )
 
+  const isMobile = useMemo(() => {
+    if (typeof navigator === 'undefined') return false
+    const ua = navigator.userAgent
+    const mobileUa = /Mobile|Android|iPhone|iPad|iPod/i.test(ua)
+    const fewCores = (navigator.hardwareConcurrency ?? 8) <= 4
+    return mobileUa || fewCores
+  }, [])
+
   const [platform, setPlatform] = useState<ExportOptions['platform']>('reel')
-  const [quality, setQuality] = useState<ExportOptions['quality']>('720p')
+  const [quality, setQuality] = useState<ExportOptions['quality']>(() => isMobile ? '480p' : '720p')
   const [status, setStatus] = useState<RenderStatus>('idle')
   const [progress, setProgress] = useState(0)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
@@ -781,8 +789,13 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
               {/* Quality */}
               <div className="space-y-2">
                 <Label className="qv-section-title !mb-0">Quality</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {(['720p', '1080p'] as const).map((q) => (
+                {isMobile && (
+                  <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-600 dark:text-amber-400 leading-relaxed">
+                    Mobile export may be slow. For best results, use a desktop browser.
+                  </div>
+                )}
+                <div className="grid grid-cols-3 gap-2">
+                  {(['480p', '720p', '1080p'] as const).map((q) => (
                     <button
                       key={q}
                       onClick={() => setQuality(q)}
@@ -797,6 +810,11 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                       {q === '1080p' && (
                         <span className="ml-2 text-[10px] uppercase tracking-wider opacity-70">
                           HD
+                        </span>
+                      )}
+                      {q === '480p' && (
+                        <span className="ml-2 text-[10px] uppercase tracking-wider opacity-70">
+                          Lite
                         </span>
                       )}
                     </button>
@@ -824,8 +842,8 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground text-xs">Resolution</span>
                     <span className="font-mono tabular-nums text-xs">
-                      {RES[settings.orientation].w * (quality === '1080p' ? 1.5 : 1)} ×{' '}
-                      {RES[settings.orientation].h * (quality === '1080p' ? 1.5 : 1)}
+                      {Math.round(RES[settings.orientation].w * RENDER_QUALITY_SCALE[quality])} ×{' '}
+                      {Math.round(RES[settings.orientation].h * RENDER_QUALITY_SCALE[quality])}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -929,9 +947,14 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
 // Named constants — no magic numbers scattered through the render code.
 const RENDER_FPS = 30
-const RENDER_VIDEO_BITRATE = 6_000_000 // 6 Mbps — high quality for 720p/1080p
+const RENDER_VIDEO_BITRATE: Record<ExportOptions['quality'], number> = {
+  '480p': 3_000_000,
+  '720p': 6_000_000,
+  '1080p': 10_000_000,
+}
 const RENDER_AUDIO_LEAD_MS = 100 // schedule audio 100ms ahead to avoid first-frame glitches
 const RENDER_QUALITY_SCALE: Record<ExportOptions['quality'], number> = {
+  '480p': 0.667,
   '720p': 1,
   '1080p': 1.5,
 }
@@ -1003,7 +1026,21 @@ async function renderVideoToWebm({
   const audioCtx = new AudioCtx()
   const buffers: AudioBuffer[] = []
   for (const s of slides) {
-    const buf = await fetchAudioBuffer(s.audioUrl, audioCtx)
+    let buf: AudioBuffer | null = null
+    try {
+      buf = await fetchAudioBuffer(s.audioUrl, audioCtx)
+    } catch {
+      // failed to fetch/decode audio — will use a silent buffer
+    }
+    if (!buf) {
+      const durSec =
+        s.audioDurationMs > 0
+          ? s.audioDurationMs / 1000
+          : 3 // fallback visual duration when length unknown
+      const sampleRate = audioCtx.sampleRate
+      const frameCount = Math.ceil(durSec * sampleRate)
+      buf = audioCtx.createBuffer(1, frameCount, sampleRate)
+    }
     buffers.push(buf)
   }
   const totalMs = slides.reduce(
@@ -1034,7 +1071,7 @@ async function renderVideoToWebm({
   const recorder = new MediaRecorder(
     stream,
     mime
-      ? { mimeType: mime, videoBitsPerSecond: RENDER_VIDEO_BITRATE }
+      ? { mimeType: mime, videoBitsPerSecond: RENDER_VIDEO_BITRATE[quality] }
       : undefined,
   )
 

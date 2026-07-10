@@ -702,7 +702,7 @@ function ZikrPage() {
       const webmUrl = URL.createObjectURL(webmBlob)
 
       // Try MP4 conversion via /api/convert-mp4
-      const wantMp4 = canConvertToMp4()
+      const wantMp4 = await canConvertToMp4()
       let finalUrl = webmUrl
       let finalBlob = webmBlob
       let mp4 = false
@@ -1473,7 +1473,7 @@ function ZikrExportModal({
     if (open && phase === 'composing' && progress === 0 && !url && !error) {
       onExport()
     }
-  }, [open])  
+  }, [open, phase, progress, url, error, onExport])  
 
   const pct = Math.min(100, Math.max(0, Math.round(progress * 100)))
 

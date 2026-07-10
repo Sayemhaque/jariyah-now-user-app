@@ -7,32 +7,32 @@ import path from 'node:path'
 
 import { logger } from '@/lib/logger'
 import { consumeRateLimit, getClientIp } from '@/lib/rateLimit'
+import { env } from '@/lib/env'
 
 /**
  * /api/convert-mp4
  *
  * Receives a WebM blob produced by the browser's MediaRecorder, runs ffmpeg
- * server-side via the Python wrapper at `scripts/webm_to_mp4.py`, and streams
- * the resulting MP4 back to the client.
+ * server-side directly, and streams the resulting MP4 back to the client.
  *
- * Why server-side Python+ffmpeg instead of ffmpeg.wasm in the browser?
+ * The output is a clean H.264 Constrained Baseline + AAC-LC MP4 with
+ * `+faststart`, which plays on every browser and uploads to Instagram /
+ * YouTube / TikTok without re-encoding warnings.
+ *
+ * Why server-side ffmpeg instead of ffmpeg.wasm in the browser?
  *   - ffmpeg.wasm needs SharedArrayBuffer, which requires COOP+COEP headers
  *     on every page (those break third-party iframes, Google sign-in, some
  *     analytics, etc.). Not worth it for an optional conversion.
- *   - The server already has ffmpeg 7.x installed; a 720p30 reel converts in
+ *   - The server already has ffmpeg installed; a 720p30 reel converts in
  *     well under a minute.
- *   - The output is a clean H.264 Constrained Baseline + AAC-LC MP4 with
- *     `+faststart`, which plays on every browser and uploads to Instagram /
- *     YouTube / TikTok without re-encoding warnings.
+ *   - Keeps the mobile browser free from heavy encoding work.
  */
 
 export const runtime = 'nodejs'
 export const maxDuration = 300 // seconds — Next.js route timeout ceiling
 export const dynamic = 'force-dynamic'
 
-// Allow the Python binary to be overridden (e.g. python3.12 vs python).
-const PYTHON_BIN = process.env.PYTHON_BIN || 'python3'
-const CONVERTER_SCRIPT = path.join(/*turbopackIgnore: true*/ process.cwd(), 'scripts', 'webm_to_mp4.py')
+const FFMPEG_BIN = env.FFMPEG_BIN
 
 // Body-size + timeout limits. 100 MB is generous: a 720p30 10-ayat reel at
 // 6 Mbps is ~75 MB max. The ffmpeg timeout (4 min) is well under the route
@@ -49,33 +49,60 @@ const RATE_LIMIT_KEY_PREFIX = 'render'
  * GET /api/convert-mp4 — capability ping.
  *
  * The client calls this to decide whether to offer the "convert to MP4"
- * option. Returns 200 + {ok: true} if the route is reachable; the actual
- * ffmpeg availability is checked at POST time (and degrades to a 500 with
- * a clear message if ffmpeg is missing).
+ * option. Returns 200 + {ok: true} if ffmpeg is available, or a degraded
+ * response if not.
  */
 export async function GET() {
+  let ok = false
+  let reason = ''
+  try {
+    const which = spawn('which', [FFMPEG_BIN], { stdio: 'pipe' })
+    const code = await new Promise<number>((resolve) => {
+      which.on('close', resolve)
+      which.on('error', () => resolve(1))
+    })
+    ok = code === 0
+    if (!ok) reason = `${FFMPEG_BIN} not found on PATH`
+  } catch {
+    reason = 'ffmpeg check failed'
+  }
+
   return NextResponse.json({
-    ok: true,
-    converter: 'python+ffmpeg',
+    ok,
+    ...(reason ? { reason } : {}),
     maxBodyBytes: MAX_BODY_BYTES,
     timeoutMs: FFMPEG_TIMEOUT_MS,
   })
 }
 
 /**
- * Run the Python converter as a subprocess. Resolves with the exit code;
+ * Run ffmpeg directly as a subprocess. Resolves with the exit code;
  * rejects on spawn failure or timeout.
  *
  * ffmpeg's `-progress pipe:2` flag writes machine-readable key=value lines
  * to stderr — we capture them so they show up in server logs for debugging
  * (the client only sees a coarse 0→1 progress via XHR upload/download).
  */
-function runConverter(
+function runFfmpeg(
   inputPath: string,
   outputPath: string,
 ): Promise<{ code: number; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const proc = spawn(PYTHON_BIN, [CONVERTER_SCRIPT, inputPath, outputPath], {
+    const args = [
+      '-i', inputPath,
+      '-c:v', 'libx264',
+      '-profile:v', 'baseline',
+      '-level', '3.0',
+      '-pix_fmt', 'yuv420p',
+      '-c:a', 'aac',
+      '-b:a', '128k',
+      '-movflags', '+faststart',
+      '-progress', 'pipe:2',
+      '-y',
+      outputPath,
+    ]
+
+    const proc = spawn(FFMPEG_BIN, args, {
       stdio: ['ignore', 'pipe', 'pipe'],
     })
 
@@ -209,7 +236,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to read request body' }, { status: 400 })
   }
 
-  // --- Spawn Python+ffmpeg on a temp file pair ---------------------------
+  // --- Spawn ffmpeg on a temp file pair ----------------------------------
   const id = randomUUID()
   const tmpDir = os.tmpdir()
   const inputPath = path.join(tmpDir, `jariyahnow-${id}.webm`)
@@ -220,7 +247,7 @@ export async function POST(req: NextRequest) {
 
     let result: { code: number; stderr: string }
     try {
-      result = await runConverter(inputPath, outputPath)
+      result = await runFfmpeg(inputPath, outputPath)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       logger.error('convert-mp4 spawn failed', {
@@ -236,15 +263,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (result.code !== 0) {
-      // The Python script maps: 1=bad args, 2=ffmpeg missing, 3=conversion failed.
-      const status = result.code === 2 ? 503 : 500
-      const reason =
-        result.code === 2
-          ? 'ffmpeg is not installed on the server'
-          : result.code === 3
-            ? 'ffmpeg conversion failed'
-            : `converter exited with code ${result.code}`
-      logger.error('convert-mp4 conversion failed', {
+      logger.error('convert-mp4 ffmpeg failed', {
         ip,
         requestId,
         inputBytes: webmBytes.byteLength,
@@ -252,8 +271,8 @@ export async function POST(req: NextRequest) {
         stderrTail: result.stderr.slice(-1200),
       })
       return NextResponse.json(
-        { error: reason, exitCode: result.code },
-        { status },
+        { error: 'ffmpeg conversion failed', exitCode: result.code },
+        { status: 500 },
       )
     }
 
@@ -302,7 +321,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'video/mp4',
         'Content-Length': String(mp4Buffer.byteLength),
         'Cache-Control': 'no-store',
-        'X-Converter': 'python+ffmpeg',
+        'X-Converter': 'node+ffmpeg',
       },
     })
   } finally {

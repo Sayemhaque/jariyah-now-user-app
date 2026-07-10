@@ -1,3 +1,5 @@
+import { env } from './env'
+
 /**
  * URL allowlist for SSRF prevention.
  *
@@ -19,10 +21,7 @@
  * `ALLOWED_AUDIO_HOSTS` in the env (comma-separated).
  */
 function getAllowedAudioHosts(): string[] {
-  const fromEnv =
-    typeof process !== 'undefined' && process.env?.ALLOWED_AUDIO_HOSTS
-      ? process.env.ALLOWED_AUDIO_HOSTS
-      : ''
+  const fromEnv = env.ALLOWED_AUDIO_HOSTS ?? ''
   if (fromEnv) {
     return fromEnv
       .split(',')

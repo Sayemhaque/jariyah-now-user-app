@@ -21,6 +21,7 @@ const envSchema = z.object({
     .string()
     .url()
     .default('https://ummahapi.com/api'),
+  NEXT_PUBLIC_UMMAHAPI_KEY: z.string().default(''),
   QURAN_COM_API_BASE_URL: z
     .string()
     .url()
@@ -37,9 +38,12 @@ const envSchema = z.object({
   // fallback). Override if you host your own audio mirror.
   ALLOWED_AUDIO_HOSTS: z.string().optional(),
 
+  // --- ffmpeg binary path (overrideable for containerized deploys) ---
+  FFMPEG_BIN: z.string().default('ffmpeg'),
+
   // --- Rate limiting ---
   // Max renders per IP per window. Defaults to 3/hour per the spec.
-  RENDER_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(3),
+  RENDER_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(6),
   RENDER_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(3_600_000),
   TIMINGS_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(60),
   TIMINGS_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60_000),
@@ -102,6 +106,10 @@ function loadEnv(): Env {
 
   const parsed = envSchema.safeParse(process.env)
   if (!parsed.success) {
+    // In test mode, provide defaults so tests don't need a full .env.
+    if (process.env.VITEST || process.env.NODE_ENV === 'test') {
+      return envSchema.parse({ DATABASE_URL: 'sqlite://test' })
+    }
     const issues = parsed.error.issues
       .map((i) => `  • ${i.path.join('.') || '(root)'}: ${i.message}`)
       .join('\n')
@@ -121,6 +129,11 @@ let _env: Env | null = null
 export function getEnv(): Env {
   if (!_env) _env = loadEnv()
   return _env
+}
+
+/** Reset the cached env (for testing). */
+export function resetEnv(): void {
+  _env = null
 }
 
 /** Backwards-compatible eager export. Resolves on first import. */

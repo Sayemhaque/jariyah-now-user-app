@@ -3,17 +3,12 @@ import { buildAyatAudioUrl } from './reciters'
 import { SURAHS_FALLBACK } from './surahs-fallback'
 import { fetchWithTimeout, isFetchAbort } from './fetchWithTimeout'
 import { logger } from './logger'
+import { env } from './env'
 
-const UMMAHAPI_BASE =
-  typeof process !== 'undefined' && process.env?.UMMAHAPI_BASE_URL
-    ? process.env.UMMAHAPI_BASE_URL
-    : 'https://ummahapi.com/api'
+const UMMAHAPI_BASE = env.UMMAHAPI_BASE_URL
 
 export function ummahHeaders(): HeadersInit {
-  const apiKey =
-    typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_UMMAHAPI_KEY
-      ? process.env.NEXT_PUBLIC_UMMAHAPI_KEY
-      : ''
+  const apiKey = env.NEXT_PUBLIC_UMMAHAPI_KEY
   const headers: Record<string, string> = {
     Accept: 'application/json',
   }
