@@ -131,6 +131,9 @@
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
+  [role="combobox"]:focus-visible {
+    @apply outline-none ring-0 ring-offset-0;
+  }
 }
 
 /* Arabic font helpers — 7 fonts spanning classical → modern.

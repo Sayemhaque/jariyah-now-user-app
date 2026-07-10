@@ -10,12 +10,8 @@ import {
   Download,
   RefreshCw,
   Menu,
-  X,
-  Eye,
-  Settings,
-  BookOpenText,
-
 } from 'lucide-react'
+import { Drawer } from 'vaul'
 import { useBuilderStore } from '@/lib/store'
 import { useAyatRangeQuery, useSurahsQuery } from '@/lib/queries/builder'
 import { RECITERS } from '@/lib/reciters'
@@ -36,8 +32,6 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { toast } from 'sonner'
-
-type MobileTab = 'preview' | 'settings'
 
 const ExportModal = dynamic(
   () => import('@/components/ExportModal').then((m) => m.ExportModal),
@@ -92,9 +86,12 @@ export default function Home() {
 
   const [exportOpen, setExportOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [mobileTab, setMobileTab] = useState<MobileTab>('settings')
-
-
+  const [settingsDrawerOpen, setSettingsDrawerOpen] = useState(
+    () => typeof window !== 'undefined' && !localStorage.getItem('qv-drawer-seen'),
+  )
+  useEffect(() => {
+    if (settingsDrawerOpen) localStorage.setItem('qv-drawer-seen', '1')
+  }, [settingsDrawerOpen])
 
   useEffect(() => {
     if (surahsQuery.data?.length) {
@@ -161,9 +158,66 @@ export default function Home() {
 
   const canExport = ayatList.length > 0 && validation.ok
 
+  const settingsContent = (
+    <div className="space-y-2.5">
+      <section className="space-y-2.5">
+        <div className="flex items-center gap-2.5">
+          <span className="qv-step">1</span>
+          <h2 className="text-sm font-bold tracking-tight">Selection</h2>
+        </div>
+        <div className="space-y-2.5">
+          <SurahSelector />
+          <AyatRangePicker />
+          <ReciterSelector />
+          <TranslationSelector />
+        </div>
+
+        <Button
+          onClick={onLoadAyats}
+          disabled={ayatRangeQuery.isFetching || !selectedSurah || !validation.ok}
+          className="w-full qv-btn-primary font-semibold"
+          size="default"
+        >
+          {ayatRangeQuery.isFetching ? (
+            <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Loading ayats…</>
+          ) : ayatList.length ? (
+            <><RefreshCw className="h-4 w-4 mr-1.5" />Reload ayats</>
+          ) : (
+            <><Download className="h-4 w-4 mr-1.5" />Load ayats</>
+          )}
+        </Button>
+      </section>
+
+      <section className="space-y-2.5">
+        <div className="flex items-center gap-2.5">
+          <span className="qv-step">2</span>
+          <h2 className="text-sm font-bold tracking-tight">Customize</h2>
+        </div>
+        <CustomizationPanel />
+      </section>
+
+      <div className="pt-1 pb-2 text-[11px] text-muted-foreground space-y-2">
+        <p className="leading-relaxed">
+          Quran text from{' '}
+          <a href="https://ummahapi.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">ummahapi.com</a>
+          {', '}
+          <a href="https://quran.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">quran.com</a>
+          . Audio from{' '}
+          <a href="https://everyayah.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">everyayah.com</a>.
+        </p>
+        <nav className="flex items-center gap-3">
+          <Link href="/about" className="hover:text-foreground transition">About</Link>
+          <span className="opacity-40">·</span>
+          <Link href="/terms" className="hover:text-foreground transition">Terms</Link>
+          <span className="opacity-40">·</span>
+          <Link href="/privacy" className="hover:text-foreground transition">Privacy</Link>
+        </nav>
+      </div>
+    </div>
+  )
+
   return (
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* Header — fixed height */}
       <header className="border-b border-border qv-frosted shrink-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">
@@ -213,122 +267,29 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Mobile tab bar */}
-      <div className="lg:hidden flex border-b border-border bg-card shrink-0">
-        <button
-          onClick={() => setMobileTab('preview')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition ${mobileTab === 'preview' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
-        >
-          <Eye className="h-4 w-4" /> Preview
-        </button>
-        <button
-          onClick={() => setMobileTab('settings')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition ${mobileTab === 'settings' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
-        >
-          <Settings className="h-4 w-4" /> Settings
-        </button>
-      </div>
-
-      {/* Main layout — fills remaining viewport height, no scrolling on the page itself */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-0 min-h-0 overflow-hidden">
-        {/* Preview pane — fills available height, no iPhone frame */}
-        <section
-          className={`relative bg-muted/30 flex flex-col min-h-0 overflow-hidden ${mobileTab === 'preview' ? 'flex-1' : 'hidden lg:flex'}`}
-        >
-          <VideoPreview />
+      <main className="flex flex-1 min-h-0 overflow-hidden lg:grid lg:grid-cols-[3fr_2fr]">
+        <section className="relative bg-muted/30 flex flex-col min-h-0 overflow-hidden flex-1">
+          <VideoPreview onSettingsClick={() => setSettingsDrawerOpen(true)} />
         </section>
 
-        {/* Controls sidebar — Selection + Customize, scrollable internally */}
-        <aside
-          className={`border-t lg:border-t-0 lg:border-l border-border bg-card min-h-0 overflow-y-auto scrollbar-thin ${mobileTab === 'settings' ? 'flex-1' : 'hidden lg:block'}`}
-        >
-          <div className="p-3 sm:p-4 space-y-4">
-            {/* Selection */}
-            <section className="space-y-3">
-              <div className="flex items-center gap-2.5">
-                <span className="qv-step">1</span>
-                <h2 className="text-sm font-bold tracking-tight">Selection</h2>
-              </div>
-              <div className="space-y-3">
-                <SurahSelector />
-                <AyatRangePicker />
-                <ReciterSelector />
-                <TranslationSelector />
-              </div>
-
-              <Button
-                onClick={onLoadAyats}
-                disabled={ayatRangeQuery.isFetching || !selectedSurah || !validation.ok}
-                className="w-full qv-btn-primary font-semibold"
-                size="default"
-              >
-                {ayatRangeQuery.isFetching ? (
-                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Loading ayats…</>
-                ) : ayatList.length ? (
-                  <><RefreshCw className="h-4 w-4 mr-1.5" />Reload ayats</>
-                ) : (
-                  <><Download className="h-4 w-4 mr-1.5" />Load ayats</>
-                )}
-              </Button>
-
-              {ayatList.length > 0 && (
-                <Button
-                  onClick={() => setMobileTab('preview')}
-                  variant="outline"
-                  className="w-full lg:hidden"
-                  size="sm"
-                >
-                  <Eye className="h-4 w-4 mr-1.5" />View preview
-                </Button>
-              )}
-            </section>
-
-            <div className="h-px bg-border" />
-
-            {/* Customize — back in the sidebar where it was */}
-            <section className="space-y-3">
-              <div className="flex items-center gap-2.5">
-                <span className="qv-step">2</span>
-                <h2 className="text-sm font-bold tracking-tight">Customize</h2>
-              </div>
-              <CustomizationPanel />
-            </section>
-
-            <div className="h-px bg-border" />
-
-            {/* Tip */}
-            <div className="qv-card rounded-xl p-3 flex gap-3">
-              <div className="grid place-items-center h-7 w-7 rounded-lg bg-primary/15 text-primary shrink-0">
-                <BookOpenText className="h-3.5 w-3.5" />
-              </div>
-              <div className="text-[11px] text-muted-foreground leading-relaxed">
-                <span className="text-foreground font-medium">How it works.</span>{' '}
-                Click <em>Load ayats</em> after changing the surah, range, or reciter.
-                Then hit <span className="text-primary font-medium">Export video</span>.
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="pt-1 pb-2 text-[11px] text-muted-foreground space-y-2">
-              <p className="leading-relaxed">
-                Quran text from{' '}
-                <a href="https://ummahapi.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">ummahapi.com</a>
-                {', '}
-                <a href="https://quran.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">quran.com</a>
-                . Audio from{' '}
-                <a href="https://everyayah.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">everyayah.com</a>.
-              </p>
-              <nav className="flex items-center gap-3">
-                <Link href="/about" className="hover:text-foreground transition">About</Link>
-                <span className="opacity-40">·</span>
-                <Link href="/terms" className="hover:text-foreground transition">Terms</Link>
-                <span className="opacity-40">·</span>
-                <Link href="/privacy" className="hover:text-foreground transition">Privacy</Link>
-              </nav>
-            </div>
-          </div>
+        <aside className="hidden lg:block border-t lg:border-t-0 lg:border-l border-border bg-card min-h-0 overflow-y-auto scrollbar-thin p-3 sm:p-4">
+          {settingsContent}
         </aside>
       </main>
+
+      <Drawer.Root open={settingsDrawerOpen} onOpenChange={setSettingsDrawerOpen}>
+        <Drawer.Portal>
+          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
+          <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 outline-none">
+            <div className="bg-card rounded-t-xl border-t border-border">
+              <Drawer.Handle />
+              <div className="overflow-y-auto max-h-[85vh] p-4">
+                {settingsContent}
+              </div>
+            </div>
+          </Drawer.Content>
+        </Drawer.Portal>
+      </Drawer.Root>
 
       <ExportModal open={exportOpen} onOpenChange={setExportOpen} />
     </div>

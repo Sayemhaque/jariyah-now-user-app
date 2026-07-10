@@ -166,10 +166,6 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return <h3 className="qv-section-title mb-2 mt-4 first:mt-0">{children}</h3>
 }
 
-function Card({ children }: { children: React.ReactNode }) {
-  return <div className="qv-card rounded-xl p-3 space-y-2.5">{children}</div>
-}
-
 export function CustomizationPanel() {
   const settings = useBuilderStore((s) => s.settings)
   const update = useBuilderStore((s) => s.updateSettings)
@@ -204,36 +200,53 @@ export function CustomizationPanel() {
     <div className="space-y-1">
       {/* Layout */}
       <SectionTitle>Layout</SectionTitle>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2.5">
         {(['portrait', 'landscape'] as Orientation[]).map((o) => (
           <button
             key={o}
             onClick={() => setOrientation(o)}
             className={cn(
-              'flex flex-col items-center gap-2 rounded-lg border px-2 py-3 text-xs transition',
+              'group relative flex flex-col items-center gap-3 rounded-xl border-2 px-4 py-5 transition-all duration-200',
               settings.orientation === o
-                ? 'border-primary bg-primary/10 text-primary'
-                : 'border-border bg-card/40 hover:border-foreground/30 hover:bg-card/70',
+                ? 'border-primary bg-gradient-to-b from-primary/[0.07] to-primary/[0.12] shadow-lg shadow-primary/10'
+                : 'border-border/80 bg-card hover:border-foreground/20 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0',
             )}
           >
             <div
               className={cn(
-                'border-2 rounded-sm',
-                settings.orientation === o
-                  ? 'border-primary'
-                  : 'border-foreground/40',
-                o === 'portrait' && 'h-7 w-4',
-                o === 'landscape' && 'h-4 w-7',
+                'flex items-center justify-center rounded-xl transition-all duration-200',
+                settings.orientation === o ? 'bg-primary/10' : 'bg-muted/60 group-hover:bg-muted',
+                o === 'portrait' ? 'h-16 w-10' : 'h-10 w-16',
               )}
-            />
-            <span className="capitalize font-medium">{o}</span>
+            >
+              <div
+                className={cn(
+                  'rounded-md border-2 transition-all duration-200',
+                  settings.orientation === o
+                    ? 'border-primary'
+                    : 'border-foreground/30',
+                  o === 'portrait' ? 'h-11 w-6' : 'h-6 w-11',
+                )}
+              />
+            </div>
+            <div className="flex flex-col items-center gap-0.5">
+              <span className={cn(
+                'text-sm font-semibold capitalize tracking-tight transition-colors duration-200',
+                settings.orientation === o ? 'text-primary' : 'text-foreground',
+              )}>
+                {o}
+              </span>
+              <span className="text-[9px] font-medium text-muted-foreground/60 uppercase tracking-[0.12em]">
+                {o === 'portrait' ? '9:16' : '16:9'}
+              </span>
+            </div>
           </button>
         ))}
       </div>
 
       {/* Background — real image thumbnails */}
       <SectionTitle>Background</SectionTitle>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1 snap-x snap-mandatory">
         {BG_PRESETS.map((p) => {
           const presetUrl =
             p.key === 'twilight-mosque'
@@ -249,16 +262,13 @@ export function CustomizationPanel() {
                 })
               }
               className={cn(
-                'group relative aspect-video rounded-lg overflow-hidden border transition',
+                'group relative aspect-video w-36 shrink-0 snap-start rounded-lg overflow-hidden border transition',
                 settings.backgroundPreset === p.key
                   ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-transparent'
                   : 'border-border hover:border-foreground/40',
               )}
             >
               {p.isVideo ? (
-                // Looping video thumbnail — plays muted in the picker so the
-                // user can see the motion before applying. Mirrors what the
-                // live preview + export will show.
                 <video
                   src={presetUrl}
                   className="absolute inset-0 h-full w-full object-cover"
@@ -273,11 +283,11 @@ export function CustomizationPanel() {
                   src={presetUrl}
                   alt={p.label}
                   fill
-                  sizes="(max-width: 768px) 30vw, 120px"
+                  sizes="144px"
                   className="object-cover"
                 />
               )}
-              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[10px] font-medium py-1 px-1.5 text-center flex items-center justify-center gap-1">
+              <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[10px] font-medium py-1 px-1.5 text-center flex items-center justify-center gap-1 truncate">
                 {p.emoji && <span aria-hidden>{p.emoji}</span>}
                 {p.label}
               </span>
@@ -307,14 +317,14 @@ export function CustomizationPanel() {
 
       {/* Overlay — preset shapes + color + opacity */}
       <SectionTitle>Overlay</SectionTitle>
-      <Card>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div className="space-y-2.5">
+        <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1 snap-x snap-mandatory">
           {OVERLAY_PRESETS.map((p) => (
             <button
               key={p.key}
               onClick={() => update({ overlayStyle: p.key })}
               className={cn(
-                'flex flex-col items-center gap-1.5 rounded-lg border p-2 transition',
+                'flex flex-col items-center gap-1 rounded-lg border p-1.5 w-[68px] shrink-0 snap-start transition',
                 settings.overlayStyle === p.key
                   ? 'border-primary bg-primary/10'
                   : 'border-border bg-card/40 hover:border-foreground/30 hover:bg-card/70',
@@ -322,7 +332,7 @@ export function CustomizationPanel() {
               title={p.label}
             >
               <span
-                className="block h-8 w-full rounded-md ring-1 ring-inset ring-white/10"
+                className="block h-6 w-full rounded-md ring-1 ring-inset ring-white/10"
                 style={{ background: p.swatch }}
               />
               <span className="text-[10px] font-medium leading-none">
@@ -354,11 +364,11 @@ export function CustomizationPanel() {
             onValueChange={(v) => update({ overlayOpacity: v[0]! })}
           />
         </div>
-      </Card>
+      </div>
 
       {/* Typography */}
       <SectionTitle>Typography</SectionTitle>
-      <Card>
+      <div className="space-y-2.5">
         {/* Auto-fit toggle — when on, font sizes auto-scale with orientation */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -532,11 +542,11 @@ export function CustomizationPanel() {
             ))}
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Captions */}
       <SectionTitle>Captions</SectionTitle>
-      <Card>
+      <div className="space-y-2.5">
         <div className="flex items-center justify-between">
           <Label className="text-sm">Show translation</Label>
           <Switch
@@ -551,7 +561,7 @@ export function CustomizationPanel() {
             onCheckedChange={(v) => update({ showTransliteration: v })}
           />
         </div>
-      </Card>
+      </div>
     </div>
   )
 }

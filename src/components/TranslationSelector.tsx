@@ -2,10 +2,7 @@
 
 import { BookText, AlertTriangle } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
-import {
-  TRANSLATION_EDITIONS,
-  getTranslationEdition,
-} from '@/lib/translations'
+import { TRANSLATION_EDITIONS } from '@/lib/translations'
 import {
   Select,
   SelectContent,
@@ -31,7 +28,6 @@ import {
 export function TranslationSelector() {
   const translationKey = useBuilderStore((s) => s.translationKey)
   const setTranslation = useBuilderStore((s) => s.setTranslation)
-  const edition = getTranslationEdition(translationKey)
 
   return (
     <div className="space-y-1.5">
@@ -41,8 +37,8 @@ export function TranslationSelector() {
       </label>
 
       <Select value={translationKey} onValueChange={setTranslation}>
-        <SelectTrigger className="w-full bg-card h-9 text-sm">
-          <SelectValue placeholder="Choose a translation" />
+        <SelectTrigger className="w-full bg-card h-12 text-sm px-4 py-3">
+          <SelectValue className="justify-center" placeholder="Choose a translation" />
         </SelectTrigger>
         <SelectContent className="bg-popover">
           {TRANSLATION_EDITIONS.map((e) => (
@@ -77,33 +73,6 @@ export function TranslationSelector() {
           ))}
         </SelectContent>
       </Select>
-
-      {/* Inline summary of the selected edition's license */}
-      <div className="rounded-lg border border-border bg-card px-2.5 py-2">
-        <div className="flex items-center justify-between gap-2 mb-0.5">
-          <span className="text-xs font-medium text-foreground/80 truncate">
-            {edition.fullName}
-          </span>
-          <span
-            className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full border shrink-0 ${
-              edition.license === 'public-domain'
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                : edition.license === 'permissive'
-                  ? 'bg-primary/10 text-primary border-primary/30'
-                  : 'bg-amber-500/10 text-amber-500 border-amber-500/30'
-            }`}
-          >
-            {edition.license === 'public-domain'
-              ? 'Public domain'
-              : edition.license === 'permissive'
-                ? 'Non-commercial'
-                : 'Personal use'}
-          </span>
-        </div>
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          {edition.licenseNote}
-        </p>
-      </div>
     </div>
   )
 }

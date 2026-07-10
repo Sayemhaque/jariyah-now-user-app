@@ -11,6 +11,7 @@ import {
   VolumeX,
   Loader2,
   Sparkles,
+  Settings,
 } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
@@ -88,7 +89,7 @@ function getAdvanceAtMs(
   return totalMs
 }
 
-export function VideoPreview() {
+export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void }) {
   const ayatList = useBuilderStore((s) => s.ayatList)
   const loading = useBuilderStore((s) => s.loadingAyats)
   const ayatError = useBuilderStore((s) => s.ayatError)
@@ -120,6 +121,8 @@ export function VideoPreview() {
   const [liveDurations, setLiveDurations] = useState<Record<number, number>>({})
   const [volume, setVolume] = useState(0.9)
   const [muted, setMuted] = useState(false)
+  const [showControls, setShowControls] = useState(true)
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const current = ayatList[currentIndex]
   const attributionLine = useMemo(
@@ -249,6 +252,7 @@ export function VideoPreview() {
         playAyat(currentIndex + 1)
       } else {
         setIsPlaying(false)
+        setShowControls(true)
         const lastAyat = ayatList[currentIndex]
         const lastDur = lastAyat?.audioDurationMs || liveDurations[currentIndex] || 0
         setCurrentTimeMs(lastDur)
@@ -276,6 +280,11 @@ export function VideoPreview() {
     }
   }, [currentIndex, ayatList, playAyat])
 
+  const resetHideTimer = useCallback(() => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    hideTimerRef.current = setTimeout(() => setShowControls(false), 3000)
+  }, [])
+
   const togglePlay = () => {
     const audio = audioRef.current
     if (!audio || !ayatList.length) return
@@ -293,6 +302,22 @@ export function VideoPreview() {
 
     audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
   }
+
+  const handleTapOverlay = useCallback((e: React.MouseEvent) => {
+    if (isPlaying) {
+      const audio = audioRef.current
+      if (audio) {
+        audio.pause()
+        setIsPlaying(false)
+      }
+      setShowControls(true)
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    } else {
+      togglePlay()
+      setShowControls(false)
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    }
+  }, [isPlaying, togglePlay])
 
   const onSeek = (v: number[]) => {
     const target = v[0]!
@@ -600,118 +625,113 @@ export function VideoPreview() {
               filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
             }}
           />
-        </div>
-      </div>
 
-      <div className="border-t border-border bg-card px-3 sm:px-5 py-2.5 sm:py-3 space-y-2">
-        <div className="flex items-center gap-2 sm:gap-2.5">
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-lg hover:bg-muted"
-              disabled={!ayatList.length}
-              onClick={() => playAyat(Math.max(0, currentIndex - 1))}
-              title="Previous ayat"
-              aria-label="Previous ayat"
-            >
-              <SkipBack className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon"
-              className="h-11 w-11 rounded-full qv-btn-primary"
-              disabled={!ayatList.length}
-              onClick={togglePlay}
-              title={isPlaying ? 'Pause' : 'Play'}
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-            >
-              {isPlaying ? (
-                <Pause className="h-4 w-4" />
-              ) : (
-                <Play className="h-4 w-4 translate-x-0.5" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-lg hover:bg-muted"
-              disabled={!ayatList.length || currentIndex >= ayatList.length - 1}
-              onClick={() => playAyat(Math.min(ayatList.length - 1, currentIndex + 1))}
-              title="Next ayat"
-              aria-label="Next ayat"
-            >
-              <SkipForward className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* Controls overlay */}
+          <div className="absolute inset-0 z-10">
+            <div className="absolute inset-0" onClick={handleTapOverlay} />
 
-          <div className="flex-1 flex items-center gap-2 sm:gap-3 min-w-0">
-            <Slider
-              value={[Math.min(totalMs, (offsets[currentIndex] || 0) + currentTimeMs)]}
-              max={Math.max(1, totalMs)}
-              step={100}
-              onValueChange={onSeek}
-              disabled={!ayatList.length}
-              className="flex-1 min-w-0"
-            />
-            <span className="text-[11px] font-mono text-muted-foreground whitespace-nowrap tabular-nums shrink-0">
-              {formatMs((offsets[currentIndex] || 0) + currentTimeMs)} / {formatMs(totalMs)}
-            </span>
-          </div>
+            <div className={`absolute inset-0 grid place-items-center transition-opacity duration-300 pointer-events-none ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (!isPlaying) {
+                    togglePlay()
+                    setShowControls(false)
+                    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+                  } else {
+                    const audio = audioRef.current
+                    if (audio) {
+                      audio.pause()
+                      setIsPlaying(false)
+                    }
+                    setShowControls(true)
+                  }
+                }}
+                className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/25 transition-colors pointer-events-auto"
+              >
+                {isPlaying ? (
+                  <Pause className="h-6 w-6 sm:h-7 sm:w-7" />
+                ) : (
+                  <Play className="h-6 w-6 sm:h-7 sm:w-7 ml-0.5" />
+                )}
+              </button>
+            </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 rounded-lg hover:bg-muted"
-              onClick={() => setMuted((m) => !m)}
-              title={muted ? 'Unmute' : 'Mute'}
-              aria-label={muted ? 'Unmute' : 'Mute'}
-            >
-              {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </Button>
-            <Slider
-              value={[muted ? 0 : volume * 100]}
-              max={100}
-              step={1}
-              onValueChange={(v) => {
-                setVolume(v[0]! / 100)
-                setMuted(false)
+            <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-between px-2 sm:px-4 transition-opacity duration-300 pointer-events-none ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); playAyat(Math.max(0, currentIndex - 1)) }}
+                disabled={!ayatList.length}
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-colors disabled:opacity-30 pointer-events-auto"
+              >
+                <SkipBack className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); playAyat(Math.min(ayatList.length - 1, currentIndex + 1)) }}
+                disabled={!ayatList.length || currentIndex >= ayatList.length - 1}
+                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-colors disabled:opacity-30 pointer-events-auto"
+              >
+                <SkipForward className="h-4 w-4 sm:h-5 sm:w-5" />
+              </button>
+            </div>
+
+            <div className={`absolute bottom-0 inset-x-0 transition-opacity duration-300 pointer-events-none ${showControls ? 'opacity-100' : 'opacity-0'}`}>
+              <div className="bg-gradient-to-t from-black/60 to-transparent pb-1.5 pt-5 px-3 sm:px-4">
+                <div className="flex items-center justify-end mb-5">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onSettingsClick?.() }}
+                    className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-md text-sm font-semibold text-white hover:bg-white/25 transition-colors pointer-events-auto shadow-lg"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Customize
+                  </button>
+                </div>
+                <Slider
+                  value={[Math.min(totalMs, (offsets[currentIndex] || 0) + currentTimeMs)]}
+                  max={Math.max(1, totalMs)}
+                  step={100}
+                  onValueChange={(v) => { onSeek(v); resetHideTimer() }}
+                  disabled={!ayatList.length}
+                  className="pointer-events-auto mb-1.5"
+                />
+                <div className="flex items-center justify-between">
+                  <span className="text-white/90 text-[11px] font-mono tabular-nums">
+                    {formatMs((offsets[currentIndex] || 0) + currentTimeMs)} / {formatMs(totalMs)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setMuted((m) => !m) }}
+                    className="text-white/80 hover:text-white transition-colors pointer-events-auto"
+                  >
+                    {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Thin seek bar - always visible */}
+            <div
+              className="absolute bottom-0 inset-x-0 h-1 cursor-pointer z-20"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect()
+                const x = e.clientX - rect.left
+                const pct = Math.max(0, Math.min(1, x / rect.width))
+                onSeek([pct * totalMs])
+                resetHideTimer()
               }}
-              className="w-20"
-            />
+            >
+              <div className="h-full bg-white/20">
+                <div
+                  className="h-full bg-white/80 hover:bg-white transition-colors"
+                  style={{ width: `${totalMs > 0 ? ((offsets[currentIndex] || 0) + currentTimeMs) / totalMs * 100 : 0}%` }}
+                />
+              </div>
+            </div>
           </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            className="sm:hidden h-9 w-9 rounded-lg hover:bg-muted shrink-0"
-            onClick={() => setMuted((m) => !m)}
-            title={muted ? 'Unmute' : 'Mute'}
-            aria-label={muted ? 'Unmute' : 'Mute'}
-          >
-            {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-          </Button>
         </div>
-
-        {ayatList.length > 0 && (
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-0.5">
-            <span className="flex items-center gap-2 min-w-0">
-              <span className="font-medium text-foreground/80 truncate">{surah?.name}</span>
-              <span className="opacity-50 shrink-0">·</span>
-              <span className="tabular-nums shrink-0">
-                Ayats {fromAyat}–{toAyat}
-              </span>
-              <span className="opacity-50 shrink-0 hidden xs:inline">·</span>
-              <span className="hidden xs:inline truncate">{reciter.name}</span>
-            </span>
-            <span className="flex items-center gap-1.5 text-foreground/70 shrink-0">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary qv-pulse" />
-              <span className="uppercase tracking-[0.15em] text-[10px]">
-                Live preview
-              </span>
-            </span>
-          </div>
-        )}
       </div>
     </div>
   )

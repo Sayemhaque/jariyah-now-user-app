@@ -56,8 +56,9 @@ export function SurahSelector() {
         onValueChange={(v) => setSurah(Number(v))}
         disabled={surahsQuery.isLoading && surahs.length === 0}
       >
-        <SelectTrigger className="w-full bg-card h-9 text-sm">
+        <SelectTrigger className="w-full bg-card h-12 text-sm px-4 py-3">
           <SelectValue
+            className="justify-center"
             placeholder={
               surahsQuery.isLoading && surahs.length === 0
                 ? 'Loading surahs…'
@@ -66,7 +67,7 @@ export function SurahSelector() {
           />
         </SelectTrigger>
         <SelectContent className="max-h-96 bg-popover">
-          <div className="p-2 sticky top-0 bg-popover z-10 border-b border-border">
+          <div className="p-2 sticky top-0 bg-popover z-10 border-b border-border" onPointerDown={(e) => e.stopPropagation()}>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -75,6 +76,7 @@ export function SurahSelector() {
                 placeholder="Search by name or number…"
                 className="pl-9 h-9 bg-background/60"
                 onKeyDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
               />
             </div>
           </div>
@@ -87,7 +89,7 @@ export function SurahSelector() {
                 <SelectItem
                   key={s.number}
                   value={String(s.number)}
-                  className="flex items-center justify-between gap-2 py-2.5"
+                  className="py-2.5"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <span className="grid place-items-center h-7 w-7 rounded-md bg-primary/15 text-primary text-[11px] font-mono font-semibold shrink-0">
@@ -103,9 +105,6 @@ export function SurahSelector() {
                       </span>
                     </div>
                   </div>
-                  <span lang="ar" className="font-arabic-uthmani text-lg text-foreground/80 shrink-0">
-                    {s.arabicName}
-                  </span>
                 </SelectItem>
               ))}
               {!filtered.length && (
