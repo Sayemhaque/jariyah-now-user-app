@@ -9,9 +9,6 @@ import { z } from 'zod'
  * with NEXT_PUBLIC_ and also listed in the client-safe subset below.
  */
 const envSchema = z.object({
-  // --- Database ---
-  DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
-
   // --- External API base URLs (overrideable for testing) ---
   // UmmahAPI is the primary upstream — surah list, ayat text, translations,
   // reciter audio URLs. The X-API-Key for UmmahAPI is exposed to the client
@@ -85,10 +82,7 @@ export type Env = z.infer<typeof envSchema>
  * load time if a required var is missing, so misconfiguration surfaces
  * during `next dev` / `next start` rather than at the first request.
  *
- * Client-side: returns the schema defaults + any `NEXT_PUBLIC_*` vars. The
- * client doesn't need server-only vars (DATABASE_URL, Redis tokens, etc.),
- * and trying to read them would fail because the bundler only inlines
- * `NEXT_PUBLIC_*` into client bundles.
+ * Client-side: returns the schema defaults + any `NEXT_PUBLIC_*` vars.
  */
 function loadEnv(): Env {
   // On the client, process.env is either undefined or a sparse object
@@ -97,7 +91,6 @@ function loadEnv(): Env {
   // the client gets the values it actually needs.
   if (typeof window !== 'undefined') {
     return envSchema.parse({
-      DATABASE_URL: 'client-side', // placeholder; client never uses this
       // NEXT_PUBLIC_* vars are inlined by the bundler into process.env on
       // the client, so spread whatever is there.
       ...(typeof process !== 'undefined' ? process.env : {}),
@@ -108,7 +101,7 @@ function loadEnv(): Env {
   if (!parsed.success) {
     // In test mode, provide defaults so tests don't need a full .env.
     if (process.env.VITEST || process.env.NODE_ENV === 'test') {
-      return envSchema.parse({ DATABASE_URL: 'sqlite://test' })
+      return envSchema.parse({})
     }
     const issues = parsed.error.issues
       .map((i) => `  • ${i.path.join('.') || '(root)'}: ${i.message}`)

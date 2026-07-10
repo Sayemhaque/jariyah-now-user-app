@@ -1,8 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
 import { isAllowedAudioUrl } from './urlAllowlist'
 
-// Mock env so tests don't need DATABASE_URL set, and so process.env
-// overrides take effect for each test.
+// Mock env so process.env overrides take effect for each test.
 vi.mock('./env', () => ({
   env: new Proxy({} as Record<string, unknown>, {
     get(_target, prop: string) {
