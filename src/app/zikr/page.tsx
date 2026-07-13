@@ -547,17 +547,8 @@ function ZikrPage() {
     setIsMp4(false)
 
     try {
-      const [
-        { checkExportCapabilities, pickSupportedMimeType },
-        { canConvertToMp4, webmToMp4 },
-      ] = await Promise.all([
-        import('@/lib/exportCapabilities'),
-        import('@/lib/videoConverter'),
-      ])
-
-      const caps = checkExportCapabilities()
-      if (!caps.ok) {
-        throw new Error(caps.reason || 'Export not supported in this browser.')
+      if (!window.MediaRecorder) {
+        throw new Error('MediaRecorder not supported in this browser.')
       }
 
       const canvas = document.createElement('canvas')
@@ -610,7 +601,13 @@ function ZikrPage() {
         }
       } catch {}
 
-      const mime = pickSupportedMimeType()
+      const mime = (() => {
+        try {
+          if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) return 'video/webm;codecs=vp9'
+          if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) return 'video/webm;codecs=vp8'
+        } catch {}
+        return ''
+      })()
       const recorder = new MediaRecorder(
         stream,
         mime ? { mimeType: mime, videoBitsPerSecond: 4_000_000 } : undefined,
@@ -699,26 +696,9 @@ function ZikrPage() {
 
       setExportPhase('uploading')
       const webmBlob = new Blob(chunks, { type: mime || 'video/webm' })
-      const webmUrl = URL.createObjectURL(webmBlob)
-
-      // Try MP4 conversion via /api/convert-mp4
-      const wantMp4 = await canConvertToMp4()
-      let finalUrl = webmUrl
-      let finalBlob = webmBlob
-      let mp4 = false
-      if (wantMp4) {
-        setExportPhase('encoding')
-        try {
-          const mp4Blob = await webmToMp4(webmBlob)
-          if (mp4Blob) {
-            finalUrl = URL.createObjectURL(mp4Blob)
-            finalBlob = mp4Blob
-            mp4 = true
-          }
-        } catch (err) {
-          console.warn('MP4 conversion failed, falling back to WebM:', err)
-        }
-      }
+      const finalUrl = URL.createObjectURL(webmBlob)
+      const finalBlob = webmBlob
+      const mp4 = false
 
       setExportPhase('finalizing')
       setExportProgress(1)

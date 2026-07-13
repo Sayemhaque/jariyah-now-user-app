@@ -1,5 +1,18 @@
 import { z } from 'zod'
-import { isAllowedAudioUrl } from './urlAllowlist'
+
+// Allowed audio CDNs
+const ALLOWED_AUDIO_ORIGINS = [
+  'https://everyayah.com',
+  'https://verses.quran.com',
+]
+function isAllowedAudioUrl(url: string): boolean {
+  try {
+    const u = new URL(url)
+    return ALLOWED_AUDIO_ORIGINS.some((origin) => u.origin === origin)
+  } catch {
+    return false
+  }
+}
 
 /**
  * Zod schemas for every API route's input. The client validates too, but the

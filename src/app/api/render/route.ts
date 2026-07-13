@@ -27,7 +27,6 @@ import {
   isVideoBackgroundUrl,
 } from '@/lib/backgroundPresets'
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout'
-import { renderQuranVideoJob } from '@/lib/server/renderQuranVideo'
 
 export const runtime = 'nodejs'
 
@@ -87,12 +86,15 @@ async function remotionRenderJob(jobId: string, body: RenderBody): Promise<void>
       downloadUrl: renderToDownloadUrl(jobId),
     })
   } catch (error) {
-    logger.error('remotion render failed, falling back to ffmpeg', {
+    logger.error('remotion render failed', {
       jobId,
       error: error instanceof Error ? error.message : String(error),
     })
-    // Fallback to FFmpeg
-    await renderQuranVideoJob(jobId, body)
+    updateRenderJob(jobId, {
+      status: 'error',
+      progress: 0,
+      error: 'Render failed: ' + (error instanceof Error ? error.message : String(error)),
+    })
   }
 }
 
@@ -140,7 +142,11 @@ export async function POST(req: NextRequest) {
 
   // --- Idempotency: dedupe by payload hash ----------------------------
   const dedupeHash = computeDedupeHash({
-    slides: body.slides,
+    slides: body.slides.map((s) => ({
+      surahNumber: s.surahNumber,
+      ayatNumber: s.ayatNumber,
+      audioUrl: s.audioUrl,
+    })),
     reciterKey: body.reciterKey,
     orientation: body.orientation,
     settings: {

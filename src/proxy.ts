@@ -1,5 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { isSameOriginWrite } from '@/lib/csrf'
+
+function isSameOriginWrite(opts: {
+  method: string
+  host: string | null
+  origin: string | null
+  secFetchSite: string | null
+}): { ok: boolean } {
+  // GET/HEAD are idempotent — no CSRF risk
+  if (opts.method === 'GET' || opts.method === 'HEAD') return { ok: true }
+  // If the browser sent Sec-Fetch-Site, trust it
+  if (opts.secFetchSite === 'same-origin') return { ok: true }
+  if (opts.secFetchSite === 'none') return { ok: true }
+  // Fallback: compare Origin vs Host
+  if (opts.origin && opts.host) {
+    try {
+      const originHost = new URL(opts.origin).host
+      if (originHost === opts.host) return { ok: true }
+    } catch {
+      // invalid origin — reject
+    }
+  }
+  return { ok: false }
+}
 
 /**
  * Next.js 16 proxy. Runs on matched requests before the route handler.
