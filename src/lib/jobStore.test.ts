@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
+  claimRenderJobStart,
   createRenderJob,
   getRenderJob,
   updateRenderJob,
@@ -183,5 +184,11 @@ describe('ownerToken + verifyJobOwnership', () => {
     expect(uuidPart).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
     )
+  })
+
+  it('claimRenderJobStart only succeeds once per job', () => {
+    const job = createRenderJob()
+    expect(claimRenderJobStart(job.id)).toBe(true)
+    expect(claimRenderJobStart(job.id)).toBe(false)
   })
 })

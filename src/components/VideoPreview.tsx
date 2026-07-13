@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import Image from 'next/image'
 import {
   Play,
   Pause,
@@ -13,81 +12,20 @@ import {
   Sparkles,
   Settings,
 } from 'lucide-react'
+import { Player, PlayerRef } from '@remotion/player'
+import { AyatVideo } from '@/remotion/AyatVideo'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
-import { overlayCssBackground } from '@/lib/overlay'
 import { videoAttributionLine } from '@/lib/translations'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
-
-const ARABIC_FONT_CLASS: Record<string, string> = {
-  uthmani: 'font-arabic-uthmani',
-  amiri: 'font-arabic-uthmani',
-  scheherazade: 'font-arabic-scheherazade',
-  markazi: 'font-arabic-markazi',
-  naskh: 'font-arabic-naskh',
-  kufi: 'font-arabic-kufi',
-  cairo: 'font-arabic-cairo',
-}
-
-const BENGALI_FONT_CLASS: Record<string, string> = {
-  sans: 'font-bengali-sans',
-  serif: 'font-bengali-serif',
-  hind: 'font-bengali-hind',
-}
-
-function buildArabicTokens(arabicText: string): string[] {
-  if (!arabicText) return []
-  return arabicText.split(/\s+/).filter(Boolean)
-}
+import { getAdvanceAtMs } from '@/lib/advanceTiming'
 
 const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
   landscape: { w: 1280, h: 720, ratio: '16 / 9' },
   portrait: { w: 720, h: 1280, ratio: '9 / 16' },
 }
 
-const TEXT_WIDTH_MAP: Record<string, string> = {
-  full: '94cqw',
-  wide: '82cqw',
-  medium: '70cqw',
-  narrow: '58cqw',
-}
-
-const TEXT_SPACING_MAP: Record<string, string> = {
-  compact: '1cqw',
-  normal: '3cqw',
-  spacious: '6cqw',
-}
-
-const AUDIO_HANDOFF_BUFFER_MS = 80
-
-function getAdvanceAtMs(
-  ayat: {
-    audioDurationMs: number
-    audioPauses?: { start: number; end: number; duration: number }[]
-  } | null | undefined,
-  liveDurationMs: number,
-): number {
-  if (!ayat) return 0
-
-  const totalMs = ayat.audioDurationMs || liveDurationMs || 0
-  if (totalMs <= 0) return 0
-
-  const trailingPause = ayat.audioPauses?.[ayat.audioPauses.length - 1]
-  if (!trailingPause) return totalMs
-
-  const remainingMs = totalMs - trailingPause.end
-  const remainingFraction = remainingMs / totalMs
-  // Only advance early if:
-  // 1. The remaining time is between 120ms and 1500ms (not a real verse gap)
-  // 2. The remaining time is less than 8% of total duration (not a mid-ayah pause near end)
-  if (remainingMs >= 120 && remainingMs <= 1500 && remainingFraction < 0.08) {
-    return Math.max(0, Math.min(totalMs, trailingPause.end + AUDIO_HANDOFF_BUFFER_MS))
-  }
-
-  return totalMs
-}
+const FPS = 30
 
 export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void }) {
   const ayatList = useBuilderStore((s) => s.ayatList)
@@ -110,307 +48,169 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
     [reciterId],
   )
 
-  const audioRef = useRef<HTMLAudioElement | null>(null)
-  const rafRef = useRef<number | null>(null)
-  const autoAdvancedAyatRef = useRef<number | null>(null)
-  const nextAudioRef = useRef<HTMLAudioElement | null>(null)
-
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTimeMs, setCurrentTimeMs] = useState(0)
-  const [liveDurations, setLiveDurations] = useState<Record<number, number>>({})
-  const [volume, setVolume] = useState(0.9)
-  const [muted, setMuted] = useState(false)
-  const [showControls, setShowControls] = useState(true)
+  const playerRef = useRef<PlayerRef>(null)
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const current = ayatList[currentIndex]
-  const attributionLine = useMemo(
-    () => videoAttributionLine(translationKey),
-    [translationKey],
-  )
-  const isBengaliTranslation = translationKey.startsWith('bn.')
-  const aspect = ASPECT[settings.orientation]
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [currentFrame, setCurrentFrame] = useState(0)
+  const [showControls, setShowControls] = useState(true)
+  const [volume, setVolume] = useState(0.9)
+  const [muted, setMuted] = useState(false)
 
-  const totalMs = useMemo(
-    () =>
-      ayatList.reduce(
-        (sum, a, i) => sum + (a.audioDurationMs || liveDurations[i] || 0),
-        0,
-      ),
-    [ayatList, liveDurations],
-  )
-
-  const offsets = useMemo(() => {
-    const arr: number[] = []
-    let acc = 0
-    for (let i = 0; i < ayatList.length; i++) {
-      arr.push(acc)
-      acc += ayatList[i]?.audioDurationMs || liveDurations[i] || 0
-    }
-    return arr
-  }, [ayatList, liveDurations])
-
-  const playAyat = useCallback(
-    (idx: number) => {
-      if (!ayatList[idx]) return
-      const audio = audioRef.current
-      if (!audio) return
-      autoAdvancedAyatRef.current = null
-      setCurrentIndex(idx)
-      setCurrentTimeMs(0)
-      audio.src = ayatList[idx]!.audioUrl
-      audio.volume = volume
-      audio.muted = muted
-      audio.play().then(() => setIsPlaying(true)).catch(() => {
-        setIsPlaying(false)
-      })
-    },
-    [ayatList, volume, muted],
-  )
-
-  useEffect(() => {
-    if (!isPlaying) return
-    let cancelled = false
-
-    const tick = () => {
-      if (cancelled) return
-      const audio = audioRef.current
-      const currentAyat = ayatList[currentIndex]
-
-      if (audio && currentAyat) {
-        const tMs = audio.currentTime * 1000
-        setCurrentTimeMs(tMs)
-
-        const advanceAtMs = getAdvanceAtMs(currentAyat, liveDurations[currentIndex] || 0)
-        if (
-          currentIndex < ayatList.length - 1 &&
-          advanceAtMs > 0 &&
-          tMs >= advanceAtMs &&
-          autoAdvancedAyatRef.current !== currentIndex
-        ) {
-          autoAdvancedAyatRef.current = currentIndex
-          playAyat(currentIndex + 1)
-          return
-        }
-      }
-
-      rafRef.current = requestAnimationFrame(tick)
-    }
-
-    rafRef.current = requestAnimationFrame(tick)
-    return () => {
-      cancelled = true
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    }
-  }, [isPlaying, ayatList, currentIndex, liveDurations, playAyat])
-
-  useEffect(() => {
-    if (!ayatList.length) return
-    const nextIdx = currentIndex + 1
-    if (nextIdx >= ayatList.length) return
-    const nextUrl = ayatList[nextIdx]?.audioUrl
-    if (!nextUrl) return
-
-    if (!nextAudioRef.current) {
-      nextAudioRef.current = new Audio()
-    }
-
-    const nextAudio = nextAudioRef.current
-    if (nextAudio.src !== nextUrl) {
-      nextAudio.src = nextUrl
-      nextAudio.preload = 'auto'
-      nextAudio.muted = true
-      nextAudio.volume = 0
-      nextAudio.play().then(() => {
-        nextAudio.pause()
-        nextAudio.currentTime = 0
-        nextAudio.muted = false
-        nextAudio.volume = 1
-      }).catch(() => {
-        nextAudio.muted = false
-        nextAudio.volume = 1
-      })
-    }
-  }, [currentIndex, ayatList])
-
-  useEffect(() => {
-    return () => {
-      if (nextAudioRef.current) {
-        nextAudioRef.current.src = ''
-        nextAudioRef.current = null
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-
-    const onEnded = () => {
-      if (currentIndex < ayatList.length - 1) {
-        playAyat(currentIndex + 1)
-      } else {
-        setIsPlaying(false)
-        setShowControls(true)
-        const lastAyat = ayatList[currentIndex]
-        const lastDur = lastAyat?.audioDurationMs || liveDurations[currentIndex] || 0
-        setCurrentTimeMs(lastDur)
-      }
-    }
-
-    const onMeta = () => {
-      const d = audio.duration
-      if (isFinite(d) && d > 0) {
-        setLiveDurations((prev) => {
-          if (prev[currentIndex] === d * 1000) return prev
-          return { ...prev, [currentIndex]: d * 1000 }
-        })
-      }
-    }
-
-    audio.addEventListener('ended', onEnded)
-    audio.addEventListener('loadedmetadata', onMeta)
-    audio.addEventListener('durationchange', onMeta)
-
-    return () => {
-      audio.removeEventListener('ended', onEnded)
-      audio.removeEventListener('loadedmetadata', onMeta)
-      audio.removeEventListener('durationchange', onMeta)
-    }
-  }, [currentIndex, ayatList, playAyat])
-
-  const resetHideTimer = useCallback(() => {
+  const scheduleHide = useCallback(() => {
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
     hideTimerRef.current = setTimeout(() => setShowControls(false), 3000)
   }, [])
 
-  const togglePlay = () => {
-    const audio = audioRef.current
-    if (!audio || !ayatList.length) return
+  const revealControls = useCallback(() => {
+    setShowControls(true)
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+  }, [])
 
-    if (isPlaying) {
-      audio.pause()
+  // Track player readiness so the event-listener effect can react to mounts
+  // and unmounts of the <Player> (which is conditionally rendered).
+  const [playerReady, setPlayerReady] = useState(false)
+
+  // Stable callback ref — only triggers on mount/unmount, never on re-render,
+  // avoiding the "maximum update depth" loop.
+  const handlePlayerRef = useCallback((p: PlayerRef | null) => {
+    playerRef.current = p
+    setPlayerReady(p !== null)
+  }, [])
+
+  // Register event listeners when the Player mounts; deregister on unmount.
+  useEffect(() => {
+    const player = playerRef.current
+    if (!player || !playerReady) return
+
+    const onFrame = () => {
+      const p = playerRef.current
+      if (p) setCurrentFrame(p.getCurrentFrame())
+    }
+    const onPlay = () => { setIsPlaying(true); scheduleHide() }
+    const onPause = () => {
       setIsPlaying(false)
-      return
-    }
-
-    if (!audio.src || audio.src === window.location.href) {
-      playAyat(currentIndex)
-      return
-    }
-
-    audio.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false))
-  }
-
-  const handleTapOverlay = useCallback((e: React.MouseEvent) => {
-    if (isPlaying) {
-      const audio = audioRef.current
-      if (audio) {
-        audio.pause()
-        setIsPlaying(false)
-      }
       setShowControls(true)
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-    } else {
-      togglePlay()
-      setShowControls(false)
+    }
+    const onEnded = () => {
+      setIsPlaying(false)
+      setShowControls(true)
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
     }
-  }, [isPlaying, togglePlay])
 
-  const onSeek = (v: number[]) => {
-    const target = v[0]!
-    let idx = 0
-    for (let i = 0; i < offsets.length; i++) {
-      const start = offsets[i]!
-      const end = start + (ayatList[i]?.audioDurationMs || liveDurations[i] || 0)
-      if (target >= start && target < end) {
-        idx = i
-        break
-      }
-      if (i === offsets.length - 1) idx = i
-    }
+    player.addEventListener('frameupdate', onFrame)
+    player.addEventListener('play', onPlay)
+    player.addEventListener('pause', onPause)
+    player.addEventListener('ended', onEnded)
 
-    const into = target - (offsets[idx] || 0)
-    if (idx !== currentIndex) {
-      autoAdvancedAyatRef.current = null
-      setCurrentIndex(idx)
-      const audio = audioRef.current!
-      audio.src = ayatList[idx]!.audioUrl
-      audio.currentTime = into / 1000
-      audio.volume = volume
-      audio.muted = muted
-      if (isPlaying) audio.play().catch(() => {})
-    } else {
-      const audio = audioRef.current!
-      audio.currentTime = into / 1000
+    return () => {
+      player.removeEventListener('frameupdate', onFrame)
+      player.removeEventListener('play', onPlay)
+      player.removeEventListener('pause', onPause)
+      player.removeEventListener('ended', onEnded)
     }
-    setCurrentTimeMs(into)
-  }
+  }, [playerReady, scheduleHide])
+
+  const attributionLine = useMemo(
+    () => videoAttributionLine(translationKey),
+    [translationKey],
+  )
+
+  const aspect = ASPECT[settings.orientation]
+
+  const frameOffsets = useMemo(() => {
+    const arr: number[] = []
+    let acc = 0
+    for (const a of ayatList) {
+      arr.push(acc)
+      const advanceMs = getAdvanceAtMs(a, a.audioDurationMs)
+      acc += Math.round(advanceMs / 1000 * FPS)
+    }
+    return arr
+  }, [ayatList])
+
+  const totalFrames = useMemo(() => {
+    if (frameOffsets.length === 0) return 0
+    const last = frameOffsets[frameOffsets.length - 1]!
+    const lastSlide = ayatList[ayatList.length - 1]
+    const lastAdvance = getAdvanceAtMs(lastSlide, lastSlide?.audioDurationMs ?? 0)
+    return last + Math.round(lastAdvance / 1000 * FPS)
+  }, [frameOffsets, ayatList])
+
+  const currentIndex = useMemo(() => {
+    for (let i = frameOffsets.length - 1; i >= 0; i--) {
+      if (currentFrame >= frameOffsets[i]!) return i
+    }
+    return 0
+  }, [currentFrame, frameOffsets])
+
+  const current = ayatList[currentIndex]
+  const currentMs = (currentFrame / FPS) * 1000
+  const totalMs = totalFrames / FPS * 1000
 
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.volume = volume
-      audioRef.current.muted = muted
+    const player = playerRef.current
+    if (!ayatList.length) {
+      player?.pause()
+      setIsPlaying(false)
+      setCurrentFrame(0)
+      return
     }
+    player?.pause()
+    setCurrentFrame(0)
+  }, [ayatList])
+
+  useEffect(() => {
+    const player = playerRef.current
+    if (!player) return
+    player.setVolume(muted ? 0 : volume)
   }, [volume, muted])
 
-  const prevListRef = useRef(ayatList)
-  useEffect(() => {
-    if (prevListRef.current === ayatList) return
-    prevListRef.current = ayatList
-    setCurrentIndex(0)
-    setIsPlaying(false)
-    autoAdvancedAyatRef.current = null
-    setCurrentTimeMs(0)
-    setLiveDurations({})
-    if (audioRef.current) {
-      audioRef.current.pause()
-      audioRef.current.removeAttribute('src')
+  const togglePlay = useCallback(() => {
+    const p = playerRef.current
+    if (!p || !ayatList.length) return
+    if (isPlaying) {
+      p.pause()
+    } else {
+      p.play()
     }
-  }, [ayatList])
+  }, [isPlaying, ayatList.length])
 
-  useEffect(() => {
-    if (!ayatList.length) return
-    const probes: HTMLAudioElement[] = []
-    ayatList.forEach((ayat, i) => {
-      if (ayat.audioDurationMs > 0) return
-      const a = new Audio()
-      a.preload = 'metadata'
-      a.onloadedmetadata = () => {
-        const d = a.duration
-        if (isFinite(d) && d > 0) {
-          setLiveDurations((prev) => ({ ...prev, [i]: d * 1000 }))
-        }
-      }
-      a.src = ayat.audioUrl
-      probes.push(a)
-    })
-    return () => {
-      probes.forEach((a) => {
-        a.src = ''
-      })
-    }
-  }, [ayatList])
+  const handleTapOverlay = useCallback(() => {
+    togglePlay()
+  }, [togglePlay])
 
-  const overlayBg = overlayCssBackground(settings)
-  const isVideoBg = settings.backgroundImage.endsWith('.mp4')
-
-  const orientationFontBase: Record<string, { ar: number; tr: number; arRef: number; trRef: number }> = {
-    portrait: { ar: 7.0, tr: 2.8, arRef: 30, trRef: 14 },
-    landscape: { ar: 4.5, tr: 1.8, arRef: 34, trRef: 15 },
+  const onSeek = (ms: number) => {
+    const p = playerRef.current
+    if (!p) return
+    const frame = Math.round(ms / 1000 * FPS)
+    p.seekTo(Math.min(frame, totalFrames - 1))
   }
-  const fb = orientationFontBase[settings.orientation]!
-  const arCqw = (fb.ar * settings.arabicFontSize / fb.arRef).toFixed(2)
-  const trCqw = (fb.tr * settings.translationFontSize / fb.trRef).toFixed(2)
-  const arabicFontSizeCss = `${arCqw}cqw`
-  const translationFontSizeCss = `${trCqw}cqw`
+
+  const playAyat = (idx: number) => {
+    const p = playerRef.current
+    if (!p) return
+    const frame = frameOffsets[idx]
+    if (frame !== undefined) {
+      p.seekTo(frame)
+      p.play()
+    }
+  }
+
+  const inputProps = useMemo(() => ({
+    slides: ayatList,
+    settings,
+    orientation: settings.orientation,
+    reciterName: reciter?.name ?? '',
+    attributionLine,
+    surahName: surah?.name ?? '',
+    surahNameArabic: surah?.arabicName ?? '',
+    totalAyats: ayatList.length,
+  }), [ayatList, settings, reciter, attributionLine, surah])
 
   return (
     <div className="flex flex-col h-full">
-      <audio ref={audioRef} preload="auto" />
-
       <div className="flex-1 min-h-0 grid place-items-center p-3 sm:p-6">
         <div
           className="qv-smooth relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10"
@@ -419,153 +219,28 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
             ...(settings.orientation === 'portrait'
               ? { height: '100%', width: 'auto', maxWidth: '100%' }
               : { width: '100%', maxHeight: '100%', height: 'auto' }),
-            containerType: 'inline-size',
-            backgroundImage: isVideoBg ? undefined : `url(${settings.backgroundImage})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundColor: isVideoBg ? '#0a0a14' : undefined,
           }}
         >
-          {isVideoBg && (
-            <video
-              key={settings.backgroundImage}
-              src={settings.backgroundImage}
-              className="absolute inset-0 h-full w-full object-cover"
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="auto"
-            />
-          )}
-
-          {overlayBg && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: overlayBg }}
-            />
-          )}
-
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0) 18%, rgba(0,0,0,0) 78%, rgba(0,0,0,0.30) 100%)',
-            }}
-          />
-
-          {surah && current && (
-            <div
-              className="absolute top-0 inset-x-0 flex items-start justify-between text-white"
-              style={{ padding: '4cqw 5cqw' }}
-            >
-              <div className="flex flex-col">
-                <span
-                  lang="ar"
-                  className="font-arabic-uthmani leading-tight drop-shadow-lg"
-                  style={{ fontSize: '5cqw' }}
-                >
-                  {surah.arabicName}
-                </span>
-                <span
-                  className="uppercase tracking-[0.12em] opacity-75 mt-0.5"
-                  style={{ fontSize: '2cqw' }}
-                >
-                  {surah.name} · {surah.revelationType}
-                </span>
-              </div>
-              <div className="flex flex-col items-end">
-                <span
-                  className="font-arabic-uthmani leading-tight drop-shadow-lg"
-                  style={{ fontSize: '4.2cqw' }}
-                >
-                  {surah.number}:{current.ayatNumber}
-                </span>
-                <span
-                  className="uppercase tracking-[0.18em] opacity-65 mt-0.5"
-                  style={{ fontSize: '1.8cqw' }}
-                >
-                  Ayat {currentIndex + 1} of {ayatList.length}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {current ? (
-            <div
-              className="absolute inset-0 flex flex-col items-center justify-center"
-              style={{ padding: '0 8cqw' }}
-            >
-              <div
-                className="qv-smooth relative flex flex-col items-center rounded-2xl"
-                style={{
-                  maxWidth: TEXT_WIDTH_MAP[settings.textWidth],
-                  backgroundColor: 'rgba(15, 15, 20, 0.6)',
-                  padding: '4cqw 5cqw',
-                  borderRadius: '3cqw',
-                  boxShadow: '0 2cqw 6cqw rgba(0, 0, 0, 0.4)',
-                }}
-              >
-                <div
-                  dir="rtl"
-                  lang="ar"
-                  className={cn(
-                    'qv-smooth text-center leading-[1.75] drop-shadow-lg',
-                    ARABIC_FONT_CLASS[settings.arabicFont] ?? 'font-arabic-uthmani',
-                  )}
-                  style={{
-                    color: settings.fontColor,
-                    fontSize: arabicFontSizeCss,
-                  }}
-                >
-                  {buildArabicTokens(current.arabicText).map((tok, i) => (
-                    <span
-                      key={i}
-                      className="qv-smooth inline-block mx-[1px]"
-                      style={{
-                        color: settings.fontColor,
-                        textShadow: '0 1px 4px rgba(0,0,0,0.7)',
-                      }}
-                    >
-                      {tok}
-                    </span>
-                  ))}
+          {ayatList.length > 0 ? (
+            <Player
+              ref={handlePlayerRef}
+              component={AyatVideo}
+              durationInFrames={totalFrames}
+              compositionWidth={aspect.w}
+              compositionHeight={aspect.h}
+              fps={FPS}
+              inputProps={inputProps}
+              controls={false}
+              showVolumeControls={false}
+              style={{ width: '100%', height: '100%' }}
+              renderLoading={() => (
+                <div className="absolute inset-0 grid place-items-center bg-[#0a0f1a]">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
-
-                {settings.showTranslation &&
-                  settings.showTransliteration &&
-                  current.arabicText && (
-                    <div
-                      className="my-2 h-px opacity-40"
-                      style={{ backgroundColor: settings.fontColor, width: '12cqw' }}
-                    />
-                  )}
-
-                {settings.showTransliteration && current.transliteration && (
-                  <div
-                    className="qv-smooth text-center italic text-white/70 leading-snug"
-                    style={{ fontSize: '2.4cqw', maxWidth: '80cqw' }}
-                  >
-                    {current.transliteration}
-                  </div>
-                )}
-
-                {settings.showTranslation && (
-                  <p
-                    className={`qv-smooth text-white/85 mx-auto leading-snug drop-shadow text-center ${isBengaliTranslation ? (BENGALI_FONT_CLASS[settings.bengaliFont] ?? 'font-bengali-sans') : ''}`}
-                    style={{
-                      fontSize: translationFontSizeCss,
-                      marginTop: TEXT_SPACING_MAP[settings.textSpacing],
-                      maxWidth: '85cqw',
-                    }}
-                  >
-                    {current.translation}
-                  </p>
-                )}
-              </div>
-            </div>
+              )}
+            />
           ) : (
-            <div className="absolute inset-0 grid place-items-center text-center text-white/70 px-6">
+            <div className="absolute inset-0 grid place-items-center text-center text-white/70 px-6 bg-[#0a0f1a]">
               {loading ? (
                 <div className="flex flex-col items-center gap-3">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -595,59 +270,19 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
             </div>
           )}
 
-          {(attributionLine || ayatList.length > 0) && (
-            <div
-              className="absolute text-white/55 font-sans leading-tight max-w-[55%] space-y-0.5"
-              style={{
-                bottom: '2.5cqw',
-                left: '3.5cqw',
-                fontSize: '2.4cqw',
-              }}
-            >
-              {attributionLine && <div>{attributionLine}</div>}
-              {ayatList.length > 0 && <div>Recited by {reciter.name}</div>}
-            </div>
-          )}
-
-          <Image
-            src="/watermark.png"
-            alt=""
-            aria-hidden
-            width={200}
-            height={56}
-            sizes="14cqw"
-            className="absolute pointer-events-none select-none h-[14cqw] w-auto"
-            style={{
-              top: '4cqw',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              opacity: 0.9,
-              filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
-            }}
-          />
-
           {/* Controls overlay */}
-          <div className="absolute inset-0 z-10">
+          <div
+            className="absolute inset-0 z-10"
+            onMouseEnter={revealControls}
+            onMouseMove={revealControls}
+            onMouseLeave={() => { if (isPlaying) scheduleHide() }}
+          >
             <div className="absolute inset-0" onClick={handleTapOverlay} />
 
             <div className={`absolute inset-0 grid place-items-center transition-opacity duration-300 pointer-events-none ${showControls ? 'opacity-100' : 'opacity-0'}`}>
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (!isPlaying) {
-                    togglePlay()
-                    setShowControls(false)
-                    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-                  } else {
-                    const audio = audioRef.current
-                    if (audio) {
-                      audio.pause()
-                      setIsPlaying(false)
-                    }
-                    setShowControls(true)
-                  }
-                }}
+                  onClick={(e) => { e.stopPropagation(); togglePlay() }}
                 className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/25 transition-colors pointer-events-auto"
               >
                 {isPlaying ? (
@@ -690,16 +325,16 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
                   </button>
                 </div>
                 <Slider
-                  value={[Math.min(totalMs, (offsets[currentIndex] || 0) + currentTimeMs)]}
+                  value={[Math.min(totalMs, currentMs)]}
                   max={Math.max(1, totalMs)}
                   step={100}
-                  onValueChange={(v) => { onSeek(v); resetHideTimer() }}
+                  onValueChange={(v) => { onSeek(v[0]!); revealControls() }}
                   disabled={!ayatList.length}
                   className="pointer-events-auto mb-1.5"
                 />
                 <div className="flex items-center justify-between">
                   <span className="text-white/90 text-[11px] font-mono tabular-nums">
-                    {formatMs((offsets[currentIndex] || 0) + currentTimeMs)} / {formatMs(totalMs)}
+                    {formatMs(currentMs)} / {formatMs(totalMs)}
                   </span>
                   <button
                     type="button"
@@ -715,18 +350,18 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
             {/* Thin seek bar - always visible */}
             <div
               className="absolute bottom-0 inset-x-0 h-1 cursor-pointer z-20"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect()
-                const x = e.clientX - rect.left
-                const pct = Math.max(0, Math.min(1, x / rect.width))
-                onSeek([pct * totalMs])
-                resetHideTimer()
-              }}
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect()
+                  const x = e.clientX - rect.left
+                  const pct = Math.max(0, Math.min(1, x / rect.width))
+                  onSeek(pct * totalMs)
+                  revealControls()
+                }}
             >
               <div className="h-full bg-white/20">
                 <div
                   className="h-full bg-white/80 hover:bg-white transition-colors"
-                  style={{ width: `${totalMs > 0 ? ((offsets[currentIndex] || 0) + currentTimeMs) / totalMs * 100 : 0}%` }}
+                  style={{ width: `${totalMs > 0 ? currentMs / totalMs * 100 : 0}%` }}
                 />
               </div>
             </div>

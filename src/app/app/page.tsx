@@ -160,8 +160,8 @@ export default function Home() {
   const canExport = ayatList.length > 0 && validation.ok
 
   const settingsContent = (
-    <div className="space-y-2.5">
-      <section className="space-y-2.5">
+    <div className="space-y-3">
+      <section className="qv-panel p-3.5 sm:p-4 space-y-3">
         <div className="flex items-center gap-2.5">
           <span className="qv-step">1</span>
           <h2 className="text-sm font-bold tracking-tight">Selection</h2>
@@ -176,7 +176,7 @@ export default function Home() {
         <Button
           onClick={onLoadAyats}
           disabled={ayatRangeQuery.isFetching || !selectedSurah || !validation.ok}
-          className="w-full qv-btn-primary font-semibold"
+          className="w-full font-semibold"
           size="default"
         >
           {ayatRangeQuery.isFetching ? (
@@ -189,7 +189,7 @@ export default function Home() {
         </Button>
       </section>
 
-      <section className="space-y-2.5">
+      <section className="qv-panel p-3.5 sm:p-4 space-y-2.5">
         <div className="flex items-center gap-2.5">
           <span className="qv-step">2</span>
           <h2 className="text-sm font-bold tracking-tight">Customize</h2>
@@ -197,7 +197,7 @@ export default function Home() {
         <CustomizationPanel />
       </section>
 
-      <div className="pt-1 pb-2 text-[11px] text-muted-foreground space-y-2">
+      <div className="px-1 pt-1 pb-2 text-[11px] text-muted-foreground space-y-2">
         <p className="leading-relaxed">
           Quran text from{' '}
           <a href="https://ummahapi.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">ummahapi.com</a>
@@ -207,34 +207,43 @@ export default function Home() {
           <a href="https://everyayah.com" target="_blank" rel="noopener noreferrer" className="text-foreground/80 hover:text-primary underline underline-offset-2 font-medium">everyayah.com</a>.
         </p>
         <nav className="flex items-center gap-3">
-          <Link href="/about" className="hover:text-foreground transition">About</Link>
+          <Link href="/about" className="hover:text-primary transition">About</Link>
           <span className="opacity-40">·</span>
-          <Link href="/terms" className="hover:text-foreground transition">Terms</Link>
+          <Link href="/terms" className="hover:text-primary transition">Terms</Link>
           <span className="opacity-40">·</span>
-          <Link href="/privacy" className="hover:text-foreground transition">Privacy</Link>
+          <Link href="/privacy" className="hover:text-primary transition">Privacy</Link>
         </nav>
       </div>
     </div>
   )
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <header className="border-b border-border qv-frosted shrink-0 z-30">
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
+      <header className="border-b border-border/70 qv-frosted shrink-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 group">
             <Image
               src="/logo.png"
               alt="Jariyah Now logo"
               width={36}
               height={36}
-              className="h-9 w-9 rounded-xl object-contain"
+              className="h-9 w-9 rounded-xl object-contain qv-logo-glow transition-transform duration-300 group-hover:scale-105"
             />
-            <span className="text-[15px] font-bold tracking-tight">Jariyah Now</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-[15px] font-bold tracking-tight">Jariyah Now</span>
+              <span className="hidden sm:inline text-[11px] text-muted-foreground font-medium">Quran Reels</span>
+            </div>
           </Link>
           <div className="flex items-center gap-2">
             <Link
+              href="/templates"
+              className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
+            >
+              Templates
+            </Link>
+            <Link
               href="/zikr"
-              className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition"
+              className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Zikr Reels
             </Link>
@@ -242,7 +251,7 @@ export default function Home() {
               onClick={() => setExportOpen(true)}
               disabled={!canExport}
               size="sm"
-              className="qv-btn-primary font-semibold"
+              className="font-semibold"
             >
               <Film className="h-4 w-4 mr-1.5" />
               <span className="hidden sm:inline">Export video</span>
@@ -253,14 +262,16 @@ export default function Home() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72">
+              <SheetContent side="right" className="w-72 p-5">
                 <SheetHeader>
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-1 mt-4">
-                  <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">About</Link>
-                  <Link href="/terms" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">Terms</Link>
-                  <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">Privacy</Link>
+                  <Link href="/templates" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Templates</Link>
+                  <Link href="/zikr" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Zikr Reels</Link>
+                  <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">About</Link>
+                  <Link href="/terms" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Terms</Link>
+                  <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Privacy</Link>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -269,29 +280,29 @@ export default function Home() {
       </header>
 
       <main className="flex flex-1 min-h-0 overflow-hidden lg:grid lg:grid-cols-[3fr_2fr]">
-        <section className="relative bg-muted/30 flex flex-col min-h-0 overflow-hidden flex-1">
+        <section className="relative qv-preview-stage flex flex-col min-h-0 overflow-hidden flex-1">
           <VideoPreview onSettingsClick={() => setSettingsDrawerOpen(true)} />
         </section>
 
-        <aside className="hidden lg:block border-t lg:border-t-0 lg:border-l border-border bg-card min-h-0 overflow-y-auto scrollbar-thin p-3 sm:p-4">
+        <aside className="hidden lg:block border-t lg:border-t-0 lg:border-l border-border/80 bg-card/90 backdrop-blur-sm min-h-0 overflow-y-auto scrollbar-thin p-3 sm:p-4">
           {settingsContent}
         </aside>
       </main>
 
       <Drawer.Root open={settingsDrawerOpen} onOpenChange={setSettingsDrawerOpen}>
         <Drawer.Portal>
-          <Drawer.Overlay className="fixed inset-0 bg-black/40 z-40" />
+          <Drawer.Overlay className="fixed inset-0 bg-black/45 backdrop-blur-[2px] z-40" />
           <Drawer.Content className="fixed bottom-0 left-0 right-0 z-50 outline-none">
-            <div className="relative bg-card rounded-t-xl border-t border-border">
-              <Drawer.Handle />
+            <div className="relative bg-card rounded-t-2xl border-t border-border shadow-2xl">
+              <Drawer.Handle className="!bg-primary/25" />
               <button
                 type="button"
                 onClick={() => setSettingsDrawerOpen(false)}
-                className="absolute top-3 right-3 h-7 w-7 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors z-10"
+                className="absolute top-3 right-3 h-8 w-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-primary/10 transition-colors z-10"
               >
                 <X className="h-4 w-4" />
               </button>
-              <div className="overflow-y-auto max-h-[85vh] p-4">
+              <div className="overflow-y-auto max-h-[85vh] p-4 scrollbar-thin">
                 {settingsContent}
               </div>
             </div>

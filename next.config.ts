@@ -81,6 +81,12 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: process.cwd(),
   },
+  serverExternalPackages: [
+    '@remotion/bundler',
+    '@remotion/renderer',
+    '@remotion/cli',
+    'remotion',
+  ],
   allowedDevOrigins: [
     "*.space-z.ai",
     "*.chatglm.cn",

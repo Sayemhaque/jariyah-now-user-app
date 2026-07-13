@@ -30,10 +30,11 @@ export default function Error({
   }, [error])
 
   return (
-    <div className="min-h-screen grid place-items-center p-6 bg-background">
-      <div className="max-w-md w-full rounded-2xl border border-destructive/30 bg-destructive/5 p-6 space-y-4">
+    <div className="min-h-screen grid place-items-center p-6 bg-background relative overflow-hidden">
+      <div className="qv-ambient opacity-40" aria-hidden />
+      <div className="relative max-w-md w-full rounded-2xl border border-destructive/25 bg-card shadow-lg p-6 space-y-4">
         <div className="flex items-start gap-3">
-          <div className="grid place-items-center h-10 w-10 rounded-lg bg-destructive/15 text-destructive shrink-0">
+          <div className="grid place-items-center h-11 w-11 rounded-xl bg-destructive/12 text-destructive shrink-0">
             <AlertCircle className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0">

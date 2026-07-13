@@ -46,6 +46,9 @@ describe('renderBodySchema', () => {
     return {
       slides: [{ ...VALID_SLIDE }],
       reciterKey: 'Alafasy_128kbps',
+      reciterName: 'Mishary Rashid Alafasy',
+      attributionLine: 'Translation: কুরআনের বাংলা অনুবাদ — মুহিউদ্দীন খান',
+      quality: '720p' as const,
       settings: { ...VALID_SETTINGS },
       orientation: 'portrait' as const,
     }
@@ -110,6 +113,12 @@ describe('renderBodySchema', () => {
   it('rejects a missing reciterKey', () => {
     const body = validBody()
     delete (body as any).reciterKey
+    expect(renderBodySchema.safeParse(body).success).toBe(false)
+  })
+
+  it('rejects a missing reciterName', () => {
+    const body = validBody()
+    delete (body as any).reciterName
     expect(renderBodySchema.safeParse(body).success).toBe(false)
   })
 })

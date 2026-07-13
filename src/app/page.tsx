@@ -51,53 +51,53 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* ─── Header ─── */}
-      <header className="sticky top-0 z-30 qv-frosted border-b border-border">
+      <header className="sticky top-0 z-30 qv-frosted border-b border-border/70">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 group">
             <Image
               src="/logo.png"
               alt="Jariyah Now logo"
               width={40}
               height={40}
               priority
-              className="h-10 w-10 rounded-xl object-contain"
+              className="h-10 w-10 rounded-xl object-contain qv-logo-glow transition-transform duration-300 group-hover:scale-105"
             />
             <span className="text-lg font-bold tracking-tight">Jariyah Now</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Link
               href="/templates"
-              className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
+              className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Templates
             </Link>
             <Link
               href="/zikr"
-              className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
+              className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Zikr
             </Link>
             <Link
               href="/about"
-              className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
+              className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               About
             </Link>
             <Link
               href="/terms"
-              className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
+              className="hidden md:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Terms
             </Link>
             <Link
               href="/privacy"
-              className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
+              className="hidden md:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Privacy
             </Link>
             <Link
               href="/app"
-              className="qv-btn-primary inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold"
+              className="qv-btn-primary inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold ml-1"
             >
               Open App
               <ArrowRight className="h-4 w-4" />
@@ -108,10 +108,12 @@ export default function LandingPage() {
 
       {/* ─── Hero ─── */}
       <section className="relative overflow-hidden">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-12 sm:pb-20">
+        <div className="qv-ambient" aria-hidden />
+        <div className="qv-grid-bg absolute inset-0 pointer-events-none opacity-80" aria-hidden />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-14 sm:pb-24">
           <div className="max-w-3xl">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-6">
+            <div className="qv-pill mb-6">
               <Image src="/logo.png" alt="" width={14} height={14} className="h-3.5 w-3.5 rounded-sm" />
               Free • No account required
             </div>
@@ -122,14 +124,14 @@ export default function LandingPage() {
             </p>
 
             {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08] mb-6">
               Turn Quran verses into
               <br />
               <span className="qv-gradient-text">shareable reels</span>
             </h1>
 
             {/* Subheadline */}
-            <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8 max-w-2xl">
+            <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-9 max-w-2xl">
               Every reel you publish is Sadaqah Jariyah — ongoing charity that
               keeps earning reward long after you hit share. Pick a Surah,
               choose a reciter, customize the look, and export a perfectly
@@ -149,44 +151,38 @@ export default function LandingPage() {
               </Link>
               <a
                 href="#how-it-works"
-                className="inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-base font-semibold border border-border bg-card hover:bg-muted transition"
+                className="qv-btn-secondary inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-base font-semibold"
               >
-                <Play className="h-4 w-4" />
+                <Play className="h-4 w-4 text-primary" />
                 See how it works
               </a>
             </div>
 
             {/* Trust indicators */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-10 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-primary" />
-                114 Surahs
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-primary" />
-                13 reciters
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-primary" />
-                Video backgrounds
-              </div>
-              <div className="flex items-center gap-2">
-                <Check className="h-4 w-4 text-primary" />
-                12 translations
-              </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-10">
+              {['114 Surahs', '13 reciters', 'Video backgrounds', '12 translations'].map((label) => (
+                <div
+                  key={label}
+                  className="inline-flex items-center gap-2 h-9 px-3.5 rounded-full bg-card/80 border border-border/80 text-sm text-muted-foreground shadow-sm backdrop-blur-sm"
+                >
+                  <Check className="h-3.5 w-3.5 text-primary shrink-0" />
+                  {label}
+                </div>
+              ))}
             </div>
           </div>
         </div>
-
-        {/* Decorative gradient blob */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -z-10" />
       </section>
 
       {/* ─── App Showcase ─── */}
-      <section className="py-12 sm:py-20 px-4 sm:px-6">
+      <section className="py-12 sm:py-20 px-4 sm:px-6 relative">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3">
+            <div className="qv-pill mb-4 mx-auto w-fit">
+              <Sparkles className="h-3.5 w-3.5" />
+              Live in the browser
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3 tracking-tight">
               Everything runs in your browser
             </h2>
             <p className="text-muted-foreground max-w-xl mx-auto">
@@ -199,16 +195,17 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-[1fr_auto] gap-8 items-center">
             {/* Desktop screenshot in a browser frame */}
             <div className="relative">
-              <div className="rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
+              <div className="absolute -inset-4 bg-primary/10 rounded-[2rem] blur-2xl opacity-60 -z-10" aria-hidden />
+              <div className="rounded-2xl border border-border/80 bg-card shadow-2xl overflow-hidden ring-1 ring-primary/5">
                 {/* Browser chrome */}
-                <div className="flex items-center gap-2 px-4 h-10 border-b border-border bg-muted/50">
+                <div className="flex items-center gap-2 px-4 h-11 border-b border-border bg-gradient-to-b from-muted/80 to-muted/40">
                   <div className="flex gap-1.5">
                     <div className="h-3 w-3 rounded-full bg-destructive/40" />
                     <div className="h-3 w-3 rounded-full bg-amber-500/40" />
                     <div className="h-3 w-3 rounded-full bg-emerald-500/40" />
                   </div>
                   <div className="flex-1 flex justify-center">
-                    <div className="px-3 py-1 rounded-md bg-card border border-border text-[10px] text-muted-foreground font-mono">
+                    <div className="px-3.5 py-1 rounded-full bg-card border border-border text-[10px] text-muted-foreground font-mono shadow-sm">
                       jariyahnow.com/app
                     </div>
                   </div>
@@ -226,17 +223,20 @@ export default function LandingPage() {
             </div>
 
             {/* Mobile screenshot in a phone frame */}
-            <div className="hidden lg:block w-[200px] shrink-0">
-              <div className="rounded-[2rem] border-[6px] border-foreground/80 bg-foreground/80 p-1 shadow-2xl">
-                <div className="rounded-[1.5rem] overflow-hidden bg-background">
-                  <Image
-                    src="/landing/app-mobile.png"
-                    alt="Jariyah Now app — mobile view"
-                    width={390}
-                    height={844}
-                    sizes="200px"
-                    className="w-full h-auto block"
-                  />
+            <div className="hidden lg:block w-[200px] shrink-0 qv-phone-float">
+              <div className="relative">
+                <div className="absolute -inset-6 bg-primary/20 rounded-full blur-2xl qv-phone-glow -z-10" aria-hidden />
+                <div className="rounded-[2rem] border-[6px] border-foreground/85 bg-foreground/85 p-1 shadow-2xl">
+                  <div className="rounded-[1.5rem] overflow-hidden bg-background">
+                    <Image
+                      src="/landing/app-mobile.png"
+                      alt="Jariyah Now app — mobile view"
+                      width={390}
+                      height={844}
+                      sizes="200px"
+                      className="w-full h-auto block"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -245,10 +245,10 @@ export default function LandingPage() {
       </section>
 
       {/* ─── How It Works ─── */}
-      <section id="how-it-works" className="py-16 sm:py-24 px-4 sm:px-6 bg-card border-y border-border">
+      <section id="how-it-works" className="py-16 sm:py-24 px-4 sm:px-6 bg-card/70 border-y border-border/80 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-14">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3 tracking-tight">
               Your reel in 4 steps
             </h2>
             <p className="text-muted-foreground">
@@ -256,7 +256,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
             {[
               {
                 icon: BookOpen,
@@ -285,10 +285,11 @@ export default function LandingPage() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="qv-card rounded-2xl p-6 relative qv-hover-lift qv-scroll-fade"
+                className="qv-card qv-gradient-border rounded-2xl p-6 relative qv-hover-lift qv-scroll-fade"
+                style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="grid place-items-center h-10 w-10 rounded-xl text-white" style={{ background: 'var(--primary-gradient)' }}>
+                  <div className="qv-icon-chip h-11 w-11">
                     <item.icon className="h-5 w-5" />
                   </div>
                   <span className="text-3xl font-bold qv-gradient-text">
@@ -317,7 +318,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
             {[
               {
                 icon: Sparkles,
@@ -350,8 +351,12 @@ export default function LandingPage() {
                 desc: 'No software to install, no uploads, fully private — your video renders right on your device.',
               },
             ].map((f, i) => (
-              <div key={i} className="qv-card rounded-2xl p-6 qv-hover-lift qv-scroll-fade">
-                <div className="grid place-items-center h-11 w-11 rounded-xl text-white mb-4" style={{ background: 'var(--primary-gradient)' }}>
+              <div
+                key={i}
+                className="qv-card qv-gradient-border rounded-2xl p-6 qv-hover-lift qv-scroll-fade"
+                style={{ animationDelay: `${i * 60}ms` }}
+              >
+                <div className="qv-icon-chip h-11 w-11 mb-4">
                   <f.icon className="h-5 w-5" />
                 </div>
                 <h3 className="font-bold text-base mb-2">{f.title}</h3>
@@ -368,12 +373,14 @@ export default function LandingPage() {
       <TemplatesShowcaseSection />
 
       {/* ─── Sadaqah Jariyah band ─── */}
-      <section className="py-16 sm:py-20 px-4 sm:px-6 bg-primary/5 border-y border-primary/10">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/15 text-primary mx-auto mb-6">
+      <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden border-y border-primary/10">
+        <div className="absolute inset-0 bg-primary/5" aria-hidden />
+        <div className="absolute inset-0 qv-grid-bg opacity-60" aria-hidden />
+        <div className="relative max-w-3xl mx-auto text-center">
+          <div className="qv-icon-chip h-14 w-14 mx-auto mb-6">
             <Heart className="h-7 w-7" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 tracking-tight">
             Why we’re called Jariyah Now
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
@@ -394,29 +401,30 @@ export default function LandingPage() {
       {/* ─── Final CTA ─── */}
       <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
-          <div className="qv-card rounded-3xl p-10 sm:p-16 text-center relative overflow-hidden">
+          <div className="qv-gradient-rim rounded-3xl p-10 sm:p-16 text-center relative overflow-hidden">
             {/* Decorative bg */}
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[400px] h-[300px] bg-primary/5 rounded-full blur-3xl -z-10" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[420px] h-[320px] bg-primary/8 rounded-full blur-3xl pointer-events-none" aria-hidden />
+            <div className="absolute -bottom-16 -right-10 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none" aria-hidden />
 
             <Image
               src="/logo.png"
               alt="Jariyah Now logo"
               width={56}
               height={56}
-              className="h-14 w-14 rounded-2xl object-contain mx-auto mb-6"
+              className="h-14 w-14 rounded-2xl object-contain mx-auto mb-6 qv-logo-glow relative"
             />
 
-            <h2 className="text-3xl sm:text-4xl font-bold mb-4">
+            <h2 className="relative text-3xl sm:text-4xl font-bold mb-4 tracking-tight">
               Start creating now
             </h2>
-            <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
+            <p className="relative text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
               No sign-up, completely free. Your first Quran reel is seconds
               away — and every share is Sadaqah Jariyah.
             </p>
 
             <Link
               href="/app"
-              className="qv-btn-primary inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl text-lg font-semibold"
+              className="qv-btn-primary relative inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl text-lg font-semibold"
             >
               <Film className="h-6 w-6" />
               Open the builder
@@ -427,7 +435,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Footer ─── */}
-      <footer className="border-t border-border bg-card mt-auto">
+      <footer className="border-t border-border/80 bg-card/80 backdrop-blur-sm mt-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
@@ -436,7 +444,7 @@ export default function LandingPage() {
                 alt="Jariyah Now logo"
                 width={36}
                 height={36}
-                className="h-9 w-9 rounded-xl object-contain"
+                className="h-9 w-9 rounded-xl object-contain qv-logo-glow"
               />
               <div>
                 <div className="font-bold text-sm">Jariyah Now</div>
@@ -446,43 +454,23 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <nav className="flex items-center gap-5 text-sm">
-              <Link
-                href="/app"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                App
-              </Link>
-              <Link
-                href="/templates"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                Templates
-              </Link>
-              <Link
-                href="/zikr"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                Zikr
-              </Link>
-              <Link
-                href="/about"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                About
-              </Link>
-              <Link
-                href="/terms"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                Terms
-              </Link>
-              <Link
-                href="/privacy"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                Privacy
-              </Link>
+            <nav className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 text-sm">
+              {[
+                { href: '/app', label: 'App' },
+                { href: '/templates', label: 'Templates' },
+                { href: '/zikr', label: 'Zikr' },
+                { href: '/about', label: 'About' },
+                { href: '/terms', label: 'Terms' },
+                { href: '/privacy', label: 'Privacy' },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-muted-foreground hover:text-foreground hover:bg-primary/5 transition font-medium h-9 px-3 rounded-lg inline-flex items-center"
+                >
+                  {item.label}
+                </Link>
+              ))}
             </nav>
           </div>
 
@@ -553,11 +541,11 @@ function TemplatesShowcaseSection() {
     <section className="py-16 sm:py-24 px-4 sm:px-6 bg-card border-y border-border">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-4">
+          <div className="qv-pill mb-4 mx-auto w-fit">
             <LayoutGrid className="h-3.5 w-3.5" />
             One-click starting points
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-3 tracking-tight">
             Start from a template
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
@@ -583,7 +571,7 @@ function TemplatesShowcaseSection() {
               <Link
                 key={t.id}
                 href={targetUrl}
-                className="group qv-card rounded-2xl p-0 overflow-hidden transition hover:shadow-lg hover:-translate-y-0.5 flex flex-col"
+                className="group qv-card qv-gradient-border rounded-2xl p-0 overflow-hidden qv-hover-lift flex flex-col"
               >
                 {/* Gradient header */}
                 <div
@@ -646,9 +634,9 @@ function TemplatesShowcaseSection() {
         <div className="text-center mt-10">
           <Link
             href="/templates"
-            className="inline-flex items-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold border border-border bg-background hover:bg-muted transition"
+            className="qv-btn-secondary inline-flex items-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold"
           >
-            <LayoutGrid className="h-4 w-4" />
+            <LayoutGrid className="h-4 w-4 text-primary" />
             Browse all {TEMPLATE_PRESETS.length} templates
             <ArrowRight className="h-4 w-4" />
           </Link>

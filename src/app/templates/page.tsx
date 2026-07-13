@@ -20,6 +20,7 @@ import {
   isZikrTemplate,
   type TemplateType,
 } from '@/lib/templatePresets'
+import { getBackgroundPresetUrl } from '@/lib/backgroundPresets'
 import { useBuilderStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -68,7 +69,7 @@ export default function TemplatesPage() {
         if (cfg.backgroundPreset) {
           updateSettings({
             backgroundPreset: cfg.backgroundPreset,
-            backgroundImage: bgPresetToUrl(cfg.backgroundPreset),
+            backgroundImage: getBackgroundPresetUrl(cfg.backgroundPreset),
           })
         }
         if (cfg.arabicFont) {
@@ -104,40 +105,40 @@ export default function TemplatesPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-30 qv-frosted border-b border-border">
+      <header className="sticky top-0 z-30 qv-frosted border-b border-border/70">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 group">
             <Image
               src="/logo.png"
               alt="Jariyah Now logo"
               width={40}
               height={40}
-              className="h-10 w-10 rounded-xl object-contain"
+              className="h-10 w-10 rounded-xl object-contain qv-logo-glow transition-transform duration-300 group-hover:scale-105"
             />
             <span className="text-lg font-bold tracking-tight">Jariyah Now</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Link
               href="/app"
-              className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
+              className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Builder
             </Link>
             <Link
               href="/zikr"
-              className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
+              className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Zikr Reels
             </Link>
             <Link
               href="/about"
-              className="hidden sm:block text-sm font-medium text-muted-foreground hover:text-foreground transition"
+              className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               About
             </Link>
             <Link
               href="/app"
-              className="qv-btn-primary inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold"
+              className="qv-btn-primary inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold ml-1"
             >
               Open App
               <ArrowRight className="h-4 w-4" />
@@ -147,18 +148,19 @@ export default function TemplatesPage() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-8 sm:pb-12">
+      <section className="relative overflow-hidden border-b border-border/70">
+        <div className="qv-ambient" aria-hidden />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-8 sm:pb-12">
           <div className="max-w-3xl">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold mb-5">
+            <div className="qv-pill mb-5">
               <LayoutGrid className="h-3.5 w-3.5" />
               One-click starting points
             </div>
 
             {/* Headline */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] mb-4">
-              Start from a <span className="text-primary">template</span>
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.08] mb-4">
+              Start from a <span className="qv-gradient-text">template</span>
             </h1>
 
             {/* Subheadline */}
@@ -169,39 +171,37 @@ export default function TemplatesPage() {
             </p>
 
             {/* Quick stats */}
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                {TEMPLATE_PRESETS.length} templates
-              </div>
-              <div className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-primary" />
-                Quran · Zikr · Dua · Names · Hadith
-              </div>
-              <div className="flex items-center gap-2">
-                <Film className="h-4 w-4 text-primary" />
-                Ready for Reels · Shorts · TikTok
-              </div>
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-6">
+              {[
+                { icon: Sparkles, label: `${TEMPLATE_PRESETS.length} templates` },
+                { icon: BookOpen, label: 'Quran · Zikr · Dua · Names · Hadith' },
+                { icon: Film, label: 'Ready for Reels · Shorts · TikTok' },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="inline-flex items-center gap-2 h-9 px-3.5 rounded-full bg-card/80 border border-border/80 text-sm text-muted-foreground shadow-sm"
+                >
+                  <item.icon className="h-3.5 w-3.5 text-primary shrink-0" />
+                  {item.label}
+                </div>
+              ))}
             </div>
           </div>
         </div>
-
-        {/* Decorative gradient blob */}
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl -z-10" />
       </section>
 
       {/* Category filter */}
-      <section className="border-b border-border bg-card/50 sticky top-16 z-20 backdrop-blur">
+      <section className="border-b border-border/70 bg-card/70 sticky top-16 z-20 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-2 overflow-x-auto scrollbar-thin">
           {TEMPLATE_CATEGORIES.map((cat) => (
             <button
               key={cat.key}
               onClick={() => setActiveCategory(cat.key)}
               className={cn(
-                'inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs font-semibold whitespace-nowrap transition border',
+                'inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border',
                 activeCategory === cat.key
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'bg-card/60 text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground',
+                  ? 'text-primary-foreground border-transparent shadow-md [background:var(--primary-gradient)]'
+                  : 'bg-card/80 text-muted-foreground border-border hover:border-primary/30 hover:text-foreground hover:bg-primary/5',
               )}
             >
               <span aria-hidden>{cat.icon}</span>
@@ -219,7 +219,7 @@ export default function TemplatesPage() {
               <button
                 key={t.id}
                 onClick={() => applyTemplate(t.id)}
-                className="group qv-card rounded-2xl p-0 overflow-hidden text-left transition hover:shadow-lg hover:-translate-y-0.5 flex flex-col"
+                className="group qv-card qv-gradient-border rounded-2xl p-0 overflow-hidden text-left qv-hover-lift flex flex-col"
               >
                 {/* Gradient header */}
                 <div
@@ -336,12 +336,12 @@ export default function TemplatesPage() {
                 desc: 'Adjust anything you want, then export an MP4 ready for Instagram Reels, TikTok, and YouTube Shorts.',
               },
             ].map((item) => (
-              <div key={item.step} className="qv-card rounded-2xl p-6">
+              <div key={item.step} className="qv-card qv-gradient-border rounded-2xl p-6 qv-hover-lift">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="grid place-items-center h-10 w-10 rounded-xl bg-primary/10 text-primary">
+                  <div className="qv-icon-chip h-11 w-11">
                     <item.icon className="h-5 w-5" />
                   </div>
-                  <span className="text-3xl font-bold text-primary/30">
+                  <span className="text-3xl font-bold qv-gradient-text">
                     {item.step}
                   </span>
                 </div>
@@ -356,12 +356,14 @@ export default function TemplatesPage() {
       </section>
 
       {/* Sadaqah Jariyah band */}
-      <section className="py-12 sm:py-16 px-4 sm:px-6 bg-primary/5 border-b border-primary/10">
-        <div className="max-w-3xl mx-auto text-center">
-          <div className="grid place-items-center h-12 w-12 rounded-2xl bg-primary/15 text-primary mx-auto mb-4">
+      <section className="relative py-12 sm:py-16 px-4 sm:px-6 overflow-hidden border-b border-primary/10">
+        <div className="absolute inset-0 bg-primary/5" aria-hidden />
+        <div className="absolute inset-0 qv-grid-bg opacity-50" aria-hidden />
+        <div className="relative max-w-3xl mx-auto text-center">
+          <div className="qv-icon-chip h-12 w-12 mx-auto mb-4">
             <Heart className="h-6 w-6" />
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold mb-3">
+          <h2 className="text-xl sm:text-2xl font-bold mb-3 tracking-tight">
             Every share is Sadaqah Jariyah
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
@@ -373,7 +375,7 @@ export default function TemplatesPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border bg-card mt-auto">
+      <footer className="border-t border-border/80 bg-card/80 backdrop-blur-sm mt-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
@@ -382,7 +384,7 @@ export default function TemplatesPage() {
                 alt="Jariyah Now logo"
                 width={36}
                 height={36}
-                className="h-9 w-9 rounded-xl object-contain"
+                className="h-9 w-9 rounded-xl object-contain qv-logo-glow"
               />
               <div>
                 <div className="font-bold text-sm">Jariyah Now</div>
@@ -392,37 +394,22 @@ export default function TemplatesPage() {
               </div>
             </div>
 
-            <nav className="flex items-center gap-5 text-sm">
-              <Link
-                href="/app"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                Builder
-              </Link>
-              <Link
-                href="/zikr"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                Zikr
-              </Link>
-              <Link
-                href="/about"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                About
-              </Link>
-              <Link
-                href="/terms"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                Terms
-              </Link>
-              <Link
-                href="/privacy"
-                className="text-muted-foreground hover:text-foreground transition font-medium"
-              >
-                Privacy
-              </Link>
+            <nav className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 text-sm">
+              {[
+                { href: '/app', label: 'Builder' },
+                { href: '/zikr', label: 'Zikr' },
+                { href: '/about', label: 'About' },
+                { href: '/terms', label: 'Terms' },
+                { href: '/privacy', label: 'Privacy' },
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="text-muted-foreground hover:text-foreground hover:bg-primary/5 transition font-medium h-9 px-3 rounded-lg inline-flex items-center"
+                >
+                  {item.label}
+                </Link>
+              ))}
             </nav>
           </div>
 
@@ -441,33 +428,3 @@ export default function TemplatesPage() {
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
-
-/**
- * Map a background preset key → the URL we'd use in the builder.
- * For twilight-mosque, we use the portrait variant by default (since
- * the builder opens in portrait orientation).
- *
- * We don't import BG_PRESETS from CustomizationPanel here to avoid pulling
- * the client-side 'use client' CustomizationPanel into this page's module
- * graph unnecessarily — but the URL strings must stay in sync.
- */
-function bgPresetToUrl(key: string): string {
-  const map: Record<string, string> = {
-    'twilight-mosque': '/backgrounds/twilight-mosque-portrait.png',
-    'crescent-night': '/backgrounds/crescent-night.png',
-    'sunset-mosque': '/backgrounds/sunset-mosque.png',
-    'twilight-hills': '/backgrounds/twilight-hills.png',
-    'mountain': '/backgrounds/mountain.png',
-    'desert': '/backgrounds/desert.png',
-    'ocean': '/backgrounds/ocean.png',
-    'forest': '/backgrounds/forest.png',
-    'night': '/backgrounds/night.png',
-    'mosque': '/backgrounds/mosque.png',
-    'pattern': '/backgrounds/pattern.png',
-    'rain': '/backgrounds/videos/rain.mp4',
-    'ocean-calm': '/backgrounds/videos/ocean-calm.mp4',
-    'sunset-glow': '/backgrounds/videos/sunset-glow.mp4',
-    'golden-particles': '/backgrounds/videos/golden-particles.mp4',
-  }
-  return map[key] ?? '/backgrounds/twilight-mosque-portrait.png'
-}

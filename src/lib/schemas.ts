@@ -105,6 +105,9 @@ export const renderBodySchema = z.object({
     `Too many slides: max ${MAX_AYATS_PER_VIDEO} ayats per video`,
   ),
   reciterKey: z.string().min(1, 'reciterKey is required'),
+  reciterName: z.string().min(1, 'reciterName is required'),
+  attributionLine: z.string(),
+  quality: z.enum(['480p', '720p', '1080p']),
   settings: settingsSchema,
   orientation: orientationSchema,
 })
@@ -140,3 +143,11 @@ export const renderStatusQuerySchema = z.object({
 })
 
 export type RenderStatusQuery = z.infer<typeof renderStatusQuerySchema>
+
+// --- GET /api/render-download -----------------------------------------
+
+export const renderDownloadQuerySchema = z.object({
+  jobId: z.string().min(1, 'jobId is required'),
+})
+
+export type RenderDownloadQuery = z.infer<typeof renderDownloadQuerySchema>

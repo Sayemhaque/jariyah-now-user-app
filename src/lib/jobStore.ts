@@ -34,6 +34,12 @@ export interface RenderJob {
   createdAt: number
   /** Hash of the request payload — used for idempotency dedupe. */
   dedupeHash?: string
+  /** Internal local path for authenticated download streaming. */
+  outputPath?: string
+  /** Internal temp workspace used while the render is in flight. */
+  workspacePath?: string
+  /** Internal flag so a deduped POST does not start a second worker. */
+  startedAt?: number
 }
 
 // Map<jobId, RenderJob>
@@ -128,6 +134,13 @@ export function createRenderJob(dedupeHash?: string): RenderJob {
 
 export function getRenderJob(jobId: string): RenderJob | undefined {
   return jobs.get(jobId)
+}
+
+export function claimRenderJobStart(jobId: string): boolean {
+  const job = jobs.get(jobId)
+  if (!job || job.startedAt) return false
+  jobs.set(jobId, { ...job, startedAt: Date.now() })
+  return true
 }
 
 /**

@@ -5,8 +5,9 @@ import { HexColorPicker } from 'react-colorful'
 import { Upload, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import { useBuilderStore } from '@/lib/store'
+import { BG_PRESETS, getBackgroundPresetUrl } from '@/lib/backgroundPresets'
 import { validateBackgroundImage } from '@/lib/uploadValidation'
-import type { ArabicFont, BengaliFont, FontStyle, Orientation, OverlayStyle } from '@/lib/types'
+import type { ArabicFont, BengaliFont, Orientation, OverlayStyle } from '@/lib/types'
 import { toast } from 'sonner'
 import { Label } from '@/components/ui/label'
 import { Slider } from '@/components/ui/slider'
@@ -25,60 +26,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
-
-interface Preset {
-  key: string
-  label: string
-  url: string
-  /** When true, the preset is a looping MP4 video background and is
-   *  rendered with a <video> thumbnail (and used as a <video> element
-   *  in the live preview + export canvas). */
-  isVideo?: boolean
-  /** Optional emoji shown alongside the label for video presets. */
-  emoji?: string
-}
-
-// Background presets — high-quality images stored in /public/backgrounds.
-// `twilight-mosque` is the Jariyah Now brand theme — a clean, text-free
-// twilight sky with silhouetted mosque + crescent moon, generated in 3
-// orientations (landscape / portrait / square) so it always fits the
-// user's chosen aspect ratio cleanly.
-// The 3 user-uploaded presets (`crescent-night`, `sunset-mosque`,
-// `twilight-hills`) are portrait 1080x1920 — they look best in Reels/Shorts
-// mode but work in any orientation (the canvas cover-fits them).
-// The 4 video presets (`rain`, `ocean-calm`, `sunset-glow`,
-// `golden-particles`) are 720x1280 looping MP4s rendered with a <video>
-// thumbnail + a `<video>` element in the live preview and a frame-seeking
-// <video> in the export canvas (see VideoPreview.tsx + ExportModal.tsx).
-const BG_PRESETS: Preset[] = [
-  { key: 'twilight-mosque', label: 'Twilight Mosque', url: '/backgrounds/twilight-mosque.png' },
-  { key: 'crescent-night', label: 'Crescent Night', url: '/backgrounds/crescent-night.png' },
-  { key: 'sunset-mosque', label: 'Sunset Mosque', url: '/backgrounds/sunset-mosque.png' },
-  { key: 'twilight-hills', label: 'Twilight Hills', url: '/backgrounds/twilight-hills.png' },
-  { key: 'mountain', label: 'Mountain Dawn', url: '/backgrounds/mountain.png' },
-  { key: 'desert', label: 'Desert Dusk', url: '/backgrounds/desert.png' },
-  { key: 'ocean', label: 'Deep Ocean', url: '/backgrounds/ocean.png' },
-  { key: 'forest', label: 'Misty Forest', url: '/backgrounds/forest.png' },
-  { key: 'night', label: 'Starlit Night', url: '/backgrounds/night.png' },
-  { key: 'mosque', label: 'Mosque Gold', url: '/backgrounds/mosque.png' },
-  { key: 'pattern', label: 'Arabesque', url: '/backgrounds/pattern.png' },
-  // ─── Looping video backgrounds ───────────────────────────────────────
-  // 10s seamless loops, 720x1280, H.264 Constrained Baseline. Live preview
-  // plays them muted behind the text; export renders them frame-by-frame.
-  { key: 'rain', label: 'Rain', url: '/backgrounds/videos/rain.mp4', isVideo: true, emoji: '🌧️' },
-  { key: 'ocean-calm', label: 'Ocean Calm', url: '/backgrounds/videos/ocean-calm.mp4', isVideo: true, emoji: '🌊' },
-  { key: 'sunset-glow', label: 'Sunset Glow', url: '/backgrounds/videos/sunset-glow.mp4', isVideo: true, emoji: '🌅' },
-  { key: 'golden-particles', label: 'Golden Particles', url: '/backgrounds/videos/golden-particles.mp4', isVideo: true, emoji: '✨' },
-]
-
-// The Twilight Mosque preset has orientation-specific variants. When the
-// user clicks the preset, we load the variant matching the current
-// orientation so the background always fits cleanly without distortion.
-const TWILIGHT_MOSQUE_URLS: Record<string, string> = {
-  portrait: '/backgrounds/twilight-mosque-portrait.png',
-  landscape: '/backgrounds/twilight-mosque.png',
-  square: '/backgrounds/twilight-mosque-square.png',
-}
 
 // Overlay style presets — each one shapes the user's color + opacity
 // differently across the frame. The mini-swatch uses a real gradient so
@@ -248,10 +195,7 @@ export function CustomizationPanel() {
       <SectionTitle>Background</SectionTitle>
       <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1 snap-x snap-mandatory">
         {BG_PRESETS.map((p) => {
-          const presetUrl =
-            p.key === 'twilight-mosque'
-              ? TWILIGHT_MOSQUE_URLS[settings.orientation] ?? p.url
-              : p.url
+          const presetUrl = getBackgroundPresetUrl(p.key, settings.orientation)
           return (
             <button
               key={p.key}
@@ -273,8 +217,6 @@ export function CustomizationPanel() {
                   src={presetUrl}
                   className="absolute inset-0 h-full w-full object-cover"
                   muted
-                  loop
-                  autoPlay
                   playsInline
                   preload="metadata"
                 />
@@ -565,5 +507,3 @@ export function CustomizationPanel() {
     </div>
   )
 }
-
-export { BG_PRESETS }

@@ -20,8 +20,9 @@ export function LegalPage({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <div className="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12">
+    <div className="min-h-screen flex flex-col bg-background relative">
+      <div className="qv-ambient opacity-60" aria-hidden />
+      <div className="relative flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <Button
           asChild
           variant="ghost"
@@ -34,13 +35,15 @@ export function LegalPage({
           </Link>
         </Button>
 
-        <h1 className="text-3xl font-bold tracking-tight mb-2">{title}</h1>
-        <p className="text-sm text-muted-foreground mb-8">
-          Last updated: {lastUpdated}
-        </p>
+        <div className="qv-card rounded-2xl p-6 sm:p-8 mb-2">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">{title}</h1>
+          <p className="text-sm text-muted-foreground mb-8">
+            Last updated: {lastUpdated}
+          </p>
 
-        <div className="prose max-w-none text-sm leading-relaxed text-foreground/80 space-y-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-8 [&_h2]:mb-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-6 [&_h3]:mb-2 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:font-medium [&_strong]:text-foreground [&_li]:leading-relaxed">
-          {children}
+          <div className="prose max-w-none text-sm leading-relaxed text-foreground/80 space-y-4 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-8 [&_h2]:mb-3 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-6 [&_h3]:mb-2 [&_p]:leading-relaxed [&_ul]:list-disc [&_ul]:pl-5 [&_ul]:space-y-1 [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-2 [&_a]:font-medium [&_strong]:text-foreground [&_li]:leading-relaxed">
+            {children}
+          </div>
         </div>
       </div>
 
@@ -57,7 +60,7 @@ export function LegalPage({
  */
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-card/30 mt-auto">
+    <footer className="border-t border-border/80 bg-card/80 backdrop-blur-sm mt-auto relative">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 justify-center sm:justify-start">
           <span className="font-medium text-foreground/70">Jariyah Now</span>

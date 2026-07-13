@@ -54,10 +54,10 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Jariyah Now light theme — clean, minimal, purple accent on lavender-gray bg.
-   Matches the target design: #eeebf0 bg, white cards, #9333ea purple accent. */
+/* Jariyah Now light theme — clean, premium, purple accent on lavender-gray bg.
+   Matches brand: #eeebf0 bg, white cards, #7c3aed → #a855f7 purple gradient. */
 :root {
-  --radius: 0.75rem;
+  --radius: 0.875rem;
   --background: #eeebf0;
   --foreground: #1a1a1a;
   --card: #ffffff;
@@ -65,8 +65,10 @@
   --popover: #ffffff;
   --popover-foreground: #1a1a1a;
   --primary: #7c3aed;
-  --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
-  --primary-gradient-soft: linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(168,85,247,0.1) 100%);
+  --primary-gradient: linear-gradient(135deg, #7c3aed 0%, #a855f7 55%, #c084fc 100%);
+  --primary-gradient-soft: linear-gradient(135deg, rgba(124,58,237,0.12) 0%, rgba(168,85,247,0.08) 100%);
+  --primary-soft: rgba(124, 58, 237, 0.08);
+  --primary-glow: rgba(124, 58, 237, 0.35);
   --primary-foreground: #ffffff;
   --secondary: #f3f0f7;
   --secondary-foreground: #1a1a1a;
@@ -91,6 +93,10 @@
   --sidebar-accent-foreground: #1a1a1a;
   --sidebar-border: #e0dce8;
   --sidebar-ring: #9333ea;
+  --shadow-sm: 0 1px 2px rgba(26, 16, 48, 0.04);
+  --shadow-md: 0 4px 16px rgba(26, 16, 48, 0.06), 0 1px 3px rgba(26, 16, 48, 0.04);
+  --shadow-lg: 0 12px 40px rgba(26, 16, 48, 0.08), 0 4px 12px rgba(124, 58, 237, 0.06);
+  --shadow-glow: 0 8px 32px rgba(124, 58, 237, 0.22);
 }
 
 /* Keep a dark variant available for the video preview frame (which needs
@@ -121,12 +127,25 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "ss01", "cv11";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.011em;
+    /* Soft ambient wash — keeps brand lavender, adds depth */
+    background-image:
+      radial-gradient(ellipse 80% 50% at 100% -10%, rgba(168, 85, 247, 0.12), transparent 55%),
+      radial-gradient(ellipse 60% 40% at -5% 30%, rgba(124, 58, 237, 0.08), transparent 50%),
+      radial-gradient(ellipse 50% 35% at 90% 90%, rgba(192, 132, 252, 0.07), transparent 45%);
+    background-attachment: fixed;
+  }
+  ::selection {
+    background: rgba(124, 58, 237, 0.2);
+    color: #1a1a1a;
   }
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
@@ -181,21 +200,21 @@
   font-family: var(--font-noto-sans-bengali), "Noto Sans Bengali", sans-serif;
 }
 
-/* Thin custom scrollbar */
+/* Thin custom scrollbar — theme purple tint */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: #ced4da transparent;
+  scrollbar-color: rgba(124, 58, 237, 0.28) transparent;
 }
 .scrollbar-thin::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb {
-  background: #ced4da;
+  background: rgba(124, 58, 237, 0.28);
   border-radius: 999px;
 }
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: #adb5bd;
+  background: rgba(124, 58, 237, 0.45);
 }
 .scrollbar-thin::-webkit-scrollbar-track {
   background: transparent;
@@ -215,11 +234,85 @@
   transition: background-image 600ms ease, color 300ms ease, font-size 250ms ease, border-color 300ms ease;
 }
 
-/* Premium card surface — light theme: subtle shadow + border */
+/* Premium card surface — soft depth + hairline border */
 .qv-card {
   background: var(--card);
+  border: 1px solid rgba(224, 220, 232, 0.9);
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 280ms ease, transform 280ms ease, border-color 280ms ease;
+}
+
+/* Elevated panel for builder sidebars / settings groups */
+.qv-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfaff 100%);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px 0 rgba(0, 0, 0, 0.02);
+  border-radius: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Soft icon chip — gradient-tinted */
+.qv-icon-chip {
+  display: grid;
+  place-items: center;
+  border-radius: 0.75rem;
+  color: white;
+  background: var(--primary-gradient);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.28);
+}
+
+/* Soft tinted badge / pill */
+.qv-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.08);
+  border: 1px solid rgba(124, 58, 237, 0.16);
+  color: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Ambient page mesh blobs (use inside relative containers) */
+.qv-ambient {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+.qv-ambient::before,
+.qv-ambient::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+}
+.qv-ambient::before {
+  width: min(520px, 70vw);
+  height: min(520px, 70vw);
+  top: -12%;
+  right: -8%;
+  background: rgba(168, 85, 247, 0.14);
+  animation: qv-hero-glow 8s ease-in-out infinite;
+}
+.qv-ambient::after {
+  width: min(420px, 55vw);
+  height: min(420px, 55vw);
+  bottom: -10%;
+  left: -6%;
+  background: rgba(124, 58, 237, 0.1);
+  animation: qv-hero-glow 10s ease-in-out infinite reverse;
+}
+
+/* Subtle geometric grid for hero / CTA bands */
+.qv-grid-bg {
+  background-image:
+    linear-gradient(rgba(124, 58, 237, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124, 58, 237, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 75%);
 }
 
 /* Refined section header with a thin accent rule on the left */
@@ -229,7 +322,7 @@
   gap: 0.5rem;
   font-size: 0.6875rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
@@ -238,33 +331,63 @@
   display: inline-block;
   width: 3px;
   height: 12px;
-  background: var(--primary);
+  background: var(--primary-gradient);
   border-radius: 999px;
+  box-shadow: 0 0 8px rgba(124, 58, 237, 0.35);
 }
 
-/* Primary button — gradient purple (#7C3AED → #A855F7) with white text */
+/* Primary button — gradient purple with soft glow */
 .qv-btn-primary {
   background: var(--primary-gradient);
-  background-size: 150% 150%;
+  background-size: 180% 180%;
   color: var(--primary-foreground);
-  box-shadow: 0 1px 3px 0 rgba(124, 58, 237, 0.3), 0 0 0 1px rgba(124, 58, 237, 0.1);
-  transition: all 200ms ease;
-  animation: qv-gradient-shift 6s ease-in-out infinite;
+  box-shadow:
+    0 2px 8px rgba(124, 58, 237, 0.28),
+    0 0 0 1px rgba(124, 58, 237, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transition: all 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  animation: qv-gradient-shift 7s ease-in-out infinite;
 }
 .qv-btn-primary:hover {
-  background-size: 200% 200%;
-  box-shadow: 0 4px 16px 0 rgba(124, 58, 237, 0.4), 0 0 0 1px rgba(124, 58, 237, 0.2);
-  transform: translateY(-1px);
+  background-size: 220% 220%;
+  box-shadow:
+    0 8px 28px rgba(124, 58, 237, 0.42),
+    0 0 0 1px rgba(124, 58, 237, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  transform: translateY(-1.5px);
 }
 .qv-btn-primary:active {
   transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+.qv-btn-primary:disabled {
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+  animation: none;
+}
+
+/* Secondary / ghost outline control */
+.qv-btn-secondary {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  box-shadow: var(--shadow-sm);
+  transition: all 200ms ease;
+}
+.qv-btn-secondary:hover {
+  background: #ffffff;
+  border-color: rgba(124, 58, 237, 0.28);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 /* Frosted-glass effect for the header */
 .qv-frosted {
-  backdrop-filter: saturate(180%) blur(14px);
-  -webkit-backdrop-filter: saturate(180%) blur(14px);
-  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 }
 
 /* Numbered step pill used in the sidebar */
@@ -272,14 +395,27 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 999px;
-  background: var(--primary);
+  background: var(--primary-gradient);
   color: var(--primary-foreground);
   font-size: 11px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
+}
+
+/* Logo mark soft halo */
+.qv-logo-glow {
+  box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.08), 0 4px 16px rgba(124, 58, 237, 0.12);
+}
+
+/* Builder preview canvas backdrop */
+.qv-preview-stage {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 40%, rgba(124, 58, 237, 0.06), transparent 70%),
+    linear-gradient(180deg, rgba(243, 240, 247, 0.9) 0%, rgba(238, 235, 240, 0.5) 100%);
 }
 
 /* ─── Premium processing animations ─────────────────────────────────── */
@@ -455,7 +591,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1px;
+  padding: 1.5px;
   background: var(--primary-gradient);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
@@ -465,12 +601,38 @@
 }
 .qv-gradient-border:hover::before { opacity: 1; }
 
+/* Always-on soft gradient rim for featured CTAs */
+.qv-gradient-rim {
+  position: relative;
+  background: var(--card);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-lg);
+}
+.qv-gradient-rim::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: var(--primary-gradient);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
 /* Scroll-triggered fade-up */
 .qv-scroll-fade { animation: qv-fade-up-scroll 600ms ease-out both; }
 
 /* Card hover lift */
-.qv-hover-lift { transition: transform 300ms ease, box-shadow 300ms ease; }
-.qv-hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(124,58,237,0.12); }
+.qv-hover-lift {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 320ms ease, border-color 320ms ease;
+}
+.qv-hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(124, 58, 237, 0.08);
+}
 
 /* Phone mockup floating */
 .qv-phone-float { animation: qv-hero-float 4s ease-in-out infinite; }

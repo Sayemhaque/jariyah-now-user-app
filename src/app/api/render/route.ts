@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { z } from 'zod'
+import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import { env } from '@/lib/env'
 import { logger } from '@/lib/logger'
 import {
@@ -12,29 +15,87 @@ import {
   getClientIp,
 } from '@/lib/rateLimit'
 import {
+  claimRenderJobStart,
   createRenderJob,
   verifyJobOwnership,
   updateRenderJob,
   computeDedupeHash,
 } from '@/lib/jobStore'
+import {
+  getEffectiveBackgroundUrl,
+  isExportSafeBackgroundVideo,
+  isVideoBackgroundUrl,
+} from '@/lib/backgroundPresets'
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout'
+import { renderQuranVideoJob } from '@/lib/server/renderQuranVideo'
 
 export const runtime = 'nodejs'
 
-/**
- * POST /api/render
- *
- * Validates the render payload, rate-limits by IP, HEAD-checks each ayat MP3
- * on the Quran.com CDN so we can fail fast if the reciter's audio is missing,
- * then creates a job record and returns its ID.
- *
- * The actual MP4 rendering happens client-side (Canvas + MediaRecorder) in
- * this sandbox build — see ExportModal.tsx. In production this route would
- * enqueue a Remotion render job on a queue (Inngest / Trigger.dev / a worker
- * process) and return 202 immediately. The job-store + status-polling API
- * surface is identical either way, so swapping in a real queue later requires
- * no client-side changes.
- */
+function renderToDownloadUrl(jobId: string): string {
+  return `/api/render-download?jobId=${encodeURIComponent(jobId)}`
+}
+
+async function remotionRenderJob(jobId: string, body: RenderBody): Promise<void> {
+  const { renderWithRemotion } = await import('@/lib/server/renderWithRemotion')
+  const outputPath = path.join(os.tmpdir(), `jariyahnow-render-${jobId}`, 'final.mp4')
+
+  try {
+    await fs.mkdir(path.dirname(outputPath), { recursive: true })
+
+    const slides = body.slides.map((s) => ({
+      arabicText: s.arabicText,
+      translation: s.translation,
+      transliteration: s.transliteration ?? '',
+      surahName: s.surahName,
+      surahNameArabic: s.surahNameArabic,
+      ayatNumber: s.ayatNumber,
+      surahNumber: s.surahNumber,
+      audioUrl: s.audioUrl,
+      audioDurationMs: s.audioDurationMs,
+    }))
+
+    const inputProps: Record<string, unknown> = {
+      slides,
+      settings: body.settings as Record<string, unknown>,
+      orientation: body.orientation,
+      reciterName: body.reciterName,
+      attributionLine: body.attributionLine,
+      surahName: body.slides[0]?.surahName ?? '',
+      surahNameArabic: body.slides[0]?.surahNameArabic ?? '',
+      totalAyats: body.slides.length,
+      isExport: true,
+    }
+
+    await renderWithRemotion(inputProps, outputPath, (progress) => {
+      updateRenderJob(jobId, { status: 'rendering', progress })
+    })
+
+    const workspaceDir = path.dirname(outputPath)
+    const outputFilename = path.basename(outputPath)
+
+    const otherFiles = await fs.readdir(workspaceDir)
+    await Promise.all(
+      otherFiles
+        .filter((f) => f !== outputFilename)
+        .map((f) => fs.rm(path.join(workspaceDir, f), { force: true })),
+    )
+
+    updateRenderJob(jobId, {
+      status: 'done',
+      progress: 1,
+      outputPath,
+      downloadUrl: renderToDownloadUrl(jobId),
+    })
+  } catch (error) {
+    logger.error('remotion render failed, falling back to ffmpeg', {
+      jobId,
+      error: error instanceof Error ? error.message : String(error),
+    })
+    // Fallback to FFmpeg
+    await renderQuranVideoJob(jobId, body)
+  }
+}
+
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
   const requestId = req.headers.get('x-request-id') ?? `req_${Date.now().toString(36)}`
@@ -82,12 +143,15 @@ export async function POST(req: NextRequest) {
     slides: body.slides,
     reciterKey: body.reciterKey,
     orientation: body.orientation,
-    settings: body.settings as Record<string, unknown>,
+    settings: {
+      ...(body.settings as Record<string, unknown>),
+      quality: body.quality,
+      reciterName: body.reciterName,
+      attributionLine: body.attributionLine,
+    },
   })
 
   // --- HEAD-check each ayat MP3 on the CDN ----------------------------
-  // Fail fast if the reciter's audio is missing — saves the client from
-  // starting a render that will immediately fail when decodeAudioData bombs.
   const audioChecks = await Promise.all(
     body.slides.map(async (s) => {
       try {
@@ -126,31 +190,32 @@ export async function POST(req: NextRequest) {
     audioOk: audioChecks.filter((c) => c.ok).length,
   })
 
+  const effectiveBackgroundUrl = getEffectiveBackgroundUrl(
+    body.settings.backgroundPreset,
+    body.settings.backgroundImage,
+    body.orientation,
+  )
+  const shouldUseServerRender =
+    isVideoBackgroundUrl(effectiveBackgroundUrl) &&
+    isExportSafeBackgroundVideo(body.settings.backgroundPreset, effectiveBackgroundUrl)
+
+  if (shouldUseServerRender && claimRenderJobStart(job.id)) {
+    void remotionRenderJob(job.id, body)
+  }
+
   return NextResponse.json(
     {
       jobId: job.id,
-      // The ownerToken is the secret that authorizes subsequent PUT/GET-status
-      // requests for this job. The client must store it and send it back.
-      // It is NOT returned by GET /api/render-status — only by this POST.
       ownerToken: job.ownerToken,
       audioCheck: audioChecks,
-      note:
-        'Rendering happens client-side via Canvas + MediaRecorder. PUT progress to /api/render with the ownerToken to update the job.',
+      note: shouldUseServerRender
+        ? 'Server-side render started. Poll /api/render-status with the owner token for progress.'
+        : 'Browser fallback remains active for this export. PUT progress to /api/render with the owner token to update the job.',
     },
-    { status: 202 }, // Accepted — the work hasn't finished, but the job exists
+    { status: 202 },
   )
 }
 
-/**
- * PUT /api/render
- *
- * Allows the client to update an existing job's progress + final state.
- * The client-side renderer is the source of truth for progress; this route
- * just stores what it reports so a tab refocus / re-poll can recover state.
- *
- * Requires the `ownerToken` returned at POST time — without it, anyone who
- * guessed a jobId could overwrite another user's job state.
- */
 export async function PUT(req: NextRequest) {
   let body: z.infer<typeof renderUpdateBodySchema>
   try {
@@ -167,9 +232,6 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  // --- Ownership check ------------------------------------------------
-  // The ownerToken must match the one returned at POST time. This prevents
-  // jobId enumeration from being able to overwrite other users' jobs.
   const ownerToken = req.headers.get('x-owner-token')
   if (!ownerToken || !verifyJobOwnership(body.jobId, ownerToken)) {
     logger.warn('PUT /api/render ownership check failed', {
@@ -191,7 +253,6 @@ export async function PUT(req: NextRequest) {
   if (!updated) {
     return NextResponse.json({ error: 'Unknown jobId' }, { status: 404 })
   }
-  // Strip the ownerToken from the response — never echo it back.
   const { ownerToken: _omit, ...safe } = updated
   return NextResponse.json(safe)
 }

@@ -30,7 +30,7 @@ import {
   ZIKR_BACKGROUND_AUDIO,
   type ZikrPacing,
 } from '@/lib/zikrPresets'
-import { BG_PRESETS } from '@/components/CustomizationPanel'
+import { BG_PRESETS } from '@/lib/backgroundPresets'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
@@ -766,17 +766,17 @@ function ZikrPage() {
 
   // ─── Render ──────────────────────────────────────────────────────────────
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Header */}
-      <header className="border-b border-border qv-frosted shrink-0 z-30">
+      <header className="border-b border-border/70 qv-frosted shrink-0 z-30">
         <div className="px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 group">
             <NextImage
               src="/logo.png"
               alt="Jariyah Now logo"
               width={36}
               height={36}
-              className="h-9 w-9 rounded-xl object-contain"
+              className="h-9 w-9 rounded-xl object-contain qv-logo-glow transition-transform duration-300 group-hover:scale-105"
             />
             <div className="flex items-baseline gap-2">
               <span className="text-[15px] font-bold tracking-tight">Jariyah Now</span>
@@ -786,20 +786,20 @@ function ZikrPage() {
           <div className="flex items-center gap-2">
             <Link
               href="/app"
-              className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition"
+              className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Quran Reels
             </Link>
             <Link
               href="/templates"
-              className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition"
+              className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Templates
             </Link>
             <Button
               onClick={() => setExportOpen(true)}
               size="sm"
-              className="qv-btn-primary font-semibold"
+              className="font-semibold"
             >
               <Film className="h-4 w-4 mr-1.5" />
               <span className="hidden sm:inline">Export video</span>
@@ -810,16 +810,16 @@ function ZikrPage() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-72">
+              <SheetContent side="right" className="w-72 p-5">
                 <SheetHeader>
                   <SheetTitle>Menu</SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col gap-1 mt-4">
-                  <Link href="/app" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">Quran Reels</Link>
-                  <Link href="/templates" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">Templates</Link>
-                  <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">About</Link>
-                  <Link href="/terms" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">Terms</Link>
-                  <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted text-sm font-medium">Privacy</Link>
+                  <Link href="/app" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Quran Reels</Link>
+                  <Link href="/templates" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Templates</Link>
+                  <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">About</Link>
+                  <Link href="/terms" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Terms</Link>
+                  <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Privacy</Link>
                 </nav>
               </SheetContent>
             </Sheet>
@@ -828,16 +828,16 @@ function ZikrPage() {
       </header>
 
       {/* Mobile tab bar */}
-      <div className="lg:hidden flex border-b border-border bg-card shrink-0">
+      <div className="lg:hidden flex border-b border-border/70 bg-card/90 shrink-0">
         <button
           onClick={() => setMobileTab('preview')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition ${mobileTab === 'preview' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition ${mobileTab === 'preview' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'}`}
         >
           <Eye className="h-4 w-4" /> Preview
         </button>
         <button
           onClick={() => setMobileTab('settings')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition ${mobileTab === 'settings' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold transition ${mobileTab === 'settings' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'}`}
         >
           <SettingsIcon className="h-4 w-4" /> Settings
         </button>
@@ -847,7 +847,7 @@ function ZikrPage() {
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-0 min-h-0 overflow-hidden">
         {/* Preview pane */}
         <section
-          className={`relative bg-muted/30 flex flex-col min-h-0 overflow-hidden ${mobileTab === 'preview' ? 'flex-1' : 'hidden lg:flex'}`}
+          className={`relative qv-preview-stage flex flex-col min-h-0 overflow-hidden ${mobileTab === 'preview' ? 'flex-1' : 'hidden lg:flex'}`}
         >
           {/* Preview frame — phone mockup style */}
           <div className="flex-1 min-h-0 grid place-items-center p-3 sm:p-6">
@@ -1007,7 +1007,7 @@ function ZikrPage() {
                   className="absolute inset-0 grid place-items-center bg-black/30 transition"
                   aria-label="Play"
                 >
-                  <div className="grid place-items-center h-16 w-16 rounded-full bg-primary/90 text-primary-foreground shadow-lg">
+                  <div className="grid place-items-center h-16 w-16 rounded-full text-primary-foreground shadow-xl qv-btn-primary qv-play-pulse">
                     <Play className="h-8 w-8 translate-x-0.5" />
                   </div>
                 </button>
@@ -1034,7 +1034,7 @@ function ZikrPage() {
           </div>
 
           {/* Controls bar — like the Quran app */}
-          <div className="border-t border-border bg-card px-3 sm:px-5 py-2.5 sm:py-3 space-y-2 shrink-0">
+          <div className="border-t border-border/80 bg-card/95 backdrop-blur-sm px-3 sm:px-5 py-2.5 sm:py-3 space-y-2 shrink-0">
             <div className="flex items-center gap-2 sm:gap-2.5">
               <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
                 <Button
@@ -1153,11 +1153,11 @@ function ZikrPage() {
 
         {/* Settings sidebar */}
         <aside
-          className={`border-t lg:border-t-0 lg:border-l border-border bg-card min-h-0 overflow-y-auto scrollbar-thin ${mobileTab === 'settings' ? 'flex-1' : 'hidden lg:block'}`}
+          className={`border-t lg:border-t-0 lg:border-l border-border/80 bg-card/90 backdrop-blur-sm min-h-0 overflow-y-auto scrollbar-thin ${mobileTab === 'settings' ? 'flex-1' : 'hidden lg:block'}`}
         >
-          <div className="p-3 sm:p-4 space-y-4">
+          <div className="p-3 sm:p-4 space-y-3">
             {/* Selection */}
-            <section className="space-y-3">
+            <section className="qv-panel p-3.5 sm:p-4 space-y-3">
               <div className="flex items-center gap-2.5">
                 <span className="qv-step">1</span>
                 <h2 className="text-sm font-bold tracking-tight">Zikr</h2>
@@ -1248,10 +1248,8 @@ function ZikrPage() {
               </div>
             </section>
 
-            <div className="h-px bg-border" />
-
             {/* Customize */}
-            <section className="space-y-3">
+            <section className="qv-panel p-3.5 sm:p-4 space-y-3">
               <div className="flex items-center gap-2.5">
                 <span className="qv-step">2</span>
                 <h2 className="text-sm font-bold tracking-tight">Customize</h2>
@@ -1280,8 +1278,6 @@ function ZikrPage() {
                           src={p.url}
                           className="absolute inset-0 h-full w-full object-cover"
                           muted
-                          loop
-                          autoPlay
                           playsInline
                           preload="metadata"
                         />
