@@ -19,6 +19,7 @@ import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { videoAttributionLine } from '@/lib/translations'
 import { Slider } from '@/components/ui/slider'
 import { getAdvanceAtMs } from '@/lib/advanceTiming'
+import { formatMs } from '@/lib/format'
 
 const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
   landscape: { w: 1280, h: 720, ratio: '16 / 9' },
@@ -372,10 +373,4 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
   )
 }
 
-function formatMs(ms: number): string {
-  if (!Number.isFinite(ms) || ms <= 0) return '0:00'
-  const total = Math.floor(ms / 1000)
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-}
+

@@ -13,8 +13,7 @@ import {
   Hind_Siliguri,
 } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/Providers";
 
 // ─── UI font ─────────────────────────────────────────────────────────
@@ -171,7 +170,6 @@ export default function RootLayout({
         <Providers>
           {children}
           <Toaster />
-          <SonnerToaster />
         </Providers>
       </body>
     </html>

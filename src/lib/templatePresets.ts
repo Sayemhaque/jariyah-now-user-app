@@ -1,19 +1,18 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Template Presets — pre-configured starting points for the Quran Video
-// Generator + Zikr Reels.
+// Generator.
 //
-// Each template bundles a Surah/ayat range (or zikr+count) plus suggested
-// visual settings (background, font, colors) so users can launch into a
-// polished reel in one click instead of configuring everything by hand.
+// Each template bundles a Surah/ayat range plus suggested visual settings
+// (background, font, colors) so users can launch into a polished reel in one
+// click instead of configuring everything by hand.
 //
 // Click behaviour on /templates:
 //   • Quran templates → setSurah + setFromAyat + setToAyat → navigate to /app
-//   • Zikr templates   → navigate to /zikr?zikr=X&count=Y
 //
 // All templates are static data — no fetches happen on this page.
 // ─────────────────────────────────────────────────────────────────────────────
 
-export type TemplateType = 'quran' | 'zikr' | 'names' | 'hadith' | 'dua'
+export type TemplateType = 'quran' | 'names' | 'hadith' | 'dua'
 
 /** Configuration for a Quran-type template — what to load in the builder. */
 export interface QuranTemplateConfig {
@@ -32,14 +31,6 @@ export interface QuranTemplateConfig {
   highlightColor?: string
 }
 
-/** Configuration for a Zikr-type template — what to load on /zikr. */
-export interface ZikrTemplateConfig {
-  zikrId: string
-  count: number
-  pacing?: 'realtime' | 'fast' | 'ultrafast'
-  backgroundPreset?: string
-}
-
 export interface TemplatePreset {
   id: string
   type: TemplateType
@@ -50,7 +41,7 @@ export interface TemplatePreset {
   /** Tailwind gradient classes (e.g. "from-amber-500 to-rose-600"). */
   gradient: string
   /** Type-specific config — narrow via the `type` field. */
-  config: QuranTemplateConfig | ZikrTemplateConfig
+  config: QuranTemplateConfig
 }
 
 // ─── 6 Quran templates ──────────────────────────────────────────────────────
@@ -165,52 +156,6 @@ const QURAN_TEMPLATES: TemplatePreset[] = [
   },
 ]
 
-// ─── 3 Zikr templates ───────────────────────────────────────────────────────
-const ZIKR_TEMPLATES: TemplatePreset[] = [
-  {
-    id: 'subhanallah-33',
-    type: 'zikr',
-    title: 'SubhanAllah × 33',
-    description: 'After every prayer — 33 repetitions of "Glory be to Allah". The Prophet\u2019s morning + evening dhikr.',
-    icon: '📿',
-    gradient: 'from-violet-500 to-indigo-700',
-    config: {
-      zikrId: 'subhanallah',
-      count: 33,
-      pacing: 'realtime',
-      backgroundPreset: 'twilight-mosque',
-    },
-  },
-  {
-    id: 'astaghfirullah-100',
-    type: 'zikr',
-    title: 'Astaghfirullah × 100',
-    description: 'Seek forgiveness 100 times. The Prophet ﷺ said he sought forgiveness 70+ times a day.',
-    icon: '🤲',
-    gradient: 'from-teal-500 to-emerald-700',
-    config: {
-      zikrId: 'astaghfirullah',
-      count: 100,
-      pacing: 'fast',
-      backgroundPreset: 'ocean-calm',
-    },
-  },
-  {
-    id: 'la-ilaha-illallah-100',
-    type: 'zikr',
-    title: 'La ilaha illallah × 100',
-    description: 'The declaration of faith, 100 times. The best dhikr — renews the heart\u2019s connection to tawheed.',
-    icon: '🌙',
-    gradient: 'from-slate-600 to-slate-900',
-    config: {
-      zikrId: 'la-ilaha-illallah',
-      count: 100,
-      pacing: 'realtime',
-      backgroundPreset: 'crescent-night',
-    },
-  },
-]
-
 // ─── 1 Names template ───────────────────────────────────────────────────────
 const NAMES_TEMPLATE: TemplatePreset = {
   id: '99-names',
@@ -219,9 +164,6 @@ const NAMES_TEMPLATE: TemplatePreset = {
   description: 'Asma ul Husna — the 99 beautiful names. A meditative reel cycling through each name with meaning.',
   icon: '✨',
   gradient: 'from-amber-400 via-orange-500 to-rose-600',
-  // We don't actually have a dedicated "99 Names" page yet, so this template
-  // opens the Quran builder with Surah Al-A'raf 7:180 (the verse that
-  // mentions Allah's beautiful names) as a starting point.
   config: {
     surah: 7,
     fromAyat: 180,
@@ -242,9 +184,6 @@ const HADITH_TEMPLATE: TemplatePreset = {
   description: 'A new hadith each day from the 40 Hadith of Imam Nawawi. Bite-sized wisdom for sharing.',
   icon: '📜',
   gradient: 'from-emerald-600 to-green-800',
-  // The Quran builder doesn't natively support hadith text, but as a
-  // starting point we open it with Surah Al-Hashr 59:7 (a verse often
-  // paired with hadith study). Users can customize the text after.
   config: {
     surah: 59,
     fromAyat: 7,
@@ -318,7 +257,6 @@ const DUA_TEMPLATES: TemplatePreset[] = [
 // ─── Combined export ────────────────────────────────────────────────────────
 export const TEMPLATE_PRESETS: TemplatePreset[] = [
   ...QURAN_TEMPLATES,
-  ...ZIKR_TEMPLATES,
   NAMES_TEMPLATE,
   HADITH_TEMPLATE,
   ...DUA_TEMPLATES,
@@ -336,18 +274,10 @@ export function isQuranTemplate(
   )
 }
 
-/** Type guard: a Zikr-type template (with zikrId + count). */
-export function isZikrTemplate(
-  t: TemplatePreset,
-): t is TemplatePreset & { config: ZikrTemplateConfig } {
-  return t.type === 'zikr'
-}
-
 /** Filter category labels for the templates page UI. */
 export const TEMPLATE_CATEGORIES: { key: TemplateType | 'all'; label: string; icon: string }[] = [
   { key: 'all', label: 'All', icon: '✨' },
   { key: 'quran', label: 'Quran', icon: '📖' },
-  { key: 'zikr', label: 'Zikr', icon: '📿' },
   { key: 'dua', label: 'Dua', icon: '🤲' },
   { key: 'names', label: '99 Names', icon: '✨' },
   { key: 'hadith', label: 'Hadith', icon: '📜' },

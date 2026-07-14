@@ -10,7 +10,6 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "normalize-bg": "./scripts/normalize-bg-video.sh",
     "validate-bg": "npx tsx scripts/validate-bg-video.ts"
   },
   "dependencies": {

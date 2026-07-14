@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import NextImage from 'next/image'
-import { Download, Film, X, CheckCircle2, AlertCircle, Play, Pause, Volume2, VolumeX } from 'lucide-react'
+import { Download, Film, X, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { videoAttributionLine } from '@/lib/translations'
 import { RENDER_QUALITY_SCALE } from '@/remotion/types'
-import { InstagramIcon, YouTubeIcon, YouTubeShortsIcon } from '@/components/PlatformIcons'
-import type { AyatSlide, ExportOptions, Orientation, VideoSettings } from '@/lib/types'
+import { formatMs } from '@/lib/format'
+import type { AyatSlide, Orientation, VideoSettings } from '@/lib/types'
 import {
   Dialog,
   DialogContent,
@@ -22,19 +22,6 @@ import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
-const PLATFORM_PRESETS: {
-  key: ExportOptions['platform']
-  label: string
-  hint: string
-  orientation: Orientation
-  icon: React.ComponentType<{ className?: string }>
-  color: string
-}[] = [
-  { key: 'reel', label: 'Instagram Reel', hint: '1080×1920 · portrait · convert to MP4', orientation: 'portrait', icon: InstagramIcon, color: '#e1306c' },
-  { key: 'shorts', label: 'YouTube Shorts', hint: '1080×1920 · portrait · WebM ok', orientation: 'portrait', icon: YouTubeShortsIcon, color: '#ff0000' },
-  { key: 'youtube', label: 'YouTube', hint: '1920×1080 · landscape · WebM ok', orientation: 'landscape', icon: YouTubeIcon, color: '#ff0000' },
-]
-
 const RES: Record<Orientation, { w: number; h: number }> = {
   landscape: { w: 1280, h: 720 },
   portrait: { w: 720, h: 1280 },
@@ -47,192 +34,9 @@ interface ExportModalProps {
   onOpenChange: (o: boolean) => void
 }
 
-/**
- * Custom video preview player with proper controls (play/pause, seek bar,
- * time display, volume). Replaces the bare <video controls> which showed
- * 0:00 / 0:00 until metadata loaded and had no visible duration.
- */
-function VideoPreviewPlayer({
-  src,
-  orientation,
-  filename,
-  isMp4,
-}: {
-  src: string
-  orientation: Orientation
-  filename: string
-  isMp4: boolean
-}) {
-  const videoRef = useRef<HTMLVideoElement | null>(null)
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentTime, setCurrentTime] = useState(0)
-  const [duration, setDuration] = useState(0)
-  const [volume, setVolume] = useState(1)
-  const [muted, setMuted] = useState(false)
-
-  useEffect(() => {
-    const v = videoRef.current
-    if (!v) return
-    const onTime = () => setCurrentTime(v.currentTime)
-    const onDur = () => setDuration(v.duration || 0)
-    const onPlay = () => setIsPlaying(true)
-    const onPause = () => setIsPlaying(false)
-    v.addEventListener('timeupdate', onTime)
-    v.addEventListener('loadedmetadata', onDur)
-    v.addEventListener('durationchange', onDur)
-    v.addEventListener('play', onPlay)
-    v.addEventListener('pause', onPause)
-    // Auto-play muted on load so the user sees motion immediately
-    v.muted = true
-    v.play().catch(() => {})
-    return () => {
-      v.removeEventListener('timeupdate', onTime)
-      v.removeEventListener('loadedmetadata', onDur)
-      v.removeEventListener('durationchange', onDur)
-      v.removeEventListener('play', onPlay)
-      v.removeEventListener('pause', onPause)
-    }
-  }, [src])
-
-  const togglePlay = () => {
-    const v = videoRef.current
-    if (!v) return
-    if (v.paused) v.play()
-    else v.pause()
-  }
-
-  const onSeek = (val: number[]) => {
-    const v = videoRef.current
-    if (!v || !duration) return
-    v.currentTime = (val[0]! / 100) * duration
-    setCurrentTime(v.currentTime)
-  }
-
-  const onVol = (val: number[]) => {
-    const v = videoRef.current
-    if (!v) return
-    const vol = val[0]! / 100
-    v.volume = vol
-    v.muted = vol === 0
-    setVolume(vol)
-    setMuted(vol === 0)
-  }
-
-  const toggleMute = () => {
-    const v = videoRef.current
-    if (!v) return
-    v.muted = !v.muted
-    setMuted(v.muted)
-  }
-
-  const pct = duration > 0 ? (currentTime / duration) * 100 : 0
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2 text-sm text-primary px-1">
-        <CheckCircle2 className="h-5 w-5" />
-        <span className="font-medium">Video ready!</span>
-        <span className="text-xs text-muted-foreground ml-auto font-mono">
-          {formatMs(duration * 1000)}
-        </span>
-      </div>
-
-      {/* Video + custom controls overlay */}
-      <div className="relative rounded-xl overflow-hidden bg-black">
-        <video
-          ref={videoRef}
-          preload="auto"
-          playsInline
-          loop
-          onClick={togglePlay}
-          className={`w-full block ${orientation === 'portrait' ? 'aspect-[9/16]' : 'aspect-video'}`}
-        >
-          <source
-            src={src}
-            type={
-              isMp4
-                ? 'video/mp4; codecs="avc1.42E01E, mp4a.40.2"'
-                : 'video/webm'
-            }
-          />
-        </video>
-
-        {/* Center play/pause button overlay */}
-        {!isPlaying && (
-          <button
-            onClick={togglePlay}
-            className="absolute inset-0 grid place-items-center bg-black/30 transition"
-            aria-label="Play"
-          >
-            <div className="grid place-items-center h-14 w-14 rounded-full bg-primary/90 text-primary-foreground shadow-lg">
-              <Play className="h-7 w-7 translate-x-0.5" />
-            </div>
-          </button>
-        )}
-      </div>
-
-      {/* Custom controls bar */}
-      <div className="flex items-center gap-2 px-1">
-        <button
-          onClick={togglePlay}
-          className="grid place-items-center h-8 w-8 rounded-lg hover:bg-muted shrink-0"
-          aria-label={isPlaying ? 'Pause' : 'Play'}
-        >
-          {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4 translate-x-0.5" />}
-        </button>
-
-        {/* Seek bar */}
-        <Slider
-          value={[pct]}
-          max={100}
-          step={0.1}
-          onValueChange={onSeek}
-          className="flex-1"
-        />
-
-        {/* Time display */}
-        <span className="text-xs font-mono tabular-nums text-muted-foreground whitespace-nowrap shrink-0">
-          {formatMs(currentTime * 1000)} / {formatMs(duration * 1000)}
-        </span>
-
-        {/* Volume */}
-        <button
-          onClick={toggleMute}
-          className="grid place-items-center h-8 w-8 rounded-lg hover:bg-muted shrink-0"
-          aria-label={muted ? 'Unmute' : 'Mute'}
-        >
-          {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-        </button>
-        <Slider
-          value={[muted ? 0 : volume * 100]}
-          max={100}
-          step={1}
-          onValueChange={onVol}
-          className="w-16 shrink-0"
-        />
-      </div>
-
-      {/* Download button */}
-      <a
-        href={src}
-        download={filename}
-        className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-xl qv-btn-primary text-sm font-semibold"
-      >
-        <Download className="h-4 w-4" />
-        Download {filename}
-      </a>
-    </div>
-  )
-}
-
 // ──────────────────────────────────────────────────────────────────────
 // ProcessingPanel — premium animated processing state
 // ──────────────────────────────────────────────────────────────────────
-// Shown during the entire WebM render + MP4 conversion pipeline.
-// ONE unified 0–100% progress bar (no reset between phases).
-// The sub-phase label cross-fades between stages so the user always
-// knows what's happening. Heavy use of CSS animations defined in
-// globals.css: gradient pan, ring spin, pulse glow, shimmer, bar glow.
 
 type ProcessingPhase = 'composing' | 'uploading' | 'encoding' | 'finalizing'
 
@@ -500,8 +304,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     return mobileUa || fewCores
   }, [])
 
-  const [platform, setPlatform] = useState<ExportOptions['platform']>('reel')
-  const [quality, setQuality] = useState<ExportOptions['quality']>(() => isMobile ? '480p' : '720p')
+  const [quality, setQuality] = useState<'480p' | '720p' | '1080p'>(() => isMobile ? '480p' : '720p')
   const [status, setStatus] = useState<RenderStatus>('idle')
   const [progress, setProgress] = useState(0)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
@@ -519,16 +322,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const stopRef = useRef<(() => void) | null>(null)
   const jobIdRef = useRef<string | null>(null)
   const ownerTokenRef = useRef<string | null>(null)
-
-  // When platform changes, also update the global orientation so the
-  // export resolution matches what the user just picked.
-  useEffect(() => {
-    if (!open) return
-    const preset = PLATFORM_PRESETS.find((p) => p.key === platform)
-    if (preset && preset.orientation !== settings.orientation) {
-      updateSettings({ orientation: preset.orientation })
-    }
-  }, [platform, open, settings.orientation, updateSettings])
 
   const totalMs = useMemo(
     () => ayatList.reduce((s, a) => s + (a.audioDurationMs || 0), 0),
@@ -734,7 +527,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
               Export video
             </DialogTitle>
             <DialogDescription className="text-[13px]">
-              Pick a platform preset, choose quality, then render.
+              Choose quality, then render. MP4 — ready for Instagram Reels, YouTube Shorts, and TikTok.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -748,41 +541,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
             {/* ─── LEFT: Settings ─── */}
             <div className="space-y-4">
-              {/* Platform */}
-              <div className="space-y-2">
-                <Label className="qv-section-title !mb-0">Platform</Label>
-                <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
-                  {PLATFORM_PRESETS.map((p) => {
-                    const Icon = p.icon
-                    return (
-                      <button
-                        key={p.key}
-                        onClick={() => setPlatform(p.key)}
-                        className={cn(
-                          'flex items-center gap-2.5 rounded-xl border p-2.5 sm:p-3 text-left transition',
-                          platform === p.key
-                            ? 'border-primary bg-primary/10 shadow-sm shadow-primary/20'
-                            : 'border-border bg-card hover:border-foreground/30',
-                        )}
-                      >
-                        <div
-                          className="grid place-items-center h-8 w-8 rounded-lg shrink-0"
-                          style={{ backgroundColor: `${p.color}15`, color: p.color }}
-                        >
-                          <Icon className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs sm:text-sm font-medium leading-tight">{p.label}</div>
-                          <div className="text-[9px] sm:text-[10px] text-muted-foreground tabular-nums leading-tight mt-0.5">
-                            {p.hint}
-                          </div>
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
               {/* Quality */}
               <div className="space-y-2">
                 <Label className="qv-section-title !mb-0">Quality</Label>
@@ -942,12 +700,4 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
       </DialogContent>
     </Dialog>
   )
-}
-
-function formatMs(ms: number): string {
-  if (!Number.isFinite(ms) || ms <= 0) return '0:00'
-  const total = Math.floor(ms / 1000)
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${String(s).padStart(2, '0')}`
 }

@@ -16,7 +16,7 @@ import {
   Languages,
   LayoutGrid,
 } from 'lucide-react'
-import { TEMPLATE_PRESETS, isQuranTemplate, isZikrTemplate } from '@/lib/templatePresets'
+import { TEMPLATE_PRESETS, isQuranTemplate } from '@/lib/templatePresets'
 
 const siteUrl = 'https://jariyahnow.com'
 const ogImage = `${siteUrl}/og-image.png`
@@ -70,12 +70,6 @@ export default function LandingPage() {
               className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Templates
-            </Link>
-            <Link
-              href="/zikr"
-              className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
-            >
-              Zikr
             </Link>
             <Link
               href="/about"
@@ -464,7 +458,6 @@ export default function LandingPage() {
               {[
                 { href: '/app', label: 'App' },
                 { href: '/templates', label: 'Templates' },
-                { href: '/zikr', label: 'Zikr' },
                 { href: '/about', label: 'About' },
                 { href: '/terms', label: 'Terms' },
                 { href: '/privacy', label: 'Privacy' },
@@ -528,14 +521,14 @@ export default function LandingPage() {
 // (we don't auto-apply from the landing page — let the user browse first).
 
 function TemplatesShowcaseSection() {
-  // Pick 6 featured templates — a mix of Quran + Zikr + Dua.
+  // Pick 6 featured templates — Quran + Dua + Names + Hadith.
   const featured = [
     'ayat-al-kursi',
     'al-fatihah',
-    'subhanallah-33',
     'ar-rahman',
     'dua-morning',
-    'astaghfirullah-100',
+    '99-names',
+    'daily-hadith',
   ]
     .map((id) => TEMPLATE_PRESETS.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t))
@@ -555,7 +548,7 @@ function TemplatesShowcaseSection() {
             Start from a template
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Pre-configured reels for Quran verses, zikr, duas, and more. Each
+            Pre-configured reels for Quran verses, duas, and more. Each
             template auto-loads the surah, reciter, font, and colors — so you
             can publish in minutes.
           </p>
@@ -568,9 +561,7 @@ function TemplatesShowcaseSection() {
             // need to be hydrated first); we just deep-link to /templates
             // so the user can browse + click apply there.
             const targetUrl =
-              isZikrTemplate(t)
-                ? `/zikr?zikr=${t.config.zikrId}&count=${t.config.count}${t.config.pacing ? `&pacing=${t.config.pacing}` : ''}`
-                : isQuranTemplate(t)
+              isQuranTemplate(t)
                 ? `/app`
                 : '/templates'
             return (
@@ -593,7 +584,6 @@ function TemplatesShowcaseSection() {
                   <div className="absolute -bottom-6 -left-4 h-20 w-20 rounded-full bg-black/15 blur-xl" />
                   <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-black/30 text-white backdrop-blur-sm">
                     {t.type === 'quran' && '📖 Quran'}
-                    {t.type === 'zikr' && '📿 Zikr'}
                     {t.type === 'dua' && '🤲 Dua'}
                     {t.type === 'names' && '✨ Names'}
                     {t.type === 'hadith' && '📜 Hadith'}
@@ -618,15 +608,6 @@ function TemplatesShowcaseSection() {
                         </span>
                         <span className="opacity-40">·</span>
                         <span className="capitalize">{t.config.arabicFont ?? 'uthmani'}</span>
-                      </>
-                    )}
-                    {isZikrTemplate(t) && (
-                      <>
-                        <span className="font-mono font-semibold text-foreground/80">
-                          × {t.config.count}
-                        </span>
-                        <span className="opacity-40">·</span>
-                        <span className="capitalize">{t.config.pacing ?? 'realtime'}</span>
                       </>
                     )}
                   </div>

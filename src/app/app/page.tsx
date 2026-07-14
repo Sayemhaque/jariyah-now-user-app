@@ -241,12 +241,6 @@ export default function Home() {
             >
               Templates
             </Link>
-            <Link
-              href="/zikr"
-              className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
-            >
-              Zikr Reels
-            </Link>
             <Button
               onClick={() => setExportOpen(true)}
               disabled={!canExport}
@@ -268,7 +262,6 @@ export default function Home() {
                 </SheetHeader>
                 <nav className="flex flex-col gap-1 mt-4">
                   <Link href="/templates" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Templates</Link>
-                  <Link href="/zikr" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Zikr Reels</Link>
                   <Link href="/about" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">About</Link>
                   <Link href="/terms" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Terms</Link>
                   <Link href="/privacy" onClick={() => setMobileMenuOpen(false)} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-primary/5 text-sm font-medium">Privacy</Link>

@@ -17,7 +17,6 @@ import {
   TEMPLATE_PRESETS,
   TEMPLATE_CATEGORIES,
   isQuranTemplate,
-  isZikrTemplate,
   type TemplateType,
 } from '@/lib/templatePresets'
 import { getBackgroundPresetUrl } from '@/lib/backgroundPresets'
@@ -87,18 +86,6 @@ export default function TemplatesPage() {
       return
     }
 
-    if (isZikrTemplate(template)) {
-      const cfg = template.config
-      const params = new URLSearchParams({
-        zikr: cfg.zikrId,
-        count: String(cfg.count),
-      })
-      if (cfg.pacing) params.set('pacing', cfg.pacing)
-      toast.success(`Loading "${template.title}" template…`)
-      router.push(`/zikr?${params.toString()}`)
-      return
-    }
-
     toast.error('Unknown template type')
   }
 
@@ -123,12 +110,6 @@ export default function TemplatesPage() {
               className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
             >
               Builder
-            </Link>
-            <Link
-              href="/zikr"
-              className="hidden sm:inline-flex items-center h-9 px-3 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
-            >
-              Zikr Reels
             </Link>
             <Link
               href="/about"
@@ -166,7 +147,7 @@ export default function TemplatesPage() {
             {/* Subheadline */}
             <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl">
               Pre-configured reels for Quran verses, dhikr, duas, and more.
-              Each template picks a verse (or zikr), a reciter, a background,
+              Each template picks a verse, a reciter, a background,
               and a font — so you can publish in minutes, not hours.
             </p>
 
@@ -174,7 +155,7 @@ export default function TemplatesPage() {
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-6">
               {[
                 { icon: Sparkles, label: `${TEMPLATE_PRESETS.length} templates` },
-                { icon: BookOpen, label: 'Quran · Zikr · Dua · Names · Hadith' },
+                { icon: BookOpen, label: 'Quran · Dua · Names · Hadith' },
                 { icon: Film, label: 'Ready for Reels · Shorts · TikTok' },
               ].map((item) => (
                 <div
@@ -240,7 +221,6 @@ export default function TemplatesPage() {
                   {/* Type badge */}
                   <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-black/30 text-white backdrop-blur-sm">
                     {t.type === 'quran' && '📖 Quran'}
-                    {t.type === 'zikr' && '📿 Zikr'}
                     {t.type === 'dua' && '🤲 Dua'}
                     {t.type === 'names' && '✨ Names'}
                     {t.type === 'hadith' && '📜 Hadith'}
@@ -272,17 +252,6 @@ export default function TemplatesPage() {
                           <span className="capitalize">{t.config.reciterId}</span>
                         </>
                       )}
-                    </div>
-                  )}
-                  {isZikrTemplate(t) && (
-                    <div className="mt-auto pt-3 border-t border-border/60 flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <span className="font-mono font-semibold text-foreground/80">
-                        × {t.config.count}
-                      </span>
-                      <span className="opacity-40">·</span>
-                      <span className="capitalize">{t.config.pacing ?? 'realtime'}</span>
-                      <span className="opacity-40">·</span>
-                      <span className="capitalize">{t.config.zikrId.replace(/-/g, ' ')}</span>
                     </div>
                   )}
                 </div>
@@ -321,7 +290,7 @@ export default function TemplatesPage() {
                 step: '1',
                 icon: LayoutGrid,
                 title: 'Pick a template',
-                desc: 'Browse Quran verses, zikr, duas, and more. Each card shows you exactly what you\u2019ll get.',
+                desc: 'Browse Quran verses, duas, and more. Each card shows you exactly what you\u2019ll get.',
               },
               {
                 step: '2',
@@ -397,7 +366,6 @@ export default function TemplatesPage() {
             <nav className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 text-sm">
               {[
                 { href: '/app', label: 'Builder' },
-                { href: '/zikr', label: 'Zikr' },
                 { href: '/about', label: 'About' },
                 { href: '/terms', label: 'Terms' },
                 { href: '/privacy', label: 'Privacy' },

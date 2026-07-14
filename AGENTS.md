@@ -20,7 +20,6 @@ The `npm run dev` script symlinks `.next/cache` to `/tmp/jariyah-next-cache` to 
 
 - **Next.js 16 App Router** with standalone output mode (`output: "standalone"`)
 - **Server external packages** (not bundled): `@remotion/bundler`, `@remotion/renderer`, `@remotion/cli`, `remotion` — configured in `next.config.ts`
-- **Client-side video export**: Canvas + MediaRecorder + Web Audio API (in `ExportModal.tsx`)
 - **Server-side video export** (production): Remotion pipeline (`src/lib/server/renderWithRemotion.ts`) using ffmpeg for background pre-looping (`src/lib/server/ffmpeg.ts`)
 - **State**: Zustand context provider (`src/lib/store.ts`) for builder UI, TanStack Query available in `src/lib/queries/`
 - **Env validation**: Zod at boot via `src/lib/env.ts`. Server vars validated on import; client gets only `NEXT_PUBLIC_*` vars. Tests get defaults automatically when `VITEST` env is set.
@@ -40,17 +39,18 @@ The `npm run dev` script symlinks `.next/cache` to `/tmp/jariyah-next-cache` to 
 
 - **Path alias**: `@/*` → `./src/*`
 - **shadcn/ui**: New York style, Lucide icons, CSS variables enabled (`components.json`)
-- **Fonts**: 10 Google Fonts loaded in `layout.tsx` (Inter, 7 Arabic, 2 Bengali)
+- **Fonts**: 11 Google Fonts loaded in `layout.tsx` (Inter, EB Garamond, 6 Arabic, 3 Bengali)
 - **ESLint**: Very permissive — `no-explicit-any`, `no-unused-vars`, `react-hooks/exhaustive-deps` all off. Don't rely on lint to catch issues.
 - **TypeScript**: `noImplicitAny: false`, `strict: true`. Types are loose by design.
 - **Tests**: `*.test.ts` colocated with source. Coverage only for `src/lib/`. Test environment is `node` (not jsdom).
-- **Background videos**: Must be normalized before use (`npm run normalize-bg` / `scripts/normalize-bg-video.sh`). Validates with `npm run validate-bg`.
+- **Background videos**: All video presets must be pre-normalized (H.264, yuv420p, correct resolution) before committing. Validates with `npm run validate-bg`.
 - **Remotion render**: Uses pre-looped background videos via ffmpeg. The `AyatVideo` component reads `preLooped` prop to skip `<Loop>` wrapper when exporting.
 - **Event listeners on Remotion Player**: Use `useEffect` with state flag pattern (not callback refs) to avoid "maximum update depth" errors. See `VideoPreview.tsx`.
 
 ## Gotchas
 
-- The app has **two video render paths**: client-side (Canvas + MediaRecorder in ExportModal) and server-side (Remotion). They share `src/remotion/` components but have different font-size scaling formulas — preview/export mismatch is a known issue area.
+- Video render is entirely server-side via Remotion (MP4). The Remotion Player provides the client-side preview.
+- `formatMs` utility lives in `src/lib/format.ts` — import from `@/lib/format`.
 - `sharp` is used server-only in Remotion render path. Don't import it from client components.
 - The dev server logs to `dev.log` (via `tee`). Production logs to `server.log`.
 - Background video presets are defined in `src/lib/backgroundPresets.ts`. Each video has a `safe` variant (normalized) and a raw variant.

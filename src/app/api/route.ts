@@ -21,7 +21,6 @@ export async function GET() {
         render: '/api/render',
         renderStatus: '/api/render-status',
         renderDownload: '/api/render-download',
-        convertMp4: '/api/convert-mp4',
       },
       docs: '/about',
     },
