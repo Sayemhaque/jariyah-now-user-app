@@ -112,19 +112,20 @@ export default function LandingPage() {
         <div className="qv-grid-bg absolute inset-0 pointer-events-none opacity-80" aria-hidden />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-14 sm:pb-24">
           <div className="max-w-3xl">
-            {/* Badge */}
-            <div className="qv-pill mb-6">
-              <Image src="/logo.png" alt="" width={14} height={14} className="h-3.5 w-3.5 rounded-sm" />
-              Free • No account required
+            {/* Premium badge */}
+            <div className="qv-pill-premium mb-6">
+              <Image src="/logo.png" alt="" width={14} height={14} className="h-3.5 w-3.5 rounded-sm ring-1 ring-primary/20" />
+              Free — No account required
             </div>
 
-            {/* Tagline */}
-            <p className="text-base sm:text-lg font-semibold qv-gradient-text mb-3 tracking-wide">
+            {/* Tagline — gold accent */}
+            <p className="qv-tagline mb-4">
+              <span className="qv-divider-accent inline-block w-6 h-[2px] rounded-full" aria-hidden />
               Share once, earn forever.
             </p>
 
-            {/* Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.08] mb-6">
+            {/* Headline — display font for premium feel */}
+            <h1 className="qv-hero-title font-display mb-6">
               Turn Quran verses into
               <br />
               <span className="qv-gradient-text">shareable reels</span>
@@ -247,8 +248,12 @@ export default function LandingPage() {
       {/* ─── How It Works ─── */}
       <section id="how-it-works" className="py-16 sm:py-24 px-4 sm:px-6 bg-card/70 border-y border-border/80 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3 tracking-tight">
+          <div className="qv-section-header mb-14">
+            <div className="qv-pill-premium">
+              <Sparkles className="h-3.5 w-3.5" />
+              Four simple steps
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight font-display">
               Your reel in 4 steps
             </h2>
             <p className="text-muted-foreground">
@@ -285,7 +290,7 @@ export default function LandingPage() {
             ].map((item, i) => (
               <div
                 key={i}
-                className="qv-card qv-gradient-border rounded-2xl p-6 relative qv-hover-lift qv-scroll-fade"
+                className="qv-card-premium rounded-2xl p-6 relative qv-hover-lift qv-scroll-fade"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
                 <div className="flex items-center gap-3 mb-4">
@@ -309,13 +314,14 @@ export default function LandingPage() {
       {/* ─── Features ─── */}
       <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-14">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-              Why creators choose Jariyah Now
-            </h2>
-            <p className="text-muted-foreground">
+          <div className="qv-section-header mb-14">
+            <div className="qv-pill-premium">
+              <Sparkles className="h-3.5 w-3.5" />
+              Why creators choose us
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight font-display">
               Built for impact, designed for sharing
-            </p>
+            </h2>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
@@ -353,7 +359,7 @@ export default function LandingPage() {
             ].map((f, i) => (
               <div
                 key={i}
-                className="qv-card qv-gradient-border rounded-2xl p-6 qv-hover-lift qv-scroll-fade"
+                className="qv-card-premium rounded-2xl p-6 qv-hover-lift qv-scroll-fade"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
                 <div className="qv-icon-chip h-11 w-11 mb-4">
@@ -380,8 +386,8 @@ export default function LandingPage() {
           <div className="qv-icon-chip h-14 w-14 mx-auto mb-6">
             <Heart className="h-7 w-7" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-4 tracking-tight">
-            Why we’re called Jariyah Now
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 tracking-tight font-display">
+            Why we're called Jariyah Now
           </h2>
           <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
             <strong className="text-foreground">Sadaqah Jariyah</strong> is the
@@ -414,7 +420,7 @@ export default function LandingPage() {
               className="h-14 w-14 rounded-2xl object-contain mx-auto mb-6 qv-logo-glow relative"
             />
 
-            <h2 className="relative text-3xl sm:text-4xl font-bold mb-4 tracking-tight">
+            <h2 className="relative text-3xl sm:text-4xl font-bold mb-4 tracking-tight font-display">
               Start creating now
             </h2>
             <p className="relative text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
@@ -540,12 +546,12 @@ function TemplatesShowcaseSection() {
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 bg-card border-y border-border">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-12">
-          <div className="qv-pill mb-4 mx-auto w-fit">
+        <div className="qv-section-header mb-12">
+          <div className="qv-pill-premium">
             <LayoutGrid className="h-3.5 w-3.5" />
             One-click starting points
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold mb-3 tracking-tight">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight font-display">
             Start from a template
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">

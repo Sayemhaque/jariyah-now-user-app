@@ -161,9 +161,9 @@ export default function Home() {
 
   const settingsContent = (
     <div className="space-y-3">
-      <section className="qv-panel p-3.5 sm:p-4 space-y-3">
+      <section className="qv-panel-premium p-3.5 sm:p-4 space-y-3">
         <div className="flex items-center gap-2.5">
-          <span className="qv-step">1</span>
+          <span className="qv-step-modern">1</span>
           <h2 className="text-sm font-bold tracking-tight">Selection</h2>
         </div>
         <div className="space-y-2.5">
@@ -189,9 +189,9 @@ export default function Home() {
         </Button>
       </section>
 
-      <section className="qv-panel p-3.5 sm:p-4 space-y-2.5">
+      <section className="qv-panel-premium p-3.5 sm:p-4 space-y-2.5">
         <div className="flex items-center gap-2.5">
-          <span className="qv-step">2</span>
+          <span className="qv-step-modern">2</span>
           <h2 className="text-sm font-bold tracking-tight">Customize</h2>
         </div>
         <CustomizationPanel />
@@ -280,7 +280,7 @@ export default function Home() {
       </header>
 
       <main className="flex flex-1 min-h-0 overflow-hidden lg:grid lg:grid-cols-[3fr_2fr]">
-        <section className="relative qv-preview-stage flex flex-col min-h-0 overflow-hidden flex-1">
+        <section className="relative qv-preview-stage-premium flex flex-col min-h-0 overflow-hidden flex-1">
           <VideoPreview onSettingsClick={() => setSettingsDrawerOpen(true)} />
         </section>
 

@@ -1,9 +1,15 @@
 import React from 'react'
-import { Img, Video, OffthreadVideo, Loop, useVideoConfig } from 'remotion'
+import { Img, Video, OffthreadVideo, Loop, useVideoConfig, staticFile } from 'remotion'
 import { normalizeBackgroundVideoUrl } from '@/lib/backgroundPresets'
 
 function isVideoUrl(url: string): boolean {
   return url.endsWith('.mp4')
+}
+
+function resolveUrl(raw: string): string {
+  const url = normalizeBackgroundVideoUrl(raw)
+  if (url.startsWith('/backgrounds/')) return staticFile(url)
+  return url
 }
 
 export const Background: React.FC<{ url: string; isExport?: boolean; preLooped?: boolean }> = ({
@@ -12,13 +18,13 @@ export const Background: React.FC<{ url: string; isExport?: boolean; preLooped?:
   preLooped = false,
 }) => {
   const { durationInFrames } = useVideoConfig()
-  const normalizedUrl = normalizeBackgroundVideoUrl(url)
+  const src = resolveUrl(url)
 
-  if (isVideoUrl(normalizedUrl)) {
+  if (isVideoUrl(src)) {
     if (isExport && preLooped) {
       return (
         <OffthreadVideo
-          src={normalizedUrl}
+          src={src}
           style={{
             position: 'absolute',
             inset: 0,
@@ -35,7 +41,7 @@ export const Background: React.FC<{ url: string; isExport?: boolean; preLooped?:
       return (
         <Loop durationInFrames={durationInFrames}>
           <OffthreadVideo
-            src={normalizedUrl}
+            src={src}
             style={{
               position: 'absolute',
               inset: 0,
@@ -51,7 +57,7 @@ export const Background: React.FC<{ url: string; isExport?: boolean; preLooped?:
 
     return (
       <Video
-        src={normalizedUrl}
+        src={src}
         style={{
           position: 'absolute',
           inset: 0,
@@ -67,7 +73,7 @@ export const Background: React.FC<{ url: string; isExport?: boolean; preLooped?:
 
   return (
     <Img
-      src={normalizedUrl}
+      src={src}
       style={{
         position: 'absolute',
         inset: 0,

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {
   Inter,
+  EB_Garamond,
   Amiri,
   Scheherazade_New,
   Markazi_Text,
@@ -20,6 +21,13 @@ import { Providers } from "@/components/Providers";
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+});
+
+// ─── Display font — classical serif for hero/headings ────────────────
+const ebGaramond = EB_Garamond({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 // ─── Arabic fonts (7 total) ──────────────────────────────────────────
@@ -158,7 +166,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${amiri.variable} ${scheherazade.variable} ${markazi.variable} ${notoNaskhArabic.variable} ${reemKufi.variable} ${cairo.variable} ${notoBengali.variable} ${notoSerifBengali.variable} ${hindSiliguri.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${ebGaramond.variable} ${amiri.variable} ${scheherazade.variable} ${markazi.variable} ${notoNaskhArabic.variable} ${reemKufi.variable} ${cairo.variable} ${notoBengali.variable} ${notoSerifBengali.variable} ${hindSiliguri.variable} antialiased bg-background text-foreground`}
       >
         <Providers>
           {children}

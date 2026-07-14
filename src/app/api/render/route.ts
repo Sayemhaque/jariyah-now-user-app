@@ -21,11 +21,6 @@ import {
   updateRenderJob,
   computeDedupeHash,
 } from '@/lib/jobStore'
-import {
-  getEffectiveBackgroundUrl,
-  isExportSafeBackgroundVideo,
-  isVideoBackgroundUrl,
-} from '@/lib/backgroundPresets'
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout'
 
 export const runtime = 'nodejs'
@@ -196,16 +191,7 @@ export async function POST(req: NextRequest) {
     audioOk: audioChecks.filter((c) => c.ok).length,
   })
 
-  const effectiveBackgroundUrl = getEffectiveBackgroundUrl(
-    body.settings.backgroundPreset,
-    body.settings.backgroundImage,
-    body.orientation,
-  )
-  const shouldUseServerRender =
-    isVideoBackgroundUrl(effectiveBackgroundUrl) &&
-    isExportSafeBackgroundVideo(body.settings.backgroundPreset, effectiveBackgroundUrl)
-
-  if (shouldUseServerRender && claimRenderJobStart(job.id)) {
+  if (claimRenderJobStart(job.id)) {
     void remotionRenderJob(job.id, body)
   }
 
@@ -214,9 +200,7 @@ export async function POST(req: NextRequest) {
       jobId: job.id,
       ownerToken: job.ownerToken,
       audioCheck: audioChecks,
-      note: shouldUseServerRender
-        ? 'Server-side render started. Poll /api/render-status with the owner token for progress.'
-        : 'Browser fallback remains active for this export. PUT progress to /api/render with the owner token to update the job.',
+      note: 'Server-side render started. Poll /api/render-status with the owner token for progress.',
     },
     { status: 202 },
   )

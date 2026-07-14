@@ -8,6 +8,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
   /* Arabic fonts (7 total) */
   --font-arabic-amiri: var(--font-amiri);
   --font-arabic-scheherazade: var(--font-scheherazade);
@@ -97,6 +98,11 @@
   --shadow-md: 0 4px 16px rgba(26, 16, 48, 0.06), 0 1px 3px rgba(26, 16, 48, 0.04);
   --shadow-lg: 0 12px 40px rgba(26, 16, 48, 0.08), 0 4px 12px rgba(124, 58, 237, 0.06);
   --shadow-glow: 0 8px 32px rgba(124, 58, 237, 0.22);
+  --shadow-xl: 0 20px 60px rgba(26, 16, 48, 0.1), 0 8px 24px rgba(124, 58, 237, 0.08);
+  --gold: #c9a84c;
+  --gold-light: #f0dca0;
+  --gold-glow: rgba(201, 168, 76, 0.18);
+  --surface-premium: linear-gradient(135deg, #fcfaff 0%, #f8f4ff 100%);
 }
 
 /* Keep a dark variant available for the video preview frame (which needs
@@ -678,6 +684,145 @@
 .qv-dot:nth-child(2) { animation-delay: 0.18s; }
 .qv-dot:nth-child(3) { animation-delay: 0.36s; }
 @keyframes qv-dot-bounce {
-  0%, 80%, 100% { transform: scale(0.5); opacity: 0.4; }
-  40%           { transform: scale(1);   opacity: 1; }
+   0%, 80%, 100% { transform: scale(0.5); opacity: 0.4; }
+   40%           { transform: scale(1);   opacity: 1; }
+}
+
+/* ─── Premium additions ───────────────────────────────────────────── */
+
+/* Elevated premium card with richer shadow */
+.qv-card-premium {
+  background: var(--surface-premium);
+  border: 1px solid rgba(224, 220, 232, 0.8);
+  box-shadow: var(--shadow-lg);
+  transition: box-shadow 350ms ease, transform 350ms ease, border-color 300ms ease;
+  position: relative;
+  overflow: hidden;
+}
+.qv-card-premium::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, rgba(201, 168, 76, 0.4) 30%, rgba(124, 58, 237, 0.3) 70%, transparent 100%);
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+.qv-card-premium:hover::after {
+  opacity: 1;
+}
+.qv-card-premium:hover {
+  box-shadow: var(--shadow-xl);
+  border-color: rgba(124, 58, 237, 0.15);
+}
+
+/* Refined step indicator — glass-style number circle */
+.qv-step-modern {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(124, 58, 237, 0.12);
+  transition: all 250ms ease;
+}
+.qv-step-modern:hover {
+  background: var(--primary);
+  color: white;
+  transform: scale(1.05);
+}
+
+/* Hero headline with refined tracking and leading */
+.qv-hero-title {
+  font-size: clamp(2.25rem, 5vw, 3.75rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+/* Decorative accent divider — subtle gold-to-purple gradient */
+.qv-divider-accent {
+  width: 60px;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--primary) 100%);
+  box-shadow: 0 0 12px var(--gold-glow);
+}
+
+/* Premium glass pill — refined badge */
+.qv-pill-premium {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.08) 0%, rgba(201, 168, 76, 0.06) 100%);
+  border: 1px solid rgba(124, 58, 237, 0.15);
+  color: var(--primary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  backdrop-filter: blur(8px);
+}
+
+/* Gold accent text */
+.qv-gold-text {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 60%, #e8d48b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Refined tagline with gold */
+.qv-tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+/* Reveal animation — subtler than qv-scroll-fade */
+@keyframes qv-reveal-up {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.qv-reveal {
+  animation: qv-reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Enhanced preview stage for builder */
+.qv-preview-stage-premium {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 35%, rgba(124, 58, 237, 0.08), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 20% 80%, rgba(201, 168, 76, 0.04), transparent 50%),
+    linear-gradient(180deg, rgba(243, 240, 247, 0.95) 0%, rgba(238, 235, 240, 0.6) 100%);
+}
+
+/* Builder panel with glass base */
+.qv-panel-premium {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(224, 220, 232, 0.7);
+  border-radius: 1rem;
+  box-shadow: 0 2px 12px rgba(26, 16, 48, 0.04);
+  transition: box-shadow 300ms ease, border-color 300ms ease;
+}
+.qv-panel-premium:hover {
+  box-shadow: 0 4px 20px rgba(26, 16, 48, 0.06);
+  border-color: rgba(124, 58, 237, 0.12);
 }

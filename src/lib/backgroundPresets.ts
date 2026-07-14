@@ -108,63 +108,7 @@ export function isExportSafeBackgroundVideo(
   return Boolean(preset?.isVideo && preset.exportSafe && preset.url === normalized)
 }
 
-export interface BackgroundVideoValidation {
-  pass: boolean
-  checks: { name: string; pass: boolean; actual: string; expected: string }[]
-}
 
-/** Run ffprobe on a file and check it meets BACKGROUND_VIDEO_POLICY constraints. */
-export async function checkBackgroundVideoValidation(
-  filePath: string,
-): Promise<BackgroundVideoValidation> {
-  const { execSync } = await import('node:child_process')
-  const result: BackgroundVideoValidation = { pass: true, checks: [] }
-  const policy = BACKGROUND_VIDEO_POLICY
-
-  try {
-    const stdout = execSync(
-      `ffprobe -v quiet -print_format json -show_streams "${filePath}"`,
-      { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024 },
-    )
-    const data = JSON.parse(stdout) as { streams: Record<string, unknown>[] }
-    const videoStream = data.streams?.find((s) => s.codec_type === 'video')
-
-    if (!videoStream) {
-      result.checks.push({ name: 'video_stream', pass: false, actual: 'none', expected: 'video stream' })
-      result.pass = false
-      return result
-    }
-
-    const codec = String(videoStream.codec_name ?? '')
-    const pixFmt = String(videoStream.pix_fmt ?? '')
-    const w = Number(videoStream.width ?? 0)
-    const h = Number(videoStream.height ?? 0)
-    const fpsRatio = String(videoStream.r_frame_rate ?? '')
-
-    let fps = 0
-    if (fpsRatio.includes('/')) {
-      const [num, den] = fpsRatio.split('/').map(Number)
-      fps = num && den ? num / den : 0
-    }
-
-    const audioStreams = data.streams?.filter((s) => s.codec_type === 'audio') ?? []
-
-    result.checks.push(
-      { name: 'codec', pass: codec === policy.codec, actual: codec, expected: policy.codec },
-      { name: 'pix_fmt', pass: pixFmt === policy.pixFmt, actual: pixFmt, expected: policy.pixFmt },
-      { name: 'resolution', pass: w === policy.width && h === policy.height, actual: `${w}x${h}`, expected: `${policy.width}x${policy.height}` },
-      { name: 'fps', pass: Math.abs(fps - policy.fps) < 0.01, actual: `${fpsRatio} (${fps.toFixed(2)})`, expected: `${policy.fps}` },
-      { name: 'no_audio', pass: audioStreams.length === 0, actual: audioStreams.length > 0 ? `${audioStreams.length} stream(s)` : 'none', expected: 'no audio' },
-    )
-
-    result.pass = result.checks.every((c) => c.pass)
-    return result
-  } catch (err) {
-    result.checks.push({ name: 'ffprobe', pass: false, actual: String(err), expected: 'ffprobe succeeds' })
-    result.pass = false
-    return result
-  }
-}
 
 export function getBackgroundRenderFps(
   backgroundPreset: string,

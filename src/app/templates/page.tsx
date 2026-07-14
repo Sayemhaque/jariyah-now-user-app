@@ -152,14 +152,14 @@ export default function TemplatesPage() {
         <div className="qv-ambient" aria-hidden />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-16 pb-8 sm:pb-12">
           <div className="max-w-3xl">
-            {/* Badge */}
-            <div className="qv-pill mb-5">
+            {/* Premium badge */}
+            <div className="qv-pill-premium mb-5">
               <LayoutGrid className="h-3.5 w-3.5" />
               One-click starting points
             </div>
 
             {/* Headline */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.08] mb-4">
+            <h1 className="qv-hero-title font-display mb-4">
               Start from a <span className="qv-gradient-text">template</span>
             </h1>
 
@@ -219,7 +219,7 @@ export default function TemplatesPage() {
               <button
                 key={t.id}
                 onClick={() => applyTemplate(t.id)}
-                className="group qv-card qv-gradient-border rounded-2xl p-0 overflow-hidden text-left qv-hover-lift flex flex-col"
+                className="group qv-card-premium rounded-2xl p-0 overflow-hidden text-left qv-hover-lift flex flex-col"
               >
                 {/* Gradient header */}
                 <div
@@ -308,7 +308,7 @@ export default function TemplatesPage() {
       <section className="py-12 sm:py-16 px-4 sm:px-6 bg-card border-y border-border">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-10">
-            <h2 className="text-2xl sm:text-3xl font-bold mb-3">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3 font-display">
               How templates work
             </h2>
             <p className="text-muted-foreground">
@@ -336,7 +336,7 @@ export default function TemplatesPage() {
                 desc: 'Adjust anything you want, then export an MP4 ready for Instagram Reels, TikTok, and YouTube Shorts.',
               },
             ].map((item) => (
-              <div key={item.step} className="qv-card qv-gradient-border rounded-2xl p-6 qv-hover-lift">
+              <div key={item.step} className="qv-card-premium rounded-2xl p-6 qv-hover-lift">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="qv-icon-chip h-11 w-11">
                     <item.icon className="h-5 w-5" />
