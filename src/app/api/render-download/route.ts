@@ -4,37 +4,25 @@ import { Readable } from 'node:stream'
 
 import { NextRequest } from 'next/server'
 
-import { getRenderJob, verifyJobOwnership } from '@/lib/jobStore'
+import { getRenderJob } from '@/lib/jobStore'
 import { logger } from '@/lib/logger'
 import { renderDownloadQuerySchema } from '@/lib/schemas'
+import { validateQuery, requireOwnership } from '@/lib/route-utils'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
-  const parsed = renderDownloadQuerySchema.safeParse({
-    jobId: req.nextUrl.searchParams.get('jobId'),
-  })
-  if (!parsed.success) {
-    return Response.json(
-      { error: parsed.error.issues[0]?.message ?? 'Invalid query' },
-      { status: 400 },
-    )
-  }
+  const q = validateQuery(
+    { jobId: req.nextUrl.searchParams.get('jobId') },
+    renderDownloadQuerySchema,
+  )
+  if (!q.ok) return q.error
 
-  const ownerToken = req.headers.get('x-owner-token')
-  if (!ownerToken || !verifyJobOwnership(parsed.data.jobId, ownerToken)) {
-    logger.warn('GET /api/render-download ownership check failed', {
-      jobId: parsed.data.jobId,
-      hasToken: Boolean(ownerToken),
-    })
-    return Response.json(
-      { error: 'Forbidden — invalid or missing owner token' },
-      { status: 403 },
-    )
-  }
+  const ownershipErr = requireOwnership(q.value.jobId, req)
+  if (ownershipErr) return ownershipErr
 
-  const job = getRenderJob(parsed.data.jobId)
+  const job = getRenderJob(q.value.jobId)
   if (!job) {
     return Response.json({ error: 'Unknown jobId' }, { status: 404 })
   }

@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { z } from 'zod'
 import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -17,11 +16,11 @@ import {
 import {
   claimRenderJobStart,
   createRenderJob,
-  verifyJobOwnership,
   updateRenderJob,
   computeDedupeHash,
 } from '@/lib/jobStore'
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout'
+import { validateBody, requireOwnership } from '@/lib/route-utils'
 
 export const runtime = 'nodejs'
 
@@ -114,26 +113,9 @@ export async function POST(req: NextRequest) {
   }
 
   // --- Parse + validate body ------------------------------------------
-  let body: RenderBody
-  try {
-    const json = await req.json()
-    const parsed = renderBodySchema.safeParse(json)
-    if (!parsed.success) {
-      return NextResponse.json(
-        {
-          error: 'Invalid request body',
-          details: parsed.error.issues.map((i) => ({
-            path: i.path.join('.'),
-            message: i.message,
-          })),
-        },
-        { status: 400 },
-      )
-    }
-    body = parsed.data
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-  }
+  const parsed = await validateBody(req, renderBodySchema)
+  if (!parsed.ok) return parsed.error
+  const body = parsed.value
 
   // --- Idempotency: dedupe by payload hash ----------------------------
   const dedupeHash = computeDedupeHash({
@@ -207,32 +189,12 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  let body: z.infer<typeof renderUpdateBodySchema>
-  try {
-    const json = await req.json()
-    const parsed = renderUpdateBodySchema.safeParse(json)
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Invalid body', details: parsed.error.issues },
-        { status: 400 },
-      )
-    }
-    body = parsed.data
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-  }
+  const parsed = await validateBody(req, renderUpdateBodySchema)
+  if (!parsed.ok) return parsed.error
+  const body = parsed.value
 
-  const ownerToken = req.headers.get('x-owner-token')
-  if (!ownerToken || !verifyJobOwnership(body.jobId, ownerToken)) {
-    logger.warn('PUT /api/render ownership check failed', {
-      jobId: body.jobId,
-      hasToken: Boolean(ownerToken),
-    })
-    return NextResponse.json(
-      { error: 'Forbidden — invalid or missing owner token' },
-      { status: 403 },
-    )
-  }
+  const ownershipErr = requireOwnership(body.jobId, req)
+  if (ownershipErr) return ownershipErr
 
   const updated = updateRenderJob(body.jobId, {
     status: body.status,
