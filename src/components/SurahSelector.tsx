@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Search, BookOpen } from 'lucide-react'
-import { useBuilderStore } from '@/lib/store'
+import { useSurahRange } from '@/lib/store'
 import { useSurahsQuery } from '@/lib/queries/builder'
 import {
   Select,
@@ -17,10 +17,7 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 
 export function SurahSelector() {
-  const surahs = useBuilderStore((s) => s.surahs)
-  const setSurahs = useBuilderStore((s) => s.setSurahs)
-  const selected = useBuilderStore((s) => s.selectedSurahNumber)
-  const setSurah = useBuilderStore((s) => s.setSurah)
+  const { surahs, setSurahs, selectedSurahNumber: selected, setSurah } = useSurahRange()
   const surahsQuery = useSurahsQuery()
 
   const [query, setQuery] = useState('')

@@ -14,42 +14,47 @@ import type {
   AyatData,
   VideoSettings,
   Reciter,
-  Orientation,
 } from './types'
+import { AUTO_FONT_SIZES, type Orientation } from './types'
 import { RECITERS, DEFAULT_RECITER_ID } from './reciters'
-import { validateAyatRange } from './validation'
-import { AUTO_FONT_SIZES } from './types'
 import { DEFAULT_TRANSLATION_KEY } from './translations'
 import { SURAHS_FALLBACK } from './surahs-fallback'
+import { validateAyatRange } from './validation'
 
-export interface BuilderState {
+// ── Slice interfaces ──────────────────────────────────────────
+
+export interface SurahRangeSlice {
   surahs: Surah[]
   selectedSurahNumber: number | null
   fromAyat: number
   toAyat: number
   reciterId: string
   translationKey: string
-  settings: VideoSettings
-  ayatList: AyatData[]
-  loadingAyats: boolean
-  ayatError: string | null
   setSurahs: (surahs: Surah[]) => void
   setSurah: (number: number) => void
   setFromAyat: (n: number) => void
   setToAyat: (n: number) => void
   setReciter: (id: string) => void
   setTranslation: (key: string) => void
+}
+
+export interface SettingsSlice {
+  settings: VideoSettings
   updateSettings: (patch: Partial<VideoSettings>) => void
   setOrientation: (o: Orientation) => void
   setAutoFitFonts: (on: boolean) => void
+}
+
+export interface AyatDataSlice {
+  ayatList: AyatData[]
+  loadingAyats: boolean
+  ayatError: string | null
   setAyatLoading: (loading: boolean) => void
   setAyatError: (error: string | null) => void
   setAyatList: (list: AyatData[]) => void
-  getReciter: () => Reciter
-  getSelectedSurah: () => Surah | undefined
-  getValidation: () => ReturnType<typeof validateAyatRange>
-  getEstimatedDurationMs: () => number
 }
+
+// ── Default settings ──────────────────────────────────────────
 
 const DEFAULT_SETTINGS: VideoSettings = {
   backgroundImage: '/backgrounds/twilight-mosque-portrait.png',
@@ -73,6 +78,8 @@ const DEFAULT_SETTINGS: VideoSettings = {
   textSpacing: 'normal',
 }
 
+// ── Helpers ───────────────────────────────────────────────────
+
 const TWILIGHT_MOSQUE_URLS: Record<string, string> = {
   portrait: '/backgrounds/twilight-mosque-portrait.png',
   landscape: '/backgrounds/twilight-mosque.png',
@@ -88,41 +95,72 @@ function pickBgForOrientation(
   return TWILIGHT_MOSQUE_URLS[newOrientation] ?? currentBg
 }
 
-const BuilderContext = createContext<BuilderState | null>(null)
+// ── Sub-contexts ──────────────────────────────────────────────
 
-export function BuilderProvider({ children }: { children: ReactNode }) {
+const SurahRangeContext = createContext<SurahRangeSlice | null>(null)
+const SettingsContext = createContext<SettingsSlice | null>(null)
+const AyatDataContext = createContext<AyatDataSlice | null>(null)
+
+function SurahRangeProvider({ children }: { children: ReactNode }) {
   const [surahs, setSurahs] = useState<Surah[]>(SURAHS_FALLBACK)
   const [selectedSurahNumber, setSelectedSurahNumber] = useState<number | null>(null)
   const [fromAyat, setFromAyat] = useState(1)
   const [toAyat, setToAyat] = useState(3)
   const [reciterId, setReciterId] = useState(DEFAULT_RECITER_ID)
   const [translationKey, setTranslationKey] = useState(DEFAULT_TRANSLATION_KEY)
-  const [settings, setSettings] = useState<VideoSettings>(DEFAULT_SETTINGS)
-  const [ayatList, setAyatList] = useState<AyatData[]>([])
-  const [loadingAyats, setAyatLoading] = useState(false)
-  const [ayatError, setAyatError] = useState<string | null>(null)
 
   const setSurah = useCallback((number: number) => {
     const surah = surahs.find((s) => s.number === number)
     setSelectedSurahNumber(number)
     setFromAyat(1)
     setToAyat(Math.min(3, surah?.numberOfAyahs ?? 3))
-    setAyatList([])
   }, [surahs])
 
   const setReciter = useCallback((id: string) => {
     setReciterId(id)
-    setAyatList([])
   }, [])
 
   const setTranslation = useCallback((key: string) => {
     setTranslationKey(key)
-    setAyatList([])
   }, [])
+
+  const value = useMemo<SurahRangeSlice>(() => ({
+    surahs,
+    selectedSurahNumber,
+    fromAyat,
+    toAyat,
+    reciterId,
+    translationKey,
+    setSurahs,
+    setSurah,
+    setFromAyat,
+    setToAyat,
+    setReciter,
+    setTranslation,
+  }), [
+    surahs,
+    selectedSurahNumber,
+    fromAyat,
+    toAyat,
+    reciterId,
+    translationKey,
+    setSurahs,
+    setSurah,
+    setFromAyat,
+    setToAyat,
+    setReciter,
+    setTranslation,
+  ])
+
+  return createElement(SurahRangeContext.Provider, { value }, children)
+}
+
+function SettingsProvider({ children }: { children: ReactNode }) {
+  const [settings, setSettings] = useState<VideoSettings>(DEFAULT_SETTINGS)
 
   const updateSettings = useCallback((patch: Partial<VideoSettings>) => {
     setSettings((current) => {
-      const next: VideoSettings = { ...current, ...patch }
+      const next = { ...current, ...patch }
       if (
         patch.orientation &&
         patch.orientation !== current.orientation &&
@@ -172,80 +210,133 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const getReciter = useCallback(() => {
-    return RECITERS.find((r) => r.id === reciterId) ?? RECITERS[0]
-  }, [reciterId])
-
-  const getSelectedSurah = useCallback(() => {
-    if (selectedSurahNumber == null) return undefined
-    return surahs.find((s) => s.number === selectedSurahNumber)
-  }, [selectedSurahNumber, surahs])
-
-  const getValidation = useCallback(() => {
-    return validateAyatRange(fromAyat, toAyat, getSelectedSurah())
-  }, [fromAyat, toAyat, getSelectedSurah])
-
-  const getEstimatedDurationMs = useCallback(() => {
-    return ayatList.reduce((sum, a) => sum + (a.audioDurationMs || 0), 0)
-  }, [ayatList])
-
-  const value = useMemo<BuilderState>(() => ({
-    surahs,
-    selectedSurahNumber,
-    fromAyat,
-    toAyat,
-    reciterId,
-    translationKey,
+  const value = useMemo<SettingsSlice>(() => ({
     settings,
-    ayatList,
-    loadingAyats,
-    ayatError,
-    setSurahs,
-    setSurah,
-    setFromAyat,
-    setToAyat,
-    setReciter,
-    setTranslation,
     updateSettings,
     setOrientation,
     setAutoFitFonts,
+  }), [
+    settings,
+    updateSettings,
+    setOrientation,
+    setAutoFitFonts,
+  ])
+
+  return createElement(SettingsContext.Provider, { value }, children)
+}
+
+function AyatDataProvider({ children }: { children: ReactNode }) {
+  const [ayatList, setAyatList] = useState<AyatData[]>([])
+  const [loadingAyats, setAyatLoading] = useState(false)
+  const [ayatError, setAyatError] = useState<string | null>(null)
+
+  const value = useMemo<AyatDataSlice>(() => ({
+    ayatList,
+    loadingAyats,
+    ayatError,
     setAyatLoading,
     setAyatError,
     setAyatList,
-    getReciter,
-    getSelectedSurah,
-    getValidation,
-    getEstimatedDurationMs,
   }), [
-    surahs,
-    selectedSurahNumber,
-    fromAyat,
-    toAyat,
-    reciterId,
-    translationKey,
-    settings,
     ayatList,
     loadingAyats,
     ayatError,
-    setSurah,
-    setReciter,
-    setTranslation,
-    updateSettings,
-    setOrientation,
-    setAutoFitFonts,
-    getReciter,
-    getSelectedSurah,
-    getValidation,
-    getEstimatedDurationMs,
+    setAyatLoading,
+    setAyatError,
+    setAyatList,
   ])
 
-  return createElement(BuilderContext.Provider, { value }, children)
+  return createElement(AyatDataContext.Provider, { value }, children)
 }
 
+// ── Combined provider (backward-compatible) ───────────────────
+
+export function BuilderProvider({ children }: { children: ReactNode }) {
+  return createElement(
+    SurahRangeProvider,
+    null,
+    createElement(SettingsProvider, null, createElement(AyatDataProvider, null, children)),
+  )
+}
+
+// ── Slice hooks ───────────────────────────────────────────────
+
+export function useSurahRange(): SurahRangeSlice {
+  const ctx = useContext(SurahRangeContext)
+  if (!ctx) throw new Error('useSurahRange must be used within BuilderProvider')
+  return ctx
+}
+
+export function useSettings(): SettingsSlice {
+  const ctx = useContext(SettingsContext)
+  if (!ctx) throw new Error('useSettings must be used within BuilderProvider')
+  return ctx
+}
+
+export function useAyatData(): AyatDataSlice {
+  const ctx = useContext(AyatDataContext)
+  if (!ctx) throw new Error('useAyatData must be used within BuilderProvider')
+  return ctx
+}
+
+// ── Legacy BuilderState (kept for backward compat) ────────────
+
+export interface BuilderState {
+  surahs: Surah[]
+  selectedSurahNumber: number | null
+  fromAyat: number
+  toAyat: number
+  reciterId: string
+  translationKey: string
+  settings: VideoSettings
+  ayatList: AyatData[]
+  loadingAyats: boolean
+  ayatError: string | null
+  setSurahs: (surahs: Surah[]) => void
+  setSurah: (number: number) => void
+  setFromAyat: (n: number) => void
+  setToAyat: (n: number) => void
+  setReciter: (id: string) => void
+  setTranslation: (key: string) => void
+  updateSettings: (patch: Partial<VideoSettings>) => void
+  setOrientation: (o: Orientation) => void
+  setAutoFitFonts: (on: boolean) => void
+  setAyatLoading: (loading: boolean) => void
+  setAyatError: (error: string | null) => void
+  setAyatList: (list: AyatData[]) => void
+  getReciter: () => Reciter
+  getSelectedSurah: () => Surah | undefined
+  getValidation: () => ReturnType<typeof validateAyatRange>
+  getEstimatedDurationMs: () => number
+}
+
+/** @deprecated Prefer the slice hooks: useSurahRange, useSettings, useAyatData. */
 export function useBuilderStore<T>(selector: (state: BuilderState) => T): T {
-  const context = useContext(BuilderContext)
-  if (!context) {
-    throw new Error('useBuilderStore must be used within BuilderProvider')
-  }
-  return selector(context)
+  const surahRange = useSurahRange()
+  const settings = useSettings()
+  const ayatData = useAyatData()
+  const merged = useMemo<BuilderState>(() => {
+    const reciters = RECITERS
+    const reciter = reciters.find((r) => r.id === surahRange.reciterId) ?? reciters[0]
+    const surah = surahRange.selectedSurahNumber == null
+      ? undefined
+      : surahRange.surahs.find((s) => s.number === surahRange.selectedSurahNumber)
+    return {
+      ...surahRange,
+      ...settings,
+      ...ayatData,
+      getReciter: () => reciter,
+      getSelectedSurah: () => surah,
+      getValidation: () => validateAyatRange(
+        surahRange.fromAyat,
+        surahRange.toAyat,
+        surah,
+      ),
+      getEstimatedDurationMs: () => ayatData.ayatList.reduce(
+        (sum, a) => sum + (a.audioDurationMs || 0),
+        0,
+      ),
+    }
+  }, [surahRange, settings, ayatData])
+  return selector(merged)
 }

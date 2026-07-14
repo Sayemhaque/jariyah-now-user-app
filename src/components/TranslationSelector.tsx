@@ -1,7 +1,7 @@
 'use client'
 
 import { BookText, AlertTriangle } from 'lucide-react'
-import { useBuilderStore } from '@/lib/store'
+import { useSurahRange } from '@/lib/store'
 import { TRANSLATION_EDITIONS } from '@/lib/translations'
 import {
   Select,
@@ -26,8 +26,7 @@ import {
  * note that they need a separate license to distribute the resulting video.
  */
 export function TranslationSelector() {
-  const translationKey = useBuilderStore((s) => s.translationKey)
-  const setTranslation = useBuilderStore((s) => s.setTranslation)
+  const { translationKey, setTranslation } = useSurahRange()
 
   return (
     <div className="space-y-1.5">

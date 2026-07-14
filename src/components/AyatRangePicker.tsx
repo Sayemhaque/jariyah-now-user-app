@@ -3,7 +3,7 @@
 import { useMemo } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { Label } from '@/components/ui/label'
-import { useBuilderStore } from '@/lib/store'
+import { useSurahRange } from '@/lib/store'
 import { validateAyatRange, MAX_AYATS_PER_VIDEO } from '@/lib/validation'
 import { cn } from '@/lib/utils'
 import {
@@ -15,12 +15,7 @@ import {
 } from '@/components/ui/select'
 
 export function AyatRangePicker() {
-  const fromAyat = useBuilderStore((s) => s.fromAyat)
-  const toAyat = useBuilderStore((s) => s.toAyat)
-  const setFromAyat = useBuilderStore((s) => s.setFromAyat)
-  const setToAyat = useBuilderStore((s) => s.setToAyat)
-  const surahs = useBuilderStore((s) => s.surahs)
-  const selectedSurahNumber = useBuilderStore((s) => s.selectedSurahNumber)
+  const { surahs, selectedSurahNumber, fromAyat, toAyat, setFromAyat, setToAyat } = useSurahRange()
 
   const surah = useMemo(
     () => surahs.find((s) => s.number === selectedSurahNumber),

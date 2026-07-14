@@ -1,7 +1,7 @@
 'use client'
 
 import { Mic2 } from 'lucide-react'
-import { useBuilderStore } from '@/lib/store'
+import { useSurahRange } from '@/lib/store'
 import { RECITERS } from '@/lib/reciters'
 import {
   Select,
@@ -12,8 +12,7 @@ import {
 } from '@/components/ui/select'
 
 export function ReciterSelector() {
-  const reciterId = useBuilderStore((s) => s.reciterId)
-  const setReciter = useBuilderStore((s) => s.setReciter)
+  const { reciterId, setReciter } = useSurahRange()
   const selected = RECITERS.find((r) => r.id === reciterId) ?? RECITERS[0]!
 
   return (

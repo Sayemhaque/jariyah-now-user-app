@@ -4,7 +4,7 @@ import { useRef } from 'react'
 import { HexColorPicker } from 'react-colorful'
 import { Upload, Sparkles } from 'lucide-react'
 import Image from 'next/image'
-import { useBuilderStore } from '@/lib/store'
+import { useSettings } from '@/lib/store'
 import { BG_PRESETS, getBackgroundPresetUrl } from '@/lib/backgroundPresets'
 import { validateBackgroundImage } from '@/lib/uploadValidation'
 import type { ArabicFont, BengaliFont, Orientation, OverlayStyle } from '@/lib/types'
@@ -114,10 +114,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 export function CustomizationPanel() {
-  const settings = useBuilderStore((s) => s.settings)
-  const update = useBuilderStore((s) => s.updateSettings)
-  const setOrientation = useBuilderStore((s) => s.setOrientation)
-  const setAutoFitFonts = useBuilderStore((s) => s.setAutoFitFonts)
+  const { settings, updateSettings: update, setOrientation, setAutoFitFonts } = useSettings()
   const fileRef = useRef<HTMLInputElement>(null)
 
   const onUpload = (file?: File) => {
