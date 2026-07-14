@@ -18,15 +18,14 @@ import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { videoAttributionLine } from '@/lib/translations'
 import { Slider } from '@/components/ui/slider'
-import { getAdvanceAtMs } from '@/lib/advanceTiming'
+import { computeSlideFrames } from '@/lib/advanceTiming'
 import { formatMs } from '@/lib/format'
+import { FPS } from '@/lib/constants'
 
 const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
   landscape: { w: 1280, h: 720, ratio: '16 / 9' },
   portrait: { w: 720, h: 1280, ratio: '9 / 16' },
 }
-
-const FPS = 30
 
 export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void }) {
   const ayatList = useBuilderStore((s) => s.ayatList)
@@ -120,24 +119,10 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
 
   const aspect = ASPECT[settings.orientation]
 
-  const frameOffsets = useMemo(() => {
-    const arr: number[] = []
-    let acc = 0
-    for (const a of ayatList) {
-      arr.push(acc)
-      const advanceMs = getAdvanceAtMs(a, a.audioDurationMs)
-      acc += Math.round(advanceMs / 1000 * FPS)
-    }
-    return arr
-  }, [ayatList])
-
-  const totalFrames = useMemo(() => {
-    if (frameOffsets.length === 0) return 0
-    const last = frameOffsets[frameOffsets.length - 1]!
-    const lastSlide = ayatList[ayatList.length - 1]
-    const lastAdvance = getAdvanceAtMs(lastSlide, lastSlide?.audioDurationMs ?? 0)
-    return last + Math.round(lastAdvance / 1000 * FPS)
-  }, [frameOffsets, ayatList])
+  const { totalFrames, offsets: frameOffsets } = useMemo(
+    () => computeSlideFrames(ayatList, FPS),
+    [ayatList],
+  )
 
   const currentIndex = useMemo(() => {
     for (let i = frameOffsets.length - 1; i >= 0; i--) {

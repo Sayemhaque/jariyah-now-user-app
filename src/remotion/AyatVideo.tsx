@@ -3,7 +3,7 @@ import { AbsoluteFill, Sequence, Audio, useVideoConfig } from 'remotion'
 import type { AyatVideoProps } from './types'
 import { TEXT_WIDTH_FRACTIONS, TEXT_SPACING_FRACTIONS, ARABIC_FONT_CLASS, BENGALI_FONT_CLASS, orientationFontBase } from './types'
 import { Background } from './Background'
-import { getAdvanceAtMs } from '@/lib/advanceTiming'
+import { computeSlideFrames, getAdvanceAtMs } from '@/lib/advanceTiming'
 import { OverlayLayer } from './OverlayLayer'
 import { TopHeader } from './TopHeader'
 import { Card } from './Card'
@@ -39,10 +39,7 @@ export const AyatVideo: React.FC<AyatVideoProps> = ({
 
   const isBengaliTranslation = isBengali(slides[0]?.translation ?? '')
 
-  const totalFrames = slides.reduce((sum, s) => {
-    const advanceMs = getAdvanceAtMs(s, s.audioDurationMs)
-    return sum + Math.round(advanceMs / 1000 * fps)
-  }, 0)
+  const { totalFrames } = computeSlideFrames(slides, fps)
 
   const fixedSettings = settings as AyatVideoProps['settings'] & {
     arabicFont: string

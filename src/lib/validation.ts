@@ -1,6 +1,7 @@
 import type { Surah } from './types'
+import { MAX_AYATS_PER_VIDEO } from '@/lib/constants'
 
-export const MAX_AYATS_PER_VIDEO = 10 // hard limit per spec
+export { MAX_AYATS_PER_VIDEO }
 
 export interface RangeValidation {
   ok: boolean

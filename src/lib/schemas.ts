@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MAX_AYATS_PER_VIDEO } from '@/lib/constants'
 
 // Allowed audio CDNs
 const ALLOWED_AUDIO_ORIGINS = [
@@ -40,8 +41,6 @@ export const ayatNumberSchema = z
   .min(1, 'Ayat number must be at least 1')
 
 // --- POST /api/render ---------------------------------------------------
-
-const MAX_AYATS_PER_VIDEO = 10
 
 const slideSchema = z.object({
   arabicText: z.string().min(1),

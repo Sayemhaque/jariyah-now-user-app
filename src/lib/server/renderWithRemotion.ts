@@ -1,6 +1,7 @@
 import path from 'node:path'
 import os from 'node:os'
-import { getAdvanceAtMs } from '@/lib/advanceTiming'
+import { computeSlideFrames } from '@/lib/advanceTiming'
+import { FPS } from '@/lib/constants'
 import { logger } from '@/lib/logger'
 
 let cachedServeUrl: string | null = null
@@ -24,16 +25,6 @@ async function getServeUrl(): Promise<string> {
   return cachedServeUrl
 }
 
-function computeTotalFrames(
-  slides: { audioDurationMs: number; audioPauses?: { start: number; end: number; duration: number }[] }[],
-  fps: number,
-): number {
-  return slides.reduce((sum, s) => {
-    const advanceMs = getAdvanceAtMs(s, s.audioDurationMs)
-    return sum + Math.round(advanceMs / 1000 * fps)
-  }, 0)
-}
-
 export async function renderWithRemotion(
   inputProps: Record<string, unknown>,
   outputPath: string,
@@ -47,8 +38,7 @@ export async function renderWithRemotion(
     throw new Error('renderWithRemotion: inputProps.slides is empty or missing')
   }
 
-  const fps = 30
-  const totalFrames = computeTotalFrames(slides, fps)
+  const totalFrames = computeSlideFrames(slides, FPS).totalFrames
   const concurrency = Math.max(1, os.cpus().length - 1)
 
   inputProps.preLooped = false
@@ -56,7 +46,7 @@ export async function renderWithRemotion(
   logger.info('remotion render starting', {
     slides: slides.length,
     totalFrames,
-    fps,
+    fps: FPS,
     concurrency,
     outputPath,
     preLooped: false,
@@ -75,7 +65,7 @@ export async function renderWithRemotion(
   }
 
   composition.durationInFrames = totalFrames
-  composition.fps = fps
+  composition.fps = FPS
 
   await renderMedia({
     composition,

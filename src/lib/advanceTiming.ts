@@ -20,3 +20,17 @@ export function getAdvanceAtMs(
   }
   return totalMs
 }
+
+export function computeSlideFrames(
+  slides: { audioDurationMs: number; audioPauses?: { start: number; end: number; duration: number }[] }[],
+  fps: number,
+): { totalFrames: number; offsets: number[] } {
+  const offsets: number[] = []
+  let acc = 0
+  for (const s of slides) {
+    offsets.push(acc)
+    const advanceMs = getAdvanceAtMs(s, s.audioDurationMs)
+    acc += Math.round(advanceMs / 1000 * fps)
+  }
+  return { totalFrames: acc, offsets }
+}
