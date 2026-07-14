@@ -1,29 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { spawn } from 'child_process'
-import { unlink, writeFile } from 'fs/promises'
+import { unlink } from 'fs/promises'
 import { logger } from '@/lib/logger'
+import { downloadAudioToTemp, runFfmpegBuffered } from '@/lib/server/audio-utils'
 
-/**
- * POST /api/silence-detect
- *
- * Downloads an audio file (MP3 URL), runs ffmpeg's silencedetect filter
- * to find natural pause points, and returns them as JSON.
- *
- * Used by the Split Long Ayah feature to snap split points to natural
- * pauses in the reciter's audio.
- *
- * Body: { audioUrl: string }
- * Response: { silences: [{ start, end, duration }] }
- */
 export const runtime = 'nodejs'
 export const maxDuration = 60
 export const dynamic = 'force-dynamic'
 
 const FFMPEG_TIMEOUT_MS = 30_000
-
-async function removeTempFile(path: string): Promise<void> {
-  await unlink(path).catch(() => {})
-}
 
 function parseSilences(stderr: string): { start: number; end: number; duration: number }[] {
   const silences: { start: number; end: number; duration: number }[] = []
@@ -62,59 +46,6 @@ function parseSilences(stderr: string): { start: number; end: number; duration: 
   return silences
 }
 
-function runSilenceDetect(
-  tmpFile: string,
-  requestId: string,
-): Promise<Response> {
-  return new Promise((resolve) => {
-    let settled = false
-    let timeoutId: ReturnType<typeof setTimeout> | undefined
-
-    const settle = (response: Response) => {
-      if (settled) return
-      settled = true
-      if (timeoutId !== undefined) clearTimeout(timeoutId)
-      resolve(response)
-    }
-
-    const proc = spawn('ffmpeg', [
-      '-i', tmpFile,
-      '-af', 'silencedetect=noise=-30dB:d=0.3',
-      '-f', 'null',
-      '-',
-    ], { stdio: ['ignore', 'pipe', 'pipe'] })
-
-    let stderr = ''
-    proc.stderr.on('data', (chunk: Buffer) => {
-      stderr += chunk.toString('utf8')
-    })
-
-    proc.on('close', (code) => {
-      if (code !== 0 && !stderr.includes('silencedetect')) {
-        logger.error('silence-detect ffmpeg failed', { requestId, code })
-        settle(NextResponse.json({ error: 'ffmpeg failed' }, { status: 500 }))
-        return
-      }
-
-      const silences = parseSilences(stderr)
-      logger.info('silence-detect complete', {
-        requestId,
-        silenceCount: silences.length,
-      })
-      settle(NextResponse.json({ silences }))
-    })
-
-    proc.on('error', () => {
-      settle(NextResponse.json({ error: 'Failed to run ffmpeg' }, { status: 500 }))
-    })
-
-    timeoutId = setTimeout(() => {
-      proc.kill('SIGKILL')
-      settle(NextResponse.json({ error: 'ffmpeg timed out' }, { status: 504 }))
-    }, FFMPEG_TIMEOUT_MS)
-  })
-}
-
 export async function POST(req: NextRequest) {
   const requestId = req.headers.get('x-request-id') ?? `req_${Date.now().toString(36)}`
 
@@ -129,29 +60,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const tmpFile = `/tmp/silence_${Date.now()}.mp3`
+  const dl = await downloadAudioToTemp(audioUrl, 'silence')
+  if ('error' in dl) return dl.error
 
   try {
-    const dlRes = await fetch(audioUrl)
-    if (!dlRes.ok) {
-      return NextResponse.json(
-        { error: `Failed to download audio: ${dlRes.status}` },
-        { status: 502 },
-      )
+    const result = await runFfmpegBuffered([
+      '-i', dl.path,
+      '-af', 'silencedetect=noise=-30dB:d=0.3',
+      '-f', 'null',
+      '-',
+    ], FFMPEG_TIMEOUT_MS)
+
+    if (result.code !== 0 && !result.stderr.includes('silencedetect')) {
+      logger.error('silence-detect ffmpeg failed', { requestId, code: result.code })
+      return NextResponse.json({ error: 'ffmpeg failed' }, { status: 500 })
     }
-    const buf = Buffer.from(await dlRes.arrayBuffer())
-    await writeFile(tmpFile, buf)
-  } catch (err) {
-    logger.error('silence-detect download failed', {
-      requestId,
-      error: err instanceof Error ? err.message : String(err),
-    })
-    return NextResponse.json({ error: 'Failed to download audio' }, { status: 502 })
-  }
 
-  try {
-    return await runSilenceDetect(tmpFile, requestId)
+    const silences = parseSilences(result.stderr)
+    logger.info('silence-detect complete', {
+      requestId,
+      silenceCount: silences.length,
+    })
+
+    return NextResponse.json({ silences })
   } finally {
-    await removeTempFile(tmpFile)
+    await unlink(dl.path).catch(() => {})
   }
 }
