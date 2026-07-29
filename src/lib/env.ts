@@ -38,6 +38,11 @@ const envSchema = z.object({
   // --- ffmpeg binary path (overrideable for containerized deploys) ---
   FFMPEG_BIN: z.string().default('ffmpeg'),
 
+  // --- Vercel Blob (required for Vercel Sandbox render uploads) ---
+  // Read-write token from Vercel Blob storage. Rendered MP4s are uploaded
+  // from inside the sandbox to Blob, then served as a direct download link.
+  BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
+
   // --- Rate limiting ---
   // Max renders per IP per window. Defaults to 3/hour per the spec.
   RENDER_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(6),

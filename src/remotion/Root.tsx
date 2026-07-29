@@ -1,4 +1,3 @@
-import React from 'react'
 import { registerRoot, Composition } from 'remotion'
 import { AyatVideo } from './AyatVideo'
 import type { AyatVideoProps } from './types'
@@ -33,16 +32,18 @@ const defaultProps: AyatVideoProps = {
   surahName: '',
   surahNameArabic: '',
   totalAyats: 0,
-  isExport: false,
+  isExport: true,
 }
 
 const RemotionRoot: React.FC = () => {
+  const MAX_FRAMES = 90_000
+
   return (
     <>
       <Composition
         id="AyatVideo"
         component={AyatVideo as unknown as React.FC<Record<string, unknown>>}
-        durationInFrames={30}
+        durationInFrames={MAX_FRAMES}
         fps={30}
         width={RES.portrait.w}
         height={RES.portrait.h}

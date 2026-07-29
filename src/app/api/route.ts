@@ -18,9 +18,7 @@ export async function GET() {
         surahs: '/api/surahs',
         ayat: '/api/ayat',
         timings: '/api/timings',
-        render: '/api/render',
-        renderStatus: '/api/render-status',
-        renderDownload: '/api/render-download',
+
       },
       docs: '/about',
     },

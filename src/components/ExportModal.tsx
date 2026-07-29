@@ -6,9 +6,8 @@ import { Download, Film, X, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
 import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
 import { videoAttributionLine } from '@/lib/translations'
-import { RENDER_QUALITY_SCALE } from '@/remotion/types'
 import { formatMs } from '@/lib/format'
-import type { AyatSlide, Orientation, VideoSettings } from '@/lib/types'
+import type { AyatSlide, Orientation } from '@/lib/types'
 import {
   Dialog,
   DialogContent,
@@ -18,13 +17,18 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
-const RES: Record<Orientation, { w: number; h: number }> = {
+const RES: Record<string, { w: number; h: number }> = {
   landscape: { w: 1280, h: 720 },
   portrait: { w: 720, h: 1280 },
+}
+
+const QUALITY_SCALE: Record<string, number> = {
+  '480p': 0.667,
+  '720p': 1,
+  '1080p': 1.5,
 }
 
 type RenderStatus = 'idle' | 'processing' | 'done' | 'error'
@@ -318,10 +322,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     'composing' | 'uploading' | 'encoding' | 'finalizing'
   >('composing')
 
-  //
-  const stopRef = useRef<(() => void) | null>(null)
-  const jobIdRef = useRef<string | null>(null)
-  const ownerTokenRef = useRef<string | null>(null)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const totalMs = useMemo(
     () => ayatList.reduce((s, a) => s + (a.audioDurationMs || 0), 0),
@@ -331,22 +332,19 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
 
   const filename = useMemo(() => {
     const s = surah?.number ?? 0
-    const ext = isMp4 ? 'mp4' : 'webm'
-    return `quran-${s}-ayat-${fromAyat}-${toAyat}-${reciter.id}.${ext}`
-  }, [surah, fromAyat, toAyat, reciter.id, isMp4])
+    return `quran-${s}-ayat-${fromAyat}-${toAyat}-${reciter.id}.mp4`
+  }, [surah, fromAyat, toAyat, reciter.id])
 
   // Reset when modal closes
   useEffect(() => {
     if (!open) {
-      if (stopRef.current) stopRef.current()
+      if (pollingRef.current) clearInterval(pollingRef.current)
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus('idle')
       setProgress(0)
       setDownloadUrl(null)
       setErrorMsg(null)
       setProcessingPhase('composing')
-      jobIdRef.current = null
-      ownerTokenRef.current = null
     }
   }, [open])
 
@@ -373,34 +371,44 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   // bar. The WebM render fills 0–60%, the MP4 conversion fills 60–100%.
   // The sub-phase (`processingPhase`) drives the label only — it does
   // NOT split the progress.
-  const handleDownload = async () => {
+  const handleDownload = () => {
     if (!downloadUrl) return
-
-    if (downloadUrl.startsWith('/api/render-download') && ownerTokenRef.current) {
-      const response = await fetch(downloadUrl, {
-        headers: { 'x-owner-token': ownerTokenRef.current },
-      })
-      if (!response.ok) {
-        throw new Error('Failed to download the rendered MP4 from the server.')
-      }
-      const blob = await response.blob()
-      const objectUrl = URL.createObjectURL(blob)
+    if (downloadUrl.startsWith('blob:')) {
       const link = document.createElement('a')
-      link.href = objectUrl
+      link.href = downloadUrl
       link.download = filename
       document.body.appendChild(link)
       link.click()
       link.remove()
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
-      return
+    } else {
+      window.open(downloadUrl, '_blank')
     }
+  }
 
-    const link = document.createElement('a')
-    link.href = downloadUrl
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
+  const mapStageToPhase = (stage: string, overallProgress: number) => {
+    switch (stage) {
+      case 'starting':
+        setProcessingPhase('composing')
+        setProgress(Math.min(0.1, overallProgress ?? 0))
+        break
+      case 'opening-browser':
+      case 'selecting-composition':
+        setProcessingPhase('uploading')
+        setProgress(0.1 + (overallProgress ?? 0) * 0.1)
+        break
+      case 'render-progress':
+        setProcessingPhase('encoding')
+        setProgress(0.2 + (overallProgress ?? 0) * 0.75)
+        break
+      case 'uploading':
+        setProcessingPhase('finalizing')
+        setProgress(0.95 + (overallProgress ?? 0) * 0.04)
+        break
+      case 'done':
+        setProcessingPhase('finalizing')
+        setProgress(1)
+        break
+    }
   }
 
   const startRender = async () => {
@@ -410,102 +418,78 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     setProgress(0)
     setErrorMsg(null)
     setDownloadUrl(null)
-    jobIdRef.current = null
-    ownerTokenRef.current = null
 
-    const requestBody = {
-      slides,
-      reciterKey: reciter.audioKey,
-      reciterName: reciter.name,
-      attributionLine: videoAttributionLine(translationKey),
-      quality: effectiveQuality,
-      settings,
-      orientation: settings.orientation,
-    }
-
-    const phaseFromServerProgress = (value: number): ProcessingPhase => {
-      if (value < 0.15) return 'composing'
-      if (value < 0.5) return 'uploading'
-      if (value < 0.7) return 'encoding'
-      return 'finalizing'
-    }
-
-    // POST /api/render — starts the server-side Remotion render, creates a
-    // render job, and returns a jobId + ownerToken for progress polling.
-    let jobId: string | null = null
-    let ownerToken: string | null = null
     try {
-      const r = await fetch('/api/render', {
+      setProcessingPhase('uploading')
+      const res = await fetch('/api/render/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          slides,
+          settings,
+          orientation: settings.orientation,
+          reciterName: reciter.name,
+          attributionLine: videoAttributionLine(translationKey),
+          surahName: surah?.name ?? '',
+          surahNameArabic: surah?.arabicName ?? '',
+          totalAyats: slides.length,
+          quality: effectiveQuality,
+        }),
       })
-      if (!r.ok) {
-        const errorBody = (await r.json().catch(() => null)) as
-          | { error?: string }
-          | null
-        throw new Error(errorBody?.error || 'Failed to start the render.')
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => null)
+        throw new Error(errData?.error ?? `Server error (${res.status})`)
       }
-      const okBody = (await r.json()) as { jobId: string; ownerToken: string }
-      jobId = okBody.jobId
-      ownerToken = okBody.ownerToken
-      jobIdRef.current = jobId
-      ownerTokenRef.current = ownerToken
-    } catch {
-      setStatus('error')
-      setErrorMsg('Failed to start the server render job.')
-      toast.error('Failed to start the server render job.')
-      return
-    }
 
-    if (!jobId || !ownerToken) {
-      setStatus('error')
-      setErrorMsg('The render job did not return an owner token.')
-      toast.error('The render job did not return an owner token.')
-      return
-    }
-
-    try {
-      for (;;) {
-        const response = await fetch(
-          `/api/render-status?jobId=${encodeURIComponent(jobId)}`,
-          {
-            headers: { 'x-owner-token': ownerToken },
-            cache: 'no-store',
-          },
-        )
-        const statusBody = (await response.json()) as {
-          status?: 'rendering' | 'done' | 'error'
-          progress?: number
-          downloadUrl?: string
-          error?: string
-        }
-
-        if (!response.ok) {
-          throw new Error(statusBody.error || 'Failed to poll render status.')
-        }
-
-        const nextProgress = Math.max(0, Math.min(1, statusBody.progress ?? 0))
-        setProgress(nextProgress)
-        setProcessingPhase(phaseFromServerProgress(nextProgress))
-
-        if (statusBody.status === 'done' && statusBody.downloadUrl) {
-          setStatus('done')
-          setDownloadUrl(statusBody.downloadUrl)
-          setProgress(1)
-          setProcessingPhase('finalizing')
-          toast.success('Video ready as MP4!')
-          return
-        }
-
-        if (statusBody.status === 'error') {
-          throw new Error(statusBody.error || 'Server render failed.')
-        }
-
-        await new Promise((resolve) => window.setTimeout(resolve, 1500))
+      const { sandboxId, cmdId } = await res.json()
+      if (!sandboxId || !cmdId) {
+        throw new Error('Server did not return a job ID')
       }
+
+      const poll = () => {
+        pollingRef.current = setInterval(async () => {
+          try {
+            const progRes = await fetch(
+              `/api/render/progress?sandboxId=${encodeURIComponent(sandboxId)}&cmdId=${encodeURIComponent(cmdId)}`,
+            )
+            if (!progRes.ok) {
+              clearInterval(pollingRef.current!)
+              const errData = await progRes.json().catch(() => null)
+              throw new Error(errData?.error ?? `Poll error (${progRes.status})`)
+            }
+
+            const data = await progRes.json()
+
+            if (data.stage === 'done') {
+              clearInterval(pollingRef.current!)
+              setDownloadUrl(data.url)
+              setStatus('done')
+              setProgress(1)
+              setProcessingPhase('finalizing')
+              toast.success('Video ready as MP4!')
+              return
+            }
+
+            if (data.stage === 'error' || data.stage === 'expired') {
+              clearInterval(pollingRef.current!)
+              throw new Error(data.message ?? 'Render failed or sandbox expired')
+            }
+
+            mapStageToPhase(data.stage, data.overallProgress ?? 0)
+          } catch (pollErr) {
+            clearInterval(pollingRef.current!)
+            const msg = pollErr instanceof Error ? pollErr.message : 'Render failed'
+            setStatus('error')
+            setErrorMsg(msg)
+            toast.error(msg)
+          }
+        }, 2000)
+      }
+
+      poll()
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Server render failed'
+      const msg = err instanceof Error ? err.message : 'Render failed'
       setStatus('error')
       setErrorMsg(msg)
       toast.error(msg)
@@ -527,13 +511,12 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
               Export video
             </DialogTitle>
             <DialogDescription className="text-[13px]">
-              Choose quality, then render. MP4 — ready for Instagram Reels, YouTube Shorts, and TikTok.
+              Rendered on the server as H.264 MP4.
             </DialogDescription>
           </DialogHeader>
         </div>
 
-        {/* All exports run server-side via Remotion — no browser capability
-            checks needed, and all background types (image/video) are supported. */}
+        {/* All exports run in-browser via WebCodecs + Canvas — no server needed. */}
 
         {/* Two-column body on desktop, single column on mobile */}
         <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-4">
@@ -597,8 +580,8 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground text-xs">Resolution</span>
                     <span className="font-mono tabular-nums text-xs">
-                      {Math.round(RES[settings.orientation].w * RENDER_QUALITY_SCALE[effectiveQuality])} ×{' '}
-                      {Math.round(RES[settings.orientation].h * RENDER_QUALITY_SCALE[effectiveQuality])}
+                      {Math.round(RES[settings.orientation]!.w * QUALITY_SCALE[effectiveQuality])} ×{' '}
+                      {Math.round(RES[settings.orientation]!.h * QUALITY_SCALE[effectiveQuality])}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -624,7 +607,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[240px]">
                       Pick your settings on the left, then hit{' '}
                       <span className="font-medium text-foreground">Process video</span>{' '}
-                      to start the server render.
+                      to render directly in your browser.
                     </p>
                   </div>
                 </div>
@@ -653,13 +636,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                   filename={filename}
                   isMp4={isMp4}
                   orientation={settings.orientation}
-                  onDownload={() => {
-                    void handleDownload().catch((error) => {
-                      const msg =
-                        error instanceof Error ? error.message : 'Download failed'
-                      toast.error(msg)
-                    })
-                  }}
+                  onDownload={handleDownload}
                 />
               )}
 

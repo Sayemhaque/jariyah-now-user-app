@@ -27,6 +27,12 @@ const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
   portrait: { w: 720, h: 1280, ratio: '9 / 16' },
 }
 
+const RenderLoadingIndicator = () => (
+  <div className="absolute inset-0 grid place-items-center bg-[#0a0f1a]">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+)
+
 export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void }) {
   const ayatList = useBuilderStore((s) => s.ayatList)
   const loading = useBuilderStore((s) => s.loadingAyats)
@@ -135,6 +141,7 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
   const currentMs = (currentFrame / FPS) * 1000
   const totalMs = totalFrames / FPS * 1000
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const player = playerRef.current
     if (!ayatList.length) {
@@ -146,6 +153,7 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
     player?.pause()
     setCurrentFrame(0)
   }, [ayatList])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     const player = playerRef.current
@@ -219,11 +227,8 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
               controls={false}
               showVolumeControls={false}
               style={{ width: '100%', height: '100%' }}
-              renderLoading={() => (
-                <div className="absolute inset-0 grid place-items-center bg-[#0a0f1a]">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              )}
+              renderLoading={RenderLoadingIndicator}
+              acknowledgeRemotionLicense
             />
           ) : (
             <div className="absolute inset-0 grid place-items-center text-center text-white/70 px-6 bg-[#0a0f1a]">

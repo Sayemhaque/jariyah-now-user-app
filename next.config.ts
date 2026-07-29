@@ -40,9 +40,9 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: https:",
-      "media-src 'self' https://everyayah.com https://download.quranicaudio.com https://verses.quran.com https://audio.qurancdn.com",
-      "connect-src 'self' https://ummahapi.com https://api.quran.com https://everyayah.com https://download.quranicaudio.com https://verses.quran.com https://audio.qurancdn.com",
+      "img-src 'self' data: https: https://*.blob.vercel-storage.com",
+      "media-src 'self' https://everyayah.com https://download.quranicaudio.com https://verses.quran.com https://audio.qurancdn.com https://*.blob.vercel-storage.com",
+      "connect-src 'self' https://ummahapi.com https://api.quran.com https://everyayah.com https://download.quranicaudio.com https://verses.quran.com https://audio.qurancdn.com https://*.blob.vercel-storage.com",
       "font-src 'self' https://fonts.gstatic.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
@@ -75,18 +75,15 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: true,
+  experimental: {
+    serverComponentsHmrCache: true,
+  },
   // Point turbopack at the project root explicitly — Next.js auto-detection
   // picks the wrong directory when multiple lockfiles exist elsewhere on the
   // filesystem (e.g. /home/user/package-lock.json).
   turbopack: {
     root: process.cwd(),
   },
-  serverExternalPackages: [
-    '@remotion/bundler',
-    '@remotion/renderer',
-    '@remotion/cli',
-    'remotion',
-  ],
   allowedDevOrigins: [
     "*.space-z.ai",
     "*.chatglm.cn",

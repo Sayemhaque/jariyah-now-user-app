@@ -1,17 +1,5 @@
 import type { Metadata } from "next";
-import {
-  Inter,
-  EB_Garamond,
-  Amiri,
-  Scheherazade_New,
-  Markazi_Text,
-  Noto_Naskh_Arabic,
-  Reem_Kufi,
-  Cairo,
-  Noto_Sans_Bengali,
-  Noto_Serif_Bengali,
-  Hind_Siliguri,
-} from "next/font/google";
+import { Inter, EB_Garamond } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/Providers";
@@ -27,66 +15,6 @@ const ebGaramond = EB_Garamond({
   variable: "--font-display",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
-});
-
-// ─── Arabic fonts (7 total) ──────────────────────────────────────────
-// Curated selection spanning classical calligraphic → modern sans-serif
-// so users can match the visual tone of their video.
-const amiri = Amiri({
-  variable: "--font-amiri",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "700"],
-});
-
-const scheherazade = Scheherazade_New({
-  variable: "--font-scheherazade",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "700"],
-});
-
-const markazi = Markazi_Text({
-  variable: "--font-markazi-text",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const notoNaskhArabic = Noto_Naskh_Arabic({
-  variable: "--font-noto-naskh-arabic",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const reemKufi = Reem_Kufi({
-  variable: "--font-reem-kufi",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const cairo = Cairo({
-  variable: "--font-cairo",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700"],
-});
-
-// ─── Bengali fonts (3 total) ─────────────────────────────────────────
-// Covers sans-serif (default), serif (formal/scholarly), and a clean
-// modern variant for contemporary reels.
-const notoBengali = Noto_Sans_Bengali({
-  variable: "--font-noto-sans-bengali",
-  subsets: ["bengali"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const notoSerifBengali = Noto_Serif_Bengali({
-  variable: "--font-noto-serif-bengali",
-  subsets: ["bengali"],
-  weight: ["400", "500", "600", "700"],
-});
-
-const hindSiliguri = Hind_Siliguri({
-  variable: "--font-hind-siliguri",
-  subsets: ["bengali"],
-  weight: ["300", "400", "500", "600", "700"],
 });
 
 const siteUrl = "https://jariyahnow.com";
@@ -165,7 +93,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${ebGaramond.variable} ${amiri.variable} ${scheherazade.variable} ${markazi.variable} ${notoNaskhArabic.variable} ${reemKufi.variable} ${cairo.variable} ${notoBengali.variable} ${notoSerifBengali.variable} ${hindSiliguri.variable} antialiased bg-background text-foreground`}
+        className={`${inter.variable} ${ebGaramond.variable} antialiased bg-background text-foreground`}
       >
         <Providers>
           {children}

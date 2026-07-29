@@ -51,7 +51,15 @@ export const AyatVideo: React.FC<AyatVideoProps> = ({
     showTransliteration: boolean
   }
 
-  let frameOffset = 0
+  const slideSequences = React.useMemo(() => {
+    return slides.reduce<Array<{ slide: (typeof slides)[number]; index: number; durFrames: number; offset: number }>>(
+      (acc, slide, i) => {
+        const dur = Math.round(getAdvanceAtMs(slide, slide.audioDurationMs) / 1000 * fps)
+        return [...acc, { slide, index: i, durFrames: dur, offset: i === 0 ? 0 : acc.at(-1)!.offset + acc.at(-1)!.durFrames }]
+      },
+      [],
+    )
+  }, [slides, fps])
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#0a0a14', overflow: 'hidden' }}>
@@ -74,9 +82,7 @@ export const AyatVideo: React.FC<AyatVideoProps> = ({
         }}
       />
 
-      {slides.map((slide, i) => {
-        const advanceMs = getAdvanceAtMs(slide, slide.audioDurationMs)
-        const durFrames = Math.round(advanceMs / 1000 * fps)
+      {slideSequences.map(({ slide, index: i, durFrames, offset: frameOffset }) => {
         const seq = (
           <Sequence key={i} from={frameOffset} durationInFrames={durFrames}>
             <Audio src={slide.audioUrl} />
@@ -161,7 +167,6 @@ export const AyatVideo: React.FC<AyatVideoProps> = ({
             <Watermark width={width} height={height} />
           </Sequence>
         )
-        frameOffset += durFrames
         return seq
       })}
     </AbsoluteFill>
