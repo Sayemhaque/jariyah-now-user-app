@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run build:bundle && cp -r .next/remotion-bundle .next/server/ && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && cp -r .next/remotion-bundle .next/standalone/.next/",
+    "build": "next build && npm run build:bundle && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && cp -r .next/remotion-bundle .next/standalone/.next/",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "build:bundle": "node build-remotion-bundle.mjs",

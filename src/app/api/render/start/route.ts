@@ -25,7 +25,6 @@ function resolveBundleDir(): string {
     return process.env.REMOTION_BUNDLE_DIR
   }
   const candidates = [
-    join(process.cwd(), '.next/server/remotion-bundle'),
     join(process.cwd(), '.next/remotion-bundle'),
     join(process.cwd(), '../.next/remotion-bundle'),
   ]
