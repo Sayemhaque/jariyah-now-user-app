@@ -442,8 +442,8 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         throw new Error(errData?.error ?? `Server error (${res.status})`)
       }
 
-      const { sandboxId, cmdId } = await res.json()
-      if (!sandboxId || !cmdId) {
+      const { jobId } = await res.json()
+      if (!jobId) {
         throw new Error('Server did not return a job ID')
       }
 
@@ -451,7 +451,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
         pollingRef.current = setInterval(async () => {
           try {
             const progRes = await fetch(
-              `/api/render/progress?sandboxId=${encodeURIComponent(sandboxId)}&cmdId=${encodeURIComponent(cmdId)}`,
+              `/api/render/progress?jobId=${encodeURIComponent(jobId)}`,
             )
             if (!progRes.ok) {
               clearInterval(pollingRef.current!)

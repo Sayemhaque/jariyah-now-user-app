@@ -75,9 +75,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   reactStrictMode: true,
-  outputFileTracingIncludes: {
-    '/api/render/start': ['./.next/remotion-bundle/**/*'],
-  },
   experimental: {
     serverComponentsHmrCache: true,
   },

@@ -1,0 +1,36 @@
+name: Render video
+on:
+  workflow_dispatch:
+    inputs:
+      jobId:
+        description: 'Unique job ID for webhook callback'
+        required: true
+      webhookUrl:
+        description: 'Callback URL'
+        required: true
+      props:
+        description: 'JSON input props'
+        required: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Write input props
+        run: echo '${{ github.event.inputs.props }}' > input-props.json
+
+      - name: Render and upload
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          JOB_ID: ${{ github.event.inputs.jobId }}
+          WEBHOOK_URL: ${{ github.event.inputs.webhookUrl }}
+        run: node render-video.mjs

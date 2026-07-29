@@ -76,6 +76,13 @@ const envSchema = z.object({
     .string()
     .url()
     .default('http://localhost:3000'),
+
+  // --- GitHub (required for triggering GHA renders) ---
+  // Personal Access Token with `repo` scope. Used to dispatch the
+  // render-video workflow via the GitHub Actions API.
+  GITHUB_TOKEN: z.string().min(1).optional(),
+  GITHUB_OWNER: z.string().min(1).optional(),
+  GITHUB_REPO: z.string().min(1).optional(),
 })
 
 export type Env = z.infer<typeof envSchema>

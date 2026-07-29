@@ -1,22 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getRenderProgress } from '@remotion/vercel'
+import { getJob } from '@/lib/renderJobStore'
 
 export const runtime = 'nodejs'
 
 export async function GET(request: NextRequest) {
   try {
-    const sandboxId = request.nextUrl.searchParams.get('sandboxId')
-    const cmdId = request.nextUrl.searchParams.get('cmdId')
+    const jobId = request.nextUrl.searchParams.get('jobId')
 
-    if (!sandboxId || !cmdId) {
-      return NextResponse.json({ error: 'sandboxId and cmdId are required' }, { status: 400 })
+    if (!jobId) {
+      return NextResponse.json({ error: 'jobId is required' }, { status: 400 })
     }
 
-    const progress = await getRenderProgress({ sandboxId, cmdId })
+    const job = getJob(jobId)
+    if (!job) {
+      return NextResponse.json({ error: 'Unknown job' }, { status: 404 })
+    }
 
-    return NextResponse.json(progress, {
-      headers: { 'Cache-Control': 'no-store' },
-    })
+    switch (job.status) {
+      case 'pending':
+      case 'rendering':
+        return NextResponse.json(
+          { stage: 'render-progress', overallProgress: 0.5 },
+          { headers: { 'Cache-Control': 'no-store' } },
+        )
+      case 'done':
+        return NextResponse.json(
+          { stage: 'done', url: job.url },
+          { headers: { 'Cache-Control': 'no-store' } },
+        )
+      case 'error':
+        return NextResponse.json(
+          { stage: 'error', message: job.error ?? 'Render failed' },
+          { headers: { 'Cache-Control': 'no-store' } },
+        )
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Progress check failed'
     console.error('[render/progress]', msg)
