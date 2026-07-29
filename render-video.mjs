@@ -11,8 +11,16 @@ async function main() {
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN
   const propsPath = join(process.cwd(), 'input-props.json')
 
+  console.log('JOB_ID:', process.env.JOB_ID ? 'present' : 'MISSING')
+  console.log('WEBHOOK_URL:', process.env.WEBHOOK_URL ? 'present' : 'MISSING')
+  console.log('BLOB_READ_WRITE_TOKEN:', process.env.BLOB_READ_WRITE_TOKEN ? 'present' : 'MISSING')
+
   if (!jobId || !webhookUrl || !blobToken) {
-    console.error('Missing required env vars: JOB_ID, WEBHOOK_URL, BLOB_READ_WRITE_TOKEN')
+    const missing = []
+    if (!jobId) missing.push('JOB_ID')
+    if (!webhookUrl) missing.push('WEBHOOK_URL')
+    if (!blobToken) missing.push('BLOB_READ_WRITE_TOKEN')
+    console.error('Missing required env vars:', missing.join(', '))
     process.exit(1)
   }
 
