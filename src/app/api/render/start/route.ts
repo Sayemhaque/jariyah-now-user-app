@@ -7,7 +7,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 
 export const runtime = 'nodejs'
-export const maxDuration = 600
+export const maxDuration = 300
 
 const RES_MAP: Record<string, { w: number; h: number }> = {
   landscape: { w: 1280, h: 720 },
