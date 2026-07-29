@@ -7,7 +7,7 @@
     "build": "next build && npm run build:bundle && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/ && cp -r .next/remotion-bundle .next/standalone/.next/",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
-    "build:bundle": "node scripts/build-remotion-bundle.mjs",
+    "build:bundle": "node build-remotion-bundle.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
