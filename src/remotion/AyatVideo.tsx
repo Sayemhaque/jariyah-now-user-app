@@ -12,6 +12,7 @@ import { TransliterationText } from './TransliterationText'
 import { TranslationText } from './TranslationText'
 import { Watermark } from './Watermark'
 import { Attribution } from './Attribution'
+import { ensureRemotionFonts } from './loadFonts'
 
 function isBengali(text: string): boolean {
   return /[\u0980-\u09FF]/.test(text)
@@ -31,6 +32,10 @@ export const AyatVideo: React.FC<AyatVideoProps> = ({
   const { width, height, fps } = useVideoConfig()
   const minDim = Math.min(width, height)
   const W = width
+
+  if (isExport) {
+    ensureRemotionFonts()
+  }
 
   const fb = orientationFontBase[settings.orientation]!
   const arabicFontSizePx = (fb.ar * settings.arabicFontSize / fb.arRef) * (W / 100)
@@ -119,7 +124,7 @@ export const AyatVideo: React.FC<AyatVideoProps> = ({
                 <ArabicText
                   text={slide.arabicText}
                   fontSize={arabicFontSizePx}
-                  fontFace={ARABIC_FONT_CLASS[fixedSettings.arabicFont] ?? 'font-arabic-uthmani'}
+                  fontFace={ARABIC_FONT_CLASS[fixedSettings.arabicFont] ?? 'Amiri'}
                   color={fixedSettings.fontColor}
                 />
 
@@ -150,7 +155,7 @@ export const AyatVideo: React.FC<AyatVideoProps> = ({
                     fontSize={translationFontSizePx}
                     maxWidth={W * 0.85}
                     isBengali={isBengaliTranslation}
-                    bengaliFont={BENGALI_FONT_CLASS[fixedSettings.bengaliFont] ?? 'font-bengali-sans'}
+                    bengaliFont={BENGALI_FONT_CLASS[fixedSettings.bengaliFont] ?? 'Noto Sans Bengali'}
                     spacing={TEXT_SPACING_FRACTIONS[fixedSettings.textSpacing] ?? 0.03}
                   />
                 )}

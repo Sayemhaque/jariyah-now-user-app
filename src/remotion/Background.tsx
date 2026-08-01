@@ -1,6 +1,6 @@
 import React from 'react'
 import { Img, Video, OffthreadVideo, Loop, useVideoConfig, staticFile } from 'remotion'
-import { normalizeBackgroundVideoUrl } from '@/lib/backgroundPresets'
+import { normalizeBackgroundVideoUrl, TWILIGHT_MOSQUE_URLS } from '@/lib/backgroundPresets'
 
 function isVideoUrl(url: string): boolean {
   return url.endsWith('.mp4')
@@ -8,6 +8,7 @@ function isVideoUrl(url: string): boolean {
 
 function resolveUrl(raw: string): string {
   const url = normalizeBackgroundVideoUrl(raw)
+  if (!url) return staticFile(TWILIGHT_MOSQUE_URLS.portrait)
   if (url.startsWith('/backgrounds/')) return staticFile(url)
   return url
 }

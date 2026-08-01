@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getEnv } from '@/lib/env'
-import { createJob } from '@/lib/renderJobStore'
+import { put } from '@vercel/blob'
 import { randomUUID } from 'node:crypto'
 
 export const runtime = 'nodejs'
@@ -11,10 +11,18 @@ export async function POST(request: Request) {
     const token = env.GITHUB_TOKEN
     const owner = env.GITHUB_OWNER
     const repo = env.GITHUB_REPO
+    const blobToken = env.BLOB_READ_WRITE_TOKEN
 
     if (!token || !owner || !repo) {
       return NextResponse.json(
         { error: 'GitHub token and repo not configured on server' },
+        { status: 500 },
+      )
+    }
+
+    if (!blobToken) {
+      return NextResponse.json(
+        { error: 'BLOB_READ_WRITE_TOKEN not configured' },
         { status: 500 },
       )
     }
@@ -27,15 +35,16 @@ export async function POST(request: Request) {
     }
 
     const jobId = randomUUID()
-    const job = createJob(jobId)
 
-    const webhookUrl = `${request.url.replace('/start', '/webhook')}`
+    await put(`jobs/${jobId}.json`, JSON.stringify({ status: 'pending' }), {
+      access: 'public',
+      token: blobToken,
+    })
 
     const ghaPayload = {
       ref: 'main',
       inputs: {
         jobId,
-        webhookUrl,
         props: JSON.stringify(body),
       },
     }
@@ -56,10 +65,9 @@ export async function POST(request: Request) {
     if (!ghaRes.ok) {
       const errText = await ghaRes.text().catch(() => 'unknown')
       console.error('[render/start] GHA dispatch failed:', ghaRes.status, errText)
-      const statusCode = ghaRes.status === 401 ? 500 : 502
       return NextResponse.json(
         { error: `GitHub dispatch failed (${ghaRes.status}): ${errText}` },
-        { status: statusCode },
+        { status: 502 },
       )
     }
 

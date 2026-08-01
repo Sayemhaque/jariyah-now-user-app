@@ -143,10 +143,12 @@ export async function renderVideo(options: RenderOptions): Promise<Blob> {
     drawFrame(frameIndex)
 
     try {
-      const videoFrame = new VideoFrame(canvas, {
+      const bitmap = (canvas as any).transferToImageBitmap()
+      const videoFrame = new VideoFrame(bitmap, {
         timestamp: frameIndex * frameDurationMicros,
         duration: frameDurationMicros,
       })
+      bitmap.close()
       videoEncoder.encode(videoFrame)
       videoFrame.close()
     } catch (frameErr) {

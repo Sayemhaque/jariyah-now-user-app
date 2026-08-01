@@ -24,6 +24,7 @@ export const ArabicText: React.FC<{
         lineHeight: 1.75,
         color,
         fontSize,
+        fontFamily: fontFace.startsWith('font-') ? fontFamily : fontFace,
         textShadow: '0 1px 4px rgba(0,0,0,0.7)',
       }}
       lang="ar"

@@ -1,30 +1,29 @@
 import { bundle } from '@remotion/bundler'
 import { renderMedia, selectComposition } from '@remotion/renderer'
 import { put } from '@vercel/blob'
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { readFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
-import { randomUUID } from 'node:crypto'
 
 async function main() {
   const jobId = process.env.JOB_ID
-  const webhookUrl = process.env.WEBHOOK_URL
   const blobToken = process.env.BLOB_READ_WRITE_TOKEN
   const propsPath = join(process.cwd(), 'input-props.json')
 
-  console.log('JOB_ID:', process.env.JOB_ID ? 'present' : 'MISSING')
-  console.log('WEBHOOK_URL:', process.env.WEBHOOK_URL ? 'present' : 'MISSING')
-  console.log('BLOB_READ_WRITE_TOKEN:', process.env.BLOB_READ_WRITE_TOKEN ? 'present' : 'MISSING')
+  console.log('JOB_ID:', jobId ? 'present' : 'MISSING')
+  console.log('BLOB_READ_WRITE_TOKEN:', blobToken ? 'present' : 'MISSING')
 
-  if (!jobId || !webhookUrl || !blobToken) {
+  if (!jobId || !blobToken) {
     const missing = []
     if (!jobId) missing.push('JOB_ID')
-    if (!webhookUrl) missing.push('WEBHOOK_URL')
     if (!blobToken) missing.push('BLOB_READ_WRITE_TOKEN')
     console.error('Missing required env vars:', missing.join(', '))
     process.exit(1)
   }
 
-  const inputProps = JSON.parse(readFileSync(propsPath, 'utf-8'))
+  const inputProps = {
+    ...JSON.parse(readFileSync(propsPath, 'utf-8')),
+    isExport: true,
+  }
 
   console.log('Bundling Remotion entry point...')
   const serveUrl = await bundle({
@@ -74,20 +73,11 @@ async function main() {
   })
   console.log('Uploaded:', blob.url)
 
-  const payload = JSON.stringify({ url: blob.url, jobId })
-  const callbackUrl = `${webhookUrl}?jobId=${encodeURIComponent(jobId)}&url=${encodeURIComponent(blob.url)}`
-
-  console.log('Calling webhook:', callbackUrl)
-  const res = await fetch(callbackUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: payload,
+  await put(`jobs/${jobId}.json`, JSON.stringify({ status: 'done', url: blob.url }), {
+    access: 'public',
+    token: blobToken,
   })
-  if (!res.ok) {
-    console.error('Webhook call failed:', res.status)
-    return
-  }
-  console.log('Webhook success')
+  console.log('Status written')
 }
 
 main().catch((err) => {

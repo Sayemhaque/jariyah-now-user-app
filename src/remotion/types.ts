@@ -9,6 +9,8 @@ export interface AyatVideoProps {
   surahName: string
   surahNameArabic: string
   totalAyats: number
+  /** Output resolution scale key. Maps to RENDER_QUALITY_SCALE. */
+  quality?: '480p' | '720p' | '1080p'
   /** When true, use <OffthreadVideo> for background (frame-accurate server render).
    *  When false (default), use <Video> for smooth browser preview. */
   isExport?: boolean
@@ -47,19 +49,19 @@ export const TEXT_SPACING_FRACTIONS: Record<string, number> = {
 }
 
 export const ARABIC_FONT_CLASS: Record<string, string> = {
-  uthmani: 'font-arabic-uthmani',
-  amiri: 'font-arabic-uthmani',
-  scheherazade: 'font-arabic-scheherazade',
-  markazi: 'font-arabic-markazi',
-  naskh: 'font-arabic-naskh',
-  kufi: 'font-arabic-kufi',
-  cairo: 'font-arabic-cairo',
+  uthmani: 'Amiri',
+  amiri: 'Amiri',
+  scheherazade: 'Scheherazade New',
+  markazi: 'Markazi Text',
+  naskh: 'Noto Naskh Arabic',
+  kufi: 'Reem Kufi',
+  cairo: 'Cairo',
 }
 
 export const BENGALI_FONT_CLASS: Record<string, string> = {
-  sans: 'font-bengali-sans',
-  serif: 'font-bengali-serif',
-  hind: 'font-bengali-hind',
+  sans: 'Noto Sans Bengali',
+  serif: 'Noto Serif Bengali',
+  hind: 'Hind Siliguri',
 }
 
 export const orientationFontBase: Record<string, { ar: number; tr: number; arRef: number; trRef: number }> = {
