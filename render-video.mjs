@@ -70,12 +70,14 @@ async function main() {
   const blob = await put(blobPath, fileBuffer, {
     access: 'private',
     token: blobToken,
+    allowOverwrite: true,
   })
   console.log('Uploaded:', blob.pathname)
 
   await put(`jobs/${jobId}.json`, JSON.stringify({ status: 'done', url: blob.pathname }), {
     access: 'private',
     token: blobToken,
+    allowOverwrite: true,
   })
   console.log('Status written')
 }
