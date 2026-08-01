@@ -68,13 +68,13 @@ async function main() {
 
   console.log('Uploading to Vercel Blob...')
   const blob = await put(blobPath, fileBuffer, {
-    access: 'public',
+    access: 'private',
     token: blobToken,
   })
-  console.log('Uploaded:', blob.url)
+  console.log('Uploaded:', blob.pathname)
 
-  await put(`jobs/${jobId}.json`, JSON.stringify({ status: 'done', url: blob.url }), {
-    access: 'public',
+  await put(`jobs/${jobId}.json`, JSON.stringify({ status: 'done', url: blob.pathname }), {
+    access: 'private',
     token: blobToken,
   })
   console.log('Status written')

@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     const jobId = randomUUID()
 
     await put(`jobs/${jobId}.json`, JSON.stringify({ status: 'pending' }), {
-      access: 'public',
+      access: 'private',
       token: blobToken,
     })
 

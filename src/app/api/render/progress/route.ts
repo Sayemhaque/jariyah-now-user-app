@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { list } from '@vercel/blob'
+import { get } from '@vercel/blob'
 import { getEnv } from '@/lib/env'
 
 export const runtime = 'nodejs'
@@ -19,22 +19,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'BLOB_READ_WRITE_TOKEN not configured' }, { status: 500 })
     }
 
-    const { blobs } = await list({ prefix: `jobs/${jobId}`, token: blobToken })
+    const statusBlob = await get(`jobs/${jobId}.json`, {
+      access: 'private',
+      token: blobToken,
+    })
 
-    if (blobs.length === 0) {
+    if (!statusBlob) {
       return NextResponse.json(
         { stage: 'render-progress', overallProgress: 0.5 },
         { headers: { 'Cache-Control': 'no-store' } },
       )
     }
 
-    const statusBlob = blobs[0]!
-    const res = await fetch(statusBlob.url)
-    const data = await res.json()
+    const data = await new Response(statusBlob.stream).json()
 
     if (data.status === 'done') {
       return NextResponse.json(
-        { stage: 'done', url: data.url },
+        { stage: 'done', url: `/api/render/download?jobId=${encodeURIComponent(jobId)}` },
         { headers: { 'Cache-Control': 'no-store' } },
       )
     }
