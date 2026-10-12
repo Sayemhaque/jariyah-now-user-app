@@ -19,8 +19,8 @@ const depthShadow = '0 2px 10px rgba(0,0,0,0.55)'
 
 export const ArabicWord: React.FC<ArabicWordProps> = ({ word, state, msIntoWord, msSinceWord, appear, fontSize, color, highlightColor }) => {
   const active = state === 'active'
-  const glow = active ? interpolate(msIntoWord, [0, 140], [0, 1], clamp) : state === 'past' ? interpolate(msSinceWord, [0, 320], [0.55, 0], clamp) : 0
-  const lift = active ? interpolate(msIntoWord, [0, 180], [0, 1], clamp) : 0
+  const glow = active ? interpolate(msIntoWord, [0, 50], [0, 1], clamp) : state === 'past' ? interpolate(msSinceWord, [0, 320], [0.55, 0], clamp) : 0
+  const lift = active ? interpolate(msIntoWord, [0, 90], [0, 1], clamp) : 0
   const opacity = state === 'future' ? 0.5 : 1
 
   return (

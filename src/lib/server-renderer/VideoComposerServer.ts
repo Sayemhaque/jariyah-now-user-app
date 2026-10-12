@@ -1,10 +1,10 @@
 import { spawn } from 'node:child_process'
 import { createCanvas, loadImage as canvasLoadImage } from 'canvas'
 import type { CanvasRenderingContext2D } from 'canvas'
-import { existsSync, readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFileSync } from 'node:fs'
 import type { AyatSlide, VideoSettings } from '@/lib/types'
 import { computeSlideFrames } from '@/lib/advanceTiming'
+import { resolvePublicFile } from './publicFiles'
 import {
   arabicFontFamilies,
   bengaliFontFamilies,
@@ -39,17 +39,9 @@ export interface ComposerWithDraw {
   drawFrame: (frameIndex: number) => void
 }
 
-function resolvePublicPath(url: string): string | null {
-  const candidates = [
-    join(process.cwd(), 'public', url),
-    join(process.cwd(), url),
-  ]
-  return candidates.find((c) => existsSync(c)) ?? null
-}
-
 async function readVideoBuffer(url: string): Promise<Buffer> {
   if (url.startsWith('/')) {
-    const fsPath = resolvePublicPath(url)
+    const fsPath = resolvePublicFile(url)
     if (fsPath) return readFileSync(fsPath)
   }
   if (url.startsWith('http://') || url.startsWith('https://')) {
@@ -57,7 +49,7 @@ async function readVideoBuffer(url: string): Promise<Buffer> {
     if (!res.ok) throw new Error(`Failed to fetch background video: ${url}`)
     return Buffer.from(await res.arrayBuffer())
   }
-  const fsPath = resolvePublicPath(url)
+  const fsPath = resolvePublicFile(url)
   if (fsPath) return readFileSync(fsPath)
   throw new Error(`Cannot resolve background video path: ${url}`)
 }

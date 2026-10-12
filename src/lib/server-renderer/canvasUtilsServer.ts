@@ -1,7 +1,6 @@
 import { createCanvas, loadImage as canvasLoadImage } from 'canvas'
 import type { CanvasRenderingContext2D } from 'canvas'
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { resolvePublicFile } from './publicFiles'
 import type { OverlayStyle } from '@/lib/types'
 
 export const arabicFontFamilies: Record<string, string> = {
@@ -292,11 +291,7 @@ export function drawDividingLine(
 
 export function loadImage(url: string): Promise<any> {
   if (url.startsWith('/') && !url.startsWith('http://') && !url.startsWith('https://')) {
-    const candidates = [
-      join(process.cwd(), 'public', url),
-      join(process.cwd(), url),
-    ]
-    const fsPath = candidates.find((c) => existsSync(c))
+    const fsPath = resolvePublicFile(url)
     if (fsPath) return canvasLoadImage(fsPath)
   }
   return canvasLoadImage(url)
