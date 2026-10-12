@@ -30,6 +30,7 @@ export function useAyatRange() {
             fromAyat,
             toAyat,
             recitationId: reciter.recitationId,
+            quranComId: reciter.quranComId,
             audioKey: reciter.audioKey,
             translationKey,
             useTajweed,

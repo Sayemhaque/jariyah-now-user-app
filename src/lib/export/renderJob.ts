@@ -21,6 +21,7 @@ export function toExportSlides(ayatList: AyatData[], surah: Surah | undefined): 
     surahNumber: a.surahNumber,
     audioUrl: a.audioUrl,
     audioDurationMs: a.audioDurationMs,
+    ...(a.words ? { words: a.words } : {}),
   }))
 }
 

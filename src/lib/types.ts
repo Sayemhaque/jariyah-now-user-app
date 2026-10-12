@@ -16,6 +16,7 @@ export interface AyatData {
   audioUrl: string
   audioDurationMs: number
   audioPauses?: { start: number; end: number; duration: number }[]
+  words?: TimedWord[]
   surahName: string
   surahNameArabic: string
 }
@@ -31,6 +32,13 @@ export interface AyatSlide {
   audioUrl: string
   audioDurationMs: number
   audioPauses?: { start: number; end: number; duration: number }[]
+  words?: TimedWord[]
+}
+
+export interface TimedWord {
+  text: string
+  startMs: number
+  endMs: number
 }
 
 export interface Reciter {
@@ -40,12 +48,14 @@ export interface Reciter {
   style: string
   audioKey: string
   recitationId: number
+  quranComId?: number
   avatarColor: string
 }
 
 export type Orientation = 'landscape' | 'portrait'
 
 export type ArabicFont =
+  | 'quran'
   | 'uthmani'
   | 'scheherazade'
   | 'markazi'

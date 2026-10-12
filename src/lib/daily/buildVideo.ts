@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { promisify } from 'node:util'
 import { fetchAyatData, fetchSurahs } from '@/lib/quranApi'
+import { fetchVerseTimings } from '@/lib/fetchVerseTimings'
 import { reciters, getReciterById } from '@/lib/reciters'
 import { bgPresets } from '@/lib/backgroundPresets'
 import { videoAttributionLine } from '@/lib/translations'
@@ -104,16 +105,12 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
     const durations: number[] = []
 
     for (let ayat = fromAyat; ayat <= surah.numberOfAyahs && slides.length < maxAyatsPerVideo; ayat++) {
-      const data = await fetchAyatData(
-        surah.number,
-        ayat,
-        reciter.recitationId,
-        reciter.audioKey,
-        surah.name,
-        surah.arabicName,
-        translationKey,
-      )
-      if (!data) throw new Error(`Failed to fetch ayat ${surah.number}:${ayat}`)
+      const [fetched, timings] = await Promise.all([
+        fetchAyatData(surah.number, ayat, reciter.recitationId, reciter.audioKey, surah.name, surah.arabicName, translationKey),
+        reciter.quranComId ? fetchVerseTimings(surah.number, ayat, reciter.quranComId) : Promise.resolve(null),
+      ])
+      if (!fetched) throw new Error(`Failed to fetch ayat ${surah.number}:${ayat}`)
+      const data = timings ? { ...fetched, audioUrl: timings.audioUrl, words: timings.words } : fetched
       const audioDurationMs = await probeDurationMs(data.audioUrl, ffprobeBin)
       durations.push(audioDurationMs)
       if (countAyatsWithinBudget(durations, maxMs, maxAyatsPerVideo) < durations.length) break
@@ -127,6 +124,7 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
         surahNumber: surah.number,
         audioUrl: data.audioUrl,
         audioDurationMs,
+        ...(data.words ? { words: data.words } : {}),
       })
     }
 

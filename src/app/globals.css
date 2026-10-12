@@ -154,6 +154,10 @@
   }
 }
 
+.font-arabic-quran {
+  font-family: var(--font-amiri-quran), "Amiri Quran", serif;
+  font-feature-settings: "calt", "liga";
+}
 .font-arabic-uthmani {
   font-family: var(--font-amiri), "Amiri Quran", serif;
   font-feature-settings: "calt", "liga";

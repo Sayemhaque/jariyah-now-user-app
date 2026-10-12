@@ -1,6 +1,8 @@
 import { delayRender, continueRender } from 'remotion'
 
 export const remotionFontFamilies: Record<string, string> = {
+  'Amiri Quran': 'Amiri Quran',
+  'EB Garamond': 'EB Garamond',
   'Amiri': 'Amiri',
   'Scheherazade New': 'Scheherazade New',
   'Markazi Text': 'Markazi Text',
@@ -14,6 +16,8 @@ export const remotionFontFamilies: Record<string, string> = {
 }
 
 const fontWeights: Record<string, number[]> = {
+  'Amiri Quran': [400],
+  'EB Garamond': [400, 500, 600],
   'Amiri': [400, 700],
   'Scheherazade New': [400, 700],
   'Markazi Text': [400, 500, 600, 700],

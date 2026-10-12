@@ -1,4 +1,5 @@
 import React from 'react'
+import { uiFontStack } from './fontStacks'
 
 interface HeaderLabelProps {
   primary: React.ReactNode
@@ -10,13 +11,14 @@ interface HeaderLabelProps {
   gap: number
   alignEnd?: boolean
   lang?: string
+  primaryFont: string
 }
 
 export const HeaderLabel: React.FC<HeaderLabelProps> = (props) => (
   <div style={{ display: 'flex', flexDirection: 'column', ...(props.alignEnd ? { alignItems: 'flex-end' } : {}) }}>
     <span
       style={{
-        fontFamily: 'Amiri, serif',
+        fontFamily: props.primaryFont,
         fontSize: props.primarySize,
         lineHeight: 1.1,
         textShadow: '0 1px 4px rgba(0,0,0,0.7)',
@@ -32,6 +34,7 @@ export const HeaderLabel: React.FC<HeaderLabelProps> = (props) => (
         letterSpacing: props.secondarySpacing,
         textTransform: 'uppercase',
         marginTop: props.gap,
+        fontFamily: uiFontStack,
       }}
     >
       {props.secondary}

@@ -7,7 +7,7 @@ export interface QuranTemplateConfig {
   reciterId?: string
   translationKey?: string
   backgroundPreset?: string
-  arabicFont?: 'uthmani' | 'scheherazade' | 'markazi' | 'naskh' | 'kufi' | 'cairo'
+  arabicFont?: 'quran' | 'uthmani' | 'scheherazade' | 'markazi' | 'naskh' | 'kufi' | 'cairo'
   highlightColor?: string
 }
 

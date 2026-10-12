@@ -4,6 +4,7 @@ import { fetchWithTimeout, isFetchAbort } from '@/lib/fetchWithTimeout'
 import { consumeRateLimit, getClientIp } from '@/lib/rateLimit'
 import { logger } from '@/lib/logger'
 import { timingsQuerySchema } from '@/lib/schemas'
+import { quranComVerseUrl } from '@/lib/fetchVerseTimings'
 
 export const runtime = 'nodejs'
 
@@ -44,22 +45,10 @@ export async function GET(req: NextRequest) {
   const { surah, ayat, recitationId } = parsedQuery.data
 
   const verseKey = `${surah}:${ayat}`
-  const upstreamUrl = new URL(
-    `${env.QURAN_COM_API_BASE_URL}/verses/by_key/${verseKey}`,
-  )
-  upstreamUrl.searchParams.set('words', 'true')
-  upstreamUrl.searchParams.set(
-    'word_fields',
-    'text_uthmani,location,transliteration,position,audio_url',
-  )
-  upstreamUrl.searchParams.set(
-    'fields',
-    'juz_number,hizb_number,rub_el_hizb_number,ruku_number,manzil_number,page_number',
-  )
-  upstreamUrl.searchParams.set('audio_recitation', String(recitationId))
+  const upstreamUrl = quranComVerseUrl(env.QURAN_COM_API_BASE_URL, surah, ayat, recitationId)
 
   try {
-    const upstream = await fetchWithTimeout(upstreamUrl.toString(), {
+    const upstream = await fetchWithTimeout(upstreamUrl, {
       headers: { Accept: 'application/json' },
       next: { revalidate: 86_400 },
     })

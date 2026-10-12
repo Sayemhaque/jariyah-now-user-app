@@ -3,6 +3,7 @@ import { AbsoluteFill, useVideoConfig } from 'remotion'
 import type { AyatVideoProps } from './types'
 import { buildSlideSequences, computeTextSizes, isBengaliText } from './layout'
 import { Background } from './Background'
+import { AmbientLights } from './AmbientLights'
 import { OverlayLayer } from './OverlayLayer'
 import { SlideSequence } from './SlideSequence'
 import { ensureRemotionFonts } from './loadFonts'
@@ -29,6 +30,7 @@ export const AyatVideo: React.FC<AyatVideoProps> = ({ slides, settings, isExport
         height={height}
       />
       <div style={{ position: 'absolute', inset: 0, background: edgeShade, pointerEvents: 'none' }} />
+      <AmbientLights color={settings.highlightColor} />
       {sequences.map((timing) => (
         <SlideSequence
           key={timing.index}

@@ -1,5 +1,6 @@
 import {
   Amiri,
+  Amiri_Quran,
   Cairo,
   Hind_Siliguri,
   Markazi_Text,
@@ -10,6 +11,7 @@ import {
   Scheherazade_New,
 } from 'next/font/google'
 
+const amiriQuran = Amiri_Quran({ variable: '--font-amiri-quran', subsets: ['arabic', 'latin'], weight: ['400'] })
 const amiri = Amiri({ variable: '--font-amiri', subsets: ['arabic', 'latin'], weight: ['400', '700'] })
 const scheherazade = Scheherazade_New({ variable: '--font-scheherazade', subsets: ['arabic', 'latin'], weight: ['400', '700'] })
 const markazi = Markazi_Text({ variable: '--font-markazi-text', subsets: ['arabic', 'latin'], weight: ['400', '500', '600', '700'] })
@@ -21,6 +23,7 @@ const notoSerifBengali = Noto_Serif_Bengali({ variable: '--font-noto-serif-benga
 const hindSiliguri = Hind_Siliguri({ variable: '--font-hind-siliguri', subsets: ['bengali'], weight: ['300', '400', '500', '600', '700'] })
 
 export const appFontVariables = [
+  amiriQuran,
   amiri,
   scheherazade,
   markazi,

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { fetchAyatData, fetchAudioPauses, fetchSurahs, getAudioDurationMs } from '@/lib/quranApi'
+import { fetchVerseTimings } from '@/lib/fetchVerseTimings'
 import type { AyatData, Surah } from '@/lib/types'
 
 export interface AyatRangeQueryParams {
@@ -9,6 +10,7 @@ export interface AyatRangeQueryParams {
   fromAyat: number
   toAyat: number
   recitationId: number
+  quranComId?: number
   audioKey: string
   translationKey: string
   useTajweed: boolean
@@ -24,6 +26,7 @@ export const builderQueryKeys = {
       params.fromAyat,
       params.toAyat,
       params.recitationId,
+      params.quranComId ?? 0,
       params.audioKey,
       params.translationKey,
       params.useTajweed ? 1 : 0,
@@ -35,6 +38,7 @@ export async function fetchAyatRangeData({
   fromAyat,
   toAyat,
   recitationId,
+  quranComId,
   audioKey,
   translationKey,
   useTajweed,
@@ -47,18 +51,12 @@ export async function fetchAyatRangeData({
 
   const resolved = await Promise.all(
     ayatNumbers.map(async (ayat) => {
-      const data = await fetchAyatData(
-        surah.number,
-        ayat,
-        recitationId,
-        audioKey,
-        surah.name,
-        surah.arabicName,
-        translationKey,
-        useTajweed,
-      )
-
-      if (!data) return null
+      const [fetched, timings] = await Promise.all([
+        fetchAyatData(surah.number, ayat, recitationId, audioKey, surah.name, surah.arabicName, translationKey, useTajweed),
+        quranComId ? fetchVerseTimings(surah.number, ayat, quranComId) : Promise.resolve(null),
+      ])
+      if (!fetched) return null
+      const data = timings ? { ...fetched, audioUrl: timings.audioUrl, words: timings.words } : fetched
 
       const arWordCount = data.arabicText.split(/\s+/).filter(Boolean).length
       const numBreakpoints = arWordCount > 20 ? Math.ceil(arWordCount / 8) - 1 : 0
