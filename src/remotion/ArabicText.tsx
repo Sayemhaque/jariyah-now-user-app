@@ -2,7 +2,8 @@ import React from 'react'
 import { interpolate } from 'remotion'
 import type { TimedWord } from '@/lib/types'
 import { activeWordIndex, computeWordWindows, splitWords } from '@/lib/wordTiming'
-import { activeScale, ArabicWord, type WordState } from './ArabicWord'
+import { ArabicWord, type WordState } from './ArabicWord'
+import { arabicLineFactor } from './layout'
 import { AyahMedallion } from './AyahMedallion'
 
 interface ArabicTextProps {
@@ -20,7 +21,7 @@ interface ArabicTextProps {
 }
 
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const
-const appearAt = (frame: number, index: number) => interpolate(frame, [index * 1.2, index * 1.2 + 10], [0, 1], clamp)
+const appearAt = (frame: number, index: number) => interpolate(frame, [index * 2.5, index * 2.5 + 18], [0, 1], clamp)
 
 export const ArabicText: React.FC<ArabicTextProps> = ({ text, timedWords, fontSize, fontFamily, color, highlightColor, highlight, ...timing }) => {
   const words = React.useMemo(
@@ -39,7 +40,7 @@ export const ArabicText: React.FC<ArabicTextProps> = ({ text, timedWords, fontSi
 
   return (
     <div
-      style={{ direction: 'rtl', textAlign: 'center', width: '100%', lineHeight: `${fontSize * (highlight ? activeScale : 1) * 1.55}px`, fontSize, fontFamily }}
+      style={{ direction: 'rtl', textAlign: 'center', width: '100%', lineHeight: `${fontSize * (highlight ? arabicLineFactor : 1.5)}px`, fontSize, fontFamily }}
       lang="ar"
     >
       {words.map((word, index) => (

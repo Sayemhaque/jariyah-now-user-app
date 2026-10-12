@@ -2,6 +2,7 @@ import React from 'react'
 import { useCurrentFrame, useVideoConfig } from 'remotion'
 import { withAlpha } from '@/lib/color'
 import { useAudioBars } from './useAudioBars'
+import { useReelLayout } from './reelLayout'
 
 const halfBars = 20
 
@@ -16,8 +17,10 @@ export const RecitationVisualizer: React.FC<RecitationVisualizerProps> = ({ audi
   const { width, height, fps } = useVideoConfig()
   const levels = useAudioBars(audioUrl, frame, fps, halfBars)
   const seconds = frame / fps
-  const boxHeight = height * 0.085
-  const barWidth = (width * 0.64) / (halfBars * 2) * 0.55
+  const layout = useReelLayout()
+  const boxHeight = height * layout.visualizerHeight
+  const boxWidth = width * layout.visualizerWidth
+  const barWidth = (boxWidth / (halfBars * 2)) * 0.55
   const idle = (index: number) => 0.18 + 0.22 * Math.abs(Math.sin(seconds * 3 + index * 0.55))
   const levelAt = (index: number) => {
     const fromCenter = Math.abs(index - halfBars + 0.5) - 0.5
@@ -29,9 +32,9 @@ export const RecitationVisualizer: React.FC<RecitationVisualizerProps> = ({ audi
     <div
       style={{
         position: 'absolute',
-        top: height * 0.27 - boxHeight / 2,
-        left: width * 0.18,
-        width: width * 0.64,
+        top: height * layout.visualizerCenter - boxHeight / 2,
+        left: (width - boxWidth) / 2,
+        width: boxWidth,
         height: boxHeight,
         display: 'flex',
         alignItems: 'center',

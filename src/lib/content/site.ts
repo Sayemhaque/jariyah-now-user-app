@@ -118,7 +118,7 @@ export const landingFeatures: FeatureItem[] = [
   { icon: Sparkles, title: 'Beautiful Arabic typography', description: 'Premium Arabic fonts with smooth RTL rendering, perfectly centered for reels and shorts.' },
   { icon: Mic2, title: '13 world-class reciters', description: 'From Mishary Alafasy to Abdul Basit — every iconic voice in one place, streamed from everyayah.com.' },
   { icon: Languages, title: '12 translations', description: 'Bengali, English, Urdu, Turkish, Indonesian, French, German, Spanish, Malay, and Bosnian — via UmmahAPI.' },
-  { icon: Palette, title: 'Full customization', description: '6 animated backgrounds that pick matching colors for you, custom uploads, font controls — make every reel your own.' },
+  { icon: Palette, title: 'Full customization', description: '12 animated backgrounds that pick matching colors for you, custom uploads, font controls — make every reel your own.' },
   { icon: Film, title: 'Reels & Shorts ready', description: 'Export portrait or landscape, 720p or 1080p — perfectly sized for every platform.' },
   { icon: Globe, title: 'Runs in your browser', description: 'No software to install, no uploads, fully private — your video renders right on your device.' },
 ]

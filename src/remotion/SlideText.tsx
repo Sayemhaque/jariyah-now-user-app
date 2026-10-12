@@ -1,7 +1,8 @@
 import React from 'react'
 import type { AyatSlide, VideoSettings } from '@/lib/types'
 import { textWidthFractions } from './types'
-import type { computeTextSizes } from './layout'
+import { fittedSizes, type computeTextSizes } from './layout'
+import { useReelLayout } from './reelLayout'
 import type { useSlideMotion } from './useSlideMotion'
 import { arabicFontStacks } from './fontStacks'
 import { ArabicText } from './ArabicText'
@@ -20,14 +21,17 @@ interface SlideTextProps {
 
 export const SlideText: React.FC<SlideTextProps> = ({ slide, settings, sizes, motion, width, height, isBengali }) => {
   const accent = settings.highlightColor
-  const maxWidth = width * (textWidthFractions[settings.textWidth] ?? 0.82)
+  const layout = useReelLayout()
+  const maxWidth = width * Math.min(textWidthFractions[settings.textWidth] ?? 0.82, layout.textMaxWidth)
+  const availableHeight = height * (1 - layout.textTop - layout.textBottom)
+  const fitted = fittedSizes(slide, settings, sizes, maxWidth, availableHeight)
 
   return (
     <div
       style={{
         position: 'absolute',
-        top: height * 0.34,
-        bottom: height * 0.2,
+        top: height * layout.textTop,
+        bottom: height * layout.textBottom,
         left: (width - maxWidth) / 2,
         width: maxWidth,
         display: 'flex',
@@ -41,7 +45,7 @@ export const SlideText: React.FC<SlideTextProps> = ({ slide, settings, sizes, mo
       <ArabicText
         text={slide.arabicText}
         timedWords={slide.words}
-        fontSize={sizes.arabic}
+        fontSize={fitted.arabic}
         fontFamily={arabicFontStacks[settings.arabicFont] ?? arabicFontStacks.quran!}
         color={settings.fontColor}
         highlightColor={accent}
@@ -55,7 +59,7 @@ export const SlideText: React.FC<SlideTextProps> = ({ slide, settings, sizes, mo
       <SlideTranslation
         slide={slide}
         settings={settings}
-        sizes={sizes}
+        sizes={fitted}
         maxWidth={maxWidth}
         isBengali={isBengali}
         opacity={motion.translationIn}

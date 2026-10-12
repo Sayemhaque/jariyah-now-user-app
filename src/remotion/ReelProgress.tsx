@@ -5,6 +5,7 @@ import { formatMs } from '@/lib/format'
 import type { SlideSequence } from './layout'
 import { uiFontStack } from './fontStacks'
 import { ProgressTicks } from './ProgressTicks'
+import { useReelLayout } from './reelLayout'
 
 interface ReelProgressProps {
   sequences: SlideSequence[]
@@ -14,6 +15,7 @@ interface ReelProgressProps {
 
 export const ReelProgress: React.FC<ReelProgressProps> = ({ sequences, accent, text }) => {
   const frame = useCurrentFrame()
+  const layout = useReelLayout()
   const { width, height, fps, durationInFrames } = useVideoConfig()
   const unit = Math.min(width, height) / 100
   const progress = Math.min(1, frame / Math.max(1, durationInFrames - 1))
@@ -22,7 +24,7 @@ export const ReelProgress: React.FC<ReelProgressProps> = ({ sequences, accent, t
   const label = { fontFamily: uiFontStack, fontSize: unit * 2.1, fontWeight: 600, color: withAlpha(text, 0.75), letterSpacing: '0.12em' }
 
   return (
-    <div style={{ position: 'absolute', left: width * 0.08, right: width * 0.08, bottom: height * 0.04, display: 'grid', gap: unit * 1.2 }}>
+    <div style={{ position: 'absolute', left: width * layout.progressInset, right: width * layout.progressInset, bottom: height * layout.progressBottom, display: 'grid', gap: unit * 1.2 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
         <span style={label}>{current ? `AYAH ${current.slide.surahNumber}:${current.slide.ayatNumber}` : ''}</span>
         <span style={{ ...label, fontVariantNumeric: 'tabular-nums' }}>

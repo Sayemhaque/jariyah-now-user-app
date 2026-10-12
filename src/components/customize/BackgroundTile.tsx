@@ -16,7 +16,7 @@ export function BackgroundTile({ label, palette, imageUrl, selected, onSelect }:
       type="button"
       onClick={onSelect}
       className={cn(
-        'group relative aspect-[3/4] w-24 shrink-0 snap-start rounded-lg overflow-hidden border transition',
+        'group relative aspect-[9/16] w-20 shrink-0 snap-start rounded-lg overflow-hidden border transition',
         selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-transparent' : 'border-border hover:border-foreground/40',
       )}
       style={{

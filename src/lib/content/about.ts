@@ -24,7 +24,7 @@ export const aboutBlocks: ContentBlock[] = [
   { kind: 'ul', items: translationEditions.map((e) => `**${e.label}** (${e.fullName}) — ${e.rightsHolder}.\n^^${e.licenseNote}^^`) },
   { kind: 'p', text: 'The default is **Bengali (Muhiuddin Khan)** so the app never ships with a copyright-restricted translation as the default. When a translation requires attribution, Jariyah Now automatically adds an attribution line to the bottom-left of the exported video.' },
   { kind: 'h2', text: 'Backgrounds' },
-  { kind: 'p', text: 'The 6 animated backgrounds (Night & Gold, Emerald Sanctuary, Royal Amethyst, Midnight Aurora, Desert Dawn, Ocean Depth) are drawn by Jariyah Now itself, so there are no third-party images to license. You may also upload your own custom background — you are responsible for ensuring you have the rights to use it.' },
+  { kind: 'p', text: 'The 12 animated backgrounds (such as Golden Dusk, Ramadan Lanterns, Golden Bokeh, Desert Starlight, Moonlit Arch and Heavenly Light) are drawn by Jariyah Now itself, so there are no third-party images to license. You may also upload your own custom background — you are responsible for ensuring you have the rights to use it.' },
   { kind: 'h2', text: 'Fonts' },
   {
     kind: 'ul',

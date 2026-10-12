@@ -2,6 +2,7 @@ import React from 'react'
 import { useCurrentFrame, useVideoConfig, spring } from 'remotion'
 import { withAlpha } from '@/lib/color'
 import { headerArabicStack, uiFontStack } from './fontStacks'
+import { useReelLayout } from './reelLayout'
 
 interface SurahTitleProps {
   arabicName: string
@@ -13,6 +14,7 @@ interface SurahTitleProps {
 
 export const SurahTitle: React.FC<SurahTitleProps> = ({ arabicName, englishName, meaning, accent, text }) => {
   const frame = useCurrentFrame()
+  const layout = useReelLayout()
   const { width, height, fps } = useVideoConfig()
   const unit = Math.min(width, height) / 100
   const enter = spring({ frame, fps, config: { damping: 200 }, durationInFrames: Math.round(fps * 0.9) })
@@ -23,7 +25,7 @@ export const SurahTitle: React.FC<SurahTitleProps> = ({ arabicName, englishName,
     <div
       style={{
         position: 'absolute',
-        top: height * 0.05,
+        top: height * layout.titleTop,
         left: 0,
         right: 0,
         display: 'flex',

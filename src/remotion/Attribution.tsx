@@ -1,6 +1,7 @@
 import React from 'react'
 import { withAlpha } from '@/lib/color'
 import { uiFontStack } from './fontStacks'
+import { useReelLayout } from './reelLayout'
 
 interface AttributionProps {
   attributionLine: string
@@ -10,19 +11,21 @@ interface AttributionProps {
 }
 
 export const Attribution: React.FC<AttributionProps> = ({ attributionLine, color, width, height }) => {
+  const layout = useReelLayout()
   if (!attributionLine) return null
   return (
     <div
       style={{
         position: 'absolute',
-        bottom: height * 0.105,
-        left: width * 0.08,
-        right: width * 0.08,
+        bottom: height * layout.attributionBottom,
+        left: width * layout.progressInset,
+        right: width * layout.progressInset,
         textAlign: 'center',
         color: withAlpha(color, 0.5),
         fontFamily: uiFontStack,
         fontSize: Math.min(width, height) * 0.019,
         lineHeight: 1.3,
+        textShadow: '0 1px 6px rgba(0,0,0,0.85)',
         pointerEvents: 'none',
       }}
     >
