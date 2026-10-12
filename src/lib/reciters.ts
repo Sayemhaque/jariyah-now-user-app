@@ -8,6 +8,7 @@ export const reciters: Reciter[] = [
     style: 'Murattal',
     audioKey: 'Alafasy_128kbps',
     recitationId: 1,
+    quranComId: 7,
     avatarColor: '#9333ea',
   },
   {
@@ -17,6 +18,7 @@ export const reciters: Reciter[] = [
     style: 'Murattal',
     audioKey: 'Abdurrahmaan_As-Sudais_192kbps',
     recitationId: 2,
+    quranComId: 3,
     avatarColor: '#1a1a1a',
   },
   {
@@ -26,6 +28,7 @@ export const reciters: Reciter[] = [
     style: 'Murattal',
     audioKey: 'Abdul_Basit_Murattal_192kbps',
     recitationId: 3,
+    quranComId: 2,
     avatarColor: '#7c3aed',
   },
   {
@@ -35,6 +38,7 @@ export const reciters: Reciter[] = [
     style: 'Mujawwad',
     audioKey: 'Abdul_Basit_Mujawwad_192kbps',
     recitationId: 4,
+    quranComId: 1,
     avatarColor: '#6d28d9',
   },
   {
@@ -62,6 +66,7 @@ export const reciters: Reciter[] = [
     style: 'Murattal',
     audioKey: 'Hani_Rifai_192kbps',
     recitationId: 7,
+    quranComId: 5,
     avatarColor: '#a21caf',
   },
   {
@@ -71,6 +76,7 @@ export const reciters: Reciter[] = [
     style: 'Murattal',
     audioKey: 'Abu_Bakr_Ash-Shaatree_128kbps',
     recitationId: 8,
+    quranComId: 4,
     avatarColor: '#86198f',
   },
   {
@@ -89,6 +95,7 @@ export const reciters: Reciter[] = [
     style: 'Murattal',
     audioKey: 'Saood_ash-Shuraym_128kbps',
     recitationId: 10,
+    quranComId: 10,
     avatarColor: '#581c87',
   },
   {

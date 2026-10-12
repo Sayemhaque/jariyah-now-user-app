@@ -1,4 +1,5 @@
 import React from 'react'
+import { displayFontStack, headerArabicStack } from './fontStacks'
 import { HeaderLabel } from './HeaderLabel'
 
 interface TopHeaderProps {
@@ -29,6 +30,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ surahName, surahNameArabic
   >
     <HeaderLabel
       lang="ar"
+      primaryFont={headerArabicStack}
       primary={surahNameArabic}
       secondary={surahName}
       primarySize={width * 0.05}
@@ -39,6 +41,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ surahName, surahNameArabic
     />
     <HeaderLabel
       alignEnd
+      primaryFont={displayFontStack}
       primary={`${surahNumber}:${ayatNumber}`}
       secondary={`Ayat ${index + 1} of ${total}`}
       primarySize={width * 0.042}

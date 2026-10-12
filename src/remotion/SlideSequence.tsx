@@ -7,6 +7,8 @@ import { SlideCard } from './SlideCard'
 import { TopHeader } from './TopHeader'
 import { Watermark } from './Watermark'
 
+const premountFrames = 45
+
 interface SlideSequenceProps {
   timing: SlideTiming
   settings: VideoSettings
@@ -24,8 +26,8 @@ interface SlideSequenceProps {
 export const SlideSequence: React.FC<SlideSequenceProps> = ({ timing, width, height, ...props }) => {
   const { slide, index } = timing
   return (
-    <Sequence from={timing.from} durationInFrames={timing.durationInFrames}>
-      <Audio src={slide.audioUrl} />
+    <Sequence from={timing.from} durationInFrames={timing.durationInFrames} premountFor={premountFrames}>
+      <Audio src={slide.audioUrl} pauseWhenBuffering />
       <TopHeader
         surahName={props.surahName}
         surahNameArabic={props.surahNameArabic}

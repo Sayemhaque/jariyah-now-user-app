@@ -55,6 +55,7 @@ const overlayStyleSchema = z.enum([
 const orientationSchema = z.enum(['landscape', 'portrait'])
 
 const arabicFontSchema = z.enum([
+  'quran',
   'uthmani',
   'scheherazade',
   'markazi',

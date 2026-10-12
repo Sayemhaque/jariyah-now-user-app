@@ -19,6 +19,7 @@ const bismillah = 'بِسْمِ ٱللَّهِ'
 const bengaliBismillah = 'বিসমিল্লাহ'
 
 export const arabicFontOptions: SelectOption<ArabicFont>[] = [
+  { value: 'quran', label: `${bismillah} — Amiri Quran`, className: 'font-arabic-quran' },
   { value: 'uthmani', label: `${bismillah} — Amiri`, className: 'font-arabic-uthmani' },
   { value: 'scheherazade', label: `${bismillah} — Scheherazade`, className: 'font-arabic-scheherazade' },
   { value: 'markazi', label: `${bismillah} — Markazi`, className: 'font-arabic-markazi' },

@@ -1,29 +1,29 @@
 import React from 'react'
+import { uiFontStack } from './fontStacks'
 
-export const TranslationText: React.FC<{
+interface TranslationTextProps {
   text: string
   fontSize: number
   maxWidth: number
-  isBengali: boolean
-  bengaliFont: string
+  fontFamily?: string
   spacing: number
-}> = ({ text, fontSize, maxWidth, isBengali, bengaliFont, spacing }) => {
+}
+
+export const TranslationText: React.FC<TranslationTextProps> = ({ text, fontSize, maxWidth, fontFamily, spacing }) => {
   if (!text) return null
-
-  const fontFamily = isBengali
-    ? bengaliFont.replace('font-bengali-', '')
-    : undefined
-
   return (
     <p
       style={{
         textAlign: 'center',
         maxWidth,
         fontSize,
-        color: 'rgba(255,255,255,0.85)',
-        lineHeight: 1.3,
+        fontWeight: 500,
+        color: 'rgba(255,255,255,0.9)',
+        lineHeight: 1.45,
+        letterSpacing: '0.01em',
         marginTop: `${spacing * 100}%`,
-        ...(fontFamily ? { fontFamily } : {}),
+        textShadow: '0 2px 12px rgba(0,0,0,0.6)',
+        fontFamily: fontFamily ?? uiFontStack,
       }}
     >
       {text}

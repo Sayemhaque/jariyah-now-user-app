@@ -1,21 +1,25 @@
 import React from 'react'
+import { uiFontStack } from './fontStacks'
 
-export const TransliterationText: React.FC<{
+interface TransliterationTextProps {
   text: string
   fontSize: number
   maxWidth: number
-}> = ({ text, fontSize, maxWidth }) => {
-  if (!text) return null
+}
 
+export const TransliterationText: React.FC<TransliterationTextProps> = ({ text, fontSize, maxWidth }) => {
+  if (!text) return null
   return (
     <div
       style={{
         textAlign: 'center',
         maxWidth,
         fontSize,
-        color: 'rgba(255,255,255,0.72)',
+        fontFamily: uiFontStack,
+        color: 'rgba(255,255,255,0.7)',
         fontStyle: 'italic',
-        lineHeight: 1.3,
+        letterSpacing: '0.02em',
+        lineHeight: 1.4,
       }}
     >
       {text}

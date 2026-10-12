@@ -1,13 +1,15 @@
 import React from 'react'
 import { interpolate } from 'remotion'
+import type { TimedWord } from '@/lib/types'
 import { activeWordIndex, computeWordWindows, splitWords } from '@/lib/wordTiming'
 import { ArabicWord, type WordState } from './ArabicWord'
 import { AyahMedallion } from './AyahMedallion'
 
 interface ArabicTextProps {
   text: string
+  timedWords?: TimedWord[]
   fontSize: number
-  fontFace: string
+  fontFamily: string
   color: string
   highlightColor: string
   highlight: boolean
@@ -18,39 +20,33 @@ interface ArabicTextProps {
 }
 
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const
+const appearAt = (frame: number, index: number) => interpolate(frame, [index * 1.2, index * 1.2 + 10], [0, 1], clamp)
 
-export const ArabicText: React.FC<ArabicTextProps> = ({ text, fontSize, fontFace, color, highlightColor, highlight, ...timing }) => {
-  const words = React.useMemo(() => splitWords(text), [text])
-  const windows = React.useMemo(() => computeWordWindows(words, timing.audioDurationMs), [words, timing.audioDurationMs])
+export const ArabicText: React.FC<ArabicTextProps> = ({ text, timedWords, fontSize, fontFamily, color, highlightColor, highlight, ...timing }) => {
+  const words = React.useMemo(
+    () => timedWords?.length ? timedWords : (() => {
+      const plain = splitWords(text)
+      const windows = computeWordWindows(plain, timing.audioDurationMs)
+      return plain.map((word, index) => ({ text: word, ...windows[index]! }))
+    })(),
+    [timedWords, text, timing.audioDurationMs],
+  )
   if (!words.length) return null
 
-  const active = highlight ? activeWordIndex(windows, timing.timeMs) : -1
+  const active = highlight ? activeWordIndex(words, timing.timeMs) : -1
   const stateOf = (index: number): WordState =>
     !highlight ? 'plain' : index < active ? 'past' : index === active ? 'active' : 'future'
-  const progressOf = (index: number) => {
-    const window = windows[index]
-    return window ? (timing.timeMs - window.startMs) / Math.max(1, window.endMs - window.startMs) : 0
-  }
 
   return (
-    <div
-      style={{
-        direction: 'rtl',
-        textAlign: 'center',
-        width: '100%',
-        lineHeight: 1.85,
-        fontSize,
-        fontFamily: fontFace.startsWith('font-') ? fontFace.replace('font-', '') : fontFace,
-      }}
-      lang="ar"
-    >
+    <div style={{ direction: 'rtl', textAlign: 'center', width: '100%', lineHeight: 2.05, fontSize, fontFamily }} lang="ar">
       {words.map((word, index) => (
         <ArabicWord
           key={index}
-          word={word}
+          word={word.text}
           state={stateOf(index)}
-          activeProgress={progressOf(index)}
-          appear={interpolate(timing.frame, [index * 1.5, index * 1.5 + 9], [0, 1], clamp)}
+          msIntoWord={timing.timeMs - (word.startMs ?? 0)}
+          msSinceWord={timing.timeMs - (word.endMs ?? 0)}
+          appear={appearAt(timing.frame, index)}
           fontSize={fontSize}
           color={color}
           highlightColor={highlightColor}
@@ -61,7 +57,7 @@ export const ArabicText: React.FC<ArabicTextProps> = ({ text, fontSize, fontFace
         fontSize={fontSize}
         color={color}
         highlightColor={highlightColor}
-        opacity={interpolate(timing.frame, [words.length * 1.5, words.length * 1.5 + 9], [0, 1], clamp)}
+        opacity={appearAt(timing.frame, words.length)}
       />
     </div>
   )

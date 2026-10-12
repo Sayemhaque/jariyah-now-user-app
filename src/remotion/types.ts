@@ -43,23 +43,7 @@ export const textSpacingFractions: Record<string, number> = {
   spacious: 0.06,
 }
 
-export const arabicFontClass: Record<string, string> = {
-  uthmani: 'Amiri',
-  amiri: 'Amiri',
-  scheherazade: 'Scheherazade New',
-  markazi: 'Markazi Text',
-  naskh: 'Noto Naskh Arabic',
-  kufi: 'Reem Kufi',
-  cairo: 'Cairo',
-}
-
-export const bengaliFontClass: Record<string, string> = {
-  sans: 'Noto Sans Bengali',
-  serif: 'Noto Serif Bengali',
-  hind: 'Hind Siliguri',
-}
-
 export const orientationFontBase: Record<string, { ar: number; tr: number; arRef: number; trRef: number }> = {
-  portrait: { ar: 7.0, tr: 2.8, arRef: 30, trRef: 14 },
-  landscape: { ar: 4.5, tr: 1.8, arRef: 34, trRef: 15 },
+  portrait: { ar: 9.4, tr: 3.0, arRef: 30, trRef: 14 },
+  landscape: { ar: 6.0, tr: 1.9, arRef: 34, trRef: 15 },
 }

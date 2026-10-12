@@ -1,4 +1,5 @@
 import React from 'react'
+import { uiFontStack } from './fontStacks'
 
 export const Attribution: React.FC<{
   reciterName: string
@@ -15,7 +16,7 @@ export const Attribution: React.FC<{
         bottom: height * 0.025,
         left: width * 0.035,
         color: 'rgba(255,255,255,0.55)',
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: uiFontStack,
         lineHeight: 1.2,
         maxWidth: width * 0.55,
         fontSize,
