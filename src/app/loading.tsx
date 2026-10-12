@@ -1,11 +1,5 @@
 import { Loader2 } from 'lucide-react'
 
-/**
- * Route-level loading state. Shown by Next.js while server components in
- * this segment are fetching data (the Surah list, in our case). Keeping
- * this at the route level means the user sees a meaningful skeleton
- * immediately instead of a blank page.
- */
 export default function Loading() {
   return (
     <div className="min-h-screen grid place-items-center bg-background relative overflow-hidden">

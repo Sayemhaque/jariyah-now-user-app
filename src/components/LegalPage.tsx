@@ -2,14 +2,9 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-const LEGAL_DISCLAIMER =
+const legalDisclaimer =
   'Jariyah Now is an independent tool and is not affiliated with or endorsed by any Quran recitation rights holder, translation publisher, or religious authority. Translations and audio recitations used in this app are credited to their respective sources. Users are responsible for the content they create and share using this platform.'
 
-/**
- * Shared layout wrapper for the legal/info pages (/terms, /privacy, /about).
- * Renders a centered prose column with a back-to-builder link at the top
- * and a site footer with attribution + legal links at the bottom.
- */
 export function LegalPage({
   title,
   lastUpdated,
@@ -52,12 +47,6 @@ export function LegalPage({
   )
 }
 
-/**
- * Site footer with attribution + legal links. Shown on every page via
- * the LegalPage wrapper, and also rendered directly on the builder page
- * inside a collapsible section so it doesn't break the full-viewport
- * two-panel layout.
- */
 export function SiteFooter() {
   return (
     <footer className="border-t border-border/80 bg-card/80 backdrop-blur-sm mt-auto relative">
@@ -122,10 +111,9 @@ export function SiteFooter() {
         </nav>
       </div>
 
-      {/* Legal disclaimer — required on every page */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-5">
         <p className="text-[11px] text-muted-foreground leading-relaxed text-center">
-          {LEGAL_DISCLAIMER}
+          {legalDisclaimer}
         </p>
         <p className="mt-2 text-[11px] text-muted-foreground text-center">
           © {new Date().getFullYear()} Jariyah Now — All rights reserved

@@ -1,21 +1,11 @@
-/**
- * TikTok upload via the Content Posting API (Direct Post, FILE_UPLOAD).
- *
- * Requires a TikTok developer app with the `video.publish` scope. Until the
- * app passes TikTok's audit, posts are restricted to SELF_ONLY (private).
- */
 import type { TikTokConfig } from './config'
 import { expectOk, sleep, type UploadInput, type UploadResult } from './types'
 
-const API = 'https://open.tiktokapis.com/v2'
-const MB = 1024 * 1024
+const tiktokApi = 'https://open.tiktokapis.com/v2'
+const megabyte = 1024 * 1024
 
-/**
- * TikTok chunk rules: a file ≤ 64 MB may go in one chunk; otherwise chunks
- * are 5–64 MB and the final chunk absorbs the remainder (up to 128 MB).
- */
-export function tiktokChunkPlan(size: number, chunkSize = 10 * MB): { chunkSize: number; count: number } {
-  if (size <= 64 * MB) return { chunkSize: size, count: 1 }
+export function tiktokChunkPlan(size: number, chunkSize = 10 * megabyte): { chunkSize: number; count: number } {
+  if (size <= 64 * megabyte) return { chunkSize: size, count: 1 }
   return { chunkSize, count: Math.floor(size / chunkSize) }
 }
 
@@ -23,7 +13,7 @@ export async function refreshTikTokToken(
   cfg: TikTokConfig,
 ): Promise<{ accessToken: string; refreshToken?: string }> {
   const res = await expectOk(
-    await fetch(`${API}/oauth/token/`, {
+    await fetch(`${tiktokApi}/oauth/token/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
@@ -48,7 +38,7 @@ export async function uploadToTikTok(cfg: TikTokConfig, input: UploadInput): Pro
   const plan = tiktokChunkPlan(size)
 
   const initRes = await expectOk(
-    await fetch(`${API}/post/publish/video/init/`, {
+    await fetch(`${tiktokApi}/post/publish/video/init/`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -99,12 +89,11 @@ export async function uploadToTikTok(cfg: TikTokConfig, input: UploadInput): Pro
     )
   }
 
-  // Poll until TikTok finishes processing.
   let status = 'PROCESSING_UPLOAD'
   for (let i = 0; i < 60 && !['PUBLISH_COMPLETE', 'FAILED', 'SEND_TO_USER_INBOX'].includes(status); i++) {
     await sleep(10_000)
     const res = await expectOk(
-      await fetch(`${API}/post/publish/status/fetch/`, {
+      await fetch(`${tiktokApi}/post/publish/status/fetch/`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,

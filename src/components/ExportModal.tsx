@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import NextImage from 'next/image'
 import { Download, Film, X, CheckCircle2, AlertCircle } from 'lucide-react'
 import { useBuilderStore } from '@/lib/store'
-import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
+import { reciters } from '@/lib/reciters'
 import { videoAttributionLine } from '@/lib/translations'
 import { formatMs } from '@/lib/format'
 import type { AyatSlide, Orientation } from '@/lib/types'
@@ -20,12 +20,12 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
-const RES: Record<string, { w: number; h: number }> = {
+const resolutions: Record<string, { w: number; h: number }> = {
   landscape: { w: 1280, h: 720 },
   portrait: { w: 720, h: 1280 },
 }
 
-const QUALITY_SCALE: Record<string, number> = {
+const qualityScale: Record<string, number> = {
   '480p': 0.667,
   '720p': 1,
   '1080p': 1.5,
@@ -38,13 +38,9 @@ interface ExportModalProps {
   onOpenChange: (o: boolean) => void
 }
 
-// ──────────────────────────────────────────────────────────────────────
-// ProcessingPanel — premium animated processing state
-// ──────────────────────────────────────────────────────────────────────
-
 type ProcessingPhase = 'composing' | 'uploading' | 'encoding' | 'finalizing'
 
-const PHASE_LABELS: Record<ProcessingPhase, { title: string; subtitle: string }> = {
+const phaseLabels: Record<ProcessingPhase, { title: string; subtitle: string }> = {
   composing: {
     title: 'Preparing render',
     subtitle: 'Staging assets and validating the export job',
@@ -73,11 +69,10 @@ function ProcessingPanel({
   isMp4: boolean
 }) {
   const pct = Math.min(100, Math.max(0, Math.round(progress * 100)))
-  const { title, subtitle } = PHASE_LABELS[phase]
+  const { title, subtitle } = phaseLabels[phase]
 
   return (
     <div className="qv-processing-panel relative rounded-2xl border border-primary/20 overflow-hidden min-h-[320px] flex flex-col justify-center p-6 sm:p-8">
-      {/* Decorative top-left + bottom-right gradient blobs for depth */}
       <div
         aria-hidden
         className="absolute -top-12 -left-12 h-40 w-40 rounded-full bg-primary/20 blur-3xl"
@@ -87,16 +82,12 @@ function ProcessingPanel({
         className="absolute -bottom-16 -right-12 h-48 w-48 rounded-full bg-primary/15 blur-3xl"
       />
 
-      {/* ─── Top: spinning ring + pulsing logo ─── */}
       <div className="relative mx-auto mb-6">
-        {/* Pulsing glow halo */}
         <div
           aria-hidden
           className="qv-processing-glow absolute inset-0 rounded-full bg-primary/30 blur-xl"
         />
-        {/* Spinning conic ring */}
         <div className="qv-processing-ring absolute inset-0 rounded-full" />
-        {/* Center logo */}
         <div className="relative grid place-items-center h-20 w-20 rounded-full bg-card shadow-lg">
           <NextImage
             src="/logo.png"
@@ -108,7 +99,6 @@ function ProcessingPanel({
         </div>
       </div>
 
-      {/* ─── Phase label (cross-fades on change) ─── */}
       <div className="text-center mb-5 min-h-[44px]">
         <p
           key={phase}
@@ -124,7 +114,6 @@ function ProcessingPanel({
         <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
-      {/* ─── Unified progress bar ─── */}
       <div className="space-y-2">
         <div className="flex justify-between items-baseline">
           <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">
@@ -138,14 +127,11 @@ function ProcessingPanel({
           </span>
         </div>
 
-        {/* Track */}
         <div className="relative h-2.5 rounded-full bg-muted/80 overflow-hidden ring-1 ring-inset ring-border">
-          {/* Fill */}
           <div
             className="qv-processing-bar relative h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary/80 transition-[width] duration-300 ease-out"
             style={{ width: `${pct}%` }}
           >
-            {/* Shimmer overlay */}
             <div
               aria-hidden
               className="qv-processing-shimmer absolute inset-0 rounded-full"
@@ -153,7 +139,6 @@ function ProcessingPanel({
           </div>
         </div>
 
-        {/* Phase dots — 4 stages, current one highlighted */}
         <div className="flex items-center justify-between pt-1.5">
           {(['composing', 'uploading', 'encoding', 'finalizing'] as const).map(
             (p, i) => {
@@ -191,21 +176,12 @@ function ProcessingPanel({
         </div>
       </div>
 
-      {/* ─── Footer note ─── */}
       <p className="text-center text-[10px] text-muted-foreground/70 mt-5">
         Do not close this tab while processing
       </p>
     </div>
   )
 }
-
-// ──────────────────────────────────────────────────────────────────────
-// DonePanel — clean success state with just a download button
-// ──────────────────────────────────────────────────────────────────────
-// Replaces the old VideoPreviewPlayer in the done state. No big video
-// preview — the user already saw the video in the live preview, so the
-// modal's job here is just to hand them the file. Compact, focused,
-// with a prominent download button.
 
 function DonePanel({
   filename,
@@ -220,7 +196,6 @@ function DonePanel({
 }) {
   return (
     <div className="qv-processing-panel relative rounded-2xl border border-primary/20 overflow-hidden min-h-[280px] flex flex-col justify-center p-6 sm:p-8 text-center">
-      {/* Decorative blobs */}
       <div
         aria-hidden
         className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-emerald-500/15 blur-3xl"
@@ -230,7 +205,6 @@ function DonePanel({
         className="absolute -bottom-12 -left-12 h-40 w-40 rounded-full bg-primary/15 blur-3xl"
       />
 
-      {/* Success checkmark with pulse */}
       <div className="relative mx-auto mb-5">
         <div
           aria-hidden
@@ -253,7 +227,6 @@ function DonePanel({
         </p>
       </div>
 
-      {/* Download button — the primary CTA */}
       <button
         type="button"
         onClick={onDownload}
@@ -263,7 +236,6 @@ function DonePanel({
         Download {filename}
       </button>
 
-      {/* Format badge */}
       <div className="relative flex items-center justify-center gap-2 mt-4">
         <span
           className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
@@ -290,13 +262,12 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const fromAyat = useBuilderStore((s) => s.fromAyat)
   const toAyat = useBuilderStore((s) => s.toAyat)
 
-  // Derive surah + reciter with stable references.
   const surah = useMemo(
     () => surahs.find((s) => s.number === selectedSurahNumber),
     [surahs, selectedSurahNumber],
   )
   const reciter = useMemo(
-    () => RECITERS_LIST.find((r) => r.id === reciterId) ?? RECITERS_LIST[0]!,
+    () => reciters.find((r) => r.id === reciterId) ?? reciters[0]!,
     [reciterId],
   )
 
@@ -313,11 +284,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   const [progress, setProgress] = useState(0)
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
-  // Server always returns MP4 — no format toggle needed.
   const isMp4 = true
-  // Sub-phase of the unified "processing" state, so the UI can show a
-  // contextual label ("Composing frames…" / "Encoding to MP4…") without
-  // splitting the progress bar.
   const [processingPhase, setProcessingPhase] = useState<
     'composing' | 'uploading' | 'encoding' | 'finalizing'
   >('composing')
@@ -335,11 +302,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     return `quran-${s}-ayat-${fromAyat}-${toAyat}-${reciter.id}.mp4`
   }, [surah, fromAyat, toAyat, reciter.id])
 
-  // Reset when modal closes
   useEffect(() => {
     if (!open) {
       if (pollingRef.current) clearInterval(pollingRef.current)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus('idle')
       setProgress(0)
       setDownloadUrl(null)
@@ -348,7 +313,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     }
   }, [open])
 
-  // Build AyatSlide[] for the renderer
   const slides: AyatSlide[] = useMemo(
     () =>
       ayatList.map((a) => ({
@@ -365,12 +329,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
     [ayatList, surah],
   )
 
-  // ----------------- PROCESS -----------------
-  // The whole pipeline (WebM render + MP4 conversion) is exposed to the
-  // user as a SINGLE "processing" state with one unified 0–100% progress
-  // bar. The WebM render fills 0–60%, the MP4 conversion fills 60–100%.
-  // The sub-phase (`processingPhase`) drives the label only — it does
-  // NOT split the progress.
   const handleDownload = () => {
     if (!downloadUrl) return
     if (downloadUrl.startsWith('blob:')) {
@@ -501,7 +459,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!max-w-6xl w-[95vw] h-[90vh] bg-card border-border shadow-xl sm:rounded-2xl p-0 max-sm:h-[100dvh] max-sm:w-screen max-sm:max-w-none max-sm:rounded-none flex flex-col overflow-hidden gap-0">
-        {/* Header — full width */}
         <div className="px-6 pt-6 shrink-0">
           <DialogHeader className="mb-2">
             <DialogTitle className="flex items-center gap-2 text-lg">
@@ -516,15 +473,10 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           </DialogHeader>
         </div>
 
-        {/* All exports run in-browser via WebCodecs + Canvas — no server needed. */}
-
-        {/* Two-column body on desktop, single column on mobile */}
         <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
 
-            {/* ─── LEFT: Settings ─── */}
             <div className="space-y-4">
-              {/* Quality */}
               <div className="space-y-2">
                 <Label className="qv-section-title !mb-0">Quality</Label>
                 {isMobile && (
@@ -560,7 +512,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                 </div>
               </div>
 
-              {/* Summary */}
               <div className="qv-card rounded-xl p-3 sm:p-3.5 text-[13px]">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                   <div className="col-span-2 flex justify-between items-center gap-2 pb-2 border-b border-border">
@@ -580,8 +531,8 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                   <div className="flex justify-between items-center">
                     <span className="text-muted-foreground text-xs">Resolution</span>
                     <span className="font-mono tabular-nums text-xs">
-                      {Math.round(RES[settings.orientation]!.w * QUALITY_SCALE[effectiveQuality])} ×{' '}
-                      {Math.round(RES[settings.orientation]!.h * QUALITY_SCALE[effectiveQuality])}
+                      {Math.round(resolutions[settings.orientation]!.w * qualityScale[effectiveQuality])} ×{' '}
+                      {Math.round(resolutions[settings.orientation]!.h * qualityScale[effectiveQuality])}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
@@ -594,9 +545,7 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
               </div>
             </div>
 
-            {/* ─── RIGHT: Output / Processing / Download ─── */}
             <div className="space-y-4">
-              {/* Idle state — show a placeholder */}
               {status === 'idle' && (
                 <div className="qv-card rounded-xl p-6 flex flex-col items-center justify-center text-center min-h-[280px] gap-3">
                   <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 text-primary">
@@ -613,11 +562,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                 </div>
               )}
 
-              {/* Processing state — premium animated UI.
-                  A SINGLE unified 0–100% progress bar spans the WebM render
-                  (0–60%) AND the MP4 conversion (60–100%). The sub-phase
-                  label cross-fades between stages so the user always knows
-                  what's happening, without splitting the progress bar. */}
               {status === 'processing' && (
                 <ProcessingPanel
                   progress={progress}
@@ -626,11 +570,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                 />
               )}
 
-              {/* Done state — success panel + download button.
-                  No big video preview — just a clean success state with
-                  a prominent download button. The user already saw the
-                  video in the live preview; the modal's job here is to
-                  hand them the file. */}
               {status === 'done' && downloadUrl && (
                 <DonePanel
                   filename={filename}
@@ -640,7 +579,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
                 />
               )}
 
-              {/* Error state */}
               {status === 'error' && (
                 <div className="qv-card rounded-xl p-5 min-h-[280px] flex flex-col justify-center">
                   <div className="flex items-start gap-3 text-sm text-destructive">
@@ -657,7 +595,6 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
           </div>
         </div>
 
-        {/* Sticky footer */}
         <div className="border-t border-border bg-card px-6 py-3 flex gap-2 shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none">
             <X className="h-4 w-4 mr-1.5" />

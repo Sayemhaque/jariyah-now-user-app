@@ -3,7 +3,7 @@ import type { AyatSlide, VideoSettings } from '@/lib/types'
 import { mixAudio } from './AudioMixerServer'
 import { createVideoComposer, type VideoComposerOptions } from './VideoComposerServer'
 import { ensureFonts } from './fonts'
-import { FPS } from '@/lib/constants'
+import { videoFps } from '@/lib/constants'
 
 export interface RenderServerOptions {
   slides: AyatSlide[]
@@ -18,13 +18,13 @@ export interface RenderServerOptions {
   onProgress?: (progress: number) => void
 }
 
-const QUALITY_SCALE: Record<string, number> = {
+const qualityScales: Record<string, number> = {
   '480p': 0.667,
   '720p': 1,
   '1080p': 1.5,
 }
 
-const QUALITY_BITRATES: Record<string, number> = {
+const qualityBitrates: Record<string, number> = {
   '480p': 1_500_000,
   '720p': 3_000_000,
   '1080p': 6_000_000,
@@ -32,13 +32,13 @@ const QUALITY_BITRATES: Record<string, number> = {
 
 export async function renderVideoServer(options: RenderServerOptions): Promise<Buffer> {
   const { slides, settings, orientation, onProgress } = options
-  const fps = FPS
-  const qualityScale = QUALITY_SCALE[options.quality] ?? 1
-  const bitrate = QUALITY_BITRATES[options.quality] ?? 3_000_000
+  const fps = videoFps
+  const qualityScale = qualityScales[options.quality] ?? 1
+  const bitrate = qualityBitrates[options.quality] ?? 3_000_000
 
   const baseRes = { landscape: { w: 1280, h: 720 }, portrait: { w: 720, h: 1280 } }[orientation]!
-  const W = Math.round(baseRes.w * qualityScale) & ~1
-  const H = Math.round(baseRes.h * qualityScale) & ~1
+  const frameWidth = Math.round(baseRes.w * qualityScale) & ~1
+  const frameHeight = Math.round(baseRes.h * qualityScale) & ~1
 
   onProgress?.(0)
 
@@ -79,7 +79,7 @@ export async function renderVideoServer(options: RenderServerOptions): Promise<B
     '-y',
     '-f', 'rawvideo',
     '-pix_fmt', 'rgba',
-    '-s', `${W}x${H}`,
+    '-s', `${frameWidth}x${frameHeight}`,
     '-r', String(fps),
     '-i', 'pipe:3',
     '-f', 'f32le',
@@ -119,7 +119,7 @@ export async function renderVideoServer(options: RenderServerOptions): Promise<B
       for (let frameIndex = 0; frameIndex < totalFrames; frameIndex++) {
         drawFrame(frameIndex)
 
-        const imageData = composer.ctx.getImageData(0, 0, W, H)
+        const imageData = composer.ctx.getImageData(0, 0, frameWidth, frameHeight)
         const buf = Buffer.from(imageData.data.buffer, imageData.data.byteOffset, imageData.data.byteLength)
         videoInput.write(buf)
 

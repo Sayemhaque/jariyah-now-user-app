@@ -1,18 +1,11 @@
-/**
- * Facebook Page Reels + Instagram Reels via the Meta Graph API.
- * Both use Meta's resumable upload host (rupload.facebook.com), so the video
- * is sent as bytes and never needs a public URL.
- *
- * Facebook Reels must be 3–90 seconds, 9:16, ≥ 540x960.
- */
 import type { FacebookConfig, InstagramConfig } from './config'
 import { expectOk, sleep, type UploadInput, type UploadResult } from './types'
 
-const GRAPH = 'https://graph.facebook.com'
+const graphUrl = 'https://graph.facebook.com'
 
 async function graphPost<T>(path: string, params: Record<string, string>, label: string): Promise<T> {
   const res = await expectOk(
-    await fetch(`${GRAPH}/${path}`, {
+    await fetch(`${graphUrl}/${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams(params),
@@ -91,12 +84,11 @@ export async function uploadToInstagramReels(cfg: InstagramConfig, input: Upload
 
   await ruploadBytes(uploadUrl, token, input.video, 'Instagram reel upload')
 
-  // Wait for Instagram to finish processing (usually < 1 min).
   for (let i = 0; i < 60; i++) {
     await sleep(10_000)
     const res = await expectOk(
       await fetch(
-        `${GRAPH}/${v}/${container.id}?fields=status_code,status&access_token=${encodeURIComponent(token)}`,
+        `${graphUrl}/${v}/${container.id}?fields=status_code,status&access_token=${encodeURIComponent(token)}`,
       ),
       'Instagram container status',
     )

@@ -13,7 +13,7 @@ export interface BackgroundPreset {
   exportSafe?: boolean
 }
 
-export const BACKGROUND_VIDEO_POLICY = {
+export const backgroundVideoPolicy = {
   width: 1080,
   height: 1920,
   fps: 30,
@@ -22,12 +22,12 @@ export const BACKGROUND_VIDEO_POLICY = {
   keyframeInterval: 30,
 } as const
 
-export const TWILIGHT_MOSQUE_URLS: Record<Orientation, string> = {
+export const twilightMosqueUrls: Record<Orientation, string> = {
   portrait: '/backgrounds/twilight-mosque-portrait.png',
   landscape: '/backgrounds/twilight-mosque.png',
 }
 
-const LEGACY_VIDEO_URL_ALIASES: Record<string, string> = {
+const legacyVideoUrlAliases: Record<string, string> = {
   '/backgrounds/videos/15478014_2160_3840_60fps.mp4':
     '/backgrounds/videos/motion-bg-1-safe.mp4',
   '/backgrounds/videos/15870451_2160_3840_60fps.mp4':
@@ -37,10 +37,10 @@ const LEGACY_VIDEO_URL_ALIASES: Record<string, string> = {
 }
 
 export function normalizeBackgroundVideoUrl(url: string): string {
-  return LEGACY_VIDEO_URL_ALIASES[url] ?? url
+  return legacyVideoUrlAliases[url] ?? url
 }
 
-export const BG_PRESETS: BackgroundPreset[] = [
+export const bgPresets: BackgroundPreset[] = [
   { key: 'twilight-mosque', label: 'Twilight Mosque', url: '/backgrounds/twilight-mosque.png' },
   { key: 'crescent-night', label: 'Crescent Night', url: '/backgrounds/crescent-night.png' },
   { key: 'sunset-mosque', label: 'Sunset Mosque', url: '/backgrounds/sunset-mosque.png' },
@@ -66,7 +66,7 @@ export const BG_PRESETS: BackgroundPreset[] = [
 ]
 
 export function getBackgroundPresetByKey(key: string): BackgroundPreset | undefined {
-  return BG_PRESETS.find((preset) => preset.key === key)
+  return bgPresets.find((preset) => preset.key === key)
 }
 
 export function getBackgroundPresetUrl(
@@ -74,9 +74,9 @@ export function getBackgroundPresetUrl(
   orientation: Orientation = 'portrait',
 ): string {
   if (key === 'twilight-mosque') {
-    return TWILIGHT_MOSQUE_URLS[orientation] ?? TWILIGHT_MOSQUE_URLS.portrait
+    return twilightMosqueUrls[orientation] ?? twilightMosqueUrls.portrait
   }
-  return getBackgroundPresetByKey(key)?.url ?? TWILIGHT_MOSQUE_URLS.portrait
+  return getBackgroundPresetByKey(key)?.url ?? twilightMosqueUrls.portrait
 }
 
 export function isVideoBackgroundUrl(url: string): boolean {
@@ -107,8 +107,6 @@ export function isExportSafeBackgroundVideo(
   const preset = getBackgroundPresetByKey(backgroundPreset)
   return Boolean(preset?.isVideo && preset.exportSafe && preset.url === normalized)
 }
-
-
 
 export function getBackgroundRenderFps(
   backgroundPreset: string,

@@ -1,6 +1,6 @@
 import { delayRender, continueRender } from 'remotion'
 
-export const REMOTION_FONT_FAMILIES: Record<string, string> = {
+export const remotionFontFamilies: Record<string, string> = {
   'Amiri': 'Amiri',
   'Scheherazade New': 'Scheherazade New',
   'Markazi Text': 'Markazi Text',
@@ -13,7 +13,7 @@ export const REMOTION_FONT_FAMILIES: Record<string, string> = {
   'Inter': 'Inter',
 }
 
-const FONT_WEIGHTS: Record<string, number[]> = {
+const fontWeights: Record<string, number[]> = {
   'Amiri': [400, 700],
   'Scheherazade New': [400, 700],
   'Markazi Text': [400, 500, 600, 700],
@@ -31,7 +31,7 @@ function cssFamilyName(family: string): string {
 }
 
 function familyCssUrl(family: string): string {
-  const weights = FONT_WEIGHTS[family] ?? [400]
+  const weights = fontWeights[family] ?? [400]
   return `https://fonts.googleapis.com/css2?family=${cssFamilyName(family)}:wght@${weights.join(';')}&display=swap`
 }
 
@@ -44,7 +44,7 @@ export function ensureRemotionFonts(): void {
 
   const handle = delayRender('Loading Google Fonts for Remotion render')
 
-  const families = Object.keys(FONT_WEIGHTS)
+  const families = Object.keys(fontWeights)
 
   Promise.all(
     families.map(async (family) => {
@@ -66,7 +66,6 @@ export function ensureRemotionFonts(): void {
       try {
         await document.fonts.ready
       } catch {
-        // ignore
       }
       continueRender(handle)
     })

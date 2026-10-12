@@ -15,13 +15,11 @@ import type {
   VideoSettings,
   Reciter,
 } from './types'
-import { AUTO_FONT_SIZES, type Orientation } from './types'
-import { RECITERS, DEFAULT_RECITER_ID } from './reciters'
-import { DEFAULT_TRANSLATION_KEY } from './translations'
-import { SURAHS_FALLBACK } from './surahs-fallback'
+import { autoFontSizes, type Orientation } from './types'
+import { reciters, defaultReciterId } from './reciters'
+import { defaultTranslationKey } from './translations'
+import { surahsFallback } from './surahs-fallback'
 import { validateAyatRange } from './validation'
-
-// ── Slice interfaces ──────────────────────────────────────────
 
 export interface SurahRangeSlice {
   surahs: Surah[]
@@ -54,9 +52,7 @@ export interface AyatDataSlice {
   setAyatList: (list: AyatData[]) => void
 }
 
-// ── Default settings ──────────────────────────────────────────
-
-const DEFAULT_SETTINGS: VideoSettings = {
+const defaultSettings: VideoSettings = {
   backgroundImage: '/backgrounds/twilight-mosque-portrait.png',
   backgroundPreset: 'twilight-mosque',
   overlayStyle: 'bottom-gradient',
@@ -64,8 +60,8 @@ const DEFAULT_SETTINGS: VideoSettings = {
   overlayOpacity: 55,
   fontColor: '#ffffff',
   highlightColor: '#9333ea',
-  arabicFontSize: AUTO_FONT_SIZES.portrait.arabic,
-  translationFontSize: AUTO_FONT_SIZES.portrait.translation,
+  arabicFontSize: autoFontSizes.portrait.arabic,
+  translationFontSize: autoFontSizes.portrait.translation,
   fontStyle: 'uthmani',
   arabicFont: 'uthmani',
   bengaliFont: 'sans',
@@ -78,9 +74,7 @@ const DEFAULT_SETTINGS: VideoSettings = {
   textSpacing: 'normal',
 }
 
-// ── Helpers ───────────────────────────────────────────────────
-
-const TWILIGHT_MOSQUE_URLS: Record<string, string> = {
+const twilightMosqueUrls: Record<string, string> = {
   portrait: '/backgrounds/twilight-mosque-portrait.png',
   landscape: '/backgrounds/twilight-mosque.png',
   square: '/backgrounds/twilight-mosque-square.png',
@@ -92,22 +86,20 @@ function pickBgForOrientation(
   newOrientation: string,
 ): string {
   if (currentPreset !== 'twilight-mosque') return currentBg
-  return TWILIGHT_MOSQUE_URLS[newOrientation] ?? currentBg
+  return twilightMosqueUrls[newOrientation] ?? currentBg
 }
-
-// ── Sub-contexts ──────────────────────────────────────────────
 
 const SurahRangeContext = createContext<SurahRangeSlice | null>(null)
 const SettingsContext = createContext<SettingsSlice | null>(null)
 const AyatDataContext = createContext<AyatDataSlice | null>(null)
 
 function SurahRangeProvider({ children }: { children: ReactNode }) {
-  const [surahs, setSurahs] = useState<Surah[]>(SURAHS_FALLBACK)
+  const [surahs, setSurahs] = useState<Surah[]>(surahsFallback)
   const [selectedSurahNumber, setSelectedSurahNumber] = useState<number | null>(null)
   const [fromAyat, setFromAyat] = useState(1)
   const [toAyat, setToAyat] = useState(3)
-  const [reciterId, setReciterId] = useState(DEFAULT_RECITER_ID)
-  const [translationKey, setTranslationKey] = useState(DEFAULT_TRANSLATION_KEY)
+  const [reciterId, setReciterId] = useState(defaultReciterId)
+  const [translationKey, setTranslationKey] = useState(defaultTranslationKey)
 
   const setSurah = useCallback((number: number) => {
     const surah = surahs.find((s) => s.number === number)
@@ -156,7 +148,7 @@ function SurahRangeProvider({ children }: { children: ReactNode }) {
 }
 
 function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<VideoSettings>(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useState<VideoSettings>(defaultSettings)
 
   const updateSettings = useCallback((patch: Partial<VideoSettings>) => {
     setSettings((current) => {
@@ -166,7 +158,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
         patch.orientation !== current.orientation &&
         current.autoFitFonts
       ) {
-        const auto = AUTO_FONT_SIZES[patch.orientation]
+        const auto = autoFontSizes[patch.orientation]
         next.arabicFontSize = auto.arabic
         next.translationFontSize = auto.translation
       }
@@ -185,7 +177,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((current) => {
       const patch: Partial<VideoSettings> = { orientation: o }
       if (current.autoFitFonts) {
-        const auto = AUTO_FONT_SIZES[o]
+        const auto = autoFontSizes[o]
         patch.arabicFontSize = auto.arabic
         patch.translationFontSize = auto.translation
       }
@@ -202,7 +194,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
     setSettings((current) => {
       const patch: Partial<VideoSettings> = { autoFitFonts: on }
       if (on) {
-        const auto = AUTO_FONT_SIZES[current.orientation]
+        const auto = autoFontSizes[current.orientation]
         patch.arabicFontSize = auto.arabic
         patch.translationFontSize = auto.translation
       }
@@ -249,8 +241,6 @@ function AyatDataProvider({ children }: { children: ReactNode }) {
   return createElement(AyatDataContext.Provider, { value }, children)
 }
 
-// ── Combined provider (backward-compatible) ───────────────────
-
 export function BuilderProvider({ children }: { children: ReactNode }) {
   return createElement(
     SurahRangeProvider,
@@ -258,8 +248,6 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     createElement(SettingsProvider, null, createElement(AyatDataProvider, null, children)),
   )
 }
-
-// ── Slice hooks ───────────────────────────────────────────────
 
 export function useSurahRange(): SurahRangeSlice {
   const ctx = useContext(SurahRangeContext)
@@ -278,8 +266,6 @@ export function useAyatData(): AyatDataSlice {
   if (!ctx) throw new Error('useAyatData must be used within BuilderProvider')
   return ctx
 }
-
-// ── Legacy BuilderState (kept for backward compat) ────────────
 
 export interface BuilderState {
   surahs: Surah[]
@@ -310,13 +296,11 @@ export interface BuilderState {
   getEstimatedDurationMs: () => number
 }
 
-/** @deprecated Prefer the slice hooks: useSurahRange, useSettings, useAyatData. */
 export function useBuilderStore<T>(selector: (state: BuilderState) => T): T {
   const surahRange = useSurahRange()
   const settings = useSettings()
   const ayatData = useAyatData()
   const merged = useMemo<BuilderState>(() => {
-    const reciters = RECITERS
     const reciter = reciters.find((r) => r.id === surahRange.reciterId) ?? reciters[0]
     const surah = surahRange.selectedSurahNumber == null
       ? undefined

@@ -2,7 +2,7 @@
 
 import { BookText, AlertTriangle } from 'lucide-react'
 import { useSurahRange } from '@/lib/store'
-import { TRANSLATION_EDITIONS } from '@/lib/translations'
+import { translationEditions } from '@/lib/translations'
 import {
   Select,
   SelectContent,
@@ -17,14 +17,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 
-/**
- * Translation edition picker. Each edition carries its own licensing terms —
- * the picker surfaces a warning badge for editions restricted to personal
- * use only (e.g. Muhammad Asad's translation).
- *
- * The default is Pickthall (public domain). Users who pick Asad see a clear
- * note that they need a separate license to distribute the resulting video.
- */
 export function TranslationSelector() {
   const { translationKey, setTranslation } = useSurahRange()
 
@@ -40,7 +32,7 @@ export function TranslationSelector() {
           <SelectValue className="justify-center" placeholder="Choose a translation" />
         </SelectTrigger>
         <SelectContent className="bg-popover">
-          {TRANSLATION_EDITIONS.map((e) => (
+          {translationEditions.map((e) => (
             <SelectItem key={e.key} value={e.key} className="py-2.5">
               <div className="flex items-center gap-2 w-full">
                 <div className="flex flex-col flex-1 min-w-0">

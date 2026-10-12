@@ -4,13 +4,11 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { Providers } from "@/components/Providers";
 
-// ─── UI font ─────────────────────────────────────────────────────────
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
 
-// ─── Display font — classical serif for hero/headings ────────────────
 const ebGaramond = EB_Garamond({
   variable: "--font-display",
   subsets: ["latin"],

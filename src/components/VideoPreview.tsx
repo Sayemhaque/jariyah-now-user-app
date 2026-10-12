@@ -15,14 +15,14 @@ import {
 import { Player, PlayerRef } from '@remotion/player'
 import { AyatVideo } from '@/remotion/AyatVideo'
 import { useBuilderStore } from '@/lib/store'
-import { RECITERS as RECITERS_LIST } from '@/lib/reciters'
+import { reciters } from '@/lib/reciters'
 import { videoAttributionLine } from '@/lib/translations'
 import { Slider } from '@/components/ui/slider'
 import { computeSlideFrames } from '@/lib/advanceTiming'
 import { formatMs } from '@/lib/format'
-import { FPS } from '@/lib/constants'
+import { videoFps } from '@/lib/constants'
 
-const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
+const aspectRatios: Record<string, { w: number; h: number; ratio: string }> = {
   landscape: { w: 1280, h: 720, ratio: '16 / 9' },
   portrait: { w: 720, h: 1280, ratio: '9 / 16' },
 }
@@ -50,7 +50,7 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
     [surahs, selectedSurahNumber],
   )
   const reciter = useMemo(
-    () => RECITERS_LIST.find((r) => r.id === reciterId) ?? RECITERS_LIST[0]!,
+    () => reciters.find((r) => r.id === reciterId) ?? reciters[0]!,
     [reciterId],
   )
 
@@ -73,18 +73,13 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
   }, [])
 
-  // Track player readiness so the event-listener effect can react to mounts
-  // and unmounts of the <Player> (which is conditionally rendered).
   const [playerReady, setPlayerReady] = useState(false)
 
-  // Stable callback ref — only triggers on mount/unmount, never on re-render,
-  // avoiding the "maximum update depth" loop.
   const handlePlayerRef = useCallback((p: PlayerRef | null) => {
     playerRef.current = p
     setPlayerReady(p !== null)
   }, [])
 
-  // Register event listeners when the Player mounts; deregister on unmount.
   useEffect(() => {
     const player = playerRef.current
     if (!player || !playerReady) return
@@ -123,10 +118,10 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
     [translationKey],
   )
 
-  const aspect = ASPECT[settings.orientation]
+  const aspect = aspectRatios[settings.orientation]
 
   const { totalFrames, offsets: frameOffsets } = useMemo(
-    () => computeSlideFrames(ayatList, FPS),
+    () => computeSlideFrames(ayatList, videoFps),
     [ayatList],
   )
 
@@ -138,10 +133,9 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
   }, [currentFrame, frameOffsets])
 
   const current = ayatList[currentIndex]
-  const currentMs = (currentFrame / FPS) * 1000
-  const totalMs = totalFrames / FPS * 1000
+  const currentMs = (currentFrame / videoFps) * 1000
+  const totalMs = totalFrames / videoFps * 1000
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const player = playerRef.current
     if (!ayatList.length) {
@@ -153,7 +147,6 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
     player?.pause()
     setCurrentFrame(0)
   }, [ayatList])
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     const player = playerRef.current
@@ -178,7 +171,7 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
   const onSeek = (ms: number) => {
     const p = playerRef.current
     if (!p) return
-    const frame = Math.round(ms / 1000 * FPS)
+    const frame = Math.round(ms / 1000 * videoFps)
     p.seekTo(Math.min(frame, totalFrames - 1))
   }
 
@@ -222,7 +215,7 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
               durationInFrames={totalFrames}
               compositionWidth={aspect.w}
               compositionHeight={aspect.h}
-              fps={FPS}
+              fps={videoFps}
               inputProps={inputProps}
               controls={false}
               showVolumeControls={false}
@@ -261,7 +254,6 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
             </div>
           )}
 
-          {/* Controls overlay */}
           <div
             className="absolute inset-0 z-10"
             onMouseEnter={revealControls}
@@ -338,7 +330,6 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
               </div>
             </div>
 
-            {/* Thin seek bar - always visible */}
             <div
               className="absolute bottom-0 inset-x-0 h-1 cursor-pointer z-20"
                 onClick={(e) => {
@@ -362,5 +353,3 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
     </div>
   )
 }
-
-

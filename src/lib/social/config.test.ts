@@ -49,17 +49,17 @@ describe('parsePlatforms', () => {
 })
 
 describe('tiktokChunkPlan', () => {
-  const MB = 1024 * 1024
+  const megabyte = 1024 * 1024
 
   it('uses a single chunk up to 64 MB', () => {
-    expect(tiktokChunkPlan(30 * MB)).toEqual({ chunkSize: 30 * MB, count: 1 })
+    expect(tiktokChunkPlan(30 * megabyte)).toEqual({ chunkSize: 30 * megabyte, count: 1 })
   })
 
   it('folds the remainder into the last chunk for larger files', () => {
-    const plan = tiktokChunkPlan(95 * MB)
-    expect(plan).toEqual({ chunkSize: 10 * MB, count: 9 })
-    const last = 95 * MB - (plan.count - 1) * plan.chunkSize
-    expect(last).toBeLessThanOrEqual(128 * MB)
+    const plan = tiktokChunkPlan(95 * megabyte)
+    expect(plan).toEqual({ chunkSize: 10 * megabyte, count: 9 })
+    const last = 95 * megabyte - (plan.count - 1) * plan.chunkSize
+    expect(last).toBeLessThanOrEqual(128 * megabyte)
     expect(last).toBeGreaterThanOrEqual(plan.chunkSize)
   })
 })

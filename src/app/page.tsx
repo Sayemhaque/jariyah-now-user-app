@@ -16,7 +16,7 @@ import {
   Languages,
   LayoutGrid,
 } from 'lucide-react'
-import { TEMPLATE_PRESETS, isQuranTemplate } from '@/lib/templatePresets'
+import { templatePresets, isQuranTemplate } from '@/lib/templatePresets'
 
 const siteUrl = 'https://jariyahnow.com'
 const ogImage = `${siteUrl}/og-image.png`
@@ -44,13 +44,12 @@ export const metadata: Metadata = {
   },
 }
 
-const LEGAL_DISCLAIMER =
+const legalDisclaimer =
   'Jariyah Now is an independent tool and is not affiliated with or endorsed by any Quran recitation rights holder, translation publisher, or religious authority. Translations and audio recitations used in this app are credited to their respective sources. Users are responsible for the content they create and share using this platform.'
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {/* ─── Header ─── */}
       <header className="sticky top-0 z-30 qv-frosted border-b border-border/70">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
@@ -100,32 +99,27 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ─── Hero ─── */}
       <section className="relative overflow-hidden">
         <div className="qv-ambient" aria-hidden />
         <div className="qv-grid-bg absolute inset-0 pointer-events-none opacity-80" aria-hidden />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-16 sm:pt-24 pb-14 sm:pb-24">
           <div className="max-w-3xl">
-            {/* Premium badge */}
             <div className="qv-pill-premium mb-6">
               <Image src="/logo.png" alt="" width={14} height={14} className="h-3.5 w-3.5 rounded-sm ring-1 ring-primary/20" />
               Free — No account required
             </div>
 
-            {/* Tagline — gold accent */}
             <p className="qv-tagline mb-4">
               <span className="qv-divider-accent inline-block w-6 h-[2px] rounded-full" aria-hidden />
               Share once, earn forever.
             </p>
 
-            {/* Headline — display font for premium feel */}
             <h1 className="qv-hero-title font-display mb-6">
               Turn Quran verses into
               <br />
               <span className="qv-gradient-text">shareable reels</span>
             </h1>
 
-            {/* Subheadline */}
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-9 max-w-2xl">
               Every reel you publish is Sadaqah Jariyah — ongoing charity that
               keeps earning reward long after you hit share. Pick a Surah,
@@ -134,7 +128,6 @@ export default function LandingPage() {
               Built for Instagram Reels, TikTok, and YouTube Shorts.
             </p>
 
-            {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-3">
               <Link
                 href="/app"
@@ -153,7 +146,6 @@ export default function LandingPage() {
               </a>
             </div>
 
-            {/* Trust indicators */}
             <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-10">
               {['114 Surahs', '13 reciters', 'Video backgrounds', '12 translations'].map((label) => (
                 <div
@@ -169,7 +161,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── App Showcase ─── */}
       <section className="py-12 sm:py-20 px-4 sm:px-6 relative">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
@@ -186,13 +177,10 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Desktop + Mobile side by side */}
           <div className="grid lg:grid-cols-[1fr_auto] gap-8 items-center">
-            {/* Desktop screenshot in a browser frame */}
             <div className="relative">
               <div className="absolute -inset-4 bg-primary/10 rounded-[2rem] blur-2xl opacity-60 -z-10" aria-hidden />
               <div className="rounded-2xl border border-border/80 bg-card shadow-2xl overflow-hidden ring-1 ring-primary/5">
-                {/* Browser chrome */}
                 <div className="flex items-center gap-2 px-4 h-11 border-b border-border bg-gradient-to-b from-muted/80 to-muted/40">
                   <div className="flex gap-1.5">
                     <div className="h-3 w-3 rounded-full bg-destructive/40" />
@@ -205,7 +193,6 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
-                {/* Screenshot */}
                 <Image
                   src="/landing/app-desktop.png"
                   alt="Jariyah Now app — desktop view"
@@ -217,7 +204,6 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Mobile screenshot in a phone frame */}
             <div className="hidden lg:block w-[200px] shrink-0 qv-phone-float">
               <div className="relative">
                 <div className="absolute -inset-6 bg-primary/20 rounded-full blur-2xl qv-phone-glow -z-10" aria-hidden />
@@ -239,7 +225,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── How It Works ─── */}
       <section id="how-it-works" className="py-16 sm:py-24 px-4 sm:px-6 bg-card/70 border-y border-border/80 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto">
           <div className="qv-section-header mb-14">
@@ -305,7 +290,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Features ─── */}
       <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
           <div className="qv-section-header mb-14">
@@ -369,10 +353,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Start from a template ─── */}
       <TemplatesShowcaseSection />
 
-      {/* ─── Sadaqah Jariyah band ─── */}
       <section className="relative py-16 sm:py-20 px-4 sm:px-6 overflow-hidden border-y border-primary/10">
         <div className="absolute inset-0 bg-primary/5" aria-hidden />
         <div className="absolute inset-0 qv-grid-bg opacity-60" aria-hidden />
@@ -398,11 +380,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Final CTA ─── */}
       <section className="py-16 sm:py-24 px-4 sm:px-6">
         <div className="max-w-4xl mx-auto">
           <div className="qv-gradient-rim rounded-3xl p-10 sm:p-16 text-center relative overflow-hidden">
-            {/* Decorative bg */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[420px] h-[320px] bg-primary/8 rounded-full blur-3xl pointer-events-none" aria-hidden />
             <div className="absolute -bottom-16 -right-10 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none" aria-hidden />
 
@@ -434,7 +414,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Footer ─── */}
       <footer className="border-t border-border/80 bg-card/80 backdrop-blur-sm mt-auto">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -473,9 +452,8 @@ export default function LandingPage() {
             </nav>
           </div>
 
-          {/* Legal disclaimer */}
           <p className="mt-8 text-xs text-muted-foreground leading-relaxed text-center max-w-4xl mx-auto">
-            {LEGAL_DISCLAIMER}
+            {legalDisclaimer}
           </p>
 
           <div className="mt-6 pt-6 border-t border-border text-xs text-muted-foreground text-center leading-relaxed">
@@ -515,13 +493,7 @@ export default function LandingPage() {
   )
 }
 
-// ─── Templates showcase section (6 featured templates) ──────────────────────
-// Rendered inline on the landing page so visitors see the templates offering
-// without having to navigate. Clicking a card navigates to the templates page
-// (we don't auto-apply from the landing page — let the user browse first).
-
 function TemplatesShowcaseSection() {
-  // Pick 6 featured templates — Quran + Dua + Names + Hadith.
   const featured = [
     'ayat-al-kursi',
     'al-fatihah',
@@ -530,11 +502,10 @@ function TemplatesShowcaseSection() {
     '99-names',
     'daily-hadith',
   ]
-    .map((id) => TEMPLATE_PRESETS.find((t) => t.id === id))
+    .map((id) => templatePresets.find((t) => t.id === id))
     .filter((t): t is NonNullable<typeof t> => Boolean(t))
 
-  // Fallback — if any of the featured IDs don't match, just take the first 6.
-  const templates = featured.length >= 6 ? featured : TEMPLATE_PRESETS.slice(0, 6)
+  const templates = featured.length >= 6 ? featured : templatePresets.slice(0, 6)
 
   return (
     <section className="py-16 sm:py-24 px-4 sm:px-6 bg-card border-y border-border">
@@ -556,10 +527,6 @@ function TemplatesShowcaseSection() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {templates.map((t) => {
-            // Build the target URL based on the template type. We don't
-            // auto-apply templates from the landing page (the store would
-            // need to be hydrated first); we just deep-link to /templates
-            // so the user can browse + click apply there.
             const targetUrl =
               isQuranTemplate(t)
                 ? `/app`
@@ -570,7 +537,6 @@ function TemplatesShowcaseSection() {
                 href={targetUrl}
                 className="group qv-card qv-gradient-border rounded-2xl p-0 overflow-hidden qv-hover-lift flex flex-col"
               >
-                {/* Gradient header */}
                 <div
                   className={`relative h-28 bg-gradient-to-br ${t.gradient} flex items-center justify-center overflow-hidden`}
                 >
@@ -590,7 +556,6 @@ function TemplatesShowcaseSection() {
                   </span>
                 </div>
 
-                {/* Content */}
                 <div className="p-5 flex flex-col flex-1">
                   <h3 className="font-bold text-base mb-1.5 flex items-center gap-2">
                     {t.title}
@@ -617,14 +582,13 @@ function TemplatesShowcaseSection() {
           })}
         </div>
 
-        {/* See all templates CTA */}
         <div className="text-center mt-10">
           <Link
             href="/templates"
             className="qv-btn-secondary inline-flex items-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold"
           >
             <LayoutGrid className="h-4 w-4 text-primary" />
-            Browse all {TEMPLATE_PRESETS.length} templates
+            Browse all {templatePresets.length} templates
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

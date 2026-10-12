@@ -2,7 +2,7 @@ import type { PostMetadata } from '@/lib/daily/plan'
 
 export type Platform = 'youtube' | 'facebook' | 'instagram' | 'tiktok'
 
-export const ALL_PLATFORMS: Platform[] = ['youtube', 'facebook', 'instagram', 'tiktok']
+export const allPlatforms: Platform[] = ['youtube', 'facebook', 'instagram', 'tiktok']
 
 export interface UploadInput {
   video: Buffer
@@ -16,7 +16,6 @@ export interface UploadResult {
   note?: string
 }
 
-/** Throws with the response body when `res` is not 2xx. */
 export async function expectOk(res: Response, label: string): Promise<Response> {
   if (res.ok) return res
   const body = await res.text().catch(() => '')

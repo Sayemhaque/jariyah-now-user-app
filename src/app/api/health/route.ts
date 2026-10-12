@@ -6,17 +6,6 @@ import { logger } from '@/lib/logger'
 
 export const runtime = 'nodejs'
 
-/**
- * GET /api/health
- *
- * Pings both upstream Quran APIs (UmmahAPI, quran.com) with a short
- * timeout. Returns 200 when everything is reachable, 503 when all
- * upstreams are down.
- *
- * Response shape:
- *   { status: 'ok' | 'degraded' | 'down', checks: { ummahapi, qurancom }, ts }
- */
-
 interface CheckResult {
   ok: boolean
   latencyMs?: number

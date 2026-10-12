@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { Label } from '@/components/ui/label'
 import { useSurahRange } from '@/lib/store'
-import { validateAyatRange, MAX_AYATS_PER_VIDEO } from '@/lib/validation'
+import { validateAyatRange, maxAyatsPerVideo } from '@/lib/validation'
 import { cn } from '@/lib/utils'
 import {
   Select,
@@ -39,7 +39,7 @@ export function AyatRangePicker() {
     [fromAyat, toAyat, surah],
   )
   const count = Math.max(0, toAyat - fromAyat + 1)
-  const over = count > MAX_AYATS_PER_VIDEO
+  const over = count > maxAyatsPerVideo
 
   return (
     <div className="space-y-1.5">
@@ -53,7 +53,7 @@ export function AyatRangePicker() {
               : 'bg-primary/10 text-primary border-primary/25',
           )}
         >
-          {count} / {MAX_AYATS_PER_VIDEO}
+          {count} / {maxAyatsPerVideo}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-3">

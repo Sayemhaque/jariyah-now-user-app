@@ -5,7 +5,7 @@ import { HexColorPicker } from 'react-colorful'
 import { Upload, Sparkles } from 'lucide-react'
 import Image from 'next/image'
 import { useSettings } from '@/lib/store'
-import { BG_PRESETS, getBackgroundPresetUrl } from '@/lib/backgroundPresets'
+import { bgPresets, getBackgroundPresetUrl } from '@/lib/backgroundPresets'
 import { validateBackgroundImage } from '@/lib/uploadValidation'
 import type { ArabicFont, BengaliFont, Orientation, OverlayStyle } from '@/lib/types'
 import { toast } from 'sonner'
@@ -27,10 +27,7 @@ import {
 } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
-// Overlay style presets — each one shapes the user's color + opacity
-// differently across the frame. The mini-swatch uses a real gradient so
-// the user can see the shape before applying it.
-const OVERLAY_PRESETS: {
+const overlayPresets: {
   key: OverlayStyle
   label: string
   swatch: string
@@ -119,9 +116,6 @@ export function CustomizationPanel() {
 
   const onUpload = (file?: File) => {
     if (!file) return
-    // Validate before reading — reject SVG (XSS / canvas-taint risk) and
-    // files over 5MB (memory bloat). Shows a toast so the user knows why
-    // their upload didn't take.
     const validation = validateBackgroundImage(file)
     if (!validation.ok) {
       toast.error(validation.error)
@@ -142,7 +136,6 @@ export function CustomizationPanel() {
 
   return (
     <div className="space-y-1">
-      {/* Layout */}
       <SectionTitle>Layout</SectionTitle>
       <div className="grid grid-cols-2 gap-2.5">
         {(['portrait', 'landscape'] as Orientation[]).map((o) => (
@@ -188,10 +181,9 @@ export function CustomizationPanel() {
         ))}
       </div>
 
-      {/* Background — real image thumbnails */}
       <SectionTitle>Background</SectionTitle>
       <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1 snap-x snap-mandatory">
-        {BG_PRESETS.map((p) => {
+        {bgPresets.map((p) => {
           const presetUrl = getBackgroundPresetUrl(p.key, settings.orientation)
           return (
             <button
@@ -254,11 +246,10 @@ export function CustomizationPanel() {
         </Button>
       </div>
 
-      {/* Overlay — preset shapes + color + opacity */}
       <SectionTitle>Overlay</SectionTitle>
       <div className="space-y-2.5">
         <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1 snap-x snap-mandatory">
-          {OVERLAY_PRESETS.map((p) => (
+          {overlayPresets.map((p) => (
             <button
               key={p.key}
               onClick={() => update({ overlayStyle: p.key })}
@@ -305,10 +296,8 @@ export function CustomizationPanel() {
         </div>
       </div>
 
-      {/* Typography */}
       <SectionTitle>Typography</SectionTitle>
       <div className="space-y-2.5">
-        {/* Auto-fit toggle — when on, font sizes auto-scale with orientation */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -326,9 +315,6 @@ export function CustomizationPanel() {
           </p>
         )}
 
-        {/* Arabic font selector — 7 fonts spanning classical → modern.
-            Each option is rendered in its own typeface so the user can
-            see what the font looks like before selecting it. */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Arabic font</Label>
           <Select
@@ -361,10 +347,6 @@ export function CustomizationPanel() {
           </Select>
         </div>
 
-        {/* Bengali font selector — 3 fonts: sans (default), serif (formal),
-            and Hind Siliguri (modern). Only relevant when a Bengali
-            translation is selected, but always available so the user can
-            pre-set their preference. */}
         <div className="flex items-center justify-between">
           <Label className="text-xs text-muted-foreground">Bengali font</Label>
           <Select
@@ -402,9 +384,6 @@ export function CustomizationPanel() {
             min={24}
             max={72}
             step={1}
-            // When auto-fit is on, the slider becomes a read-only indicator
-            // (the value follows the orientation). The user can still drag it,
-            // which will not stick — they need to turn off auto-fit first.
             disabled={settings.autoFitFonts}
             onValueChange={(v) => update({ arabicFontSize: v[0]! })}
           />
@@ -440,7 +419,6 @@ export function CustomizationPanel() {
           onChange={(v) => update({ highlightColor: v })}
         />
 
-        {/* Text width — controls horizontal padding inside the card */}
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Text width</Label>
           <div className="grid grid-cols-4 gap-1">
@@ -461,7 +439,6 @@ export function CustomizationPanel() {
           </div>
         </div>
 
-        {/* Text spacing — gap between Arabic and translation */}
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Text spacing</Label>
           <div className="grid grid-cols-3 gap-1">
@@ -483,7 +460,6 @@ export function CustomizationPanel() {
         </div>
       </div>
 
-      {/* Captions */}
       <SectionTitle>Captions</SectionTitle>
       <div className="space-y-2.5">
         <div className="flex items-center justify-between">

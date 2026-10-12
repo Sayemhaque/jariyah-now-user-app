@@ -2,7 +2,7 @@ import { registerFont } from 'canvas'
 import { writeFileSync, mkdirSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 
-const FONT_DIR = '/tmp/jariyah-fonts'
+const fontDir = '/tmp/jariyah-fonts'
 
 interface FontDef {
   family: string
@@ -10,7 +10,7 @@ interface FontDef {
   style: string
 }
 
-const FONTS: FontDef[] = [
+const fontFiles: FontDef[] = [
   { family: 'Inter', weight: 400, style: 'normal' },
   { family: 'Inter', weight: 700, style: 'normal' },
   { family: 'EB Garamond', weight: 400, style: 'normal' },
@@ -91,12 +91,12 @@ export async function ensureFonts(): Promise<void> {
   if (initialized) return
   initialized = true
 
-  if (!existsSync(FONT_DIR)) {
-    mkdirSync(FONT_DIR, { recursive: true })
+  if (!existsSync(fontDir)) {
+    mkdirSync(fontDir, { recursive: true })
   }
 
   const families = new Map<string, FontDef[]>()
-  for (const font of FONTS) {
+  for (const font of fontFiles) {
     const list = families.get(font.family) ?? []
     list.push(font)
     families.set(font.family, list)
@@ -110,7 +110,7 @@ export async function ensureFonts(): Promise<void> {
 
     for (const font of defs) {
       const filename = `${familyCssName(font.family)}-${font.weight}.ttf`
-      const path = join(FONT_DIR, filename)
+      const path = join(fontDir, filename)
 
       if (!existsSync(path)) {
         const url = urlMap.get(font.weight)
@@ -123,9 +123,9 @@ export async function ensureFonts(): Promise<void> {
     }
   }
 
-  for (const font of FONTS) {
+  for (const font of fontFiles) {
     const filename = `${familyCssName(font.family)}-${font.weight}.ttf`
-    const path = join(FONT_DIR, filename)
+    const path = join(fontDir, filename)
     registerFont(path, {
       family: font.family,
       weight: font.weight as any,

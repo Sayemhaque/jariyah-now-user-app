@@ -1,33 +1,13 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// Template Presets — pre-configured starting points for the Quran Video
-// Generator.
-//
-// Each template bundles a Surah/ayat range plus suggested visual settings
-// (background, font, colors) so users can launch into a polished reel in one
-// click instead of configuring everything by hand.
-//
-// Click behaviour on /templates:
-//   • Quran templates → setSurah + setFromAyat + setToAyat → navigate to /app
-//
-// All templates are static data — no fetches happen on this page.
-// ─────────────────────────────────────────────────────────────────────────────
-
 export type TemplateType = 'quran' | 'names' | 'hadith' | 'dua'
 
-/** Configuration for a Quran-type template — what to load in the builder. */
 export interface QuranTemplateConfig {
   surah: number
   fromAyat: number
   toAyat: number
-  /** Suggested reciter id (matches RECITERS[].id in lib/reciters.ts). */
   reciterId?: string
-  /** Suggested UmmahAPI translation key (e.g. 'bengali', 'sahiih_international'). */
   translationKey?: string
-  /** Suggested background preset key (matches BG_PRESETS[].key). */
   backgroundPreset?: string
-  /** Suggested Arabic font. */
   arabicFont?: 'uthmani' | 'scheherazade' | 'markazi' | 'naskh' | 'kufi' | 'cairo'
-  /** Suggested highlight color (hex). */
   highlightColor?: string
 }
 
@@ -36,16 +16,12 @@ export interface TemplatePreset {
   type: TemplateType
   title: string
   description: string
-  /** Emoji or short icon glyph shown on the template card. */
   icon: string
-  /** Tailwind gradient classes (e.g. "from-amber-500 to-rose-600"). */
   gradient: string
-  /** Type-specific config — narrow via the `type` field. */
   config: QuranTemplateConfig
 }
 
-// ─── 6 Quran templates ──────────────────────────────────────────────────────
-const QURAN_TEMPLATES: TemplatePreset[] = [
+const quranTemplates: TemplatePreset[] = [
   {
     id: 'ayat-al-kursi',
     type: 'quran',
@@ -156,8 +132,7 @@ const QURAN_TEMPLATES: TemplatePreset[] = [
   },
 ]
 
-// ─── 1 Names template ───────────────────────────────────────────────────────
-const NAMES_TEMPLATE: TemplatePreset = {
+const namesTemplate: TemplatePreset = {
   id: '99-names',
   type: 'names',
   title: '99 Names of Allah',
@@ -176,8 +151,7 @@ const NAMES_TEMPLATE: TemplatePreset = {
   },
 }
 
-// ─── 1 Hadith template ──────────────────────────────────────────────────────
-const HADITH_TEMPLATE: TemplatePreset = {
+const hadithTemplate: TemplatePreset = {
   id: 'daily-hadith',
   type: 'hadith',
   title: 'Daily Hadith',
@@ -196,8 +170,7 @@ const HADITH_TEMPLATE: TemplatePreset = {
   },
 }
 
-// ─── 3 Dua templates ────────────────────────────────────────────────────────
-const DUA_TEMPLATES: TemplatePreset[] = [
+const duaTemplates: TemplatePreset[] = [
   {
     id: 'dua-travel',
     type: 'dua',
@@ -254,15 +227,13 @@ const DUA_TEMPLATES: TemplatePreset[] = [
   },
 ]
 
-// ─── Combined export ────────────────────────────────────────────────────────
-export const TEMPLATE_PRESETS: TemplatePreset[] = [
-  ...QURAN_TEMPLATES,
-  NAMES_TEMPLATE,
-  HADITH_TEMPLATE,
-  ...DUA_TEMPLATES,
+export const templatePresets: TemplatePreset[] = [
+  ...quranTemplates,
+  namesTemplate,
+  hadithTemplate,
+  ...duaTemplates,
 ]
 
-/** Type guard: a Quran-type template (with surah/ayat range). */
 export function isQuranTemplate(
   t: TemplatePreset,
 ): t is TemplatePreset & { config: QuranTemplateConfig } {
@@ -274,8 +245,7 @@ export function isQuranTemplate(
   )
 }
 
-/** Filter category labels for the templates page UI. */
-export const TEMPLATE_CATEGORIES: { key: TemplateType | 'all'; label: string; icon: string }[] = [
+export const templateCategories: { key: TemplateType | 'all'; label: string; icon: string }[] = [
   { key: 'all', label: 'All', icon: '✨' },
   { key: 'quran', label: 'Quran', icon: '📖' },
   { key: 'dua', label: 'Dua', icon: '🤲' },

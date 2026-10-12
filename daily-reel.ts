@@ -1,20 +1,3 @@
-/**
- * Daily Quran reel: pick today's surah, render it with Remotion, and post it
- * to YouTube Shorts, Facebook Reels, Instagram Reels and TikTok.
- *
- * Run by .github/workflows/daily-reel.yml every day at 22:00 Asia/Dhaka.
- * Locally:  DRY_RUN=1 npx tsx daily-reel.ts
- *
- * Env (all optional unless noted):
- *   DRY_RUN=1            render only, don't post
- *   SURAH=112            force a surah instead of the daily pick
- *   RECITER=alafasy      reciter id, or "random" (default) for the rotation
- *   TRANSLATION=bengali  UmmahAPI translation key
- *   PLATFORMS=youtube,facebook,instagram,tiktok   (default: all configured)
- *   MAX_DURATION_SEC=85  QUALITY=1080p  EXTRA_HASHTAGS="JariyahNow,Bangladesh"
- *   BROWSER_EXECUTABLE=/path/to/chrome   use a local Chrome instead of downloading one
- *   + platform credentials — see src/lib/social/config.ts
- */
 import { bundle } from '@remotion/bundler'
 import { renderMedia, selectComposition } from '@remotion/renderer'
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -44,7 +27,6 @@ async function render(props: object, outPath: string) {
     },
   })
   const inputProps = props as Record<string, unknown>
-  // Remotion downloads its own headless Chrome unless one is provided.
   const browserExecutable = env.BROWSER_EXECUTABLE || null
   const composition = await selectComposition({ serveUrl, id: 'AyatVideo', inputProps, browserExecutable })
   console.log(`Rendering ${composition.durationInFrames} frames at ${composition.width}x${composition.height}...`)
@@ -108,7 +90,6 @@ async function main() {
     tiktok: cfg.tiktok && (() => uploadToTikTok(cfg.tiktok!, input)),
   }
 
-  // One platform failing must not stop the others.
   const failures: string[] = []
   summary('| Platform | Result |\n|---|---|')
   for (const platform of parsePlatforms(env.PLATFORMS)) {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   validateBackgroundImage,
-  MAX_BACKGROUND_IMAGE_BYTES,
+  maxBackgroundImageBytes,
 } from './uploadValidation'
 
 describe('validateBackgroundImage', () => {
@@ -40,7 +40,7 @@ describe('validateBackgroundImage', () => {
       expect(
         validateBackgroundImage({
           type: 'image/jpeg',
-          size: MAX_BACKGROUND_IMAGE_BYTES,
+          size: maxBackgroundImageBytes,
           name: 'boundary.jpg',
         }).ok,
       ).toBe(true)
@@ -110,7 +110,7 @@ describe('validateBackgroundImage', () => {
     it('rejects a file 1 byte over the limit', () => {
       const result = validateBackgroundImage({
         type: 'image/jpeg',
-        size: MAX_BACKGROUND_IMAGE_BYTES + 1,
+        size: maxBackgroundImageBytes + 1,
         name: 'huge.jpg',
       })
       expect(result.ok).toBe(false)
@@ -141,7 +141,7 @@ describe('validateBackgroundImage', () => {
 
   describe('MAX_BACKGROUND_IMAGE_BYTES', () => {
     it('is 5 MB', () => {
-      expect(MAX_BACKGROUND_IMAGE_BYTES).toBe(5 * 1024 * 1024)
+      expect(maxBackgroundImageBytes).toBe(5 * 1024 * 1024)
     })
   })
 })

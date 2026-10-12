@@ -1,8 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { LegalPage } from '@/components/LegalPage'
-import { RECITERS } from '@/lib/reciters'
-import { TRANSLATION_EDITIONS } from '@/lib/translations'
+import { reciters } from '@/lib/reciters'
+import { translationEditions } from '@/lib/translations'
 
 export const metadata: Metadata = {
   title: 'About — Jariyah Now',
@@ -60,12 +60,12 @@ export default function AboutPage() {
 
       <h2>Reciters</h2>
       <p>
-        Jariyah Now offers {RECITERS.length} reciters via UmmahAPI. We are
+        Jariyah Now offers {reciters.length} reciters via UmmahAPI. We are
         deeply grateful to each of them and their estates for making these
         recitations available.
       </p>
       <ul>
-        {RECITERS.map((r) => (
+        {reciters.map((r) => (
           <li key={r.id}>
             <strong>{r.name}</strong>{' '}
             <span className="font-arabic-uthmani text-base">
@@ -84,14 +84,14 @@ export default function AboutPage() {
 
       <h2>Translation editions</h2>
       <p>
-        Jariyah Now lets you choose from {TRANSLATION_EDITIONS.length}{' '}
+        Jariyah Now lets you choose from {translationEditions.length}{' '}
         translations across Bengali, English, Urdu, Turkish, Indonesian,
         French, German, Spanish, Malay, and Bosnian — all sourced from
         UmmahAPI. Each has its own license — pick the one that fits your
         use case.
       </p>
       <ul>
-        {TRANSLATION_EDITIONS.map((e) => (
+        {translationEditions.map((e) => (
           <li key={e.key}>
             <strong>{e.label}</strong> ({e.fullName}) — {e.rightsHolder}.
             <br />

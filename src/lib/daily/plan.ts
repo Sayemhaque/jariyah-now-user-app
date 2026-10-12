@@ -1,28 +1,17 @@
-/**
- * Daily auto-post planning — pure, deterministic helpers.
- *
- * Every decision (surah, start ayat, reciter, background) is derived from the
- * Bangladesh calendar date, so a re-run of the same day's job produces the
- * same video and nothing needs to be persisted between runs.
- */
 import type { Surah } from '@/lib/types'
 
-/** Asia/Dhaka is UTC+6 all year (no DST). */
-const DHAKA_OFFSET_MS = 6 * 60 * 60 * 1000
-const DAY_MS = 24 * 60 * 60 * 1000
-const TOTAL_SURAHS = 114
+const dhakaOffsetMs = 6 * 60 * 60 * 1000
+const dayMs = 24 * 60 * 60 * 1000
+const totalSurahs = 114
 
-/** YYYY-MM-DD of `date` in Bangladesh local time. */
 export function dhakaDateKey(date: Date): string {
-  return new Date(date.getTime() + DHAKA_OFFSET_MS).toISOString().slice(0, 10)
+  return new Date(date.getTime() + dhakaOffsetMs).toISOString().slice(0, 10)
 }
 
-/** Whole days since 1970-01-01 in Bangladesh local time. */
 export function dhakaDayIndex(date: Date): number {
-  return Math.floor((date.getTime() + DHAKA_OFFSET_MS) / DAY_MS)
+  return Math.floor((date.getTime() + dhakaOffsetMs) / dayMs)
 }
 
-/** Small seeded PRNG (mulberry32). Returns floats in [0, 1). */
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0
   return () => {
@@ -34,7 +23,6 @@ export function mulberry32(seed: number): () => number {
   }
 }
 
-/** Fisher–Yates shuffle with a seeded PRNG. Does not mutate `items`. */
 export function seededShuffle<T>(items: readonly T[], seed: number): T[] {
   const out = items.slice()
   const rand = mulberry32(seed)
@@ -45,35 +33,21 @@ export function seededShuffle<T>(items: readonly T[], seed: number): T[] {
   return out
 }
 
-/**
- * Surah for a given day. Walks a fixed shuffled order of all 114 surahs, so
- * the pick looks random but no surah repeats until every other one has been
- * posted (one full cycle = 114 days). A new order is used for each cycle.
- */
 export function pickSurahNumber(dayIndex: number): number {
-  const cycle = Math.floor(dayIndex / TOTAL_SURAHS)
+  const cycle = Math.floor(dayIndex / totalSurahs)
   const order = seededShuffle(
-    Array.from({ length: TOTAL_SURAHS }, (_, i) => i + 1),
+    Array.from({ length: totalSurahs }, (_, i) => i + 1),
     0x51ab + cycle,
   )
-  return order[((dayIndex % TOTAL_SURAHS) + TOTAL_SURAHS) % TOTAL_SURAHS]!
+  return order[((dayIndex % totalSurahs) + totalSurahs) % totalSurahs]!
 }
 
-/**
- * First ayat of the excerpt. Short surahs always start at 1 so the whole
- * surah can be posted; longer ones start at a random ayat, leaving room for
- * at least a few ayats after it.
- */
 export function pickStartAyat(numberOfAyahs: number, maxAyats: number, rand: () => number): number {
   if (numberOfAyahs <= maxAyats) return 1
   const lastStart = Math.max(1, numberOfAyahs - 2)
   return 1 + Math.floor(rand() * lastStart)
 }
 
-/**
- * How many consecutive ayats (from the start of `durationsMs`) fit in the
- * time budget. Returns 0 when even the first ayat is too long.
- */
 export function countAyatsWithinBudget(
   durationsMs: readonly number[],
   maxTotalMs: number,
@@ -94,22 +68,17 @@ export interface PostMetadataInput {
   fromAyat: number
   toAyat: number
   reciterName: string
-  /** Extra hashtags (without or with '#') appended to the defaults. */
   extraHashtags?: string[]
 }
 
 export interface PostMetadata {
-  /** ≤100 chars (YouTube's title limit). */
   title: string
-  /** Long caption for YouTube / Facebook / Instagram. */
   description: string
-  /** Hashtags, each starting with '#'. */
   hashtags: string[]
-  /** Short caption for TikTok (title field, ≤2200 chars). */
   shortCaption: string
 }
 
-const DEFAULT_HASHTAGS = [
+const defaultHashtags = [
   '#Quran',
   '#QuranRecitation',
   '#Islam',
@@ -136,7 +105,7 @@ export function buildPostMetadata(input: PostMetadataInput): PostMetadata {
       : `Ayat ${fromAyat}-${toAyat}`
 
   const tags = [
-    ...DEFAULT_HASHTAGS,
+    ...defaultHashtags,
     toHashtag(`Surah${surah.name}`),
     toHashtag(reciterName),
     ...(input.extraHashtags ?? []).map(toHashtag),

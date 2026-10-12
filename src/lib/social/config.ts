@@ -1,12 +1,4 @@
-/**
- * Social-platform credentials for the daily auto-post job.
- *
- * Read straight from `process.env` (GitHub Actions secrets) rather than the
- * app's env schema — the Next.js app itself never posts to social media.
- * A platform whose credentials are missing is reported as unconfigured and
- * skipped, so you can enable platforms one at a time.
- */
-import { ALL_PLATFORMS, type Platform } from './types'
+import { allPlatforms, type Platform } from './types'
 
 export interface YouTubeConfig {
   clientId: string
@@ -61,7 +53,6 @@ export function loadSocialConfig(env: Env): SocialConfig {
   const fb = all({ pageId: env.FACEBOOK_PAGE_ID, pageAccessToken: env.FACEBOOK_PAGE_ACCESS_TOKEN })
   const ig = all({
     igUserId: env.INSTAGRAM_USER_ID,
-    // Instagram Graph API uses the Facebook Page token of the linked Page.
     accessToken: env.INSTAGRAM_ACCESS_TOKEN || env.FACEBOOK_PAGE_ACCESS_TOKEN,
   })
   const tt = all({
@@ -78,20 +69,15 @@ export function loadSocialConfig(env: Env): SocialConfig {
     },
     facebook: fb && { ...fb, graphVersion },
     instagram: ig && { ...ig, graphVersion },
-    // Unaudited TikTok apps may only post SELF_ONLY (private) videos.
     tiktok: tt && { ...tt, privacyLevel: env.TIKTOK_PRIVACY_LEVEL?.trim() || 'SELF_ONLY' },
   }
 }
 
-/**
- * Parse a comma-separated platform list ("youtube,tiktok"). Empty or "all"
- * means every platform.
- */
 export function parsePlatforms(raw: string | undefined): Platform[] {
   const v = (raw ?? '').trim().toLowerCase()
-  if (!v || v === 'all') return [...ALL_PLATFORMS]
+  if (!v || v === 'all') return [...allPlatforms]
   const wanted = v.split(',').map((s) => s.trim())
-  const unknown = wanted.filter((p) => !ALL_PLATFORMS.includes(p as Platform))
+  const unknown = wanted.filter((p) => !allPlatforms.includes(p as Platform))
   if (unknown.length) throw new Error(`Unknown platform(s): ${unknown.join(', ')}`)
-  return ALL_PLATFORMS.filter((p) => wanted.includes(p))
+  return allPlatforms.filter((p) => wanted.includes(p))
 }

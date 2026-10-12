@@ -2,7 +2,7 @@
 
 import { Mic2 } from 'lucide-react'
 import { useSurahRange } from '@/lib/store'
-import { RECITERS } from '@/lib/reciters'
+import { reciters } from '@/lib/reciters'
 import {
   Select,
   SelectContent,
@@ -13,7 +13,7 @@ import {
 
 export function ReciterSelector() {
   const { reciterId, setReciter } = useSurahRange()
-  const selected = RECITERS.find((r) => r.id === reciterId) ?? RECITERS[0]!
+  const selected = reciters.find((r) => r.id === reciterId) ?? reciters[0]!
 
   return (
     <div className="space-y-1.5">
@@ -27,7 +27,7 @@ export function ReciterSelector() {
           <SelectValue className="justify-center" placeholder="Choose a reciter" />
         </SelectTrigger>
         <SelectContent className="bg-popover">
-          {RECITERS.map((r) => (
+          {reciters.map((r) => (
             <SelectItem key={r.id} value={r.id} className="py-2.5">
               <div className="flex items-center gap-3 w-full">
                 <div className="flex flex-col flex-1 min-w-0">

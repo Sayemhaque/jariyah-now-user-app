@@ -15,7 +15,7 @@ import {
 import { Drawer } from 'vaul'
 import { useBuilderStore } from '@/lib/store'
 import { useAyatRangeQuery, useSurahsQuery } from '@/lib/queries/builder'
-import { RECITERS } from '@/lib/reciters'
+import { reciters } from '@/lib/reciters'
 import { validateAyatRange } from '@/lib/validation'
 import { SurahSelector } from '@/components/SurahSelector'
 import { AyatRangePicker } from '@/components/AyatRangePicker'
@@ -63,7 +63,7 @@ export default function Home() {
   )
 
   const reciter = useMemo(
-    () => RECITERS.find((item) => item.id === reciterId) ?? RECITERS[0],
+    () => reciters.find((item) => item.id === reciterId) ?? reciters[0],
     [reciterId],
   )
 

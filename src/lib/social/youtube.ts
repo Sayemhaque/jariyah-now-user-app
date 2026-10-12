@@ -1,10 +1,3 @@
-/**
- * YouTube Shorts upload via the YouTube Data API v3 resumable upload.
- * A vertical video ≤ 3 minutes is automatically classified as a Short.
- *
- * Note: until your Google Cloud project passes YouTube's API audit, videos
- * uploaded through the API are locked to private regardless of privacyStatus.
- */
 import type { YouTubeConfig } from './config'
 import { expectOk, type UploadInput, type UploadResult } from './types'
 

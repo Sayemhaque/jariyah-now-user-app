@@ -12,9 +12,7 @@ import {
 
 describe('dhaka date helpers', () => {
   it('uses UTC+6 for the calendar date', () => {
-    // 16:00 UTC = 22:00 in Dhaka, same day
     expect(dhakaDateKey(new Date('2026-10-12T16:00:00Z'))).toBe('2026-10-12')
-    // 18:30 UTC = 00:30 next day in Dhaka
     expect(dhakaDateKey(new Date('2026-10-12T18:30:00Z'))).toBe('2026-10-13')
   })
 

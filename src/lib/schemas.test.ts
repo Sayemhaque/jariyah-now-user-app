@@ -6,8 +6,7 @@ import {
 } from './schemas'
 import type { AyatSlide, VideoSettings } from './types'
 
-// A complete, valid settings object — used as the base for tests.
-const VALID_SETTINGS: VideoSettings = {
+const validSettings: VideoSettings = {
   backgroundImage: '/backgrounds/twilight-mosque-portrait.png',
   backgroundPreset: 'twilight-mosque',
   overlayStyle: 'bottom-gradient',
@@ -29,7 +28,7 @@ const VALID_SETTINGS: VideoSettings = {
   textSpacing: 'normal',
 }
 
-const VALID_SLIDE: AyatSlide = {
+const validSlide: AyatSlide = {
   arabicText: 'بسم الله',
   translation: 'In the name of God',
   transliteration: 'Bismillah',
@@ -44,12 +43,12 @@ const VALID_SLIDE: AyatSlide = {
 describe('renderBodySchema', () => {
   function validBody() {
     return {
-      slides: [{ ...VALID_SLIDE }],
+      slides: [{ ...validSlide }],
       reciterKey: 'Alafasy_128kbps',
       reciterName: 'Mishary Rashid Alafasy',
       attributionLine: 'Translation: কুরআনের বাংলা অনুবাদ — মুহিউদ্দীন খান',
       quality: '720p' as const,
-      settings: { ...VALID_SETTINGS },
+      settings: { ...validSettings },
       orientation: 'portrait' as const,
     }
   }
@@ -60,13 +59,13 @@ describe('renderBodySchema', () => {
 
   it('accepts 10 slides (the max)', () => {
     const body = validBody()
-    body.slides = Array.from({ length: 10 }, () => ({ ...VALID_SLIDE }))
+    body.slides = Array.from({ length: 10 }, () => ({ ...validSlide }))
     expect(renderBodySchema.safeParse(body).success).toBe(true)
   })
 
   it('rejects 11 slides (exceeds max)', () => {
     const body = validBody()
-    body.slides = Array.from({ length: 11 }, () => ({ ...VALID_SLIDE }))
+    body.slides = Array.from({ length: 11 }, () => ({ ...validSlide }))
     const parsed = renderBodySchema.safeParse(body)
     expect(parsed.success).toBe(false)
   })
@@ -80,14 +79,14 @@ describe('renderBodySchema', () => {
 
   it('rejects an invalid overlay color (not 6-digit hex)', () => {
     const body = validBody()
-    ;(body.settings as any).overlayColor = '#fff' // too short
+    ;(body.settings as any).overlayColor = '#fff'
     const parsed = renderBodySchema.safeParse(body)
     expect(parsed.success).toBe(false)
   })
 
   it('rejects arabicFontSize out of range', () => {
     const body = validBody()
-    ;(body.settings as any).arabicFontSize = 10 // below min of 24
+    ;(body.settings as any).arabicFontSize = 10
     expect(renderBodySchema.safeParse(body).success).toBe(false)
   })
 

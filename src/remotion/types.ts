@@ -9,46 +9,41 @@ export interface AyatVideoProps {
   surahName: string
   surahNameArabic: string
   totalAyats: number
-  /** Output resolution scale key. Maps to RENDER_QUALITY_SCALE. */
   quality?: '480p' | '720p' | '1080p'
-  /** When true, use <OffthreadVideo> for background (frame-accurate server render).
-   *  When false (default), use <Video> for smooth browser preview. */
   isExport?: boolean
-  /** When true, the background video has been pre-looped server-side to match
-   *  the total composition duration, so <Loop> wrapping is unnecessary. */
   preLooped?: boolean
 }
 
-export const RES: Record<Orientation, { w: number; h: number }> = {
+export const resolutions: Record<Orientation, { w: number; h: number }> = {
   landscape: { w: 1280, h: 720 },
   portrait: { w: 720, h: 1280 },
 }
 
-export const RENDER_QUALITY_SCALE: Record<string, number> = {
+export const renderQualityScale: Record<string, number> = {
   '480p': 0.667,
   '720p': 1,
   '1080p': 1.5,
 }
 
-export const ASPECT: Record<string, { w: number; h: number; ratio: string }> = {
+export const aspectRatios: Record<string, { w: number; h: number; ratio: string }> = {
   landscape: { w: 1280, h: 720, ratio: '16 / 9' },
   portrait: { w: 720, h: 1280, ratio: '9 / 16' },
 }
 
-export const TEXT_WIDTH_FRACTIONS: Record<string, number> = {
+export const textWidthFractions: Record<string, number> = {
   full: 0.94,
   wide: 0.82,
   medium: 0.70,
   narrow: 0.58,
 }
 
-export const TEXT_SPACING_FRACTIONS: Record<string, number> = {
+export const textSpacingFractions: Record<string, number> = {
   compact: 0.01,
   normal: 0.03,
   spacious: 0.06,
 }
 
-export const ARABIC_FONT_CLASS: Record<string, string> = {
+export const arabicFontClass: Record<string, string> = {
   uthmani: 'Amiri',
   amiri: 'Amiri',
   scheherazade: 'Scheherazade New',
@@ -58,7 +53,7 @@ export const ARABIC_FONT_CLASS: Record<string, string> = {
   cairo: 'Cairo',
 }
 
-export const BENGALI_FONT_CLASS: Record<string, string> = {
+export const bengaliFontClass: Record<string, string> = {
   sans: 'Noto Sans Bengali',
   serif: 'Noto Serif Bengali',
   hind: 'Hind Siliguri',

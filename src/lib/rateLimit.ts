@@ -1,33 +1,16 @@
 import { env, hasRedis } from './env'
 import { logger } from './logger'
 
-/**
- * Sliding-window rate limiter.
- *
- * - When Upstash Redis is configured (UPSTASH_REDIS_REST_URL +
- *   UPSTASH_REDIS_REST_TOKEN), uses @upstash/ratelimit so limits are shared
- *   across serverless instances. This is the production path.
- * - Otherwise, falls back to an in-memory Map. Correct for a single process
- *   (dev, single-instance prod) but under-counts in multi-instance deployments
- *   because each instance has its own Map.
- *
- * The public API (`consumeRateLimit`) is the same either way, so call sites
- * don't change when you flip from memory to Redis.
- */
-
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
 
 export interface RateLimitResult {
   ok: boolean
   remaining: number
-  /** Epoch ms when the oldest request in the current window expires. */
   resetMs: number
 }
 
-// --- In-memory implementation -----------------------------------------
-
-const buckets = new Map<string, number[]>() // ip -> array of request timestamps
+const buckets = new Map<string, number[]>()
 
 function inMemoryConsume(
   key: string,
@@ -49,8 +32,6 @@ function inMemoryConsume(
   return { ok: true, remaining: limit - arr.length, resetMs: now + windowMs }
 }
 
-// --- Redis implementation (lazy-initialized) --------------------------
-
 let redisLimiter: Ratelimit | null = null
 
 function getRedisLimiter(): Ratelimit | null {
@@ -62,15 +43,12 @@ function getRedisLimiter(): Ratelimit | null {
       url: env.UPSTASH_REDIS_REST_URL!,
       token: env.UPSTASH_REDIS_REST_TOKEN!,
     })
-    // Sliding-window algorithm — accurate, slightly more expensive than
-    // fixed-window but worth it for a low-traffic API.
     redisLimiter = new Ratelimit({
       redis,
       limiter: Ratelimit.slidingWindow(
         env.RENDER_RATE_LIMIT_MAX,
         `${env.RENDER_RATE_LIMIT_WINDOW_MS} ms`,
       ),
-      // Prefix keys so we don't collide with other uses of the same Redis.
       prefix: 'jariyahnow:rl',
       analytics: false,
     })
@@ -84,12 +62,6 @@ function getRedisLimiter(): Ratelimit | null {
   }
 }
 
-/**
- * Consume one unit from the rate-limit bucket identified by `key`. Returns
- * whether the request is allowed plus the remaining quota.
- *
- * Uses Redis when configured, in-memory otherwise.
- */
 export async function consumeRateLimit(
   key: string,
   limit: number = env.RENDER_RATE_LIMIT_MAX,
@@ -102,14 +74,9 @@ export async function consumeRateLimit(
       return {
         ok: result.success,
         remaining: result.remaining,
-        // @upstash/ratelimit returns reset as a Unix timestamp in seconds.
         resetMs: result.reset * 1000,
       }
     } catch (err) {
-      // If Redis is unreachable mid-request, degrade to in-memory rather
-      // than failing the request outright. This is the safer default —
-      // a Redis outage shouldn't block legitimate users entirely, and the
-      // in-memory limiter still caps per-instance abuse.
       logger.warn('Redis rate limit failed — degrading to in-memory', {
         key,
         error: err instanceof Error ? err.message : String(err),
@@ -119,10 +86,6 @@ export async function consumeRateLimit(
   return inMemoryConsume(key, limit, windowMs)
 }
 
-/**
- * Extract a client IP from a Next.js request, respecting the X-Forwarded-For
- * chain. Falls back to a sentinel string when no IP can be determined.
- */
 export function getClientIp(req: Request): string {
   const fwd = req.headers.get('x-forwarded-for')
   if (fwd) return fwd.split(',')[0]!.trim()
