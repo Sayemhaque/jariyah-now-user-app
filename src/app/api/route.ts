@@ -2,12 +2,6 @@ import { NextResponse } from 'next/server'
 
 export const runtime = 'nodejs'
 
-/**
- * GET /api
- *
- * Returns basic service info + links to the useful endpoints. This is the
- * API root — not a health check (see /api/health for that).
- */
 export async function GET() {
   return NextResponse.json(
     {
@@ -18,7 +12,6 @@ export async function GET() {
         surahs: '/api/surahs',
         ayat: '/api/ayat',
         timings: '/api/timings',
-
       },
       docs: '/about',
     },

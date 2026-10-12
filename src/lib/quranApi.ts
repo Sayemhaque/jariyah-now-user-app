@@ -1,11 +1,11 @@
 import type { Surah, AyatData } from './types'
 import { buildAyatAudioUrl } from './reciters'
-import { SURAHS_FALLBACK } from './surahs-fallback'
+import { surahsFallback } from './surahs-fallback'
 import { fetchWithTimeout, isFetchAbort } from './fetchWithTimeout'
 import { logger } from './logger'
 import { env } from './env'
 
-const UMMAHAPI_BASE = env.UMMAHAPI_BASE_URL
+const ummahapiBase = env.UMMAHAPI_BASE_URL
 
 export function ummahHeaders(): HeadersInit {
   const apiKey = env.NEXT_PUBLIC_UMMAHAPI_KEY
@@ -120,7 +120,7 @@ export async function fetchSurahs(): Promise<Surah[]> {
 
   try {
     const res = await fetchWithTimeout(
-      isBrowser ? '/api/surahs' : `${UMMAHAPI_BASE}/quran/surahs`,
+      isBrowser ? '/api/surahs' : `${ummahapiBase}/quran/surahs`,
       {
         headers: isBrowser ? { Accept: 'application/json' } : ummahHeaders(),
         cache: 'force-cache',
@@ -154,9 +154,9 @@ export async function fetchSurahs(): Promise<Surah[]> {
         error: err instanceof Error ? err.message : String(err),
       })
     }
-    surahCache.list = SURAHS_FALLBACK
-    SURAHS_FALLBACK.forEach((s) => surahCache.byNumber.set(s.number, s))
-    return SURAHS_FALLBACK
+    surahCache.list = surahsFallback
+    surahsFallback.forEach((s) => surahCache.byNumber.set(s.number, s))
+    return surahsFallback
   }
 }
 
@@ -243,7 +243,7 @@ export async function fetchAyatData(
     ? `/api/ayat?surah=${surah}&ayat=${ayat}&translation=${encodeURIComponent(
         translationEdition,
       )}&script=uthmani`
-    : `${UMMAHAPI_BASE}/quran/surah/${surah}/ayah/${ayat}?translation=${encodeURIComponent(
+    : `${ummahapiBase}/quran/surah/${surah}/ayah/${ayat}?translation=${encodeURIComponent(
         translationEdition,
       )}&script=uthmani`
 

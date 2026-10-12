@@ -1,8 +1,8 @@
 import type { AyatSlide, VideoSettings } from '@/lib/types'
 import { computeSlideFrames } from '@/lib/advanceTiming'
 import {
-  ARABIC_FONT_FAMILIES,
-  BENGALI_FONT_FAMILIES,
+  arabicFontFamilies,
+  bengaliFontFamilies,
   setupCanvas,
   loadImage,
   drawOverlayLayer,
@@ -13,19 +13,19 @@ import {
   drawDividingLine,
 } from './canvasUtils'
 
-export const RES: Record<string, { w: number; h: number }> = {
+export const resolutions: Record<string, { w: number; h: number }> = {
   landscape: { w: 1280, h: 720 },
   portrait: { w: 720, h: 1280 },
 }
 
-export const TEXT_WIDTH_FRACTIONS: Record<string, number> = {
+export const textWidthFractions: Record<string, number> = {
   full: 0.94,
   wide: 0.82,
   medium: 0.70,
   narrow: 0.58,
 }
 
-export const TEXT_SPACING_FRACTIONS: Record<string, number> = {
+export const textSpacingFractions: Record<string, number> = {
   compact: 0.01,
   normal: 0.03,
   spacious: 0.06,
@@ -57,12 +57,12 @@ export async function createVideoComposer(
 ): Promise<ComposerWithDraw> {
   const { slides, settings, orientation, fps } = options
   const qualityScale = options.qualityScale ?? 1
-  const baseRes = RES[orientation]!
-  const W = Math.round(baseRes.w * qualityScale) & ~1
-  const H = Math.round(baseRes.h * qualityScale) & ~1
+  const baseRes = resolutions[orientation]!
+  const frameWidth = Math.round(baseRes.w * qualityScale) & ~1
+  const frameHeight = Math.round(baseRes.h * qualityScale) & ~1
 
-  const { canvas, ctx } = setupCanvas(W, H)
-  const minDim = Math.min(W, H)
+  const { canvas, ctx } = setupCanvas(frameWidth, frameHeight)
+  const minDim = Math.min(frameWidth, frameHeight)
 
   const { totalFrames } = computeSlideFrames(slides, fps)
 
@@ -84,8 +84,8 @@ export async function createVideoComposer(
       settings.backgroundImage,
       bgVideoFps,
       bgVideoDurationSec,
-      W,
-      H,
+      frameWidth,
+      frameHeight,
       (progress) => options.onProgress?.(0.005 + progress * 0.025),
     )
     options.onProgress?.(0.03)
@@ -102,19 +102,19 @@ export async function createVideoComposer(
     landscape: { ar: 4.5, tr: 1.8, arRef: 34, trRef: 15 },
   }
   const fb = fontBase[orientation]!
-  const arabicFontSizePx = (fb.ar * settings.arabicFontSize / fb.arRef) * (W / 100)
-  const translationFontSizePx = (fb.tr * settings.translationFontSize / fb.trRef) * (W / 100)
+  const arabicFontSizePx = (fb.ar * settings.arabicFontSize / fb.arRef) * (frameWidth / 100)
+  const translationFontSizePx = (fb.tr * settings.translationFontSize / fb.trRef) * (frameWidth / 100)
   const translitFontSizePx = Math.max(11, minDim * 0.024)
 
-  const arabicFontFamily = ARABIC_FONT_FAMILIES[settings.arabicFont] ?? 'Amiri'
-  const bengaliFontFamily = BENGALI_FONT_FAMILIES[settings.bengaliFont] ?? 'Noto Sans Bengali'
+  const arabicFontFamily = arabicFontFamilies[settings.arabicFont] ?? 'Amiri'
+  const bengaliFontFamily = bengaliFontFamilies[settings.bengaliFont] ?? 'Noto Sans Bengali'
 
-  const textWidthFraction = TEXT_WIDTH_FRACTIONS[settings.textWidth] ?? 0.82
-  const textSpacingFraction = TEXT_SPACING_FRACTIONS[settings.textSpacing] ?? 0.03
+  const textWidthFraction = textWidthFractions[settings.textWidth] ?? 0.82
+  const textSpacingFraction = textSpacingFractions[settings.textSpacing] ?? 0.03
 
-  const cardMaxWidth = W * textWidthFraction
-  const cardPaddingTop = W * 0.04
-  const cardPaddingX = W * 0.05
+  const cardMaxWidth = frameWidth * textWidthFraction
+  const cardPaddingTop = frameWidth * 0.04
+  const cardPaddingX = frameWidth * 0.05
   const cardBorderRadius = minDim * 0.03
   const cardShadow = minDim * 0.03
 
@@ -138,7 +138,7 @@ export async function createVideoComposer(
   }
 
   function drawFrame(frameIndex: number) {
-    ctx.clearRect(0, 0, W, H)
+    ctx.clearRect(0, 0, frameWidth, frameHeight)
 
     const { slide, slideIndex } = getSlideForFrame(frameIndex)
 
@@ -146,23 +146,23 @@ export async function createVideoComposer(
       const totalBgFrames = bgVideoFrames.length
       const bgFrameIndex = frameIndex % totalBgFrames
       const bgFrame = bgVideoFrames[bgFrameIndex]!
-      ctx.drawImage(bgFrame, 0, 0, W, H)
+      ctx.drawImage(bgFrame, 0, 0, frameWidth, frameHeight)
     } else if (bgImage) {
-      ctx.drawImage(bgImage, 0, 0, W, H)
+      ctx.drawImage(bgImage, 0, 0, frameWidth, frameHeight)
     } else {
       ctx.fillStyle = '#0a0a14'
-      ctx.fillRect(0, 0, W, H)
+      ctx.fillRect(0, 0, frameWidth, frameHeight)
     }
 
-    drawOverlayLayer(ctx, W, H, settings.overlayStyle, settings.overlayColor, settings.overlayOpacity)
+    drawOverlayLayer(ctx, frameWidth, frameHeight, settings.overlayStyle, settings.overlayColor, settings.overlayOpacity)
 
-    drawFixedGradient(ctx, W, H)
+    drawFixedGradient(ctx, frameWidth, frameHeight)
 
-    drawTopHeader(ctx, W, H, options.surahName, options.surahNameArabic, options.totalAyats, slide, slideIndex)
+    drawTopHeader(ctx, frameWidth, frameHeight, options.surahName, options.surahNameArabic, options.totalAyats, slide, slideIndex)
 
-    const centerX = W / 2
-    const contentTop = H * 0.22
-    const contentBottom = H * 0.78
+    const centerX = frameWidth / 2
+    const contentTop = frameHeight * 0.22
+    const contentBottom = frameHeight * 0.78
     const contentHeight = contentBottom - contentTop
 
     const cardWidth = cardMaxWidth
@@ -258,8 +258,8 @@ export async function createVideoComposer(
       )
     }
 
-    drawAttribution(ctx, W, H, options.reciterName, options.attributionLine)
-    drawWatermark(ctx, W, H)
+    drawAttribution(ctx, frameWidth, frameHeight, options.reciterName, options.attributionLine)
+    drawWatermark(ctx, frameWidth, frameHeight)
   }
 
   return {
@@ -364,10 +364,10 @@ function drawWatermark(ctx: CanvasRenderingContext2D, w: number, h: number) {
 }
 
 async function findVideoPresetByUrl(url: string) {
-  const { BG_PRESETS } = await import('@/lib/backgroundPresets')
+  const { bgPresets } = await import('@/lib/backgroundPresets')
   const { normalizeBackgroundVideoUrl } = await import('@/lib/backgroundPresets')
   const normalized = normalizeBackgroundVideoUrl(url)
-  return BG_PRESETS.find((p) => p.isVideo && (p.url === normalized || p.url === url))
+  return bgPresets.find((p) => p.isVideo && (p.url === normalized || p.url === url))
 }
 
 async function extractVideoFrames(

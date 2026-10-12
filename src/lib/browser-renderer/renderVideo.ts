@@ -2,7 +2,7 @@ import { Muxer, ArrayBufferTarget } from 'mp4-muxer'
 import type { AyatSlide, VideoSettings } from '@/lib/types'
 import { mixAudio } from './AudioMixer'
 import { createVideoComposer, type VideoComposerOptions } from './VideoComposer'
-import { FPS } from '@/lib/constants'
+import { videoFps } from '@/lib/constants'
 
 export interface RenderOptions {
   slides: AyatSlide[]
@@ -17,13 +17,13 @@ export interface RenderOptions {
   onProgress?: (progress: number) => void
 }
 
-const QUALITY_SCALE: Record<string, number> = {
+const qualityScales: Record<string, number> = {
   '480p': 0.667,
   '720p': 1,
   '1080p': 1.5,
 }
 
-const QUALITY_BITRATES: Record<string, number> = {
+const qualityBitrates: Record<string, number> = {
   '480p': 1_500_000,
   '720p': 3_000_000,
   '1080p': 6_000_000,
@@ -51,17 +51,17 @@ function interleavePcm(
 
 export async function renderVideo(options: RenderOptions): Promise<Blob> {
   const { slides, settings, orientation, onProgress } = options
-  const fps = FPS
-  const qualityScale = QUALITY_SCALE[options.quality] ?? 1
-  const bitrate = QUALITY_BITRATES[options.quality] ?? 3_000_000
+  const fps = videoFps
+  const qualityScale = qualityScales[options.quality] ?? 1
+  const bitrate = qualityBitrates[options.quality] ?? 3_000_000
 
   const baseRes: Record<string, { w: number; h: number }> = {
     landscape: { w: 1280, h: 720 },
     portrait: { w: 720, h: 1280 },
   }
   const res = baseRes[orientation]!
-  const W = Math.round(res.w * qualityScale) & ~1
-  const H = Math.round(res.h * qualityScale) & ~1
+  const frameWidth = Math.round(res.w * qualityScale) & ~1
+  const frameHeight = Math.round(res.h * qualityScale) & ~1
 
   const composerOpts: VideoComposerOptions = {
     slides,
@@ -87,11 +87,11 @@ export async function renderVideo(options: RenderOptions): Promise<Blob> {
   const { canvas, ctx, totalFrames, drawFrame } = composer
   const { pcmData, sampleRate, channels, totalSamples } = audioResult
 
-  const codec = getCodecString(W, H)
+  const codec = getCodecString(frameWidth, frameHeight)
 
   const muxer = new Muxer({
     target: new ArrayBufferTarget(),
-    video: { codec: 'avc', width: W, height: H, frameRate: fps },
+    video: { codec: 'avc', width: frameWidth, height: frameHeight, frameRate: fps },
     audio: { codec: 'aac', numberOfChannels: channels, sampleRate },
     fastStart: 'in-memory',
     firstTimestampBehavior: 'offset',
@@ -115,8 +115,8 @@ export async function renderVideo(options: RenderOptions): Promise<Blob> {
   try {
     videoEncoder.configure({
       codec,
-      width: W,
-      height: H,
+      width: frameWidth,
+      height: frameHeight,
       bitrate,
       alpha: 'discard',
     })
@@ -168,13 +168,13 @@ export async function renderVideo(options: RenderOptions): Promise<Blob> {
 
   const interleaved = interleavePcm(pcmData, totalSamples, channels)
 
-  const CHUNK_SIZE = sampleRate * 10
+  const chunkSize = sampleRate * 10
   let audioOffset = 0
 
   while (audioOffset < totalSamples) {
     if (encodeFailed) throw new Error('Audio encoder failed')
 
-    const end = Math.min(audioOffset + CHUNK_SIZE, totalSamples)
+    const end = Math.min(audioOffset + chunkSize, totalSamples)
     const chunkLength = end - audioOffset
     const chunkData = new Float32Array(chunkLength * channels)
     for (let i = 0; i < chunkLength; i++) {

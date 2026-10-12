@@ -40,10 +40,22 @@ Runs on Turbopack (default in Next.js 16). The `npm run dev` script symlinks `.n
 - `src/lib/` — shared logic, schemas, types
 - `src/lib/browser-renderer/` — browser-side video renderer (Canvas, AudioMixer, WebCodecs)
 - `src/remotion/` — Remotion video components (preview only)
-- `src/components/` — React components (VideoPreview, ExportModal, CustomizationPanel)
+- `src/components/` — top-level feature components (VideoPreview, ExportModal, CustomizationPanel, selectors)
+- `src/components/{site,legal,builder,preview,export,customize,selection,common}/` — small reusable pieces, one component per file
+- `src/hooks/` — custom hooks that hold component state and effects
+- `src/lib/content/` — page copy as data (landing, templates, legal pages); legal text uses `**bold**` / `[link](href)` markup parsed by `richText.ts`
+- `src/lib/daily/`, `src/lib/social/`, `daily-reel.ts` — daily auto-post to YouTube/Facebook/Instagram/TikTok (see `docs/DAILY_AUTOPOST.md`)
 - `public/backgrounds/` — preset images + videos for video backgrounds
 
 ## Conventions
+
+Follow `docs/REFACTOR_PROMPT.md`. In short:
+
+- **camelCase** for every variable, constant, function and prop (`maxAyatsPerVideo`, not `MAX_AYATS_PER_VIDEO`). Only components, types and classes are capitalized. Env var names and external API fields keep their original names.
+- **No comments** in code — use clear names and small functions instead.
+- **One component per file, 60–70 lines max.** Move state into a hook in `src/hooks/`, pure logic into `src/lib/`, repeated JSX into a reusable component.
+- **Reuse before creating.** Search `src/components/` for an existing component (e.g. `OptionButton`, `SliderField`, `SectionHeader`, `FeatureCard`, `GlassButton`) before writing a new one.
+- **Watch `cn()` order**: `tailwind-merge` drops `leading-*` when a `text-{size}` class comes after it — put size classes first.
 
 - **Path alias**: `@/*` → `./src/*`
 - **shadcn/ui**: New York style, Lucide icons, CSS variables enabled (`components.json`)

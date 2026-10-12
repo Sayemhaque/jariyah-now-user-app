@@ -3,7 +3,7 @@ import { env } from '@/lib/env'
 import { fetchWithTimeout } from '@/lib/fetchWithTimeout'
 import { parseUmmahSurahsResponse, ummahHeaders } from '@/lib/quranApi'
 import { logger } from '@/lib/logger'
-import { SURAHS_FALLBACK } from '@/lib/surahs-fallback'
+import { surahsFallback } from '@/lib/surahs-fallback'
 
 export const runtime = 'nodejs'
 
@@ -15,7 +15,7 @@ export async function GET() {
     })
     if (!res.ok) {
       return NextResponse.json(
-        { error: `Upstream returned ${res.status}`, surahs: SURAHS_FALLBACK },
+        { error: `Upstream returned ${res.status}`, surahs: surahsFallback },
         {
           status: 502,
           headers: {
@@ -29,7 +29,7 @@ export async function GET() {
     const surahs = parseUmmahSurahsResponse(json)
     if (!surahs.length) {
       return NextResponse.json(
-        { surahs: SURAHS_FALLBACK },
+        { surahs: surahsFallback },
         {
           headers: {
             'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',
@@ -51,7 +51,7 @@ export async function GET() {
       error: err instanceof Error ? err.message : String(err),
     })
     return NextResponse.json(
-      { surahs: SURAHS_FALLBACK },
+      { surahs: surahsFallback },
       {
         headers: {
           'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=3600',

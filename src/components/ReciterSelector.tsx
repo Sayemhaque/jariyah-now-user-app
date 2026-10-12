@@ -2,47 +2,24 @@
 
 import { Mic2 } from 'lucide-react'
 import { useSurahRange } from '@/lib/store'
-import { RECITERS } from '@/lib/reciters'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { reciters } from '@/lib/reciters'
+import { SelectItem } from '@/components/ui/select'
+import { FieldLabel } from './selection/FieldLabel'
+import { PickerSelect } from './selection/PickerSelect'
+import { TwoLineOption } from './selection/TwoLineOption'
 
 export function ReciterSelector() {
   const { reciterId, setReciter } = useSurahRange()
-  const selected = RECITERS.find((r) => r.id === reciterId) ?? RECITERS[0]!
-
   return (
     <div className="space-y-1.5">
-      <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-        <Mic2 className="h-3.5 w-3.5 text-primary" />
-        Reciter
-      </label>
-
-      <Select value={reciterId} onValueChange={setReciter}>
-        <SelectTrigger className="w-full bg-card h-12 text-sm px-4 py-3">
-          <SelectValue className="justify-center" placeholder="Choose a reciter" />
-        </SelectTrigger>
-        <SelectContent className="bg-popover">
-          {RECITERS.map((r) => (
-            <SelectItem key={r.id} value={r.id} className="py-2.5">
-              <div className="flex items-center gap-3 w-full">
-                <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-sm font-medium leading-tight truncate">
-                    {r.name}
-                  </span>
-                  <span className="text-[11px] text-muted-foreground leading-tight">
-                    {r.style}
-                  </span>
-                </div>
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <FieldLabel icon={Mic2}>Reciter</FieldLabel>
+      <PickerSelect value={reciterId} onChange={setReciter} placeholder="Choose a reciter">
+        {reciters.map((reciter) => (
+          <SelectItem key={reciter.id} value={reciter.id} className="py-2.5">
+            <TwoLineOption title={reciter.name} subtitle={reciter.style} />
+          </SelectItem>
+        ))}
+      </PickerSelect>
     </div>
   )
 }

@@ -1,33 +1,18 @@
 import { z } from 'zod'
-import { MAX_AYATS_PER_VIDEO } from '@/lib/constants'
+import { maxAyatsPerVideo } from '@/lib/constants'
 
-// Allowed audio CDNs
-const ALLOWED_AUDIO_ORIGINS = [
+const allowedAudioOrigins = [
   'https://everyayah.com',
   'https://verses.quran.com',
 ]
 function isAllowedAudioUrl(url: string): boolean {
   try {
     const u = new URL(url)
-    return ALLOWED_AUDIO_ORIGINS.some((origin) => u.origin === origin)
+    return allowedAudioOrigins.some((origin) => u.origin === origin)
   } catch {
     return false
   }
 }
-
-/**
- * Zod schemas for every API route's input. The client validates too, but the
- * server never trusts the client — someone can hit the route directly with
- * curl. These schemas are the single source of truth for what each endpoint
- * accepts.
- *
- * Usage in a route handler:
- *   const parsed = renderBodySchema.safeParse(await req.json())
- *   if (!parsed.success) return NextResponse.json({ error: ... }, { status: 400 })
- *   const body = parsed.data  // fully typed
- */
-
-// --- Shared primitives -------------------------------------------------
 
 export const surahNumberSchema = z
   .number()
@@ -39,8 +24,6 @@ export const ayatNumberSchema = z
   .number()
   .int('Ayat number must be an integer')
   .min(1, 'Ayat number must be at least 1')
-
-// --- POST /api/render ---------------------------------------------------
 
 const slideSchema = z.object({
   arabicText: z.string().min(1),
@@ -97,6 +80,7 @@ const settingsSchema = z.object({
   highlightColor: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, 'highlightColor must be a #rrggbb hex'),
+  wordHighlight: z.boolean().optional(),
   arabicFontSize: z.number().min(24).max(72),
   translationFontSize: z.number().min(14).max(32),
   fontStyle: fontStyleSchema,
@@ -113,8 +97,8 @@ const settingsSchema = z.object({
 
 export const renderBodySchema = z.object({
   slides: z.array(slideSchema).min(1, 'At least one slide is required').max(
-    MAX_AYATS_PER_VIDEO,
-    `Too many slides: max ${MAX_AYATS_PER_VIDEO} ayats per video`,
+    maxAyatsPerVideo,
+    `Too many slides: max ${maxAyatsPerVideo} ayats per video`,
   ),
   reciterKey: z.string().min(1, 'reciterKey is required'),
   reciterName: z.string().min(1, 'reciterName is required'),
@@ -126,8 +110,6 @@ export const renderBodySchema = z.object({
 
 export type RenderBody = z.infer<typeof renderBodySchema>
 
-// --- PUT /api/render (progress update) ---------------------------------
-
 export const renderUpdateBodySchema = z.object({
   jobId: z.string().min(1),
   status: z.enum(['rendering', 'done', 'error']).optional(),
@@ -138,8 +120,6 @@ export const renderUpdateBodySchema = z.object({
 
 export type RenderUpdateBody = z.infer<typeof renderUpdateBodySchema>
 
-// --- GET /api/timings --------------------------------------------------
-
 export const timingsQuerySchema = z.object({
   surah: surahNumberSchema,
   ayat: ayatNumberSchema,
@@ -148,15 +128,11 @@ export const timingsQuerySchema = z.object({
 
 export type TimingsQuery = z.infer<typeof timingsQuerySchema>
 
-// --- GET /api/render-status --------------------------------------------
-
 export const renderStatusQuerySchema = z.object({
   jobId: z.string().min(1, 'jobId is required'),
 })
 
 export type RenderStatusQuery = z.infer<typeof renderStatusQuerySchema>
-
-// --- GET /api/render-download -----------------------------------------
 
 export const renderDownloadQuerySchema = z.object({
   jobId: z.string().min(1, 'jobId is required'),

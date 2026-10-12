@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { consumeRateLimit, getClientIp } from './rateLimit'
 
-// Hoisted mock factories so we can change behavior per test
 const { mockHasRedis, mockRedis, mockLimit, mockRatelimit } = vi.hoisted(() => {
   const mockLimit = vi.fn()
   const mockRatelimit = Object.assign(

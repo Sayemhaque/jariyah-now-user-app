@@ -5,17 +5,6 @@ import { AlertCircle, RotateCcw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { captureException } from '@/lib/sentry'
 
-/**
- * Route-level error boundary. Catches any uncaught error thrown during
- * render or server-component data fetching for the segment below.
- *
- * This is the "last resort" UI — component-level errors should be caught
- * closer to the source with try/catch + a local fallback. This catches the
- * things that slip through.
- *
- * Errors are forwarded to Sentry when SENTRY_DSN is configured; otherwise
- * they fall through to the structured logger.
- */
 export default function Error({
   error,
   reset,
@@ -24,8 +13,6 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    // Forward to Sentry (or the structured logger in dev). The digest is
-    // included so we can correlate the user-visible ref with the Sentry event.
     captureException(error, { digest: error.digest })
   }, [error])
 

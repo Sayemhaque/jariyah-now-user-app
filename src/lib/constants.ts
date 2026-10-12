@@ -1,3 +1,3 @@
-export const FPS = 30
+export const videoFps = 30
 
-export const MAX_AYATS_PER_VIDEO = 10
+export const maxAyatsPerVideo = 10

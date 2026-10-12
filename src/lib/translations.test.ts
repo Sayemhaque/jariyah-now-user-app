@@ -1,23 +1,23 @@
 import { describe, it, expect } from 'vitest'
 import {
-  TRANSLATION_EDITIONS,
+  translationEditions,
   getTranslationEdition,
   videoAttributionLine,
-  DEFAULT_TRANSLATION_KEY,
+  defaultTranslationKey,
 } from './translations'
 
 describe('TRANSLATION_EDITIONS', () => {
   it('includes the 12 UmmahAPI editions (1 Bengali + 4 English + 7 others)', () => {
-    expect(TRANSLATION_EDITIONS.length).toBe(12)
+    expect(translationEditions.length).toBe(12)
   })
 
   it('every edition has a unique key', () => {
-    const keys = TRANSLATION_EDITIONS.map((e) => e.key)
+    const keys = translationEditions.map((e) => e.key)
     expect(new Set(keys).size).toBe(keys.length)
   })
 
   it('every edition has a label, fullName, rightsHolder, and licenseNote', () => {
-    for (const e of TRANSLATION_EDITIONS) {
+    for (const e of translationEditions) {
       expect(e.label).toBeTruthy()
       expect(e.fullName).toBeTruthy()
       expect(e.rightsHolder).toBeTruthy()
@@ -26,7 +26,7 @@ describe('TRANSLATION_EDITIONS', () => {
   })
 
   it('only personal-use-only editions carry the warn flag', () => {
-    for (const e of TRANSLATION_EDITIONS) {
+    for (const e of translationEditions) {
       if (e.license === 'personal-use-only') {
         expect(e.warn).toBe(true)
       } else {
@@ -36,7 +36,7 @@ describe('TRANSLATION_EDITIONS', () => {
   })
 
   it('includes all 12 expected UmmahAPI translation keys', () => {
-    const keys = TRANSLATION_EDITIONS.map((e) => e.key)
+    const keys = translationEditions.map((e) => e.key)
     const expected = [
       'bengali',
       'sahiih_international',
@@ -59,13 +59,13 @@ describe('TRANSLATION_EDITIONS', () => {
 
 describe('DEFAULT_TRANSLATION_KEY', () => {
   it('is bengali (Bengali translation)', () => {
-    expect(DEFAULT_TRANSLATION_KEY).toBe('bengali')
+    expect(defaultTranslationKey).toBe('bengali')
   })
 
   it('is NOT an English edition', () => {
-    expect(DEFAULT_TRANSLATION_KEY).not.toBe('sahiih_international')
-    expect(DEFAULT_TRANSLATION_KEY).not.toBe('pickthall')
-    expect(DEFAULT_TRANSLATION_KEY).not.toBe('yusuf_ali')
+    expect(defaultTranslationKey).not.toBe('sahiih_international')
+    expect(defaultTranslationKey).not.toBe('pickthall')
+    expect(defaultTranslationKey).not.toBe('yusuf_ali')
   })
 })
 

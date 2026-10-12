@@ -1,8 +1,6 @@
 import type { Surah } from './types'
 
-// Bundled fallback list of all 114 surahs (UmmahAPI shape).
-// Used only if the live API is unreachable so the UI never blocks.
-export const SURAHS_FALLBACK: Surah[] = [
+export const surahsFallback: Surah[] = [
   { number: 1, name: 'Al-Fatihah', englishName: 'The Opening', arabicName: 'الفاتحة', numberOfAyahs: 7, revelationType: 'Meccan' },
   { number: 2, name: 'Al-Baqarah', englishName: 'The Cow', arabicName: 'البقرة', numberOfAyahs: 286, revelationType: 'Medinan' },
   { number: 3, name: 'Aal-E-Imran', englishName: 'The Family of Imran', arabicName: 'آل عمران', numberOfAyahs: 200, revelationType: 'Medinan' },

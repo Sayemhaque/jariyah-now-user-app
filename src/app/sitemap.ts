@@ -1,11 +1,5 @@
 import type { MetadataRoute } from 'next'
 
-/**
- * sitemap.ts — generated at build time by Next.js.
- *
- * Lists the public-facing pages so search engines can discover them. The
- * /api/* routes are intentionally excluded (they're not for crawling).
- */
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://jariyahnow.com'
 

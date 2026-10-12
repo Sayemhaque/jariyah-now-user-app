@@ -1,13 +1,3 @@
-/**
- * Tiny structured logger. In production this would be `pino` or similar
- * piping to a log aggregator; here we keep it dependency-free but with the
- * same JSON shape so it can be swapped out later without touching call sites.
- *
- * Every log line includes a timestamp, level, message, and any structured
- * context fields. Request IDs should be passed in from the route handler so
- * logs across a single request can be correlated.
- */
-
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 interface LogContext {

@@ -1,87 +1,39 @@
 import React from 'react'
-import { Img, Video, OffthreadVideo, Loop, useVideoConfig, staticFile } from 'remotion'
-import { normalizeBackgroundVideoUrl, TWILIGHT_MOSQUE_URLS } from '@/lib/backgroundPresets'
+import { Img, interpolate, Loop, OffthreadVideo, staticFile, useCurrentFrame, useVideoConfig, Video } from 'remotion'
+import { normalizeBackgroundVideoUrl, twilightMosqueUrls } from '@/lib/backgroundPresets'
 
-function isVideoUrl(url: string): boolean {
-  return url.endsWith('.mp4')
-}
+const zoomRange = [1, 1.08]
 
 function resolveUrl(raw: string): string {
   const url = normalizeBackgroundVideoUrl(raw)
-  if (!url) return staticFile(TWILIGHT_MOSQUE_URLS.portrait)
+  if (!url) return staticFile(twilightMosqueUrls.portrait)
   if (url.startsWith('/backgrounds/')) return staticFile(url)
   return url
 }
 
-export const Background: React.FC<{ url: string; isExport?: boolean; preLooped?: boolean }> = ({
-  url,
-  isExport = false,
-  preLooped = false,
-}) => {
+interface BackgroundProps {
+  url: string
+  isExport?: boolean
+  preLooped?: boolean
+}
+
+export const Background: React.FC<BackgroundProps> = ({ url, isExport = false, preLooped = false }) => {
+  const frame = useCurrentFrame()
   const { durationInFrames } = useVideoConfig()
   const src = resolveUrl(url)
-
-  if (isVideoUrl(src)) {
-    if (isExport && preLooped) {
-      return (
-        <OffthreadVideo
-          src={src}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-          muted
-        />
-      )
-    }
-
-    if (isExport) {
-      return (
-        <Loop durationInFrames={durationInFrames}>
-          <OffthreadVideo
-            src={src}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
-            muted
-          />
-        </Loop>
-      )
-    }
-
-    return (
-      <Video
-        src={src}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-        }}
-        muted
-        loop
-      />
-    )
+  const zoom = interpolate(frame, [0, Math.max(1, durationInFrames)], zoomRange, { extrapolateRight: 'clamp' })
+  const coverStyle: React.CSSProperties = {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    transform: `scale(${zoom})`,
   }
 
-  return (
-    <Img
-      src={src}
-      style={{
-        position: 'absolute',
-        inset: 0,
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-      }}
-    />
-  )
+  if (!src.endsWith('.mp4')) return <Img src={src} style={coverStyle} />
+  if (!isExport) return <Video src={src} style={coverStyle} muted loop />
+
+  const video = <OffthreadVideo src={src} style={coverStyle} muted />
+  return preLooped ? video : <Loop durationInFrames={durationInFrames}>{video}</Loop>
 }

@@ -1,18 +1,6 @@
 import type { Reciter } from './types'
 
-/**
- * 13 reciters available via UmmahAPI. The `recitationId` field matches
- * UmmahAPI's reciter_id (1..13) — used to look up the audio URL in the
- * `audio` array of an UmmahAPI ayah response.
- *
- * The `audioKey` field is the everyayah.com directory name (e.g.
- * "Alafasy_128kbps") used to construct the fallback audio URL when
- * UmmahAPI doesn't return a direct audio URL for a given reciter.
- *
- * Source: everyayah.com/data/{audioKey}/{sss}{aaa}.mp3
- *   where {sss} = zero-padded 3-digit surah, {aaa} = zero-padded 3-digit ayat.
- */
-export const RECITERS: Reciter[] = [
+export const reciters: Reciter[] = [
   {
     id: 'alafasy',
     name: 'Mishary Alafasy',
@@ -133,20 +121,15 @@ export const RECITERS: Reciter[] = [
 ]
 
 export function getReciterById(id: string): Reciter | undefined {
-  return RECITERS.find((r) => r.id === id)
+  return reciters.find((r) => r.id === id)
 }
 
 export function getReciterByRecitationId(recitationId: number): Reciter | undefined {
-  return RECITERS.find((r) => r.recitationId === recitationId)
+  return reciters.find((r) => r.recitationId === recitationId)
 }
 
-export const DEFAULT_RECITER_ID = 'alafasy'
+export const defaultReciterId = 'alafasy'
 
-/**
- * Build the per-ayat MP3 URL on the everyayah.com CDN.
- * Example: https://everyayah.com/data/Alafasy_128kbps/001001.mp3
- * The path uses zero-padded 3-digit surah + zero-padded 3-digit ayat.
- */
 export function buildAyatAudioUrl(audioKey: string, surah: number, ayat: number): string {
   const s = String(surah).padStart(3, '0')
   const a = String(ayat).padStart(3, '0')

@@ -1,6 +1,6 @@
 import type { OverlayStyle } from '@/lib/types'
 
-export const ARABIC_FONT_FAMILIES: Record<string, string> = {
+export const arabicFontFamilies: Record<string, string> = {
   uthmani: 'Amiri',
   amiri: 'Amiri',
   scheherazade: 'Scheherazade New',
@@ -10,7 +10,7 @@ export const ARABIC_FONT_FAMILIES: Record<string, string> = {
   cairo: 'Cairo',
 }
 
-export const BENGALI_FONT_FAMILIES: Record<string, string> = {
+export const bengaliFontFamilies: Record<string, string> = {
   sans: 'Noto Sans Bengali',
   serif: 'Noto Serif Bengali',
   hind: 'Hind Siliguri',
