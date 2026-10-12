@@ -114,6 +114,6 @@ export interface ExportOptions {
 }
 
 export const autoFontSizes: Record<Orientation, { arabic: number; translation: number }> = {
-  portrait: { arabic: 30, translation: 14 },
-  landscape: { arabic: 34, translation: 15 },
+  portrait: { arabic: 30, translation: 24 },
+  landscape: { arabic: 34, translation: 24 },
 }

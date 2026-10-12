@@ -43,7 +43,6 @@ export const SurahTitle: React.FC<SurahTitleProps> = ({ arabicName, englishName,
           fontSize: unit * 9,
           lineHeight: 1.25,
           color: accent,
-          textShadow: `0 0 ${unit * 3}px ${withAlpha(accent, 0.55)}, 0 2px 8px rgba(0,0,0,0.5)`,
         }}
       >
         {arabicName}

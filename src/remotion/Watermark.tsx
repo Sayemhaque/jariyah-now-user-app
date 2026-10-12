@@ -17,7 +17,6 @@ export const Watermark: React.FC<{ width: number; height: number }> = ({ width, 
         width: 'auto',
         opacity: 0.9,
         pointerEvents: 'none',
-        filter: 'drop-shadow(0 1px 4px rgba(0,0,0,0.6))',
       }}
     />
   )

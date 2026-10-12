@@ -25,7 +25,6 @@ export const Attribution: React.FC<AttributionProps> = ({ attributionLine, color
         fontFamily: uiFontStack,
         fontSize: Math.min(width, height) * 0.019,
         lineHeight: 1.3,
-        textShadow: '0 1px 6px rgba(0,0,0,0.85)',
         pointerEvents: 'none',
       }}
     >
