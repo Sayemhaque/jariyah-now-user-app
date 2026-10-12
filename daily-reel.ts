@@ -1,9 +1,10 @@
 import { bundle } from '@remotion/bundler'
 import { renderMedia, selectComposition } from '@remotion/renderer'
-import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildDailyVideo } from '@/lib/daily/buildVideo'
-import { loadSocialConfig, parsePlatforms } from '@/lib/social/config'
+import { dailyConfig } from '@/lib/daily/dailyConfig'
+import { loadSocialConfig } from '@/lib/social/config'
 import { uploadToYouTube } from '@/lib/social/youtube'
 import { uploadToFacebookReels, uploadToInstagramReels } from '@/lib/social/meta'
 import { uploadToTikTok } from '@/lib/social/tiktok'
@@ -53,11 +54,11 @@ async function render(props: object, outPath: string) {
 async function main() {
   const video = await buildDailyVideo({
     surahOverride: env.SURAH ? Number(env.SURAH) : undefined,
-    reciterId: env.RECITER || 'random',
-    translationKey: env.TRANSLATION || 'bengali',
-    maxDurationSec: env.MAX_DURATION_SEC ? Number(env.MAX_DURATION_SEC) : 85,
-    quality: (env.QUALITY as '480p' | '720p' | '1080p') || '1080p',
-    extraHashtags: env.EXTRA_HASHTAGS ? env.EXTRA_HASHTAGS.split(',') : undefined,
+    reciterId: dailyConfig.reciterId,
+    translationKey: dailyConfig.translationKey,
+    maxDurationSec: dailyConfig.maxDurationSec,
+    quality: dailyConfig.quality,
+    extraHashtags: dailyConfig.extraHashtags,
   })
 
   summary(`## Daily reel — ${video.dateKey}`)
@@ -70,7 +71,6 @@ async function main() {
   const outDir = join(process.cwd(), 'out')
   mkdirSync(outDir, { recursive: true })
   const outPath = join(outDir, `daily-${video.dateKey}.mp4`)
-  writeFileSync(join(outDir, `daily-${video.dateKey}.json`), JSON.stringify(video, null, 2))
 
   await render(video.props, outPath)
   const buf = readFileSync(outPath)
@@ -81,7 +81,11 @@ async function main() {
     return
   }
 
-  const cfg = loadSocialConfig(env)
+  const cfg = loadSocialConfig({
+    ...env,
+    YOUTUBE_PRIVACY_STATUS: dailyConfig.youtubePrivacy,
+    TIKTOK_PRIVACY_LEVEL: dailyConfig.tiktokPrivacy,
+  })
   const input: UploadInput = { video: buf, meta: video.meta }
   const uploaders: Record<Platform, (() => Promise<UploadResult>) | null> = {
     youtube: cfg.youtube && (() => uploadToYouTube(cfg.youtube!, input)),
@@ -92,7 +96,7 @@ async function main() {
 
   const failures: string[] = []
   summary('| Platform | Result |\n|---|---|')
-  for (const platform of parsePlatforms(env.PLATFORMS)) {
+  for (const platform of dailyConfig.platforms) {
     const upload = uploaders[platform]
     if (!upload) {
       summary(`| ${platform} | skipped (no credentials) |`)

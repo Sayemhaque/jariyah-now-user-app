@@ -6,17 +6,6 @@ on:
     # GitHub may start scheduled runs a few minutes late at busy times.
     - cron: '0 16 * * *'
   workflow_dispatch:
-    inputs:
-      dry_run:
-        description: 'Render only, do not post'
-        type: boolean
-        default: true
-      surah:
-        description: 'Force a surah number (1-114). Empty = daily pick'
-        required: false
-      platforms:
-        description: 'Comma-separated: youtube,facebook,instagram,tiktok (empty = all configured)'
-        required: false
 
 # Never run two posting jobs at once (avoids double posts).
 concurrency:
@@ -41,15 +30,6 @@ jobs:
 
       - name: Render and post
         env:
-          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
-          SURAH: ${{ inputs.surah }}
-          PLATFORMS: ${{ inputs.platforms }}
-          # Optional tuning (Settings → Secrets and variables → Actions → Variables)
-          RECITER: ${{ vars.DAILY_RECITER }}
-          TRANSLATION: ${{ vars.DAILY_TRANSLATION }}
-          EXTRA_HASHTAGS: ${{ vars.DAILY_EXTRA_HASHTAGS }}
-          YOUTUBE_PRIVACY_STATUS: ${{ vars.YOUTUBE_PRIVACY_STATUS }}
-          TIKTOK_PRIVACY_LEVEL: ${{ vars.TIKTOK_PRIVACY_LEVEL }}
           NEXT_PUBLIC_UMMAHAPI_KEY: ${{ secrets.UMMAHAPI_KEY }}
           # YouTube Shorts
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
@@ -65,11 +45,3 @@ jobs:
           TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
         run: npx tsx daily-reel.ts
 
-      - name: Keep the video as a downloadable artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: daily-reel
-          path: out/
-          if-no-files-found: ignore
-          retention-days: 7
