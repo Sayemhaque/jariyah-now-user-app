@@ -1,6 +1,7 @@
 import { bundle } from '@remotion/bundler'
 import { renderMedia, selectComposition } from '@remotion/renderer'
-import { appendFileSync, mkdirSync, readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
+import { appendFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildDailyVideo } from '@/lib/daily/buildVideo'
 import { dailyConfig } from '@/lib/daily/dailyConfig'
@@ -39,6 +40,9 @@ async function render(props: object, outPath: string) {
     outputLocation: outPath,
     inputProps,
     imageFormat: 'jpeg',
+    pixelFormat: 'yuv420p',
+    colorSpace: 'bt709',
+    audioBitrate: '128k',
     enforceAudioTrack: true,
     browserExecutable,
     onProgress: ({ progress }) => {
@@ -49,6 +53,11 @@ async function render(props: object, outPath: string) {
       }
     },
   })
+}
+
+function makeReelSafe(rawPath: string, outPath: string) {
+  execFileSync(env.FFMPEG_BIN || 'ffmpeg', ['-v', 'error', '-y', '-i', rawPath, '-c', 'copy', '-use_editlist', '0', '-movflags', '+faststart', outPath])
+  rmSync(rawPath)
 }
 
 async function main() {
@@ -72,7 +81,9 @@ async function main() {
   mkdirSync(outDir, { recursive: true })
   const outPath = join(outDir, `daily-${video.dateKey}.mp4`)
 
-  await render(video.props, outPath)
+  const rawPath = join(outDir, `raw-${video.dateKey}.mp4`)
+  await render(video.props, rawPath)
+  makeReelSafe(rawPath, outPath)
   const buf = readFileSync(outPath)
   console.log(`Rendered ${outPath} (${(buf.length / 1024 / 1024).toFixed(1)} MB)`)
 
