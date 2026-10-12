@@ -63,7 +63,7 @@ Facebook Reels must be 3–90 s long, which is why the job keeps videos at 85 s 
 | `translationKey` | `bengali` | Translation shown under the Arabic |
 | `maxDurationSec` | `85` | Longest video length |
 | `extraHashtags` | `JariyahNow`, `Quran` | Hashtags added to every post |
-| `platforms` | all four | Platforms to post to; ones without secrets are skipped |
+| `platforms` | `facebook`, `instagram` | Platforms to post to: `youtube`, `facebook`, `instagram`, `tiktok`. Ones without secrets are skipped |
 | `youtubePrivacy` | `public` | `public`, `unlisted` or `private` |
 | `tiktokPrivacy` | `SELF_ONLY` | `PUBLIC_TO_EVERYONE` after TikTok approves the app |
 

@@ -6,7 +6,7 @@ export const dailyConfig = {
   maxDurationSec: 85,
   quality: '1080p' as const,
   extraHashtags: ['JariyahNow', 'Quran'],
-  platforms: ['youtube', 'facebook', 'instagram', 'tiktok'] as Platform[],
+  platforms: ['facebook', 'instagram'] as Platform[],
   youtubePrivacy: 'public',
   tiktokPrivacy: 'SELF_ONLY',
 }
