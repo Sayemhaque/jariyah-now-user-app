@@ -1,5 +1,6 @@
 import { registerRoot, Composition } from 'remotion'
 import { AyatVideo } from './AyatVideo'
+import { ScenePreview } from './ScenePreview'
 import type { AyatVideoProps } from './types'
 import { resolutions, renderQualityScale } from './types'
 import { computeSlideFrames } from '@/lib/advanceTiming'
@@ -49,6 +50,15 @@ const RemotionRoot: React.FC = () => {
             height,
           }
         }}
+      />
+      <Composition
+        id="ScenePreview"
+        component={ScenePreview as unknown as React.FC<Record<string, unknown>>}
+        durationInFrames={120}
+        fps={videoFps}
+        width={360}
+        height={640}
+        defaultProps={{ sceneKey: 'golden-dusk' }}
       />
     </>
   )

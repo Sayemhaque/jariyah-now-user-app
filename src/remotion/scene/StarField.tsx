@@ -4,7 +4,7 @@ import { seeded } from './seeded'
 
 const starCount = 70
 
-export const StarField: React.FC<{ color: string }> = ({ color }) => {
+export const StarField: React.FC<{ color: string; showMoon?: boolean }> = ({ color, showMoon = true }) => {
   const frame = useCurrentFrame()
   const { width, height, fps } = useVideoConfig()
   const unit = Math.min(width, height) / 100
@@ -33,6 +33,7 @@ export const StarField: React.FC<{ color: string }> = ({ color }) => {
           />
         )
       })}
+      {showMoon && (
       <div
         style={{
           position: 'absolute',
@@ -46,6 +47,7 @@ export const StarField: React.FC<{ color: string }> = ({ color }) => {
           opacity: 0.85,
         }}
       />
+      )}
     </div>
   )
 }

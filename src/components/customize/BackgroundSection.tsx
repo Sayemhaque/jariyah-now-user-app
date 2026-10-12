@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { Upload } from 'lucide-react'
 import { useSettings } from '@/lib/store'
-import { backgroundScenes, customPresetKey, sceneUrl } from '@/lib/backgroundPresets'
+import { backgroundScenes, customPresetKey, scenePreviewUrl, sceneUrl } from '@/lib/backgroundPresets'
 import { useBackgroundUpload } from '@/hooks/useBackgroundUpload'
 import { Button } from '@/components/ui/button'
 import { BackgroundTile } from './BackgroundTile'
@@ -22,6 +22,7 @@ export function BackgroundSection() {
             key={scene.key}
             label={scene.label}
             palette={scene.palette}
+            imageUrl={scenePreviewUrl(scene.key)}
             selected={settings.backgroundPreset === scene.key}
             onSelect={() => updateSettings({ backgroundImage: sceneUrl(scene.key), backgroundPreset: scene.key })}
           />

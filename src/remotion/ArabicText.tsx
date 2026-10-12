@@ -20,7 +20,7 @@ interface ArabicTextProps {
 }
 
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const
-const appearAt = (frame: number, index: number) => interpolate(frame, [index * 1.2, index * 1.2 + 10], [0, 1], clamp)
+const appearAt = (frame: number, index: number) => interpolate(frame, [index * 2.5, index * 2.5 + 18], [0, 1], clamp)
 
 export const ArabicText: React.FC<ArabicTextProps> = ({ text, timedWords, fontSize, fontFamily, color, highlightColor, highlight, ...timing }) => {
   const words = React.useMemo(

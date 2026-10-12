@@ -45,7 +45,7 @@ Runs on Turbopack (default in Next.js 16). The `npm run dev` script symlinks `.n
 - `src/hooks/` — custom hooks that hold component state and effects
 - `src/lib/content/` — page copy as data (landing, templates, legal pages); legal text uses `**bold**` / `[link](href)` markup parsed by `richText.ts`
 - `src/lib/daily/`, `src/lib/social/`, `daily-reel.ts` — daily auto-post to YouTube/Facebook/Instagram/TikTok (see `docs/DAILY_AUTOPOST.md`)
-- `src/lib/backgroundPresets.ts` + `src/remotion/scene/` — animated backgrounds drawn in code, each with a color palette; `src/lib/theme.ts` applies the palette to text colors when "Match colors to background" is on, and `src/lib/imagePalette.ts` builds a palette from an uploaded image
+- `src/lib/backgroundPresets.ts` + `src/remotion/scene/` — animated backgrounds drawn in code, each with a color palette; `src/lib/theme.ts` applies the palette to text colors when "Match colors to background" is on, and `src/lib/imagePalette.ts` builds a palette from an uploaded image. After adding or changing a scene, run `npm run scene-previews` to regenerate the picker thumbnails in `public/scene-previews/`
 
 ## Conventions
 

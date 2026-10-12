@@ -38,7 +38,7 @@ export const termsBlocks: ContentBlock[] = [
   { kind: 'h3', text: '5.3 Reciter audio' },
   { kind: 'p', text: 'Reciter audio is streamed from [everyayah.com](https://everyayah.com) (via URLs provided by [ummahapi.com](https://ummahapi.com)). Rights belong to the reciters and their estates. Non-commercial use with attribution is widely accepted; commercial use requires permission from the rights holder. We encourage you to credit the reciter by name in any video description when publishing.' },
   { kind: 'h3', text: '5.4 Backgrounds' },
-  { kind: 'p', text: 'The 6 animated backgrounds are drawn by Jariyah Now itself and carry no third-party license. If you upload your own custom background, you are solely responsible for ensuring you have the rights to use it.' },
+  { kind: 'p', text: 'The 12 animated backgrounds are drawn by Jariyah Now itself and carry no third-party license. If you upload your own custom background, you are solely responsible for ensuring you have the rights to use it.' },
   { kind: 'h2', text: '6. No warranty' },
   { kind: 'p', text: 'The Service is provided "as is" and "as available", without warranty of any kind. We do not guarantee that the Service will be uninterrupted, error-free, or that the third-party APIs will remain available. The Quran text and translations are sourced from third parties; we are not responsible for their accuracy.' },
   { kind: 'h2', text: '7. Limitation of liability' },

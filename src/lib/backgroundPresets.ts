@@ -1,4 +1,16 @@
-export type SceneMotif = 'girih' | 'stars' | 'aurora' | 'dunes' | 'rays' | 'arches'
+export type SceneMotif =
+  | 'dusk'
+  | 'lanterns'
+  | 'bokeh'
+  | 'starlight'
+  | 'arch'
+  | 'heavenly'
+  | 'girih'
+  | 'stars'
+  | 'aurora'
+  | 'dunes'
+  | 'rays'
+  | 'arches'
 
 export interface ScenePalette {
   base: [string, string, string]
@@ -19,6 +31,42 @@ export const scenePrefix = 'scene:'
 export const customPresetKey = 'custom'
 
 export const backgroundScenes: BackgroundScene[] = [
+  {
+    key: 'golden-dusk',
+    label: 'Golden Dusk',
+    motif: 'dusk',
+    palette: { base: ['#16193f', '#5a2c5c', '#d9824c'], pattern: '#ffd27d', accent: '#ffd27d', text: '#fff6ea', translation: '#f6e6d4' },
+  },
+  {
+    key: 'ramadan-lanterns',
+    label: 'Ramadan Lanterns',
+    motif: 'lanterns',
+    palette: { base: ['#0f3b4c', '#082331', '#030c12'], pattern: '#ffe2a8', accent: '#ffcf73', text: '#fbf4e4', translation: '#d9e6e3' },
+  },
+  {
+    key: 'golden-bokeh',
+    label: 'Golden Bokeh',
+    motif: 'bokeh',
+    palette: { base: ['#2b1a0c', '#150c06', '#060302'], pattern: '#f5c76b', accent: '#f5c76b', text: '#fff4df', translation: '#ead9bd' },
+  },
+  {
+    key: 'desert-starlight',
+    label: 'Desert Starlight',
+    motif: 'starlight',
+    palette: { base: ['#141a4a', '#0a0e2c', '#03040d'], pattern: '#e9ddff', accent: '#d6c8ff', text: '#f4f1ff', translation: '#d4cdf0' },
+  },
+  {
+    key: 'moonlit-arch',
+    label: 'Moonlit Arch',
+    motif: 'arch',
+    palette: { base: ['#1a2a55', '#0d1733', '#050913'], pattern: '#e8d3a0', accent: '#e8d3a0', text: '#f5f1e6', translation: '#d6d9e6' },
+  },
+  {
+    key: 'heavenly-light',
+    label: 'Heavenly Light',
+    motif: 'heavenly',
+    palette: { base: ['#4a6fa5', '#27406d', '#0e1a33'], pattern: '#ffe1a0', accent: '#ffe1a0', text: '#ffffff', translation: '#e6edf8' },
+  },
   {
     key: 'night-gold',
     label: 'Night & Gold',
@@ -60,6 +108,8 @@ export const backgroundScenes: BackgroundScene[] = [
 export const defaultScene = backgroundScenes[0]!
 
 export const sceneUrl = (key: string) => `${scenePrefix}${key}`
+
+export const scenePreviewUrl = (key: string) => `/scene-previews/${key}.jpg`
 
 export const isSceneUrl = (url: string) => url.startsWith(scenePrefix)
 
