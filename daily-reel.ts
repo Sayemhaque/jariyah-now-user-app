@@ -56,7 +56,7 @@ async function main() {
     surahOverride: env.SURAH ? Number(env.SURAH) : undefined,
     reciterId: dailyConfig.reciterId,
     translationKey: dailyConfig.translationKey,
-    maxDurationSec: dailyConfig.maxDurationSec,
+    maxAyats: dailyConfig.maxAyats,
     quality: dailyConfig.quality,
     extraHashtags: dailyConfig.extraHashtags,
   })

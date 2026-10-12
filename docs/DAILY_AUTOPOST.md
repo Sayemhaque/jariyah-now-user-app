@@ -3,7 +3,7 @@
 Every day at **22:00 Bangladesh time** (16:00 UTC), `.github/workflows/daily-reel.yml`:
 
 1. Picks a surah. It works through a shuffled order of all 114 surahs, so no surah repeats until every surah has been posted (one cycle takes 114 days).
-2. Fetches the ayats and audio, and keeps as many ayats as fit in **85 s**. Short surahs go out whole. Long surahs get an excerpt that starts at a random ayat.
+2. Fetches the ayats and audio, and keeps up to **10 ayats**. Short surahs go out whole. Long surahs get an excerpt that starts at a random ayat.
 3. Renders a 1080×1920 MP4 with Remotion. It uses the same `AyatVideo` composition as the app, with a rotating reciter and video background.
 4. Posts it with a title, description and hashtags to every platform that has credentials set.
 
@@ -40,7 +40,7 @@ Each platform is optional. A platform with missing secrets is skipped.
 | `FACEBOOK_PAGE_ACCESS_TOKEN` | Create a Meta app of type Business. Grant `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `publish_video`, and for Instagram also `instagram_basic` and `instagram_content_publish`. Get a **long-lived user token**, then call `GET /me/accounts`. The Page token it returns does not expire. |
 | `INSTAGRAM_USER_ID` | The Instagram professional account must be linked to the Page. Get the ID from `GET /{page-id}?fields=instagram_business_account`. Instagram reuses the Page token. |
 
-Facebook Reels must be 3–90 s long, which is why the job keeps videos at 85 s or less.
+Facebook Reels must be 3–90 s long. Videos have no length limit, so a long excerpt can be rejected by Facebook while Instagram still posts it.
 
 ### TikTok
 | Secret | How to get it |
@@ -61,7 +61,7 @@ Facebook Reels must be 3–90 s long, which is why the job keeps videos at 85 s 
 |---|---|---|
 | `reciterId` | `random` | A reciter id from `src/lib/reciters.ts`, or `random` to rotate through 7 reciters |
 | `translationKey` | `bengali` | Translation shown under the Arabic |
-| `maxDurationSec` | `85` | Longest video length |
+| `maxAyats` | `10` | Most ayat in one video. There is no length limit |
 | `extraHashtags` | `JariyahNow`, `Quran` | Hashtags added to every post |
 | `platforms` | `facebook`, `instagram` | Platforms to post to: `youtube`, `facebook`, `instagram`, `tiktok`. Ones without secrets are skipped |
 | `youtubePrivacy` | `public` | `public`, `unlisted` or `private` |
