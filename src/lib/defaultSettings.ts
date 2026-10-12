@@ -8,6 +8,7 @@ export const defaultVideoSettings: VideoSettings = {
   overlayOpacity: 55,
   fontColor: '#ffffff',
   highlightColor: '#9333ea',
+  wordHighlight: true,
   arabicFontSize: autoFontSizes.portrait.arabic,
   translationFontSize: autoFontSizes.portrait.translation,
   fontStyle: 'uthmani',

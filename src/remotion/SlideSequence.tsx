@@ -47,7 +47,14 @@ export const SlideSequence: React.FC<SlideSequenceProps> = ({ timing, width, hei
           padding: `0 ${(8 * width) / 100}px`,
         }}
       >
-        <SlideCard slide={slide} settings={props.settings} sizes={props.sizes} width={width} isBengali={props.isBengali} />
+        <SlideCard
+          slide={slide}
+          settings={props.settings}
+          sizes={props.sizes}
+          width={width}
+          isBengali={props.isBengali}
+          durationInFrames={timing.durationInFrames}
+        />
       </div>
       <Attribution reciterName={props.reciterName} attributionLine={props.attributionLine} width={width} height={height} />
       <Watermark width={width} height={height} />

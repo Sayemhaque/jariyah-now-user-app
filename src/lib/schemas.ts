@@ -80,6 +80,7 @@ const settingsSchema = z.object({
   highlightColor: z
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, 'highlightColor must be a #rrggbb hex'),
+  wordHighlight: z.boolean().optional(),
   arabicFontSize: z.number().min(24).max(72),
   translationFontSize: z.number().min(14).max(32),
   fontStyle: fontStyleSchema,

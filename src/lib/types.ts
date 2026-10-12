@@ -77,6 +77,7 @@ export interface VideoSettings {
   overlayOpacity: number
   fontColor: string
   highlightColor: string
+  wordHighlight?: boolean
   arabicFontSize: number
   translationFontSize: number
   fontStyle: FontStyle

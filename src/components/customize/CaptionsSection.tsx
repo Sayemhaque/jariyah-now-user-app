@@ -9,6 +9,11 @@ export function CaptionsSection() {
       <SectionTitle>Captions</SectionTitle>
       <div className="space-y-2.5">
         <SwitchField
+          label="Highlight words while reciting"
+          checked={settings.wordHighlight ?? true}
+          onChange={(wordHighlight) => updateSettings({ wordHighlight })}
+        />
+        <SwitchField
           label="Show translation"
           checked={settings.showTranslation}
           onChange={(showTranslation) => updateSettings({ showTranslation })}
