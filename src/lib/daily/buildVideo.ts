@@ -6,7 +6,8 @@ import { promisify } from 'node:util'
 import { fetchAyatData, fetchSurahs } from '@/lib/quranApi'
 import { fetchVerseTimings } from '@/lib/fetchVerseTimings'
 import { reciters, getReciterById } from '@/lib/reciters'
-import { bgPresets } from '@/lib/backgroundPresets'
+import { backgroundScenes, sceneUrl, type BackgroundScene } from '@/lib/backgroundPresets'
+import { themeColors } from '@/lib/theme'
 import { videoAttributionLine } from '@/lib/translations'
 import { maxAyatsPerVideo } from '@/lib/constants'
 import { defaultVideoSettings } from '@/lib/defaultSettings'
@@ -70,8 +71,8 @@ export async function probeDurationMs(url: string, ffprobeBin = 'ffprobe'): Prom
   }
 }
 
-function baseSettings(backgroundImage: string, backgroundPreset: string): VideoSettings {
-  return { ...defaultVideoSettings, backgroundImage, backgroundPreset }
+function baseSettings(scene: BackgroundScene): VideoSettings {
+  return { ...defaultVideoSettings, backgroundImage: sceneUrl(scene.key), backgroundPreset: scene.key, ...themeColors(scene.palette) }
 }
 
 export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<DailyVideo> {
@@ -91,8 +92,7 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
     throw new Error(`Unknown reciter "${opts.reciterId}". Valid: ${reciters.map((r) => r.id).join(', ')}`)
   }
 
-  const videoBgs = bgPresets.filter((p) => p.isVideo && p.exportSafe)
-  const bg = videoBgs[Math.floor(rand() * videoBgs.length)] ?? bgPresets[0]!
+  const scene = backgroundScenes[Math.floor(rand() * backgroundScenes.length)] ?? backgroundScenes[0]!
 
   const surahs = await fetchSurahs()
   const surahNumber = opts.surahOverride ?? pickSurahNumber(dayIndex)
@@ -131,7 +131,7 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
     if (slides.length === 0) continue
 
     const toAyat = slides[slides.length - 1]!.ayatNumber
-    const settings = baseSettings(bg.url, bg.key)
+    const settings = baseSettings(scene)
     return {
       dateKey: dhakaDateKey(now),
       surah,
@@ -147,6 +147,7 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
         attributionLine: videoAttributionLine(translationKey),
         surahName: surah.name,
         surahNameArabic: surah.arabicName,
+        surahMeaning: surah.englishName,
         totalAyats: slides.length,
         quality: opts.quality ?? '1080p',
         isExport: true,

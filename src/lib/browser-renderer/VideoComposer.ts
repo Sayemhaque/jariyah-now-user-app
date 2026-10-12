@@ -70,15 +70,10 @@ export async function createVideoComposer(
 
   let bgImage: HTMLImageElement | null = null
   let bgVideoFrames: ImageBitmap[] | null = null
-  let bgVideoFps = 24
-  let bgVideoDurationSec = 10
+  const bgVideoFps = 24
+  const bgVideoDurationSec = 10
 
   if (isVideoBg) {
-    const preset = await findVideoPresetByUrl(settings.backgroundImage)
-    if (preset) {
-      bgVideoFps = preset.fps ?? 24
-      bgVideoDurationSec = preset.durationSec ?? 10
-    }
     options.onProgress?.(0.005)
     bgVideoFrames = await extractVideoFrames(
       settings.backgroundImage,
@@ -361,13 +356,6 @@ function drawWatermark(ctx: CanvasRenderingContext2D, w: number, h: number) {
   ctx.shadowOffsetY = 1
   ctx.fillText('Jariyah Now', x, y + targetH * 0.55)
   ctx.restore()
-}
-
-async function findVideoPresetByUrl(url: string) {
-  const { bgPresets } = await import('@/lib/backgroundPresets')
-  const { normalizeBackgroundVideoUrl } = await import('@/lib/backgroundPresets')
-  const normalized = normalizeBackgroundVideoUrl(url)
-  return bgPresets.find((p) => p.isVideo && (p.url === normalized || p.url === url))
 }
 
 async function extractVideoFrames(

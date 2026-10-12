@@ -82,11 +82,22 @@ const settingsSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, 'highlightColor must be a #rrggbb hex'),
   wordHighlight: z.boolean().optional(),
+  autoColors: z.boolean().optional(),
+  translationColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'translationColor must be a #rrggbb hex').optional(),
+  backgroundPalette: z
+    .object({
+      base: z.tuple([z.string(), z.string(), z.string()]),
+      pattern: z.string(),
+      accent: z.string(),
+      text: z.string(),
+      translation: z.string(),
+    })
+    .optional(),
   arabicFontSize: z.number().min(24).max(72),
   translationFontSize: z.number().min(14).max(32),
   fontStyle: fontStyleSchema,
   arabicFont: arabicFontSchema,
-  bengaliFont: z.enum(['sans', 'serif', 'hind']),
+  bengaliFont: z.enum(['anek', 'tiro', 'sans', 'serif', 'hind']),
   useTajweed: z.boolean(),
   showTranslation: z.boolean(),
   showTransliteration: z.boolean(),

@@ -183,6 +183,12 @@
   font-feature-settings: "calt", "liga";
 }
 
+.font-bengali-anek {
+  font-family: var(--font-anek-bangla), "Anek Bangla", sans-serif;
+}
+.font-bengali-tiro {
+  font-family: var(--font-tiro-bangla), "Tiro Bangla", serif;
+}
 .font-bengali-sans {
   font-family: var(--font-noto-sans-bengali), "Noto Sans Bengali", sans-serif;
 }

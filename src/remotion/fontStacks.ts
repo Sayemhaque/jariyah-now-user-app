@@ -12,6 +12,8 @@ export const arabicFontStacks: Record<string, string> = {
 }
 
 export const bengaliFontStacks: Record<string, string> = {
+  anek: stack('--font-anek-bangla', 'Anek Bangla', 'sans-serif'),
+  tiro: stack('--font-tiro-bangla', 'Tiro Bangla', 'serif'),
   sans: stack('--font-noto-sans-bengali', 'Noto Sans Bengali', 'sans-serif'),
   serif: stack('--font-noto-serif-bengali', 'Noto Serif Bengali', 'serif'),
   hind: stack('--font-hind-siliguri', 'Hind Siliguri', 'sans-serif'),

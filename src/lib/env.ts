@@ -48,6 +48,11 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>
 
+function withoutInvalidKeys(issues: { path: PropertyKey[] }[]): Record<string, string | undefined> {
+  const invalid = new Set(issues.map((issue) => String(issue.path[0])))
+  return Object.fromEntries(Object.entries(process.env).filter(([key]) => !invalid.has(key)))
+}
+
 function loadEnv(): Env {
   if (typeof window !== 'undefined') {
     return envSchema.parse({
@@ -63,6 +68,10 @@ function loadEnv(): Env {
     const issues = parsed.error.issues
       .map((i) => `  • ${i.path.join('.') || '(root)'}: ${i.message}`)
       .join('\n')
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      console.warn(`[env] Ignoring invalid environment variables during build:\n${issues}`)
+      return envSchema.parse(withoutInvalidKeys(parsed.error.issues))
+    }
     console.error(
       `[env] Invalid environment variables:\n${issues}\n\n` +
         'Check your .env file against .env.example.',

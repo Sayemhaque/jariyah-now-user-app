@@ -7,9 +7,10 @@ interface TranslationTextProps {
   maxWidth: number
   fontFamily?: string
   spacing: number
+  color: string
 }
 
-export const TranslationText: React.FC<TranslationTextProps> = ({ text, fontSize, maxWidth, fontFamily, spacing }) => {
+export const TranslationText: React.FC<TranslationTextProps> = ({ text, fontSize, maxWidth, fontFamily, spacing, color }) => {
   if (!text) return null
   return (
     <p
@@ -18,7 +19,7 @@ export const TranslationText: React.FC<TranslationTextProps> = ({ text, fontSize
         maxWidth,
         fontSize,
         fontWeight: 500,
-        color: 'rgba(255,255,255,0.9)',
+        color,
         lineHeight: 1.45,
         letterSpacing: '0.01em',
         marginTop: `${spacing * 100}%`,

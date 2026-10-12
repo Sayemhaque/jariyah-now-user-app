@@ -1,7 +1,7 @@
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { templatePresets } from '@/lib/templatePresets'
-import { getBackgroundPresetUrl } from '@/lib/backgroundPresets'
+import { sceneUrl } from '@/lib/backgroundPresets'
 import { useBuilderStore } from '@/lib/store'
 
 export function useApplyTemplate() {
@@ -29,11 +29,10 @@ export function useApplyTemplate() {
       if (config.backgroundPreset) {
         updateSettings({
           backgroundPreset: config.backgroundPreset,
-          backgroundImage: getBackgroundPresetUrl(config.backgroundPreset),
+          backgroundImage: sceneUrl(config.backgroundPreset),
         })
       }
       if (config.arabicFont) updateSettings({ arabicFont: config.arabicFont, fontStyle: config.arabicFont })
-      if (config.highlightColor) updateSettings({ highlightColor: config.highlightColor })
     })
     toast.success(`Loading "${template.title}" template…`)
     router.push('/app')

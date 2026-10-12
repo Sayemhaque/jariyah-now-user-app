@@ -133,17 +133,10 @@ export async function createVideoComposer(
 
   let bgImage: any = null
   let bgVideoFrames: any[] | null = null
-  let bgVideoFps = 24
-  let bgVideoDurationSec = 10
+  const bgVideoFps = 24
+  const bgVideoDurationSec = 10
 
   if (isVideoBg) {
-    const { bgPresets, normalizeBackgroundVideoUrl } = await import('@/lib/backgroundPresets')
-    const normalized = normalizeBackgroundVideoUrl(settings.backgroundImage)
-    const preset = bgPresets.find((p) => p.isVideo && (p.url === normalized || p.url === settings.backgroundImage))
-    if (preset) {
-      bgVideoFps = preset.fps ?? 24
-      bgVideoDurationSec = preset.durationSec ?? 10
-    }
     options.onProgress?.(0.005)
     bgVideoFrames = await extractVideoFramesViaFfmpeg(
       settings.backgroundImage,

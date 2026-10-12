@@ -45,7 +45,7 @@ Runs on Turbopack (default in Next.js 16). The `npm run dev` script symlinks `.n
 - `src/hooks/` — custom hooks that hold component state and effects
 - `src/lib/content/` — page copy as data (landing, templates, legal pages); legal text uses `**bold**` / `[link](href)` markup parsed by `richText.ts`
 - `src/lib/daily/`, `src/lib/social/`, `daily-reel.ts` — daily auto-post to YouTube/Facebook/Instagram/TikTok (see `docs/DAILY_AUTOPOST.md`)
-- `public/backgrounds/` — preset images + videos for video backgrounds
+- `src/lib/backgroundPresets.ts` + `src/remotion/scene/` — animated backgrounds drawn in code, each with a color palette; `src/lib/theme.ts` applies the palette to text colors when "Match colors to background" is on, and `src/lib/imagePalette.ts` builds a palette from an uploaded image
 
 ## Conventions
 
@@ -63,7 +63,6 @@ Follow `docs/REFACTOR_PROMPT.md`. In short:
 - **ESLint**: Very permissive — `no-explicit-any`, `no-unused-vars`, `react-hooks/exhaustive-deps` all off. Don't rely on lint to catch issues.
 - **TypeScript**: `noImplicitAny: false`, `strict: true`. Types are loose by design.
 - **Tests**: `*.test.ts` colocated with source. Coverage only for `src/lib/`. Test environment is `node` (not jsdom).
-- **Background videos**: All video presets must be pre-normalized (H.264, yuv420p, correct resolution) before committing. Validates with `npm run validate-bg`.
 - **Event listeners on Remotion Player**: Use `useEffect` with state flag pattern (not callback refs) to avoid "maximum update depth" errors. See `VideoPreview.tsx`.
 
 ## Gotchas
@@ -71,5 +70,4 @@ Follow `docs/REFACTOR_PROMPT.md`. In short:
 - Video render happens entirely in the browser (Canvas → WebCodecs → MP4), not on the server.
 - `formatMs` utility lives in `src/lib/format.ts` — import from `@/lib/format`.
 - The dev server logs to `dev.log` (via `tee`). Production logs to `server.log`.
-- Background video presets are defined in `src/lib/backgroundPresets.ts`. Each video has a `safe` variant (normalized) and a raw variant.
 - Turbopack is the default bundler. If you hit a bundler issue, try `next build --webpack` to isolate.

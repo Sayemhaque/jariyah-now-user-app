@@ -7,7 +7,7 @@ import {
 import type { AyatSlide, VideoSettings } from './types'
 
 const validSettings: VideoSettings = {
-  backgroundImage: '/backgrounds/twilight-mosque-portrait.png',
+  backgroundImage: 'scene:night-gold',
   backgroundPreset: 'twilight-mosque',
   overlayStyle: 'bottom-gradient',
   overlayColor: '#000000',

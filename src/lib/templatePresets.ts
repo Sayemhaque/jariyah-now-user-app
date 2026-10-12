@@ -8,7 +8,6 @@ export interface QuranTemplateConfig {
   translationKey?: string
   backgroundPreset?: string
   arabicFont?: 'quran' | 'uthmani' | 'scheherazade' | 'markazi' | 'naskh' | 'kufi' | 'cairo'
-  highlightColor?: string
 }
 
 export interface TemplatePreset {
@@ -35,9 +34,8 @@ const quranTemplates: TemplatePreset[] = [
       toAyat: 255,
       reciterId: 'abdulbasit',
       translationKey: 'bengali',
-      backgroundPreset: 'twilight-mosque',
+      backgroundPreset: 'night-gold',
       arabicFont: 'uthmani',
-      highlightColor: '#9333ea',
     },
   },
   {
@@ -53,9 +51,8 @@ const quranTemplates: TemplatePreset[] = [
       toAyat: 5,
       reciterId: 'sudais',
       translationKey: 'sahiih_international',
-      backgroundPreset: 'sunset-mosque',
+      backgroundPreset: 'desert-dawn',
       arabicFont: 'uthmani',
-      highlightColor: '#f5b942',
     },
   },
   {
@@ -71,9 +68,8 @@ const quranTemplates: TemplatePreset[] = [
       toAyat: 185,
       reciterId: 'muaiqly',
       translationKey: 'bengali',
-      backgroundPreset: 'forest',
+      backgroundPreset: 'emerald-sanctuary',
       arabicFont: 'naskh',
-      highlightColor: '#10b981',
     },
   },
   {
@@ -89,9 +85,8 @@ const quranTemplates: TemplatePreset[] = [
       toAyat: 7,
       reciterId: 'alafasy',
       translationKey: 'bengali',
-      backgroundPreset: 'twilight-hills',
+      backgroundPreset: 'royal-amethyst',
       arabicFont: 'uthmani',
-      highlightColor: '#f43f5e',
     },
   },
   {
@@ -107,9 +102,8 @@ const quranTemplates: TemplatePreset[] = [
       toAyat: 4,
       reciterId: 'shatri',
       translationKey: 'sahiih_international',
-      backgroundPreset: 'night',
+      backgroundPreset: 'midnight-aurora',
       arabicFont: 'kufi',
-      highlightColor: '#06b6d4',
     },
   },
   {
@@ -125,9 +119,8 @@ const quranTemplates: TemplatePreset[] = [
       toAyat: 13,
       reciterId: 'abdulbasit_mujawwad',
       translationKey: 'bengali',
-      backgroundPreset: 'sunset-glow',
+      backgroundPreset: 'desert-dawn',
       arabicFont: 'uthmani',
-      highlightColor: '#d946ef',
     },
   },
 ]
@@ -145,9 +138,8 @@ const namesTemplate: TemplatePreset = {
     toAyat: 180,
     reciterId: 'alafasy',
     translationKey: 'sahiih_international',
-    backgroundPreset: 'golden-particles',
+    backgroundPreset: 'night-gold',
     arabicFont: 'uthmani',
-    highlightColor: '#f5b942',
   },
 }
 
@@ -164,9 +156,8 @@ const hadithTemplate: TemplatePreset = {
     toAyat: 7,
     reciterId: 'shatri',
     translationKey: 'bengali',
-    backgroundPreset: 'mosque',
+    backgroundPreset: 'emerald-sanctuary',
     arabicFont: 'uthmani',
-    highlightColor: '#10b981',
   },
 }
 
@@ -184,9 +175,8 @@ const duaTemplates: TemplatePreset[] = [
       toAyat: 14,
       reciterId: 'alafasy',
       translationKey: 'bengali',
-      backgroundPreset: 'twilight-hills',
+      backgroundPreset: 'royal-amethyst',
       arabicFont: 'uthmani',
-      highlightColor: '#0ea5e9',
     },
   },
   {
@@ -202,9 +192,8 @@ const duaTemplates: TemplatePreset[] = [
       toAyat: 191,
       reciterId: 'muaiqly',
       translationKey: 'bengali',
-      backgroundPreset: 'sunset-glow',
+      backgroundPreset: 'desert-dawn',
       arabicFont: 'naskh',
-      highlightColor: '#f5b942',
     },
   },
   {
@@ -220,9 +209,8 @@ const duaTemplates: TemplatePreset[] = [
       toAyat: 5,
       reciterId: 'sudais',
       translationKey: 'bengali',
-      backgroundPreset: 'crescent-night',
+      backgroundPreset: 'royal-amethyst',
       arabicFont: 'uthmani',
-      highlightColor: '#6366f1',
     },
   },
 ]

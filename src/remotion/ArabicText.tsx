@@ -2,7 +2,7 @@ import React from 'react'
 import { interpolate } from 'remotion'
 import type { TimedWord } from '@/lib/types'
 import { activeWordIndex, computeWordWindows, splitWords } from '@/lib/wordTiming'
-import { ArabicWord, type WordState } from './ArabicWord'
+import { activeScale, ArabicWord, type WordState } from './ArabicWord'
 import { AyahMedallion } from './AyahMedallion'
 
 interface ArabicTextProps {
@@ -38,7 +38,10 @@ export const ArabicText: React.FC<ArabicTextProps> = ({ text, timedWords, fontSi
     !highlight ? 'plain' : index < active ? 'past' : index === active ? 'active' : 'future'
 
   return (
-    <div style={{ direction: 'rtl', textAlign: 'center', width: '100%', lineHeight: 2.05, fontSize, fontFamily }} lang="ar">
+    <div
+      style={{ direction: 'rtl', textAlign: 'center', width: '100%', lineHeight: `${fontSize * (highlight ? activeScale : 1) * 1.55}px`, fontSize, fontFamily }}
+      lang="ar"
+    >
       {words.map((word, index) => (
         <ArabicWord
           key={index}

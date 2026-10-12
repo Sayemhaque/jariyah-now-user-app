@@ -26,6 +26,7 @@ export function usePreviewProps() {
       attributionLine: videoAttributionLine(translationKey),
       surahName: surah?.name ?? '',
       surahNameArabic: surah?.arabicName ?? '',
+      surahMeaning: surah?.englishName ?? '',
       totalAyats: slides.length,
     }
   }, [slides, settings, surahs, selectedSurahNumber, reciterId, translationKey])

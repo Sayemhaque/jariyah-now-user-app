@@ -1,33 +1,37 @@
-import Image from 'next/image'
-import type { BackgroundPreset } from '@/lib/backgroundPresets'
+import type { ScenePalette } from '@/lib/backgroundPresets'
 import { cn } from '@/lib/utils'
 
 interface BackgroundTileProps {
-  preset: BackgroundPreset
-  url: string
+  label: string
+  palette: ScenePalette
+  imageUrl?: string
   selected: boolean
   onSelect: () => void
 }
 
-export function BackgroundTile({ preset, url, selected, onSelect }: BackgroundTileProps) {
+export function BackgroundTile({ label, palette, imageUrl, selected, onSelect }: BackgroundTileProps) {
+  const [top, middle, bottom] = palette.base
   return (
     <button
+      type="button"
       onClick={onSelect}
       className={cn(
-        'group relative aspect-video w-36 shrink-0 snap-start rounded-lg overflow-hidden border transition',
-        selected
-          ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-transparent'
-          : 'border-border hover:border-foreground/40',
+        'group relative aspect-[3/4] w-24 shrink-0 snap-start rounded-lg overflow-hidden border transition',
+        selected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background border-transparent' : 'border-border hover:border-foreground/40',
       )}
+      style={{
+        background: imageUrl
+          ? `center / cover no-repeat url("${imageUrl}")`
+          : `radial-gradient(circle at 50% 38%, ${palette.accent}40 0%, transparent 55%), linear-gradient(180deg, ${top}, ${middle} 50%, ${bottom})`,
+      }}
     >
-      {preset.isVideo ? (
-        <video src={url} className="absolute inset-0 h-full w-full object-cover" muted playsInline preload="metadata" />
-      ) : (
-        <Image src={url} alt={preset.label} fill sizes="144px" className="object-cover" />
-      )}
-      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[10px] font-medium py-1 px-1.5 text-center flex items-center justify-center gap-1 truncate">
-        {preset.emoji && <span aria-hidden>{preset.emoji}</span>}
-        {preset.label}
+      <span className="absolute top-1.5 left-1/2 -translate-x-1/2 flex gap-1">
+        {[palette.accent, palette.text, palette.translation].map((color) => (
+          <span key={color} className="h-2 w-2 rounded-full ring-1 ring-black/20" style={{ background: color }} />
+        ))}
+      </span>
+      <span className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-[10px] font-medium py-1 px-1 text-center leading-tight">
+        {label}
       </span>
     </button>
   )
