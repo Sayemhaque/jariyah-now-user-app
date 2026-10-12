@@ -252,3 +252,24 @@ export const templateCategories: { key: TemplateType | 'all'; label: string; ico
   { key: 'names', label: '99 Names', icon: '✨' },
   { key: 'hadith', label: 'Hadith', icon: '📜' },
 ]
+
+export const templateTypeLabels: Record<TemplateType, string> = {
+  quran: '📖 Quran',
+  dua: '🤲 Dua',
+  names: '✨ Names',
+  hadith: '📜 Hadith',
+}
+
+const featuredTemplateIds = ['ayat-al-kursi', 'al-fatihah', 'ar-rahman', 'dua-morning', '99-names', 'daily-hadith']
+
+export function getFeaturedTemplates(): TemplatePreset[] {
+  const featured = featuredTemplateIds
+    .map((id) => templatePresets.find((t) => t.id === id))
+    .filter((t): t is TemplatePreset => Boolean(t))
+  return featured.length >= 6 ? featured : templatePresets.slice(0, 6)
+}
+
+export function formatTemplateRange(config: QuranTemplateConfig): string {
+  const end = config.toAyat !== config.fromAyat ? `–${config.toAyat}` : ''
+  return `${config.surah}:${config.fromAyat}${end}`
+}
