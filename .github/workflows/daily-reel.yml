@@ -1,0 +1,75 @@
+name: Daily Quran reel
+
+on:
+  schedule:
+    # 16:00 UTC = 22:00 Bangladesh time (Asia/Dhaka is UTC+6, no DST).
+    # GitHub may start scheduled runs a few minutes late at busy times.
+    - cron: '0 16 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Render only, do not post'
+        type: boolean
+        default: true
+      surah:
+        description: 'Force a surah number (1-114). Empty = daily pick'
+        required: false
+      platforms:
+        description: 'Comma-separated: youtube,facebook,instagram,tiktok (empty = all configured)'
+        required: false
+
+# Never run two posting jobs at once (avoids double posts).
+concurrency:
+  group: daily-reel
+  cancel-in-progress: false
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Install ffmpeg (ffprobe measures ayat audio length)
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+
+      - name: Render and post
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && '1' || '0' }}
+          SURAH: ${{ inputs.surah }}
+          PLATFORMS: ${{ inputs.platforms }}
+          # Optional tuning (Settings → Secrets and variables → Actions → Variables)
+          RECITER: ${{ vars.DAILY_RECITER }}
+          TRANSLATION: ${{ vars.DAILY_TRANSLATION }}
+          EXTRA_HASHTAGS: ${{ vars.DAILY_EXTRA_HASHTAGS }}
+          YOUTUBE_PRIVACY_STATUS: ${{ vars.YOUTUBE_PRIVACY_STATUS }}
+          TIKTOK_PRIVACY_LEVEL: ${{ vars.TIKTOK_PRIVACY_LEVEL }}
+          NEXT_PUBLIC_UMMAHAPI_KEY: ${{ secrets.UMMAHAPI_KEY }}
+          # YouTube Shorts
+          YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_REFRESH_TOKEN: ${{ secrets.YOUTUBE_REFRESH_TOKEN }}
+          # Facebook Page Reels + Instagram Reels
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+          INSTAGRAM_USER_ID: ${{ secrets.INSTAGRAM_USER_ID }}
+          # TikTok
+          TIKTOK_CLIENT_KEY: ${{ secrets.TIKTOK_CLIENT_KEY }}
+          TIKTOK_CLIENT_SECRET: ${{ secrets.TIKTOK_CLIENT_SECRET }}
+          TIKTOK_REFRESH_TOKEN: ${{ secrets.TIKTOK_REFRESH_TOKEN }}
+        run: npx tsx daily-reel.ts
+
+      - name: Keep the video as a downloadable artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-reel
+          path: out/
+          if-no-files-found: ignore
+          retention-days: 7
