@@ -1,21 +1,22 @@
 import React from 'react'
 import { interpolate } from 'remotion'
 import type { TimedWord } from '@/lib/types'
-import { activeWordIndex, computeWordWindows, splitWords } from '@/lib/wordTiming'
+import { activeWordIndex } from '@/lib/wordTiming'
 import { ArabicWord, type WordState } from './ArabicWord'
 import { arabicLineFactor } from './layout'
 import { AyahMedallion } from './AyahMedallion'
 
 interface ArabicTextProps {
-  text: string
-  timedWords?: TimedWord[]
+  words: TimedWord[]
+  start: number
+  end: number
+  showNumber: boolean
   fontSize: number
   fontFamily: string
   color: string
   highlightColor: string
   highlight: boolean
   ayatNumber: number
-  audioDurationMs: number
   timeMs: number
   frame: number
 }
@@ -23,15 +24,7 @@ interface ArabicTextProps {
 const clamp = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const
 const appearAt = (frame: number, index: number) => interpolate(frame, [index * 2.5, index * 2.5 + 18], [0, 1], clamp)
 
-export const ArabicText: React.FC<ArabicTextProps> = ({ text, timedWords, fontSize, fontFamily, color, highlightColor, highlight, ...timing }) => {
-  const words = React.useMemo(
-    () => timedWords?.length ? timedWords : (() => {
-      const plain = splitWords(text)
-      const windows = computeWordWindows(plain, timing.audioDurationMs)
-      return plain.map((word, index) => ({ text: word, ...windows[index]! }))
-    })(),
-    [timedWords, text, timing.audioDurationMs],
-  )
+export const ArabicText: React.FC<ArabicTextProps> = ({ words, start, end, showNumber, fontSize, fontFamily, color, highlightColor, highlight, ...timing }) => {
   if (!words.length) return null
 
   const active = highlight ? activeWordIndex(words, timing.timeMs) : -1
@@ -43,26 +36,28 @@ export const ArabicText: React.FC<ArabicTextProps> = ({ text, timedWords, fontSi
       style={{ direction: 'rtl', textAlign: 'center', width: '100%', lineHeight: `${fontSize * (highlight ? arabicLineFactor : 1.5)}px`, fontSize, fontFamily }}
       lang="ar"
     >
-      {words.map((word, index) => (
+      {words.slice(start, end).map((word, offset) => (
         <ArabicWord
-          key={index}
+          key={start + offset}
           word={word.text}
-          state={stateOf(index)}
-          msIntoWord={timing.timeMs - (word.startMs ?? 0)}
-          msSinceWord={timing.timeMs - (word.endMs ?? 0)}
-          appear={appearAt(timing.frame, index)}
+          state={stateOf(start + offset)}
+          msIntoWord={timing.timeMs - word.startMs}
+          msSinceWord={timing.timeMs - word.endMs}
+          appear={appearAt(timing.frame, offset)}
           fontSize={fontSize}
           color={color}
           highlightColor={highlightColor}
         />
       ))}
-      <AyahMedallion
-        number={timing.ayatNumber}
-        fontSize={fontSize}
-        color={color}
-        highlightColor={highlightColor}
-        opacity={appearAt(timing.frame, words.length)}
-      />
+      {showNumber && (
+        <AyahMedallion
+          number={timing.ayatNumber}
+          fontSize={fontSize}
+          color={color}
+          highlightColor={highlightColor}
+          opacity={appearAt(timing.frame, end - start)}
+        />
+      )}
     </div>
   )
 }
