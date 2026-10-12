@@ -96,7 +96,13 @@ describe('buildPostMetadata', () => {
     expect(meta.title).toBe('Surah Al-Ikhlas (الإخلاص) | Full Surah #Shorts')
     expect(meta.hashtags).toContain('#SurahAlIkhlas')
     expect(meta.hashtags).toContain('#MisharyAlafasy')
-    expect(meta.description).toContain('Recited by Mishary Alafasy')
+    expect(meta.description).toContain('Reciter: Mishary Alafasy')
+    expect(meta.description).not.toContain('Translation:')
+  })
+
+  it('credits the translation in the description', () => {
+    const meta = buildPostMetadata({ surah: ikhlas, fromAyat: 1, toAyat: 4, reciterName: 'Mishary Alafasy', translationCredit: 'Saheeh International' })
+    expect(meta.description).toContain('Translation: Saheeh International')
   })
 
   it('labels a partial range', () => {

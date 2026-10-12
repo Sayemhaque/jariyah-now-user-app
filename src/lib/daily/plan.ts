@@ -68,6 +68,7 @@ export interface PostMetadataInput {
   fromAyat: number
   toAyat: number
   reciterName: string
+  translationCredit?: string
   extraHashtags?: string[]
 }
 
@@ -118,7 +119,9 @@ export function buildPostMetadata(input: PostMetadataInput): PostMetadata {
   const lines = [
     `Surah ${surah.name} — ${surah.englishName}`,
     `Surah ${surah.number}, ${range === 'Full Surah' ? `all ${surah.numberOfAyahs} ayats` : range}`,
-    `Recited by ${reciterName}`,
+    '',
+    `Reciter: ${reciterName}`,
+    ...(input.translationCredit ? [`Translation: ${input.translationCredit}`] : []),
     '',
     'Share this reminder — it could be sadaqah jariyah for you.',
     '',

@@ -127,6 +127,11 @@ export function getTranslationEdition(key: string): TranslationEdition {
   )
 }
 
+export function translationCredit(key: string): string {
+  const edition = getTranslationEdition(key)
+  return `${edition.fullName} — ${edition.rightsHolder}`
+}
+
 export function videoAttributionLine(key: string): string {
   const edition = getTranslationEdition(key)
   if (edition.license === 'public-domain') return ''
