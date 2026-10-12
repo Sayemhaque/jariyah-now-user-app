@@ -18,7 +18,6 @@ export const GoldDivider: React.FC<GoldDividerProps> = ({ width, color, opacity 
           height: diamond,
           transform: 'rotate(45deg)',
           background: color,
-          boxShadow: `0 0 ${diamond * 1.5}px ${color}`,
         }}
       />
       <div style={{ ...line, background: `linear-gradient(90deg, ${color}, transparent)` }} />

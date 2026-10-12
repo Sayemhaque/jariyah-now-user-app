@@ -50,7 +50,6 @@ export const RecitationVisualizer: React.FC<RecitationVisualizerProps> = ({ audi
             height: `${levelAt(index) * 100}%`,
             borderRadius: barWidth,
             background: `linear-gradient(180deg, ${accent} 0%, ${withAlpha(accent, 0.35)} 100%)`,
-            boxShadow: `0 0 ${barWidth * 2}px ${withAlpha(accent, 0.45)}`,
           }}
         />
       ))}

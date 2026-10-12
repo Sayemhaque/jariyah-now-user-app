@@ -38,7 +38,6 @@ export const ReelProgress: React.FC<ReelProgressProps> = ({ sequences, accent, t
             height: '100%',
             borderRadius: trackHeight,
             background: `linear-gradient(90deg, ${withAlpha(accent, 0.6)}, ${accent})`,
-            boxShadow: `0 0 ${unit * 1.5}px ${withAlpha(accent, 0.7)}`,
           }}
         />
         <ProgressTicks
@@ -60,7 +59,6 @@ export const ReelProgress: React.FC<ReelProgressProps> = ({ sequences, accent, t
             borderRadius: '50%',
             background: accent,
             transform: 'translate(-50%, -50%)',
-            boxShadow: `0 0 ${unit * 2}px ${accent}`,
           }}
         />
       </div>

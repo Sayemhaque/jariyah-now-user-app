@@ -3,8 +3,10 @@ import type { AyatSlide, VideoSettings } from '@/lib/types'
 import { splitWords } from '@/lib/wordTiming'
 import { orientationFontBase } from './types'
 
-export const activeScale = 1.4
-export const arabicLineFactor = activeScale * 1.4
+export const activeScale = 1.2
+export const restScale = 0.9
+export const wordBoxScale = 1.14
+export const arabicLineFactor = activeScale * 1.45
 
 export interface SlideSequence {
   slide: AyatSlide
@@ -42,7 +44,7 @@ export function estimateArabicLines(words: string[], fontSize: number, maxWidth:
   let lines = 1
   let used = 0
   for (const word of words) {
-    const wordWidth = fontSize * (0.34 * word.replace(arabicMarks, '').length + 0.5)
+    const wordWidth = fontSize * wordBoxScale * (0.34 * word.replace(arabicMarks, '').length + 0.5)
     if (used > 0 && used + wordWidth > maxWidth) {
       lines++
       used = 0
