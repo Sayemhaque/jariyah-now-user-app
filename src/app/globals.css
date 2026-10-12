@@ -9,14 +9,12 @@
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-display);
-  /* Arabic fonts (7 total) */
   --font-arabic-amiri: var(--font-amiri);
   --font-arabic-scheherazade: var(--font-scheherazade);
   --font-arabic-markazi: var(--font-markazi-text);
   --font-arabic-naskh: var(--font-noto-naskh-arabic);
   --font-arabic-kufi: var(--font-reem-kufi);
   --font-arabic-cairo: var(--font-cairo);
-  /* Bengali fonts (3 total) */
   --font-bengali-sans: var(--font-noto-sans-bengali);
   --font-bengali-serif: var(--font-noto-serif-bengali);
   --font-bengali-hind: var(--font-hind-siliguri);
@@ -55,8 +53,6 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* Jariyah Now light theme — clean, premium, purple accent on lavender-gray bg.
-   Matches brand: #eeebf0 bg, white cards, #7c3aed → #a855f7 purple gradient. */
 :root {
   --radius: 0.875rem;
   --background: #eeebf0;
@@ -105,8 +101,6 @@
   --surface-premium: linear-gradient(135deg, #fcfaff 0%, #f8f4ff 100%);
 }
 
-/* Keep a dark variant available for the video preview frame (which needs
-   to stay dark for video content legibility). Applied via `qv-dark-frame`. */
 .qv-dark-frame,
 .dark {
   --background: #140632;
@@ -142,7 +136,6 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     letter-spacing: -0.011em;
-    /* Soft ambient wash — keeps brand lavender, adds depth */
     background-image:
       radial-gradient(ellipse 80% 50% at 100% -10%, rgba(168, 85, 247, 0.12), transparent 55%),
       radial-gradient(ellipse 60% 40% at -5% 30%, rgba(124, 58, 237, 0.08), transparent 50%),
@@ -161,8 +154,6 @@
   }
 }
 
-/* Arabic font helpers — 7 fonts spanning classical → modern.
-   The class names match the ArabicFont type in src/lib/types.ts. */
 .font-arabic-uthmani {
   font-family: var(--font-amiri), "Amiri Quran", serif;
   font-feature-settings: "calt", "liga";
@@ -188,8 +179,6 @@
   font-feature-settings: "calt", "liga";
 }
 
-/* Bengali font helpers — 3 fonts: sans-serif (default), serif (formal),
-   and Hind Siliguri (clean modern). Class names match BengaliFont type. */
 .font-bengali-sans {
   font-family: var(--font-noto-sans-bengali), "Noto Sans Bengali", sans-serif;
 }
@@ -200,13 +189,10 @@
   font-family: var(--font-hind-siliguri), "Hind Siliguri", sans-serif;
 }
 
-/* Backwards-compat alias so existing code that uses .font-bengali
-   (without the suffix) keeps working. */
 .font-bengali {
   font-family: var(--font-noto-sans-bengali), "Noto Sans Bengali", sans-serif;
 }
 
-/* Thin custom scrollbar — theme purple tint */
 .scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: rgba(124, 58, 237, 0.28) transparent;
@@ -226,7 +212,6 @@
   background: transparent;
 }
 
-/* Subtle pulsing glow used on the "live preview" pill */
 @keyframes qv-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.55; transform: scale(0.85); }
@@ -235,12 +220,10 @@
   animation: qv-pulse 1.8s ease-in-out infinite;
 }
 
-/* Smooth color transitions when swapping backgrounds or font styles */
 .qv-smooth {
   transition: background-image 600ms ease, color 300ms ease, font-size 250ms ease, border-color 300ms ease;
 }
 
-/* Premium card surface — soft depth + hairline border */
 .qv-card {
   background: var(--card);
   border: 1px solid rgba(224, 220, 232, 0.9);
@@ -248,7 +231,6 @@
   transition: box-shadow 280ms ease, transform 280ms ease, border-color 280ms ease;
 }
 
-/* Elevated panel for builder sidebars / settings groups */
 .qv-panel {
   background: linear-gradient(180deg, #ffffff 0%, #fbfaff 100%);
   border: 1px solid var(--border);
@@ -256,7 +238,6 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* Soft icon chip — gradient-tinted */
 .qv-icon-chip {
   display: grid;
   place-items: center;
@@ -266,7 +247,6 @@
   box-shadow: 0 4px 14px rgba(124, 58, 237, 0.28);
 }
 
-/* Soft tinted badge / pill */
 .qv-pill {
   display: inline-flex;
   align-items: center;
@@ -280,7 +260,6 @@
   font-weight: 600;
 }
 
-/* Ambient page mesh blobs (use inside relative containers) */
 .qv-ambient {
   pointer-events: none;
   position: absolute;
@@ -312,7 +291,6 @@
   animation: qv-hero-glow 10s ease-in-out infinite reverse;
 }
 
-/* Subtle geometric grid for hero / CTA bands */
 .qv-grid-bg {
   background-image:
     linear-gradient(rgba(124, 58, 237, 0.04) 1px, transparent 1px),
@@ -321,7 +299,6 @@
   mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 20%, transparent 75%);
 }
 
-/* Refined section header with a thin accent rule on the left */
 .qv-section-title {
   display: flex;
   align-items: center;
@@ -342,7 +319,6 @@
   box-shadow: 0 0 8px rgba(124, 58, 237, 0.35);
 }
 
-/* Primary button — gradient purple with soft glow */
 .qv-btn-primary {
   background: var(--primary-gradient);
   background-size: 180% 180%;
@@ -373,7 +349,6 @@
   animation: none;
 }
 
-/* Secondary / ghost outline control */
 .qv-btn-secondary {
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid var(--border);
@@ -388,7 +363,6 @@
   transform: translateY(-1px);
 }
 
-/* Frosted-glass effect for the header */
 .qv-frosted {
   backdrop-filter: saturate(180%) blur(18px);
   -webkit-backdrop-filter: saturate(180%) blur(18px);
@@ -396,7 +370,6 @@
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 }
 
-/* Numbered step pill used in the sidebar */
 .qv-step {
   display: inline-flex;
   align-items: center;
@@ -412,21 +385,15 @@
   box-shadow: 0 2px 8px rgba(124, 58, 237, 0.3);
 }
 
-/* Logo mark soft halo */
 .qv-logo-glow {
   box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.08), 0 4px 16px rgba(124, 58, 237, 0.12);
 }
 
-/* Builder preview canvas backdrop */
 .qv-preview-stage {
   background:
     radial-gradient(ellipse 70% 50% at 50% 40%, rgba(124, 58, 237, 0.06), transparent 70%),
     linear-gradient(180deg, rgba(243, 240, 247, 0.9) 0%, rgba(238, 235, 240, 0.5) 100%);
 }
-
-/* ─── Premium processing animations ─────────────────────────────────── */
-/* Used by the ProcessingPanel in ExportModal — gives the processing UI
-   a high-end, animated feel: gradient pulse, shimmer, ring spin, glow. */
 
 @keyframes qv-gradient-pan {
   0%   { background-position: 0% 50%; }
@@ -469,7 +436,6 @@
   40%           { transform: scale(1);   opacity: 1; }
 }
 
-/* Animated gradient background panel */
 .qv-processing-panel {
   background: linear-gradient(
     135deg,
@@ -482,7 +448,6 @@
   animation: qv-gradient-pan 6s ease-in-out infinite;
 }
 
-/* The spinning conic-gradient ring around the logo */
 .qv-processing-ring {
   background: conic-gradient(
     from 0deg,
@@ -497,12 +462,10 @@
   -webkit-mask: radial-gradient(circle, transparent 58%, black 60%, black 100%);
 }
 
-/* The pulsing glow halo behind the logo */
 .qv-processing-glow {
   animation: qv-pulse-glow 2.4s ease-in-out infinite;
 }
 
-/* The shimmer overlay on the progress bar */
 .qv-processing-shimmer {
   background: linear-gradient(
     90deg,
@@ -513,24 +476,19 @@
   animation: qv-shimmer 1.8s ease-in-out infinite;
 }
 
-/* The progress bar itself — animated glow on the leading edge */
 .qv-processing-bar {
   animation: qv-bar-glow 2s ease-in-out infinite;
 }
 
-/* Cross-fade between phase labels */
 .qv-phase-label {
   animation: qv-fade-up 350ms ease-out;
 }
 
-/* Bouncing dots used as a "still working…" indicator */
 .qv-dot {
   animation: qv-dot-bounce 1.4s ease-in-out infinite;
 }
 .qv-dot:nth-child(2) { animation-delay: 0.18s; }
 .qv-dot:nth-child(3) { animation-delay: 0.36s; }
-
-/* ─── Premium landing page animations ───────────────────────────────── */
 
 @keyframes qv-gradient-shift {
   0%, 100% { background-position: 0% 50%; }
@@ -575,7 +533,6 @@
   100% { transform: scale(1); }
 }
 
-/* Gradient text */
 .qv-gradient-text {
   background: var(--primary-gradient);
   background-size: 200% 200%;
@@ -586,7 +543,6 @@
   animation: qv-gradient-shift 5s ease-in-out infinite;
 }
 
-/* Gradient border card */
 .qv-gradient-border {
   position: relative;
   background: var(--card);
@@ -607,7 +563,6 @@
 }
 .qv-gradient-border:hover::before { opacity: 1; }
 
-/* Always-on soft gradient rim for featured CTAs */
 .qv-gradient-rim {
   position: relative;
   background: var(--card);
@@ -628,10 +583,8 @@
   pointer-events: none;
 }
 
-/* Scroll-triggered fade-up */
 .qv-scroll-fade { animation: qv-fade-up-scroll 600ms ease-out both; }
 
-/* Card hover lift */
 .qv-hover-lift {
   transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 320ms ease, border-color 320ms ease;
 }
@@ -640,21 +593,18 @@
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(124, 58, 237, 0.08);
 }
 
-/* Phone mockup floating */
 .qv-phone-float { animation: qv-hero-float 4s ease-in-out infinite; }
 .qv-phone-glow { animation: qv-hero-glow 3s ease-in-out infinite; }
 .qv-shimmer-overlay { animation: qv-shimmer-sweep 2.5s ease-in-out infinite; }
 .qv-play-pulse { animation: qv-play-pulse 2s ease-in-out infinite; }
 .qv-stat-pop { animation: qv-stat-pop 500ms ease-out both; }
 
-/* Processing panel gradient bg */
 .qv-processing-panel {
   background: linear-gradient(135deg, rgba(124,58,237,0.08) 0%, rgba(124,58,237,0.02) 30%, rgba(124,58,237,0.08) 60%, rgba(124,58,237,0.02) 100%);
   background-size: 300% 300%;
   animation: qv-gradient-shift 6s ease-in-out infinite;
 }
 
-/* Processing ring (spinning conic gradient) */
 .qv-processing-ring {
   background: conic-gradient(from 0deg, transparent 0deg, var(--primary) 60deg, transparent 200deg, var(--primary) 300deg, transparent 360deg);
   animation: qv-ring-spin 1.6s linear infinite;
@@ -663,23 +613,19 @@
 }
 @keyframes qv-ring-spin { to { transform: rotate(360deg); } }
 
-/* Processing shimmer on progress bar */
 .qv-processing-shimmer {
   background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.45) 50%, transparent 100%);
   animation: qv-shimmer-sweep 1.8s ease-in-out infinite;
 }
 
-/* Processing bar glow */
 .qv-processing-bar { animation: qv-bar-glow 2s ease-in-out infinite; }
 @keyframes qv-bar-glow {
   0%, 100% { box-shadow: 0 0 8px 0 var(--primary); }
   50%      { box-shadow: 0 0 18px 2px var(--primary); }
 }
 
-/* Phase label cross-fade */
 .qv-phase-label { animation: qv-fade-up-scroll 350ms ease-out; }
 
-/* Bouncing dots */
 .qv-dot { animation: qv-dot-bounce 1.4s ease-in-out infinite; }
 .qv-dot:nth-child(2) { animation-delay: 0.18s; }
 .qv-dot:nth-child(3) { animation-delay: 0.36s; }
@@ -688,9 +634,6 @@
    40%           { transform: scale(1);   opacity: 1; }
 }
 
-/* ─── Premium additions ───────────────────────────────────────────── */
-
-/* Elevated premium card with richer shadow */
 .qv-card-premium {
   background: var(--surface-premium);
   border: 1px solid rgba(224, 220, 232, 0.8);
@@ -718,7 +661,6 @@
   border-color: rgba(124, 58, 237, 0.15);
 }
 
-/* Refined step indicator — glass-style number circle */
 .qv-step-modern {
   display: inline-flex;
   align-items: center;
@@ -742,7 +684,6 @@
   transform: scale(1.05);
 }
 
-/* Hero headline with refined tracking and leading */
 .qv-hero-title {
   font-size: clamp(2.25rem, 5vw, 3.75rem);
   font-weight: 800;
@@ -750,7 +691,6 @@
   letter-spacing: -0.03em;
 }
 
-/* Decorative accent divider — subtle gold-to-purple gradient */
 .qv-divider-accent {
   width: 60px;
   height: 3px;
@@ -759,7 +699,6 @@
   box-shadow: 0 0 12px var(--gold-glow);
 }
 
-/* Premium glass pill — refined badge */
 .qv-pill-premium {
   display: inline-flex;
   align-items: center;
@@ -775,7 +714,6 @@
   backdrop-filter: blur(8px);
 }
 
-/* Gold accent text */
 .qv-gold-text {
   background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 60%, #e8d48b 100%);
   -webkit-background-clip: text;
@@ -784,7 +722,6 @@
   color: transparent;
 }
 
-/* Refined tagline with gold */
 .qv-tagline {
   display: inline-flex;
   align-items: center;
@@ -796,7 +733,6 @@
   color: var(--gold);
 }
 
-/* Reveal animation — subtler than qv-scroll-fade */
 @keyframes qv-reveal-up {
   from { opacity: 0; transform: translateY(16px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -805,7 +741,6 @@
   animation: qv-reveal-up 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Enhanced preview stage for builder */
 .qv-preview-stage-premium {
   background:
     radial-gradient(ellipse 80% 55% at 50% 35%, rgba(124, 58, 237, 0.08), transparent 70%),
@@ -813,7 +748,6 @@
     linear-gradient(180deg, rgba(243, 240, 247, 0.95) 0%, rgba(238, 235, 240, 0.6) 100%);
 }
 
-/* Builder panel with glass base */
 .qv-panel-premium {
   background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(8px);

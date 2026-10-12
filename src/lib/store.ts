@@ -20,6 +20,8 @@ import { reciters, defaultReciterId } from './reciters'
 import { defaultTranslationKey } from './translations'
 import { surahsFallback } from './surahs-fallback'
 import { validateAyatRange } from './validation'
+import { defaultVideoSettings } from './defaultSettings'
+import { twilightMosqueUrls } from './backgroundPresets'
 
 export interface SurahRangeSlice {
   surahs: Surah[]
@@ -52,41 +54,13 @@ export interface AyatDataSlice {
   setAyatList: (list: AyatData[]) => void
 }
 
-const defaultSettings: VideoSettings = {
-  backgroundImage: '/backgrounds/twilight-mosque-portrait.png',
-  backgroundPreset: 'twilight-mosque',
-  overlayStyle: 'bottom-gradient',
-  overlayColor: '#000000',
-  overlayOpacity: 55,
-  fontColor: '#ffffff',
-  highlightColor: '#9333ea',
-  arabicFontSize: autoFontSizes.portrait.arabic,
-  translationFontSize: autoFontSizes.portrait.translation,
-  fontStyle: 'uthmani',
-  arabicFont: 'uthmani',
-  bengaliFont: 'sans',
-  useTajweed: false,
-  showTranslation: true,
-  showTransliteration: false,
-  orientation: 'portrait',
-  autoFitFonts: true,
-  textWidth: 'wide',
-  textSpacing: 'normal',
-}
-
-const twilightMosqueUrls: Record<string, string> = {
-  portrait: '/backgrounds/twilight-mosque-portrait.png',
-  landscape: '/backgrounds/twilight-mosque.png',
-  square: '/backgrounds/twilight-mosque-square.png',
-}
-
 function pickBgForOrientation(
   currentPreset: string,
   currentBg: string,
   newOrientation: string,
 ): string {
   if (currentPreset !== 'twilight-mosque') return currentBg
-  return twilightMosqueUrls[newOrientation] ?? currentBg
+  return twilightMosqueUrls[newOrientation as Orientation] ?? currentBg
 }
 
 const SurahRangeContext = createContext<SurahRangeSlice | null>(null)
@@ -148,7 +122,7 @@ function SurahRangeProvider({ children }: { children: ReactNode }) {
 }
 
 function SettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<VideoSettings>(defaultSettings)
+  const [settings, setSettings] = useState<VideoSettings>(defaultVideoSettings)
 
   const updateSettings = useCallback((patch: Partial<VideoSettings>) => {
     setSettings((current) => {

@@ -1,10 +1,8 @@
 import React from 'react'
-import { Img, Video, OffthreadVideo, Loop, useVideoConfig, staticFile } from 'remotion'
+import { Img, Loop, OffthreadVideo, staticFile, useVideoConfig, Video } from 'remotion'
 import { normalizeBackgroundVideoUrl, twilightMosqueUrls } from '@/lib/backgroundPresets'
 
-function isVideoUrl(url: string): boolean {
-  return url.endsWith('.mp4')
-}
+const coverStyle: React.CSSProperties = { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }
 
 function resolveUrl(raw: string): string {
   const url = normalizeBackgroundVideoUrl(raw)
@@ -13,75 +11,19 @@ function resolveUrl(raw: string): string {
   return url
 }
 
-export const Background: React.FC<{ url: string; isExport?: boolean; preLooped?: boolean }> = ({
-  url,
-  isExport = false,
-  preLooped = false,
-}) => {
+interface BackgroundProps {
+  url: string
+  isExport?: boolean
+  preLooped?: boolean
+}
+
+export const Background: React.FC<BackgroundProps> = ({ url, isExport = false, preLooped = false }) => {
   const { durationInFrames } = useVideoConfig()
   const src = resolveUrl(url)
 
-  if (isVideoUrl(src)) {
-    if (isExport && preLooped) {
-      return (
-        <OffthreadVideo
-          src={src}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-          muted
-        />
-      )
-    }
+  if (!src.endsWith('.mp4')) return <Img src={src} style={coverStyle} />
+  if (!isExport) return <Video src={src} style={coverStyle} muted loop />
 
-    if (isExport) {
-      return (
-        <Loop durationInFrames={durationInFrames}>
-          <OffthreadVideo
-            src={src}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-            }}
-            muted
-          />
-        </Loop>
-      )
-    }
-
-    return (
-      <Video
-        src={src}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-        }}
-        muted
-        loop
-      />
-    )
-  }
-
-  return (
-    <Img
-      src={src}
-      style={{
-        position: 'absolute',
-        inset: 0,
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',
-      }}
-    />
-  )
+  const video = <OffthreadVideo src={src} style={coverStyle} muted />
+  return preLooped ? video : <Loop durationInFrames={durationInFrames}>{video}</Loop>
 }

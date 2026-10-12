@@ -1,6 +1,7 @@
 import React from 'react'
+import { HeaderLabel } from './HeaderLabel'
 
-export const TopHeader: React.FC<{
+interface TopHeaderProps {
   surahName: string
   surahNameArabic: string
   ayatNumber: number
@@ -9,69 +10,42 @@ export const TopHeader: React.FC<{
   total: number
   width: number
   height: number
-}> = ({ surahName, surahNameArabic, ayatNumber, surahNumber, index, total, width, height }) => {
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        color: 'white',
-        padding: `${height * 0.04}px ${width * 0.05}px`,
-        pointerEvents: 'none',
-      }}
-    >
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <span
-          style={{
-            fontFamily: 'Amiri, serif',
-            fontSize: width * 0.05,
-            lineHeight: 1.1,
-            textShadow: '0 1px 4px rgba(0,0,0,0.7)',
-          }}
-          lang="ar"
-        >
-          {surahNameArabic}
-        </span>
-        <span
-          style={{
-            fontSize: width * 0.02,
-            opacity: 0.75,
-            letterSpacing: '0.12em',
-            textTransform: 'uppercase',
-            marginTop: height * 0.005,
-          }}
-        >
-          {surahName}
-        </span>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-        <span
-          style={{
-            fontFamily: 'Amiri, serif',
-            fontSize: width * 0.042,
-            lineHeight: 1.1,
-            textShadow: '0 1px 4px rgba(0,0,0,0.7)',
-          }}
-        >
-          {surahNumber}:{ayatNumber}
-        </span>
-        <span
-          style={{
-            fontSize: width * 0.018,
-            opacity: 0.65,
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            marginTop: height * 0.005,
-          }}
-        >
-          Ayat {index + 1} of {total}
-        </span>
-      </div>
-    </div>
-  )
 }
+
+export const TopHeader: React.FC<TopHeaderProps> = ({ surahName, surahNameArabic, ayatNumber, surahNumber, index, total, width, height }) => (
+  <div
+    style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      display: 'flex',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      color: 'white',
+      padding: `${height * 0.04}px ${width * 0.05}px`,
+      pointerEvents: 'none',
+    }}
+  >
+    <HeaderLabel
+      lang="ar"
+      primary={surahNameArabic}
+      secondary={surahName}
+      primarySize={width * 0.05}
+      secondarySize={width * 0.02}
+      secondaryOpacity={0.75}
+      secondarySpacing="0.12em"
+      gap={height * 0.005}
+    />
+    <HeaderLabel
+      alignEnd
+      primary={`${surahNumber}:${ayatNumber}`}
+      secondary={`Ayat ${index + 1} of ${total}`}
+      primarySize={width * 0.042}
+      secondarySize={width * 0.018}
+      secondaryOpacity={0.65}
+      secondarySpacing="0.18em"
+      gap={height * 0.005}
+    />
+  </div>
+)

@@ -1,6 +1,5 @@
-import { Fragment } from 'react'
-import Link from 'next/link'
 import { copyrightText, legalDisclaimer, legalFooterLinks } from '@/lib/content/site'
+import { DotNav } from '@/components/site/DotNav'
 import { ExternalLink } from '@/components/site/ExternalLink'
 
 const linkClass = 'text-primary/80 hover:text-primary underline underline-offset-2'
@@ -22,14 +21,7 @@ export function SiteFooter() {
             Audio from <ExternalLink href="https://everyayah.com" className={linkClass}>everyayah.com</ExternalLink>
           </span>
         </div>
-        <nav className="flex items-center gap-3">
-          {legalFooterLinks.map((link, index) => (
-            <Fragment key={link.href}>
-              {index > 0 && dot}
-              <Link href={link.href} className="hover:text-foreground transition">{link.label}</Link>
-            </Fragment>
-          ))}
-        </nav>
+        <DotNav links={legalFooterLinks} linkClassName="hover:text-foreground transition" />
       </div>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-5">
         <p className="text-[11px] text-muted-foreground leading-relaxed text-center">{legalDisclaimer}</p>

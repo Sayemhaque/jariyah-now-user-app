@@ -43,6 +43,35 @@ export const landingMetadata: Metadata = {
   twitter: { card: 'summary_large_image', title: shareTitle, description: shareDescription, images: [ogImage] },
 }
 
+export const rootMetadata: Metadata = {
+  ...landingMetadata,
+  metadataBase: new URL(siteUrl),
+  keywords: [
+    'Quran',
+    'Quran reels',
+    'Islamic reels',
+    'Sadaqah Jariyah',
+    'Instagram reels',
+    'TikTok Quran',
+    'YouTube shorts',
+    'Quran video generator',
+    'Quran recitation',
+    'Islamic content creator',
+    'Arabic text + translation',
+    'Quran translation',
+  ],
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/logo-32.png', type: 'image/png', sizes: '32x32' },
+      { url: '/logo.png', type: 'image/png', sizes: '256x256' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/logo-180.png',
+  },
+  robots: { index: true, follow: true, googleBot: { index: true, follow: true, 'max-image-preview': 'large' } },
+}
+
 export const landingHeaderLinks: NavItem[] = [
   { href: '/templates', label: 'Templates', hideBelow: 'sm' },
   { href: '/about', label: 'About', hideBelow: 'sm' },
@@ -98,4 +127,9 @@ export const templateSteps: FeatureItem[] = [
   { icon: LayoutGrid, step: '1', title: 'Pick a template', description: 'Browse Quran verses, duas, and more. Each card shows you exactly what you’ll get.' },
   { icon: Sparkles, step: '2', title: 'It auto-configures', description: 'The builder loads the surah, ayat range, reciter, font, background, and colors from the template.' },
   { icon: Film, step: '3', title: 'Tweak + export', description: 'Adjust anything you want, then export an MP4 ready for Instagram Reels, TikTok, and YouTube Shorts.' },
+]
+
+export const appMenuLinks: NavItem[] = [
+  { href: '/templates', label: 'Templates' },
+  ...legalFooterLinks,
 ]

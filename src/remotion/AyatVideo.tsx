@@ -1,75 +1,26 @@
 import React from 'react'
-import { AbsoluteFill, Sequence, Audio, useVideoConfig } from 'remotion'
+import { AbsoluteFill, useVideoConfig } from 'remotion'
 import type { AyatVideoProps } from './types'
-import { textWidthFractions, textSpacingFractions, arabicFontClass, bengaliFontClass, orientationFontBase } from './types'
+import { buildSlideSequences, computeTextSizes, isBengaliText } from './layout'
 import { Background } from './Background'
-import { computeSlideFrames, getAdvanceAtMs } from '@/lib/advanceTiming'
 import { OverlayLayer } from './OverlayLayer'
-import { TopHeader } from './TopHeader'
-import { Card } from './Card'
-import { ArabicText } from './ArabicText'
-import { TransliterationText } from './TransliterationText'
-import { TranslationText } from './TranslationText'
-import { Watermark } from './Watermark'
-import { Attribution } from './Attribution'
+import { SlideSequence } from './SlideSequence'
 import { ensureRemotionFonts } from './loadFonts'
 
-function isBengali(text: string): boolean {
-  return /[\u0980-\u09FF]/.test(text)
-}
+const edgeShade =
+  'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0) 18%, rgba(0,0,0,0) 78%, rgba(0,0,0,0.30) 100%)'
 
-export const AyatVideo: React.FC<AyatVideoProps> = ({
-  slides,
-  settings,
-  reciterName,
-  attributionLine,
-  surahName,
-  surahNameArabic,
-  totalAyats,
-  isExport,
-  preLooped,
-}) => {
+export const AyatVideo: React.FC<AyatVideoProps> = ({ slides, settings, isExport, preLooped, ...text }) => {
   const { width, height, fps } = useVideoConfig()
-  const minDim = Math.min(width, height)
-  const frameWidth = width
+  if (isExport) ensureRemotionFonts()
 
-  if (isExport) {
-    ensureRemotionFonts()
-  }
-
-  const fb = orientationFontBase[settings.orientation]!
-  const arabicFontSizePx = (fb.ar * settings.arabicFontSize / fb.arRef) * (frameWidth / 100)
-  const translationFontSizePx = (fb.tr * settings.translationFontSize / fb.trRef) * (frameWidth / 100)
-  const translitFontSizePx = Math.max(11, minDim * 0.024)
-
-  const isBengaliTranslation = isBengali(slides[0]?.translation ?? '')
-
-  const { totalFrames } = computeSlideFrames(slides, fps)
-
-  const fixedSettings = settings as AyatVideoProps['settings'] & {
-    arabicFont: string
-    bengaliFont: string
-    fontColor: string
-    textWidth: string
-    textSpacing: string
-    showTranslation: boolean
-    showTransliteration: boolean
-  }
-
-  const slideSequences = React.useMemo(() => {
-    return slides.reduce<Array<{ slide: (typeof slides)[number]; index: number; durFrames: number; offset: number }>>(
-      (acc, slide, i) => {
-        const dur = Math.round(getAdvanceAtMs(slide, slide.audioDurationMs) / 1000 * fps)
-        return [...acc, { slide, index: i, durFrames: dur, offset: i === 0 ? 0 : acc.at(-1)!.offset + acc.at(-1)!.durFrames }]
-      },
-      [],
-    )
-  }, [slides, fps])
+  const sizes = computeTextSizes(settings, width, height)
+  const isBengali = isBengaliText(slides[0]?.translation ?? '')
+  const sequences = React.useMemo(() => buildSlideSequences(slides, fps), [slides, fps])
 
   return (
     <AbsoluteFill style={{ backgroundColor: '#0a0a14', overflow: 'hidden' }}>
       <Background url={settings.backgroundImage} isExport={isExport} preLooped={preLooped} />
-
       <OverlayLayer
         style={settings.overlayStyle}
         color={settings.overlayColor}
@@ -77,103 +28,23 @@ export const AyatVideo: React.FC<AyatVideoProps> = ({
         width={width}
         height={height}
       />
-
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'linear-gradient(180deg, rgba(0,0,0,0.22) 0%, rgba(0,0,0,0) 18%, rgba(0,0,0,0) 78%, rgba(0,0,0,0.30) 100%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      {slideSequences.map(({ slide, index: i, durFrames, offset: frameOffset }) => {
-        const seq = (
-          <Sequence key={i} from={frameOffset} durationInFrames={durFrames}>
-            <Audio src={slide.audioUrl} />
-
-            <TopHeader
-              surahName={surahName}
-              surahNameArabic={surahNameArabic}
-              ayatNumber={slide.ayatNumber}
-              surahNumber={slide.surahNumber}
-              index={i}
-              total={totalAyats}
-              width={width}
-              height={height}
-            />
-
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: `0 ${8 * frameWidth / 100}px`,
-              }}
-            >
-              <Card
-                maxWidth={frameWidth * (textWidthFractions[fixedSettings.textWidth] ?? 0.82)}
-                paddingTop={frameWidth * 0.04}
-                paddingX={frameWidth * 0.05}
-                borderRadius={minDim * 0.03}
-                shadow={minDim * 0.03}
-              >
-                <ArabicText
-                  text={slide.arabicText}
-                  fontSize={arabicFontSizePx}
-                  fontFace={arabicFontClass[fixedSettings.arabicFont] ?? 'Amiri'}
-                  color={fixedSettings.fontColor}
-                />
-
-                {fixedSettings.showTranslation && fixedSettings.showTransliteration && slide.arabicText && (
-                  <div
-                    style={{
-                      marginTop: minDim * 0.015,
-                      marginBottom: minDim * 0.015,
-                      height: 1,
-                      width: minDim * 0.12,
-                      opacity: 0.4,
-                      backgroundColor: fixedSettings.fontColor,
-                    }}
-                  />
-                )}
-
-                {fixedSettings.showTransliteration && slide.transliteration && (
-                  <TransliterationText
-                    text={slide.transliteration}
-                    fontSize={translitFontSizePx}
-                    maxWidth={frameWidth * 0.80}
-                  />
-                )}
-
-                {fixedSettings.showTranslation && (
-                  <TranslationText
-                    text={slide.translation}
-                    fontSize={translationFontSizePx}
-                    maxWidth={frameWidth * 0.85}
-                    isBengali={isBengaliTranslation}
-                    bengaliFont={bengaliFontClass[fixedSettings.bengaliFont] ?? 'Noto Sans Bengali'}
-                    spacing={textSpacingFractions[fixedSettings.textSpacing] ?? 0.03}
-                  />
-                )}
-              </Card>
-            </div>
-
-            <Attribution
-              reciterName={reciterName}
-              attributionLine={attributionLine}
-              width={width}
-              height={height}
-            />
-
-            <Watermark width={width} height={height} />
-          </Sequence>
-        )
-        return seq
-      })}
+      <div style={{ position: 'absolute', inset: 0, background: edgeShade, pointerEvents: 'none' }} />
+      {sequences.map((timing) => (
+        <SlideSequence
+          key={timing.index}
+          timing={timing}
+          settings={settings}
+          sizes={sizes}
+          isBengali={isBengali}
+          width={width}
+          height={height}
+          surahName={text.surahName}
+          surahNameArabic={text.surahNameArabic}
+          totalAyats={text.totalAyats}
+          reciterName={text.reciterName}
+          attributionLine={text.attributionLine}
+        />
+      ))}
     </AbsoluteFill>
   )
 }

@@ -1,200 +1,21 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  VolumeX,
-  Loader2,
-  Sparkles,
-  Settings,
-} from 'lucide-react'
-import { Player, PlayerRef } from '@remotion/player'
+import { Player } from '@remotion/player'
 import { AyatVideo } from '@/remotion/AyatVideo'
-import { useBuilderStore } from '@/lib/store'
-import { reciters } from '@/lib/reciters'
-import { videoAttributionLine } from '@/lib/translations'
-import { Slider } from '@/components/ui/slider'
-import { computeSlideFrames } from '@/lib/advanceTiming'
-import { formatMs } from '@/lib/format'
 import { videoFps } from '@/lib/constants'
+import { usePreviewPlayer } from '@/hooks/usePreviewPlayer'
+import { usePreviewProps } from '@/hooks/usePreviewProps'
+import { LoadingIndicator } from './preview/LoadingIndicator'
+import { PlayerOverlay } from './preview/PlayerOverlay'
+import { PreviewPlaceholder } from './preview/PreviewPlaceholder'
 
-const aspectRatios: Record<string, { w: number; h: number; ratio: string }> = {
-  landscape: { w: 1280, h: 720, ratio: '16 / 9' },
-  portrait: { w: 720, h: 1280, ratio: '9 / 16' },
-}
-
-const RenderLoadingIndicator = () => (
-  <div className="absolute inset-0 grid place-items-center bg-[#0a0f1a]">
-    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-  </div>
-)
+const frameToMs = (frame: number) => (frame / videoFps) * 1000
 
 export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void }) {
-  const ayatList = useBuilderStore((s) => s.ayatList)
-  const loading = useBuilderStore((s) => s.loadingAyats)
-  const ayatError = useBuilderStore((s) => s.ayatError)
-  const surahs = useBuilderStore((s) => s.surahs)
-  const selectedSurahNumber = useBuilderStore((s) => s.selectedSurahNumber)
-  const reciterId = useBuilderStore((s) => s.reciterId)
-  const translationKey = useBuilderStore((s) => s.translationKey)
-  const settings = useBuilderStore((s) => s.settings)
-  const fromAyat = useBuilderStore((s) => s.fromAyat)
-  const toAyat = useBuilderStore((s) => s.toAyat)
-
-  const surah = useMemo(
-    () => surahs.find((s) => s.number === selectedSurahNumber),
-    [surahs, selectedSurahNumber],
-  )
-  const reciter = useMemo(
-    () => reciters.find((r) => r.id === reciterId) ?? reciters[0]!,
-    [reciterId],
-  )
-
-  const playerRef = useRef<PlayerRef>(null)
-  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const [isPlaying, setIsPlaying] = useState(false)
-  const [currentFrame, setCurrentFrame] = useState(0)
-  const [showControls, setShowControls] = useState(true)
-  const [volume, setVolume] = useState(0.9)
-  const [muted, setMuted] = useState(false)
-
-  const scheduleHide = useCallback(() => {
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-    hideTimerRef.current = setTimeout(() => setShowControls(false), 3000)
-  }, [])
-
-  const revealControls = useCallback(() => {
-    setShowControls(true)
-    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-  }, [])
-
-  const [playerReady, setPlayerReady] = useState(false)
-
-  const handlePlayerRef = useCallback((p: PlayerRef | null) => {
-    playerRef.current = p
-    setPlayerReady(p !== null)
-  }, [])
-
-  useEffect(() => {
-    const player = playerRef.current
-    if (!player || !playerReady) return
-
-    const onFrame = () => {
-      const p = playerRef.current
-      if (p) setCurrentFrame(p.getCurrentFrame())
-    }
-    const onPlay = () => { setIsPlaying(true); scheduleHide() }
-    const onPause = () => {
-      setIsPlaying(false)
-      setShowControls(true)
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-    }
-    const onEnded = () => {
-      setIsPlaying(false)
-      setShowControls(true)
-      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-    }
-
-    player.addEventListener('frameupdate', onFrame)
-    player.addEventListener('play', onPlay)
-    player.addEventListener('pause', onPause)
-    player.addEventListener('ended', onEnded)
-
-    return () => {
-      player.removeEventListener('frameupdate', onFrame)
-      player.removeEventListener('play', onPlay)
-      player.removeEventListener('pause', onPause)
-      player.removeEventListener('ended', onEnded)
-    }
-  }, [playerReady, scheduleHide])
-
-  const attributionLine = useMemo(
-    () => videoAttributionLine(translationKey),
-    [translationKey],
-  )
-
-  const aspect = aspectRatios[settings.orientation]
-
-  const { totalFrames, offsets: frameOffsets } = useMemo(
-    () => computeSlideFrames(ayatList, videoFps),
-    [ayatList],
-  )
-
-  const currentIndex = useMemo(() => {
-    for (let i = frameOffsets.length - 1; i >= 0; i--) {
-      if (currentFrame >= frameOffsets[i]!) return i
-    }
-    return 0
-  }, [currentFrame, frameOffsets])
-
-  const current = ayatList[currentIndex]
-  const currentMs = (currentFrame / videoFps) * 1000
-  const totalMs = totalFrames / videoFps * 1000
-
-  useEffect(() => {
-    const player = playerRef.current
-    if (!ayatList.length) {
-      player?.pause()
-      setIsPlaying(false)
-      setCurrentFrame(0)
-      return
-    }
-    player?.pause()
-    setCurrentFrame(0)
-  }, [ayatList])
-
-  useEffect(() => {
-    const player = playerRef.current
-    if (!player) return
-    player.setVolume(muted ? 0 : volume)
-  }, [volume, muted])
-
-  const togglePlay = useCallback(() => {
-    const p = playerRef.current
-    if (!p || !ayatList.length) return
-    if (isPlaying) {
-      p.pause()
-    } else {
-      p.play()
-    }
-  }, [isPlaying, ayatList.length])
-
-  const handleTapOverlay = useCallback(() => {
-    togglePlay()
-  }, [togglePlay])
-
-  const onSeek = (ms: number) => {
-    const p = playerRef.current
-    if (!p) return
-    const frame = Math.round(ms / 1000 * videoFps)
-    p.seekTo(Math.min(frame, totalFrames - 1))
-  }
-
-  const playAyat = (idx: number) => {
-    const p = playerRef.current
-    if (!p) return
-    const frame = frameOffsets[idx]
-    if (frame !== undefined) {
-      p.seekTo(frame)
-      p.play()
-    }
-  }
-
-  const inputProps = useMemo(() => ({
-    slides: ayatList,
-    settings,
-    orientation: settings.orientation,
-    reciterName: reciter?.name ?? '',
-    attributionLine,
-    surahName: surah?.name ?? '',
-    surahNameArabic: surah?.arabicName ?? '',
-    totalAyats: ayatList.length,
-  }), [ayatList, settings, reciter, attributionLine, surah])
+  const { slides, inputProps, totalFrames, frameOffsets, aspect } = usePreviewProps()
+  const { attachPlayer, currentFrame, ...player } = usePreviewPlayer(slides, totalFrames, frameOffsets)
+  const currentIndex = Math.max(0, frameOffsets.findLastIndex((offset) => currentFrame >= offset))
+  const portrait = inputProps.orientation === 'portrait'
 
   return (
     <div className="flex flex-col h-full">
@@ -203,14 +24,14 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
           className="qv-smooth relative overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/10"
           style={{
             aspectRatio: aspect.ratio,
-            ...(settings.orientation === 'portrait'
+            ...(portrait
               ? { height: '100%', width: 'auto', maxWidth: '100%' }
               : { width: '100%', maxHeight: '100%', height: 'auto' }),
           }}
         >
-          {ayatList.length > 0 ? (
+          {slides.length > 0 ? (
             <Player
-              ref={handlePlayerRef}
+              ref={attachPlayer}
               component={AyatVideo}
               durationInFrames={totalFrames}
               compositionWidth={aspect.w}
@@ -220,134 +41,20 @@ export function VideoPreview({ onSettingsClick }: { onSettingsClick?: () => void
               controls={false}
               showVolumeControls={false}
               style={{ width: '100%', height: '100%' }}
-              renderLoading={RenderLoadingIndicator}
+              renderLoading={LoadingIndicator}
               acknowledgeRemotionLicense
             />
           ) : (
-            <div className="absolute inset-0 grid place-items-center text-center text-white/70 px-6 bg-[#0a0f1a]">
-              {loading ? (
-                <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span className="text-sm">Loading ayat data…</span>
-                </div>
-              ) : ayatError ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-destructive">{ayatError}</p>
-                </div>
-              ) : (
-                <div className="space-y-4 max-w-sm">
-                  <div className="grid place-items-center h-14 w-14 rounded-2xl bg-primary/10 ring-1 ring-primary/20 mx-auto">
-                    <Sparkles className="h-7 w-7 text-primary" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <p className="text-sm font-medium text-white/90">
-                      Your recitation video will appear here
-                    </p>
-                    <p className="text-xs text-white/55 leading-relaxed">
-                      Pick a surah and ayat range, choose a reciter, then click{' '}
-                      <span className="text-primary font-medium">Load ayats</span>{' '}
-                      to preview the recitation.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+            <PreviewPlaceholder />
           )}
-
-          <div
-            className="absolute inset-0 z-10"
-            onMouseEnter={revealControls}
-            onMouseMove={revealControls}
-            onMouseLeave={() => { if (isPlaying) scheduleHide() }}
-          >
-            <div className="absolute inset-0" onClick={handleTapOverlay} />
-
-            <div className={`absolute inset-0 grid place-items-center transition-opacity duration-300 pointer-events-none ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-              <button
-                type="button"
-                  onClick={(e) => { e.stopPropagation(); togglePlay() }}
-                className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-white/15 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/25 transition-colors pointer-events-auto"
-              >
-                {isPlaying ? (
-                  <Pause className="h-6 w-6 sm:h-7 sm:w-7" />
-                ) : (
-                  <Play className="h-6 w-6 sm:h-7 sm:w-7 ml-0.5" />
-                )}
-              </button>
-            </div>
-
-            <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-between px-2 sm:px-4 transition-opacity duration-300 pointer-events-none ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); playAyat(Math.max(0, currentIndex - 1)) }}
-                disabled={!ayatList.length}
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-colors disabled:opacity-30 pointer-events-auto"
-              >
-                <SkipBack className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); playAyat(Math.min(ayatList.length - 1, currentIndex + 1)) }}
-                disabled={!ayatList.length || currentIndex >= ayatList.length - 1}
-                className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/20 transition-colors disabled:opacity-30 pointer-events-auto"
-              >
-                <SkipForward className="h-4 w-4 sm:h-5 sm:w-5" />
-              </button>
-            </div>
-
-            <div className={`absolute bottom-0 inset-x-0 transition-opacity duration-300 pointer-events-none ${showControls ? 'opacity-100' : 'opacity-0'}`}>
-              <div className="bg-gradient-to-t from-black/60 to-transparent pb-1.5 pt-5 px-3 sm:px-4">
-                <div className="flex items-center justify-end mb-5">
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); onSettingsClick?.() }}
-                    className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-md text-sm font-semibold text-white hover:bg-white/25 transition-colors pointer-events-auto shadow-lg"
-                  >
-                    <Settings className="h-4 w-4" />
-                    Customize
-                  </button>
-                </div>
-                <Slider
-                  value={[Math.min(totalMs, currentMs)]}
-                  max={Math.max(1, totalMs)}
-                  step={100}
-                  onValueChange={(v) => { onSeek(v[0]!); revealControls() }}
-                  disabled={!ayatList.length}
-                  className="pointer-events-auto mb-1.5"
-                />
-                <div className="flex items-center justify-between">
-                  <span className="text-white/90 text-[11px] font-mono tabular-nums">
-                    {formatMs(currentMs)} / {formatMs(totalMs)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); setMuted((m) => !m) }}
-                    className="text-white/80 hover:text-white transition-colors pointer-events-auto"
-                  >
-                    {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className="absolute bottom-0 inset-x-0 h-1 cursor-pointer z-20"
-                onClick={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect()
-                  const x = e.clientX - rect.left
-                  const pct = Math.max(0, Math.min(1, x / rect.width))
-                  onSeek(pct * totalMs)
-                  revealControls()
-                }}
-            >
-              <div className="h-full bg-white/20">
-                <div
-                  className="h-full bg-white/80 hover:bg-white transition-colors"
-                  style={{ width: `${totalMs > 0 ? currentMs / totalMs * 100 : 0}%` }}
-                />
-              </div>
-            </div>
-          </div>
+          <PlayerOverlay
+            player={player}
+            slideCount={slides.length}
+            currentIndex={currentIndex}
+            currentMs={frameToMs(currentFrame)}
+            totalMs={frameToMs(totalFrames)}
+            onSettingsClick={onSettingsClick}
+          />
         </div>
       </div>
     </div>

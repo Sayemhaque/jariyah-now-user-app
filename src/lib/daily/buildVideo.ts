@@ -8,6 +8,7 @@ import { reciters, getReciterById } from '@/lib/reciters'
 import { bgPresets } from '@/lib/backgroundPresets'
 import { videoAttributionLine } from '@/lib/translations'
 import { maxAyatsPerVideo } from '@/lib/constants'
+import { defaultVideoSettings } from '@/lib/defaultSettings'
 import type { AyatSlide, Reciter, Surah, VideoSettings } from '@/lib/types'
 import type { AyatVideoProps } from '@/remotion/types'
 import {
@@ -69,27 +70,7 @@ export async function probeDurationMs(url: string, ffprobeBin = 'ffprobe'): Prom
 }
 
 function baseSettings(backgroundImage: string, backgroundPreset: string): VideoSettings {
-  return {
-    backgroundImage,
-    backgroundPreset,
-    overlayStyle: 'bottom-gradient',
-    overlayColor: '#000000',
-    overlayOpacity: 55,
-    fontColor: '#ffffff',
-    highlightColor: '#9333ea',
-    arabicFontSize: 30,
-    translationFontSize: 14,
-    fontStyle: 'uthmani',
-    arabicFont: 'uthmani',
-    bengaliFont: 'sans',
-    useTajweed: false,
-    showTranslation: true,
-    showTransliteration: false,
-    orientation: 'portrait',
-    autoFitFonts: true,
-    textWidth: 'wide',
-    textSpacing: 'normal',
-  }
+  return { ...defaultVideoSettings, backgroundImage, backgroundPreset }
 }
 
 export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<DailyVideo> {
