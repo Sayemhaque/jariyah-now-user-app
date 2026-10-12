@@ -8,7 +8,7 @@ import { fetchVerseTimings } from '@/lib/fetchVerseTimings'
 import { reciters, getReciterById } from '@/lib/reciters'
 import { backgroundScenes, sceneUrl, type BackgroundScene } from '@/lib/backgroundPresets'
 import { themeColors } from '@/lib/theme'
-import { videoAttributionLine } from '@/lib/translations'
+import { translationCredit } from '@/lib/translations'
 import { maxAyatsPerVideo } from '@/lib/constants'
 import { defaultVideoSettings } from '@/lib/defaultSettings'
 import type { AyatSlide, Reciter, Surah, VideoSettings } from '@/lib/types'
@@ -146,7 +146,7 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
         settings,
         orientation: 'portrait',
         reciterName: reciter.name,
-        attributionLine: videoAttributionLine(translationKey),
+        attributionLine: '',
         surahName: surah.name,
         surahNameArabic: surah.arabicName,
         surahMeaning: surah.englishName,
@@ -159,6 +159,7 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
         fromAyat,
         toAyat,
         reciterName: reciter.name,
+        translationCredit: translationCredit(translationKey),
         extraHashtags: opts.extraHashtags,
       }),
     }
