@@ -2,9 +2,7 @@ import React from 'react'
 import { AbsoluteFill, useVideoConfig } from 'remotion'
 import type { AyatVideoProps } from './types'
 import { buildSlideSequences, computeTextSizes, isBengaliText } from './layout'
-import { Attribution } from './Attribution'
 import { ReciterBadge } from './ReciterBadge'
-import { ReelProgress } from './ReelProgress'
 import { SlideSequence } from './SlideSequence'
 import { SurahTitle } from './SurahTitle'
 import { Watermark } from './Watermark'
@@ -42,8 +40,6 @@ export const AyatVideo: React.FC<AyatVideoProps> = ({ slides, settings, isExport
           height={height}
         />
       ))}
-      <Attribution attributionLine={text.attributionLine} color={settings.fontColor} width={width} height={height} />
-      <ReelProgress sequences={sequences} accent={accent} text={settings.fontColor} />
       <Watermark width={width} height={height} />
     </AbsoluteFill>
   )
