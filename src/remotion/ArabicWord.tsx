@@ -1,10 +1,10 @@
 import React from 'react'
 import { Easing, interpolate, interpolateColors } from 'remotion'
 import { withAlpha } from '@/lib/color'
+import { activeScale } from './layout'
 
 export type WordState = 'plain' | 'past' | 'active' | 'future'
 
-export const activeScale = 1.4
 const restScale = 0.84
 const growMs = 450
 const shrinkMs = 520

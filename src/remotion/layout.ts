@@ -1,6 +1,10 @@
 import { getAdvanceAtMs } from '@/lib/advanceTiming'
 import type { AyatSlide, VideoSettings } from '@/lib/types'
+import { splitWords } from '@/lib/wordTiming'
 import { orientationFontBase } from './types'
+
+export const activeScale = 1.4
+export const arabicLineFactor = activeScale * 1.4
 
 export interface SlideSequence {
   slide: AyatSlide
@@ -31,3 +35,62 @@ export function computeTextSizes(settings: VideoSettings, width: number, height:
 }
 
 export const isBengaliText = (text: string) => /[ঀ-৿]/.test(text)
+
+const arabicMarks = /[ؐ-ًؚ-ٰٟۖ-ۭـ]/g
+
+export function estimateArabicLines(words: string[], fontSize: number, maxWidth: number): number {
+  let lines = 1
+  let used = 0
+  for (const word of words) {
+    const wordWidth = fontSize * (0.34 * word.replace(arabicMarks, '').length + 0.5)
+    if (used > 0 && used + wordWidth > maxWidth) {
+      lines++
+      used = 0
+    }
+    used += wordWidth
+  }
+  return lines
+}
+
+export function estimateTextLines(text: string, fontSize: number, maxWidth: number): number {
+  return text ? Math.max(1, Math.ceil((text.length * fontSize * 0.5) / maxWidth)) : 0
+}
+
+interface FitInput {
+  arabicWords: string[]
+  translation: string
+  arabicSize: number
+  translationSize: number
+  arabicLineHeight: number
+  maxWidth: number
+  availableHeight: number
+}
+
+export function fitTextScale(input: FitInput): number {
+  const height = (scale: number) =>
+    estimateArabicLines(input.arabicWords, input.arabicSize * scale, input.maxWidth) * input.arabicSize * scale * input.arabicLineHeight +
+    estimateTextLines(input.translation, input.translationSize * scale, input.maxWidth) * input.translationSize * scale * 1.45 +
+    input.availableHeight * 0.12
+  let scale = 1
+  while (scale > 0.45 && height(scale) > input.availableHeight) scale -= 0.05
+  return Math.max(0.45, scale)
+}
+
+export function fittedSizes(
+  slide: AyatSlide,
+  settings: VideoSettings,
+  sizes: ReturnType<typeof computeTextSizes>,
+  maxWidth: number,
+  availableHeight: number,
+) {
+  const scale = fitTextScale({
+    arabicWords: slide.words?.map((w) => w.text) ?? splitWords(slide.arabicText),
+    translation: settings.showTranslation ? slide.translation : '',
+    arabicSize: sizes.arabic,
+    translationSize: sizes.translation,
+    arabicLineHeight: (settings.wordHighlight ?? true) ? arabicLineFactor : 1.5,
+    maxWidth,
+    availableHeight,
+  })
+  return { ...sizes, arabic: sizes.arabic * scale, translation: sizes.translation * scale, transliteration: sizes.transliteration * scale }
+}
