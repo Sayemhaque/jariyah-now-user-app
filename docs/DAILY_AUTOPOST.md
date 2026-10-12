@@ -40,7 +40,7 @@ Each platform is optional. A platform with missing secrets is skipped.
 | `FACEBOOK_PAGE_ACCESS_TOKEN` | Create a Meta app of type Business. Grant `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `publish_video`, and for Instagram also `instagram_basic` and `instagram_content_publish`. Get a **long-lived user token**, then call `GET /me/accounts`. The Page token it returns does not expire. |
 | `INSTAGRAM_USER_ID` | The Instagram professional account must be linked to the Page. Get the ID from `GET /{page-id}?fields=instagram_business_account`. Instagram reuses the Page token. |
 
-Facebook Reels must be 3–90 s long, which is why the job keeps videos at 85 s or less. Optional variable: `META_GRAPH_VERSION` (default `v23.0`).
+Facebook Reels must be 3–90 s long, which is why the job keeps videos at 85 s or less.
 
 ### TikTok
 | Secret | How to get it |
