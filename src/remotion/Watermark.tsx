@@ -5,16 +5,15 @@ export const Watermark: React.FC<{
   width: number
   height: number
 }> = ({ width, height }) => {
-  const targetH = Math.round((Math.min(width, height) / 720) * 112)
+  const targetH = Math.round((Math.min(width, height) / 720) * 64)
 
   return (
     <Img
       src={staticFile('/watermark.png')}
       style={{
         position: 'absolute',
-        top: height * 0.04,
-        left: '50%',
-        transform: 'translateX(-50%)',
+        top: height * 0.03,
+        right: width * 0.04,
         height: targetH,
         width: 'auto',
         opacity: 0.9,

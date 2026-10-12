@@ -21,7 +21,7 @@ import { defaultTranslationKey } from './translations'
 import { surahsFallback } from './surahs-fallback'
 import { validateAyatRange } from './validation'
 import { defaultVideoSettings } from './defaultSettings'
-import { twilightMosqueUrls } from './backgroundPresets'
+import { withAutoColors } from './theme'
 
 export interface SurahRangeSlice {
   surahs: Surah[]
@@ -52,15 +52,6 @@ export interface AyatDataSlice {
   setAyatLoading: (loading: boolean) => void
   setAyatError: (error: string | null) => void
   setAyatList: (list: AyatData[]) => void
-}
-
-function pickBgForOrientation(
-  currentPreset: string,
-  currentBg: string,
-  newOrientation: string,
-): string {
-  if (currentPreset !== 'twilight-mosque') return currentBg
-  return twilightMosqueUrls[newOrientation as Orientation] ?? currentBg
 }
 
 const SurahRangeContext = createContext<SurahRangeSlice | null>(null)
@@ -136,14 +127,7 @@ function SettingsProvider({ children }: { children: ReactNode }) {
         next.arabicFontSize = auto.arabic
         next.translationFontSize = auto.translation
       }
-      if (patch.orientation) {
-        next.backgroundImage = pickBgForOrientation(
-          current.backgroundPreset,
-          current.backgroundImage,
-          patch.orientation,
-        )
-      }
-      return next
+      return withAutoColors(next, patch)
     })
   }, [])
 
@@ -155,11 +139,6 @@ function SettingsProvider({ children }: { children: ReactNode }) {
         patch.arabicFontSize = auto.arabic
         patch.translationFontSize = auto.translation
       }
-      patch.backgroundImage = pickBgForOrientation(
-        current.backgroundPreset,
-        current.backgroundImage,
-        o,
-      )
       return { ...current, ...patch }
     })
   }, [])

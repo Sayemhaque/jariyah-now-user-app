@@ -1,7 +1,6 @@
 import { Sparkles } from 'lucide-react'
 import { useSettings } from '@/lib/store'
 import { arabicFontOptions, bengaliFontOptions, textSpacingOptions, textWidthOptions } from '@/lib/content/customize'
-import { ColorField } from './ColorField'
 import { FontSizeFields } from './FontSizeFields'
 import { SectionTitle } from './SectionTitle'
 import { SegmentedField } from './SegmentedField'
@@ -33,12 +32,6 @@ export function TypographySection() {
           onChange={(bengaliFont) => updateSettings({ bengaliFont })}
         />
         <FontSizeFields />
-        <ColorField label="Font color" value={settings.fontColor} onChange={(fontColor) => updateSettings({ fontColor })} />
-        <ColorField
-          label="Highlight color"
-          value={settings.highlightColor}
-          onChange={(highlightColor) => updateSettings({ highlightColor })}
-        />
         <SegmentedField
           label="Text width"
           value={settings.textWidth}

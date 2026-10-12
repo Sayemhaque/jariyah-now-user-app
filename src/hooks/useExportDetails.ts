@@ -28,6 +28,7 @@ export function useExportDetails() {
     attributionLine: videoAttributionLine(translationKey),
     surahName: surah?.name ?? '',
     surahNameArabic: surah?.arabicName ?? '',
+    surahMeaning: surah?.englishName ?? '',
     totalAyats: slides.length,
     quality,
   })

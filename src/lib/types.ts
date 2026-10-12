@@ -1,3 +1,5 @@
+import type { ScenePalette } from './backgroundPresets'
+
 export interface Surah {
   number: number
   name: string
@@ -64,7 +66,7 @@ export type ArabicFont =
   | 'cairo'
   | 'amiri'
 
-export type BengaliFont = 'sans' | 'serif' | 'hind'
+export type BengaliFont = 'anek' | 'tiro' | 'sans' | 'serif' | 'hind'
 
 export type FontStyle = ArabicFont
 
@@ -88,6 +90,9 @@ export interface VideoSettings {
   fontColor: string
   highlightColor: string
   wordHighlight?: boolean
+  autoColors?: boolean
+  translationColor?: string
+  backgroundPalette?: ScenePalette
   arabicFontSize: number
   translationFontSize: number
   fontStyle: FontStyle

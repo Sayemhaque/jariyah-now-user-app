@@ -8,6 +8,7 @@ export interface AyatVideoProps {
   attributionLine: string
   surahName: string
   surahNameArabic: string
+  surahMeaning?: string
   totalAyats: number
   quality?: '480p' | '720p' | '1080p'
   isExport?: boolean
@@ -44,6 +45,6 @@ export const textSpacingFractions: Record<string, number> = {
 }
 
 export const orientationFontBase: Record<string, { ar: number; tr: number; arRef: number; trRef: number }> = {
-  portrait: { ar: 9.4, tr: 3.0, arRef: 30, trRef: 14 },
-  landscape: { ar: 6.0, tr: 1.9, arRef: 34, trRef: 15 },
+  portrait: { ar: 9.4, tr: 3.7, arRef: 30, trRef: 14 },
+  landscape: { ar: 6.0, tr: 2.3, arRef: 34, trRef: 15 },
 }

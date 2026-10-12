@@ -1,61 +1,23 @@
 import { describe, expect, it } from 'vitest'
-import {
-  getBackgroundPresetUrl,
-  getEffectiveBackgroundUrl,
-  getBackgroundRenderFps,
-  isExportSafeBackgroundVideo,
-  normalizeBackgroundVideoUrl,
-} from './backgroundPresets'
+import { backgroundScenes, getScene, isSceneUrl, sceneForUrl, sceneUrl } from './backgroundPresets'
 
-describe('backgroundPresets', () => {
-  it('normalizes legacy heavy motion background URLs to safe variants', () => {
-    expect(
-      normalizeBackgroundVideoUrl('/backgrounds/videos/15478014_2160_3840_60fps.mp4'),
-    ).toBe('/backgrounds/videos/motion-bg-1-safe.mp4')
+const hex = /^#[0-9a-f]{6}$/
+
+describe('background scenes', () => {
+  it('have unique keys and complete hex palettes', () => {
+    expect(new Set(backgroundScenes.map((s) => s.key)).size).toBe(backgroundScenes.length)
+    for (const scene of backgroundScenes) {
+      const { base, pattern, accent, text, translation } = scene.palette
+      for (const color of [...base, pattern, accent, text, translation]) expect(color).toMatch(hex)
+    }
   })
 
-  it('returns orientation-aware twilight mosque background', () => {
-    expect(getBackgroundPresetUrl('twilight-mosque', 'portrait')).toBe(
-      '/backgrounds/twilight-mosque-portrait.png',
-    )
-    expect(getBackgroundPresetUrl('twilight-mosque', 'landscape')).toBe(
-      '/backgrounds/twilight-mosque.png',
-    )
-  })
-
-  it('resolves motion preset selections to normalized safe assets', () => {
-    expect(
-      getEffectiveBackgroundUrl(
-        'motion-bg-2',
-        '/backgrounds/videos/15870451_2160_3840_60fps.mp4',
-        'portrait',
-      ),
-    ).toBe('/backgrounds/videos/motion-bg-2-safe.mp4')
-  })
-
-  it('marks normalized motion backgrounds as export-safe', () => {
-    expect(
-      isExportSafeBackgroundVideo(
-        'motion-bg-3',
-        '/backgrounds/videos/motion-bg-3-safe.mp4',
-      ),
-    ).toBe(true)
-  })
-
-  it('caps video background renders to their preset fps', () => {
-    expect(
-      getBackgroundRenderFps(
-        'motion-bg-1',
-        '/backgrounds/videos/motion-bg-1-safe.mp4',
-        30,
-      ),
-    ).toBe(24)
-    expect(
-      getBackgroundRenderFps(
-        'forest',
-        '/backgrounds/forest.png',
-        30,
-      ),
-    ).toBe(30)
+  it('round-trips scene urls', () => {
+    expect(sceneUrl('night-gold')).toBe('scene:night-gold')
+    expect(isSceneUrl('scene:night-gold')).toBe(true)
+    expect(isSceneUrl('data:image/png;base64,abc')).toBe(false)
+    expect(sceneForUrl('scene:ocean-depth')?.label).toBe('Ocean Depth')
+    expect(sceneForUrl('scene:missing')).toBeUndefined()
+    expect(getScene('desert-dawn')?.motif).toBe('dunes')
   })
 })

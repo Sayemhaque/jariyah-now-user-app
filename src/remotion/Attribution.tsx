@@ -1,30 +1,32 @@
 import React from 'react'
+import { withAlpha } from '@/lib/color'
 import { uiFontStack } from './fontStacks'
 
-export const Attribution: React.FC<{
-  reciterName: string
+interface AttributionProps {
   attributionLine: string
+  color: string
   width: number
   height: number
-}> = ({ reciterName, attributionLine, width, height }) => {
-  const fontSize = width * 0.024
+}
 
+export const Attribution: React.FC<AttributionProps> = ({ attributionLine, color, width, height }) => {
+  if (!attributionLine) return null
   return (
     <div
       style={{
         position: 'absolute',
-        bottom: height * 0.025,
-        left: width * 0.035,
-        color: 'rgba(255,255,255,0.55)',
+        bottom: height * 0.105,
+        left: width * 0.08,
+        right: width * 0.08,
+        textAlign: 'center',
+        color: withAlpha(color, 0.5),
         fontFamily: uiFontStack,
-        lineHeight: 1.2,
-        maxWidth: width * 0.55,
-        fontSize,
+        fontSize: Math.min(width, height) * 0.019,
+        lineHeight: 1.3,
         pointerEvents: 'none',
       }}
     >
-      {attributionLine && <div style={{ marginBottom: 2 }}>{attributionLine}</div>}
-      <div>Recited by {reciterName}</div>
+      {attributionLine}
     </div>
   )
 }

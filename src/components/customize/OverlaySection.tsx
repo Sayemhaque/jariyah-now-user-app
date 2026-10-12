@@ -1,5 +1,6 @@
 import { useSettings } from '@/lib/store'
 import { overlayPresets } from '@/lib/content/customize'
+import { customPresetKey } from '@/lib/backgroundPresets'
 import { ColorField } from './ColorField'
 import { OverlaySwatch } from './OverlaySwatch'
 import { SectionTitle } from './SectionTitle'
@@ -8,6 +9,7 @@ import { SliderField } from './SliderField'
 export function OverlaySection() {
   const { settings, updateSettings } = useSettings()
   const disabled = settings.overlayStyle === 'none'
+  if (settings.backgroundPreset !== customPresetKey) return null
 
   return (
     <>

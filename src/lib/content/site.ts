@@ -105,7 +105,7 @@ export const legalFooterLinks: NavItem[] = [
   { href: '/privacy', label: 'Privacy' },
 ]
 
-export const heroHighlights = ['114 Surahs', '13 reciters', 'Video backgrounds', '12 translations']
+export const heroHighlights = ['114 Surahs', '13 reciters', 'Animated backgrounds', '12 translations']
 
 export const landingSteps: FeatureItem[] = [
   { icon: BookOpen, step: '1', title: 'Pick a Surah', description: 'Choose from all 114 Surahs and set your ayat range (up to 10 ayats).' },
@@ -118,7 +118,7 @@ export const landingFeatures: FeatureItem[] = [
   { icon: Sparkles, title: 'Beautiful Arabic typography', description: 'Premium Arabic fonts with smooth RTL rendering, perfectly centered for reels and shorts.' },
   { icon: Mic2, title: '13 world-class reciters', description: 'From Mishary Alafasy to Abdul Basit — every iconic voice in one place, streamed from everyayah.com.' },
   { icon: Languages, title: '12 translations', description: 'Bengali, English, Urdu, Turkish, Indonesian, French, German, Spanish, Malay, and Bosnian — via UmmahAPI.' },
-  { icon: Palette, title: 'Full customization', description: '7 background presets, custom uploads, 6 overlay styles, font controls, colors — make every reel your own.' },
+  { icon: Palette, title: 'Full customization', description: '6 animated backgrounds that pick matching colors for you, custom uploads, font controls — make every reel your own.' },
   { icon: Film, title: 'Reels & Shorts ready', description: 'Export portrait or landscape, 720p or 1080p — perfectly sized for every platform.' },
   { icon: Globe, title: 'Runs in your browser', description: 'No software to install, no uploads, fully private — your video renders right on your device.' },
 ]

@@ -29,6 +29,8 @@ export const arabicFontOptions: SelectOption<ArabicFont>[] = [
 ]
 
 export const bengaliFontOptions: SelectOption<BengaliFont>[] = [
+  { value: 'anek', label: `${bengaliBismillah} — Anek Bangla`, className: 'font-bengali-anek' },
+  { value: 'tiro', label: `${bengaliBismillah} — Tiro Bangla`, className: 'font-bengali-tiro' },
   { value: 'sans', label: `${bengaliBismillah} — Noto Sans`, className: 'font-bengali-sans' },
   { value: 'serif', label: `${bengaliBismillah} — Noto Serif`, className: 'font-bengali-serif' },
   { value: 'hind', label: `${bengaliBismillah} — Hind Siliguri`, className: 'font-bengali-hind' },

@@ -1,7 +1,7 @@
 import { useRef } from 'react'
 import { Upload } from 'lucide-react'
 import { useSettings } from '@/lib/store'
-import { bgPresets, getBackgroundPresetUrl } from '@/lib/backgroundPresets'
+import { backgroundScenes, customPresetKey, sceneUrl } from '@/lib/backgroundPresets'
 import { useBackgroundUpload } from '@/hooks/useBackgroundUpload'
 import { Button } from '@/components/ui/button'
 import { BackgroundTile } from './BackgroundTile'
@@ -11,23 +11,24 @@ export function BackgroundSection() {
   const { settings, updateSettings } = useSettings()
   const fileRef = useRef<HTMLInputElement>(null)
   const upload = useBackgroundUpload()
+  const custom = settings.backgroundPreset === customPresetKey && settings.backgroundPalette
 
   return (
     <>
       <SectionTitle>Background</SectionTitle>
       <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1 snap-x snap-mandatory">
-        {bgPresets.map((preset) => {
-          const url = getBackgroundPresetUrl(preset.key, settings.orientation)
-          return (
-            <BackgroundTile
-              key={preset.key}
-              preset={preset}
-              url={url}
-              selected={settings.backgroundPreset === preset.key}
-              onSelect={() => updateSettings({ backgroundImage: url, backgroundPreset: preset.key })}
-            />
-          )
-        })}
+        {backgroundScenes.map((scene) => (
+          <BackgroundTile
+            key={scene.key}
+            label={scene.label}
+            palette={scene.palette}
+            selected={settings.backgroundPreset === scene.key}
+            onSelect={() => updateSettings({ backgroundImage: sceneUrl(scene.key), backgroundPreset: scene.key })}
+          />
+        ))}
+        {custom && (
+          <BackgroundTile label="Your image" palette={custom} imageUrl={settings.backgroundImage} selected onSelect={() => undefined} />
+        )}
       </div>
       <div className="flex items-center gap-2 mt-2">
         <input

@@ -23,8 +23,8 @@ export const aboutBlocks: ContentBlock[] = [
   { kind: 'p', text: `Jariyah Now lets you choose from ${translationEditions.length} translations across Bengali, English, Urdu, Turkish, Indonesian, French, German, Spanish, Malay, and Bosnian — all sourced from UmmahAPI. Each has its own license — pick the one that fits your use case.` },
   { kind: 'ul', items: translationEditions.map((e) => `**${e.label}** (${e.fullName}) — ${e.rightsHolder}.\n^^${e.licenseNote}^^`) },
   { kind: 'p', text: 'The default is **Bengali (Muhiuddin Khan)** so the app never ships with a copyright-restricted translation as the default. When a translation requires attribution, Jariyah Now automatically adds an attribution line to the bottom-left of the exported video.' },
-  { kind: 'h2', text: 'Background images' },
-  { kind: 'p', text: 'The 7 preset background images (Mountain Dawn, Desert Dusk, Deep Ocean, Misty Forest, Starlit Night, Mosque Gold, Arabesque) were AI-generated and released to the public domain (CC0). You may also upload your own custom background — you are responsible for ensuring you have the rights to use it.' },
+  { kind: 'h2', text: 'Backgrounds' },
+  { kind: 'p', text: 'The 6 animated backgrounds (Night & Gold, Emerald Sanctuary, Royal Amethyst, Midnight Aurora, Desert Dawn, Ocean Depth) are drawn by Jariyah Now itself, so there are no third-party images to license. You may also upload your own custom background — you are responsible for ensuring you have the rights to use it.' },
   { kind: 'h2', text: 'Fonts' },
   {
     kind: 'ul',
