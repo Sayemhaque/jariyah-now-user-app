@@ -1,5 +1,6 @@
 import type { FacebookConfig, InstagramConfig } from './config'
 import { expectOk, sleep, type UploadInput, type UploadResult } from './types'
+import { withTemporaryVideoUrl } from './temporaryVideoUrl'
 
 const graphUrl = 'https://graph.facebook.com'
 
@@ -65,44 +66,57 @@ export async function uploadToFacebookReels(cfg: FacebookConfig, input: UploadIn
   }
 }
 
-export async function uploadToInstagramReels(cfg: InstagramConfig, input: UploadInput): Promise<UploadResult> {
-  const { igUserId, accessToken: token, graphVersion: v } = cfg
-
-  const container = await graphPost<{ id?: string; uri?: string }>(
-    `${v}/${igUserId}/media`,
-    {
-      media_type: 'REELS',
-      upload_type: 'resumable',
-      caption: input.meta.description,
-      share_to_feed: 'true',
-      access_token: token,
-    },
-    'Instagram container create',
-  )
-  if (!container.id) throw new Error('Instagram container create returned no id')
-  const uploadUrl = container.uri ?? `https://rupload.facebook.com/ig-api-upload/${v}/${container.id}`
-
-  await ruploadBytes(uploadUrl, token, input.video, 'Instagram reel upload')
-
+async function waitForContainer(cfg: InstagramConfig, containerId: string): Promise<void> {
   for (let i = 0; i < 60; i++) {
     await sleep(10_000)
     const res = await expectOk(
       await fetch(
-        `${graphUrl}/${v}/${container.id}?fields=status_code,status&access_token=${encodeURIComponent(token)}`,
+        `${graphUrl}/${cfg.graphVersion}/${containerId}?fields=status_code,status&access_token=${encodeURIComponent(cfg.accessToken)}`,
       ),
       'Instagram container status',
     )
     const s = (await res.json()) as { status_code?: string; status?: string }
-    if (s.status_code === 'FINISHED') break
+    if (s.status_code === 'FINISHED') return
     if (s.status_code === 'ERROR' || s.status_code === 'EXPIRED') {
       throw new Error(`Instagram processing failed: ${s.status ?? s.status_code}`)
     }
-    if (i === 59) throw new Error('Instagram processing timed out after 10 minutes')
   }
+  throw new Error('Instagram processing timed out after 10 minutes')
+}
 
+async function createReelContainer(cfg: InstagramConfig, input: UploadInput, source: Record<string, string>) {
+  const container = await graphPost<{ id?: string; uri?: string }>(
+    `${cfg.graphVersion}/${cfg.igUserId}/media`,
+    { media_type: 'REELS', caption: input.meta.description, share_to_feed: 'true', access_token: cfg.accessToken, ...source },
+    'Instagram container create',
+  )
+  if (!container.id) throw new Error('Instagram container create returned no id')
+  return { id: container.id, uri: container.uri }
+}
+
+async function containerFromUrl(cfg: InstagramConfig, input: UploadInput, videoHostToken: string): Promise<string> {
+  return withTemporaryVideoUrl(input.video, videoHostToken, async (videoUrl) => {
+    const container = await createReelContainer(cfg, input, { video_url: videoUrl })
+    await waitForContainer(cfg, container.id)
+    return container.id
+  })
+}
+
+async function containerFromUpload(cfg: InstagramConfig, input: UploadInput): Promise<string> {
+  const container = await createReelContainer(cfg, input, { upload_type: 'resumable' })
+  const uploadUrl = container.uri ?? `https://rupload.facebook.com/ig-api-upload/${cfg.graphVersion}/${container.id}`
+  await ruploadBytes(uploadUrl, cfg.accessToken, input.video, 'Instagram reel upload')
+  await waitForContainer(cfg, container.id)
+  return container.id
+}
+
+export async function uploadToInstagramReels(cfg: InstagramConfig, input: UploadInput): Promise<UploadResult> {
+  const containerId = cfg.videoHostToken
+    ? await containerFromUrl(cfg, input, cfg.videoHostToken)
+    : await containerFromUpload(cfg, input)
   const published = await graphPost<{ id?: string }>(
-    `${v}/${igUserId}/media_publish`,
-    { creation_id: container.id, access_token: token },
+    `${cfg.graphVersion}/${cfg.igUserId}/media_publish`,
+    { creation_id: containerId, access_token: cfg.accessToken },
     'Instagram publish',
   )
   if (!published.id) throw new Error('Instagram publish returned no media id')

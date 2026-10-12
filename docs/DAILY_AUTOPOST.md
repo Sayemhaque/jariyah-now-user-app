@@ -38,6 +38,7 @@ Each platform is optional. A platform with missing secrets is skipped.
 |---|---|
 | `FACEBOOK_PAGE_ID` | Your Page's numeric ID (Page → About → Page transparency). |
 | `FACEBOOK_PAGE_ACCESS_TOKEN` | Create a Meta app of type Business. Grant `pages_show_list`, `pages_read_engagement`, `pages_manage_posts`, `publish_video`, and for Instagram also `instagram_basic` and `instagram_content_publish`. Get a **long-lived user token**, then call `GET /me/accounts`. The Page token it returns does not expire. |
+| `BLOB_READ_WRITE_TOKEN` | The Vercel Blob token the app already uses (Vercel → Project → Settings → Environment Variables). When set, the job uploads the video to Blob, gives Instagram a one-hour signed link, and deletes the file after publishing. Instagram's direct upload often fails with `ProcessingFailedError`, so this is recommended. |
 | `INSTAGRAM_USER_ID` | The Instagram professional account must be linked to the Page. Get the ID from `GET /{page-id}?fields=instagram_business_account`. Instagram reuses the Page token. |
 
 Facebook Reels must be 3–90 s long. Videos have no length limit, so a long excerpt can be rejected by Facebook while Instagram still posts it.

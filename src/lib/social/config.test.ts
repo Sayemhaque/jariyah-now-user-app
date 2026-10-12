@@ -8,6 +8,11 @@ describe('loadSocialConfig', () => {
     expect(cfg).toEqual({ youtube: null, facebook: null, instagram: null, tiktok: null })
   })
 
+  it('passes the blob token to Instagram for hosting the video', () => {
+    const cfg = loadSocialConfig({ FACEBOOK_PAGE_ACCESS_TOKEN: 'page-token', INSTAGRAM_USER_ID: '456', BLOB_READ_WRITE_TOKEN: 'blob' })
+    expect(cfg.instagram?.videoHostToken).toBe('blob')
+  })
+
   it('treats blank secrets as missing', () => {
     const cfg = loadSocialConfig({ FACEBOOK_PAGE_ID: '123', FACEBOOK_PAGE_ACCESS_TOKEN: '  ' })
     expect(cfg.facebook).toBeNull()

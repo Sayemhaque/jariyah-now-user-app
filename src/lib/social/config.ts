@@ -17,6 +17,7 @@ export interface InstagramConfig {
   igUserId: string
   accessToken: string
   graphVersion: string
+  videoHostToken?: string
 }
 
 export interface TikTokConfig {
@@ -68,7 +69,7 @@ export function loadSocialConfig(env: Env): SocialConfig {
         ytPrivacy === 'unlisted' || ytPrivacy === 'private' ? ytPrivacy : 'public',
     },
     facebook: fb && { ...fb, graphVersion },
-    instagram: ig && { ...ig, graphVersion },
+    instagram: ig && { ...ig, graphVersion, ...(env.BLOB_READ_WRITE_TOKEN?.trim() ? { videoHostToken: env.BLOB_READ_WRITE_TOKEN.trim() } : {}) },
     tiktok: tt && { ...tt, privacyLevel: env.TIKTOK_PRIVACY_LEVEL?.trim() || 'SELF_ONLY' },
   }
 }
