@@ -49,7 +49,8 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
               />
             </div>
             <div className="space-y-4">
-              <ExportStatusView job={job} filename={details.filename} orientation={details.orientation} />
+              <ExportStatusView job={job} filename={details.filename} orientation={details.orientation}
+                durationMs={details.totalMs} caption={details.caption} />
             </div>
           </div>
         </div>

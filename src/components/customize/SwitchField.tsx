@@ -7,9 +7,10 @@ interface SwitchFieldProps {
   checked: boolean
   onChange: (checked: boolean) => void
   icon?: LucideIcon
+  disabled?: boolean
 }
 
-export function SwitchField({ label, checked, onChange, icon: Icon }: SwitchFieldProps) {
+export function SwitchField({ label, checked, onChange, icon: Icon, disabled }: SwitchFieldProps) {
   const text = <Label className={Icon ? 'text-sm font-medium' : 'text-sm'}>{label}</Label>
   return (
     <div className="flex items-center justify-between">
@@ -21,7 +22,7 @@ export function SwitchField({ label, checked, onChange, icon: Icon }: SwitchFiel
       ) : (
         text
       )}
-      <Switch checked={checked} onCheckedChange={onChange} />
+      <Switch checked={checked} onCheckedChange={onChange} disabled={disabled} aria-label={label} />
     </div>
   )
 }

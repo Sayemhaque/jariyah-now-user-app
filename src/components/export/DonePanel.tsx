@@ -6,9 +6,10 @@ interface DonePanelProps {
   filename: string
   orientation: Orientation
   onDownload: () => void
+  onShareTikTok: () => void
 }
 
-export function DonePanel({ filename, orientation, onDownload }: DonePanelProps) {
+export function DonePanel({ filename, orientation, onDownload, onShareTikTok }: DonePanelProps) {
   return (
     <GlowPanel tone="success" className="min-h-[280px] text-center">
       <div className="relative mx-auto mb-5">
@@ -30,6 +31,13 @@ export function DonePanel({ filename, orientation, onDownload }: DonePanelProps)
       >
         <Download className="h-5 w-5" />
         Download {filename}
+      </button>
+      <button
+        type="button"
+        onClick={onShareTikTok}
+        className="relative mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl bg-black text-sm font-semibold text-white hover:bg-black/85"
+      >
+        Post to TikTok
       </button>
       <div className="relative flex items-center justify-center gap-2 mt-4">
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">

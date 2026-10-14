@@ -41,6 +41,11 @@ const envSchema = z.object({
     .url()
     .default('http://localhost:3000'),
 
+  TIKTOK_CLIENT_KEY: z.string().min(1).optional(),
+  TIKTOK_CLIENT_SECRET: z.string().min(1).optional(),
+  TIKTOK_REDIRECT_URI: z.string().url().optional(),
+  TIKTOK_MEDIA_ORIGIN: z.string().url().optional(),
+
   GITHUB_TOKEN: z.string().min(1).optional(),
   GITHUB_OWNER: z.string().min(1).optional(),
   GITHUB_REPO: z.string().min(1).optional(),
