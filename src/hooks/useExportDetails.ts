@@ -3,6 +3,7 @@ import { useBuilderStore } from '@/lib/store'
 import { reciters } from '@/lib/reciters'
 import { videoAttributionLine } from '@/lib/translations'
 import { toExportSlides } from '@/lib/export/renderJob'
+import { buildPostMetadata } from '@/lib/daily/plan'
 
 export function useExportDetails() {
   const ayatList = useBuilderStore((s) => s.ayatList)
@@ -20,6 +21,8 @@ export function useExportDetails() {
   const totalMs = useMemo(() => ayatList.reduce((sum, a) => sum + (a.audioDurationMs || 0), 0), [ayatList])
   const filename = `quran-${surah?.number ?? 0}-ayat-${fromAyat}-${toAyat}-${reciter.id}.mp4`
 
+  const caption = surah ? buildPostMetadata({ surah, fromAyat, toAyat, reciterName: reciter.name }).shortCaption : ''
+
   const buildRequest = (quality: string) => ({
     slides,
     settings,
@@ -33,5 +36,5 @@ export function useExportDetails() {
     quality,
   })
 
-  return { slides, totalMs, filename, orientation: settings.orientation, buildRequest }
+  return { slides, totalMs, filename, caption, orientation: settings.orientation, buildRequest }
 }
