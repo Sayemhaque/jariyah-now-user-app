@@ -39,3 +39,5 @@ Record the screen at `https://jariyahnow.vercel.app`:
 5. Open TikTok and show the posted video.
 
 Unaudited apps can only post with privacy **Only me** (`SELF_ONLY`); choose that while recording in the sandbox.
+
+Each push to this branch also gets a Vercel preview deployment. Record the review demo on `https://jariyahnow.vercel.app` (the verified domain), not on a preview URL.
