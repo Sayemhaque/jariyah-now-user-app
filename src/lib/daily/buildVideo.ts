@@ -17,8 +17,9 @@ import {
   buildPostMetadata,
   countAyatsWithinBudget,
   dhakaDateKey,
-  dhakaDayIndex,
+  postIndex,
   mulberry32,
+  pickSceneIndex,
   pickStartAyat,
   pickSurahNumber,
   type PostMetadata,
@@ -38,6 +39,7 @@ export interface DailyVideoOptions {
   quality?: '480p' | '720p' | '1080p'
   extraHashtags?: string[]
   ffprobeBin?: string
+  postTimes?: string[]
 }
 
 export interface DailyVideo {
@@ -78,8 +80,8 @@ function baseSettings(scene: BackgroundScene): VideoSettings {
 
 export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<DailyVideo> {
   const now = opts.now ?? new Date()
-  const dayIndex = dhakaDayIndex(now)
-  const rand = mulberry32(dayIndex * 2654435761)
+  const sequence = postIndex(now, opts.postTimes ?? ['22:00'])
+  const rand = mulberry32(sequence * 2654435761)
   const maxMs = opts.maxDurationSec ? opts.maxDurationSec * 1000 : Infinity
   const maxAyats = opts.maxAyats ?? maxAyatsPerVideo
   const translationKey = opts.translationKey ?? 'bengali'
@@ -94,10 +96,10 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
     throw new Error(`Unknown reciter "${opts.reciterId}". Valid: ${reciters.map((r) => r.id).join(', ')}`)
   }
 
-  const scene = backgroundScenes[Math.floor(rand() * backgroundScenes.length)] ?? backgroundScenes[0]!
+  const scene = backgroundScenes[pickSceneIndex(sequence, backgroundScenes.length)] ?? backgroundScenes[0]!
 
   const surahs = await fetchSurahs()
-  const surahNumber = opts.surahOverride ?? pickSurahNumber(dayIndex)
+  const surahNumber = opts.surahOverride ?? pickSurahNumber(sequence)
   const surah = surahs.find((s) => s.number === surahNumber)
   if (!surah) throw new Error(`Surah ${surahNumber} not found`)
 

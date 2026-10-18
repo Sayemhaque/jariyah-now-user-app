@@ -66,6 +66,7 @@ async function main() {
     reciterId: dailyConfig.reciterId,
     translationKey: dailyConfig.translationKey,
     maxAyats: dailyConfig.maxAyats,
+    postTimes: dailyConfig.postTimes,
     quality: dailyConfig.quality,
     extraHashtags: dailyConfig.extraHashtags,
   })
@@ -97,7 +98,7 @@ async function main() {
     YOUTUBE_PRIVACY_STATUS: dailyConfig.youtubePrivacy,
     TIKTOK_PRIVACY_LEVEL: dailyConfig.tiktokPrivacy,
   })
-  const input: UploadInput = { video: buf, meta: video.meta }
+  const input: UploadInput = { video: buf, meta: video.meta, coverAtMs: dailyConfig.coverAtMs }
   const uploaders: Record<Platform, (() => Promise<UploadResult>) | null> = {
     youtube: cfg.youtube && (() => uploadToYouTube(cfg.youtube!, input)),
     facebook: cfg.facebook && (() => uploadToFacebookReels(cfg.facebook!, input)),

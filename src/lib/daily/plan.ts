@@ -12,6 +12,20 @@ export function dhakaDayIndex(date: Date): number {
   return Math.floor((date.getTime() + dhakaOffsetMs) / dayMs)
 }
 
+const toMinutes = (time: string) => {
+  const [hours, minutes] = time.split(':').map(Number)
+  return (hours ?? 0) * 60 + (minutes ?? 0)
+}
+
+export function postSlot(date: Date, postTimes: readonly string[]): number {
+  const minuteOfDay = Math.floor(((date.getTime() + dhakaOffsetMs) % dayMs) / 60_000)
+  const passed = postTimes.map(toMinutes).filter((minutes) => minutes <= minuteOfDay).length
+  return Math.max(0, passed - 1)
+}
+
+export const postIndex = (date: Date, postTimes: readonly string[]) =>
+  dhakaDayIndex(date) * Math.max(1, postTimes.length) + postSlot(date, postTimes)
+
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0
   return () => {
@@ -31,6 +45,11 @@ export function seededShuffle<T>(items: readonly T[], seed: number): T[] {
     ;[out[i], out[j]] = [out[j]!, out[i]!]
   }
   return out
+}
+
+export function pickSceneIndex(dayIndex: number, sceneCount: number): number {
+  const order = seededShuffle(Array.from({ length: sceneCount }, (_, i) => i), 0x5ce7e)
+  return order[((dayIndex % sceneCount) + sceneCount) % sceneCount]!
 }
 
 export function pickSurahNumber(dayIndex: number): number {
