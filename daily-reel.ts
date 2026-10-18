@@ -66,6 +66,7 @@ async function main() {
     reciterId: dailyConfig.reciterId,
     translationKey: dailyConfig.translationKey,
     maxAyats: dailyConfig.maxAyats,
+    postTimes: dailyConfig.postTimes,
     quality: dailyConfig.quality,
     extraHashtags: dailyConfig.extraHashtags,
   })

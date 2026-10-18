@@ -6,6 +6,8 @@ import {
   dhakaDayIndex,
   mulberry32,
   pickSceneIndex,
+  postIndex,
+  postSlot,
   pickStartAyat,
   pickSurahNumber,
   seededShuffle,
@@ -146,5 +148,27 @@ describe('pickSceneIndex', () => {
   it('does not follow the plain scene list order', () => {
     const picks = Array.from({ length: 12 }, (_, i) => pickSceneIndex(i, 12))
     expect(picks).not.toEqual(Array.from({ length: 12 }, (_, i) => i))
+  })
+})
+
+describe('postSlot', () => {
+  const times = ['09:00', '15:00', '22:00']
+
+  it('picks the latest post time that has passed in Dhaka', () => {
+    expect(postSlot(new Date('2026-10-18T03:05:00Z'), times)).toBe(0)
+    expect(postSlot(new Date('2026-10-18T09:40:00Z'), times)).toBe(1)
+    expect(postSlot(new Date('2026-10-18T16:20:00Z'), times)).toBe(2)
+    expect(postSlot(new Date('2026-10-18T01:00:00Z'), times)).toBe(0)
+  })
+
+  it('gives every post of the day its own index', () => {
+    const indexes = ['03:05', '09:05', '16:05'].map((t) => postIndex(new Date(`2026-10-18T${t}:00Z`), times))
+    expect(new Set(indexes).size).toBe(3)
+    expect(indexes[1]! - indexes[0]!).toBe(1)
+  })
+
+  it('matches the day index when posting once a day', () => {
+    const date = new Date('2026-10-18T16:05:00Z')
+    expect(postIndex(date, ['22:00'])).toBe(dhakaDayIndex(date))
   })
 })

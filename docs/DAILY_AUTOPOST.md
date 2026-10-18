@@ -1,13 +1,13 @@
 # Daily Quran reel auto-post
 
-Every day at **22:00 Bangladesh time** (16:00 UTC), `.github/workflows/daily-reel.yml`:
+Three times a day, at **09:00, 15:00 and 22:00 Bangladesh time** (03:00, 09:00 and 16:00 UTC), `.github/workflows/daily-reel.yml`:
 
-1. Picks a surah. It works through a shuffled order of all 114 surahs, so no surah repeats until every surah has been posted (one cycle takes 114 days).
+1. Picks a surah. It works through a shuffled order of all 114 surahs, so no surah repeats until every surah has been posted (one cycle takes 114 posts, 38 days at three posts a day).
 2. Fetches the ayats and audio, and keeps up to **10 ayats**. Short surahs go out whole. Long surahs get an excerpt that starts at a random ayat.
 3. Renders a 1080×1920 MP4 with Remotion. It uses the same `AyatVideo` composition as the app, with a rotating reciter and background. Backgrounds go through all 12 scenes in a shuffled order and never repeat on consecutive days.
 4. Posts it with a title, description and hashtags to every platform that has credentials set.
 
-The reciter, background and starting ayat all come from the date. Re-running a day's job builds the same video, and the job stores no state between runs.
+The reciter, background and starting ayat all come from the date and post slot. Re-running a slot's job builds the same video, and the job stores no state between runs.
 
 Code: `src/lib/daily/` (planning), `src/lib/social/` (uploaders), `daily-reel.ts` (entry point).
 
@@ -61,7 +61,8 @@ Facebook Reels must be 3–90 s long. Videos have no length limit, so a long exc
 | Field | Default | Purpose |
 |---|---|---|
 | `reciterId` | `random` | A reciter id from `src/lib/reciters.ts`, or `random` to rotate through 7 reciters |
-| `translationKey` | `bengali` | Translation shown under the Arabic |
+| `translationKey` | `sahiih_international` (English) | Translation shown under the Arabic |
+| `postTimes` | `09:00`, `15:00`, `22:00` | Bangladesh times of the daily posts. Each run works out its slot from the time it starts, so every post gets its own surah, reciter and background. Keep the `cron` lines in the workflow in sync |
 | `coverAtMs` | `2500` | Moment of the video Instagram uses as the cover (`thumb_offset`), after the title and first ayah have appeared |
 | `maxAyats` | `10` | Most ayat in one video. There is no length limit |
 | `extraHashtags` | `JariyahNow`, `Quran` | Hashtags added to every post |
