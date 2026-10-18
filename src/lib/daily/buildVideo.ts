@@ -19,6 +19,7 @@ import {
   dhakaDateKey,
   dhakaDayIndex,
   mulberry32,
+  pickSceneIndex,
   pickStartAyat,
   pickSurahNumber,
   type PostMetadata,
@@ -94,7 +95,7 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
     throw new Error(`Unknown reciter "${opts.reciterId}". Valid: ${reciters.map((r) => r.id).join(', ')}`)
   }
 
-  const scene = backgroundScenes[Math.floor(rand() * backgroundScenes.length)] ?? backgroundScenes[0]!
+  const scene = backgroundScenes[pickSceneIndex(dayIndex, backgroundScenes.length)] ?? backgroundScenes[0]!
 
   const surahs = await fetchSurahs()
   const surahNumber = opts.surahOverride ?? pickSurahNumber(dayIndex)

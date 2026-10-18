@@ -5,6 +5,7 @@ import {
   dhakaDateKey,
   dhakaDayIndex,
   mulberry32,
+  pickSceneIndex,
   pickStartAyat,
   pickSurahNumber,
   seededShuffle,
@@ -131,5 +132,16 @@ describe('buildPostMetadata', () => {
       reciterName: 'X',
     })
     expect(meta.title.length).toBeLessThanOrEqual(100)
+  })
+})
+
+describe('pickSceneIndex', () => {
+  it('never repeats the background on consecutive days', () => {
+    for (let day = 20000; day < 20200; day++) expect(pickSceneIndex(day, 12)).not.toBe(pickSceneIndex(day - 1, 12))
+  })
+
+  it('uses every background within a few cycles', () => {
+    const seen = new Set(Array.from({ length: 36 }, (_, i) => pickSceneIndex(20000 + i, 12)))
+    expect(seen.size).toBe(12)
   })
 })

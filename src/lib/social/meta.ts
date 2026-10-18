@@ -87,7 +87,14 @@ async function waitForContainer(cfg: InstagramConfig, containerId: string): Prom
 async function createReelContainer(cfg: InstagramConfig, input: UploadInput, source: Record<string, string>) {
   const container = await graphPost<{ id?: string; uri?: string }>(
     `${cfg.graphVersion}/${cfg.igUserId}/media`,
-    { media_type: 'REELS', caption: input.meta.description, share_to_feed: 'true', access_token: cfg.accessToken, ...source },
+    {
+      media_type: 'REELS',
+      caption: input.meta.description,
+      share_to_feed: 'true',
+      access_token: cfg.accessToken,
+      ...(input.coverAtMs ? { thumb_offset: String(input.coverAtMs) } : {}),
+      ...source,
+    },
     'Instagram container create',
   )
   if (!container.id) throw new Error('Instagram container create returned no id')

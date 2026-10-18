@@ -7,6 +7,7 @@ export const allPlatforms: Platform[] = ['youtube', 'facebook', 'instagram', 'ti
 export interface UploadInput {
   video: Buffer
   meta: PostMetadata
+  coverAtMs?: number
 }
 
 export interface UploadResult {

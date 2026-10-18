@@ -97,7 +97,7 @@ async function main() {
     YOUTUBE_PRIVACY_STATUS: dailyConfig.youtubePrivacy,
     TIKTOK_PRIVACY_LEVEL: dailyConfig.tiktokPrivacy,
   })
-  const input: UploadInput = { video: buf, meta: video.meta }
+  const input: UploadInput = { video: buf, meta: video.meta, coverAtMs: dailyConfig.coverAtMs }
   const uploaders: Record<Platform, (() => Promise<UploadResult>) | null> = {
     youtube: cfg.youtube && (() => uploadToYouTube(cfg.youtube!, input)),
     facebook: cfg.facebook && (() => uploadToFacebookReels(cfg.facebook!, input)),

@@ -4,6 +4,7 @@ export const dailyConfig = {
   reciterId: 'random',
   translationKey: 'bengali',
   maxAyats: 10,
+  coverAtMs: 2500,
   quality: '1080p' as const,
   extraHashtags: ['JariyahNow', 'Quran'],
   platforms: ['instagram'] as Platform[],
