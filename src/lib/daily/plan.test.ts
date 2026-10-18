@@ -136,12 +136,15 @@ describe('buildPostMetadata', () => {
 })
 
 describe('pickSceneIndex', () => {
-  it('never repeats the background on consecutive days', () => {
-    for (let day = 20000; day < 20200; day++) expect(pickSceneIndex(day, 12)).not.toBe(pickSceneIndex(day - 1, 12))
+  it('shows every other background before repeating one', () => {
+    for (let day = 20000; day < 20200; day++) {
+      const window = new Set(Array.from({ length: 12 }, (_, i) => pickSceneIndex(day + i, 12)))
+      expect(window.size).toBe(12)
+    }
   })
 
-  it('uses every background within a few cycles', () => {
-    const seen = new Set(Array.from({ length: 36 }, (_, i) => pickSceneIndex(20000 + i, 12)))
-    expect(seen.size).toBe(12)
+  it('does not follow the plain scene list order', () => {
+    const picks = Array.from({ length: 12 }, (_, i) => pickSceneIndex(i, 12))
+    expect(picks).not.toEqual(Array.from({ length: 12 }, (_, i) => i))
   })
 })

@@ -34,10 +34,8 @@ export function seededShuffle<T>(items: readonly T[], seed: number): T[] {
 }
 
 export function pickSceneIndex(dayIndex: number, sceneCount: number): number {
-  const orderFor = (day: number) => seededShuffle(Array.from({ length: sceneCount }, (_, i) => i), 0x5ce7e + Math.floor(day / sceneCount))
-  const pickFor = (day: number) => orderFor(day)[((day % sceneCount) + sceneCount) % sceneCount]!
-  const pick = pickFor(dayIndex)
-  return sceneCount > 1 && pick === pickFor(dayIndex - 1) ? (pick + 1) % sceneCount : pick
+  const order = seededShuffle(Array.from({ length: sceneCount }, (_, i) => i), 0x5ce7e)
+  return order[((dayIndex % sceneCount) + sceneCount) % sceneCount]!
 }
 
 export function pickSurahNumber(dayIndex: number): number {
