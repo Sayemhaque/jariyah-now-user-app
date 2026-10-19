@@ -53,9 +53,13 @@ const envSchema = z.object({
 
 export type Env = z.infer<typeof envSchema>
 
+export function presentVariables(source: Record<string, string | undefined>): Record<string, string> {
+  return Object.fromEntries(Object.entries(source).filter((entry): entry is [string, string] => typeof entry[1] === 'string' && entry[1].trim() !== ''))
+}
+
 function withoutInvalidKeys(issues: { path: PropertyKey[] }[]): Record<string, string | undefined> {
   const invalid = new Set(issues.map((issue) => String(issue.path[0])))
-  return Object.fromEntries(Object.entries(process.env).filter(([key]) => !invalid.has(key)))
+  return Object.fromEntries(Object.entries(presentVariables(process.env)).filter(([key]) => !invalid.has(key)))
 }
 
 function loadEnv(): Env {
@@ -65,7 +69,7 @@ function loadEnv(): Env {
     })
   }
 
-  const parsed = envSchema.safeParse(process.env)
+  const parsed = envSchema.safeParse(presentVariables(process.env))
   if (!parsed.success) {
     if (process.env.VITEST || process.env.NODE_ENV === 'test') {
       return envSchema.parse({})
