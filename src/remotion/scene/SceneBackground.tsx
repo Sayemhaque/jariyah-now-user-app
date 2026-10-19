@@ -1,9 +1,10 @@
 import React from 'react'
-import { AbsoluteFill } from 'remotion'
+import { AbsoluteFill, staticFile } from 'remotion'
 import { defaultScene, getScene, sceneForUrl } from '@/lib/backgroundPresets'
 import type { VideoSettings } from '@/lib/types'
 import { OverlayLayer } from '../OverlayLayer'
 import { DustParticles } from './DustParticles'
+import { FootageBackground } from './FootageBackground'
 import { ImageBackground } from './ImageBackground'
 import { SceneMotif } from './SceneMotif'
 
@@ -21,7 +22,13 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({ settings, widt
 
   return (
     <AbsoluteFill style={{ background: `linear-gradient(180deg, ${top} 0%, ${middle} 48%, ${bottom} 100%)`, overflow: 'hidden' }}>
-      {isImage ? <ImageBackground src={settings.backgroundImage} palette={palette} /> : <SceneMotif scene={scene ?? defaultScene} />}
+      {isImage ? (
+        <ImageBackground src={settings.backgroundImage} palette={palette} />
+      ) : scene?.video ? (
+        <FootageBackground src={staticFile(scene.video)} seconds={scene.videoSeconds ?? 10} palette={palette} />
+      ) : (
+        <SceneMotif scene={scene ?? defaultScene} />
+      )}
       {isImage && (
         <OverlayLayer
           style={settings.overlayStyle}

@@ -25,6 +25,8 @@ export interface BackgroundScene {
   label: string
   motif: SceneMotif
   palette: ScenePalette
+  video?: string
+  videoSeconds?: number
 }
 
 export const scenePrefix = 'scene:'
@@ -105,6 +107,10 @@ export const backgroundScenes: BackgroundScene[] = [
   },
 ]
 
+export const footageScenes: BackgroundScene[] = []
+
+export const footagePath = (key: string) => `/backgrounds/${key}.mp4`
+
 export const defaultScene = backgroundScenes[0]!
 
 export const sceneUrl = (key: string) => `${scenePrefix}${key}`
@@ -114,7 +120,7 @@ export const scenePreviewUrl = (key: string) => `/scene-previews/${key}.jpg`
 export const isSceneUrl = (url: string) => url.startsWith(scenePrefix)
 
 export function getScene(key: string): BackgroundScene | undefined {
-  return backgroundScenes.find((scene) => scene.key === key)
+  return backgroundScenes.find((scene) => scene.key === key) ?? footageScenes.find((scene) => scene.key === key)
 }
 
 export function sceneForUrl(url: string): BackgroundScene | undefined {
