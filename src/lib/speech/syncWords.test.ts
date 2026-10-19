@@ -21,6 +21,16 @@ describe('fitTimedWords', () => {
     expect(fitted[3]!.endMs).toBe(3270)
   })
 
+  it('pulls timings that lag behind the voice back onto it', () => {
+    const fitted = fitTimedWords(timed([1130, 1600, 2200, 3000], 3980), 4200, speech)!
+    expect(fitted.map((w) => w.startMs)).toEqual([420, 890, 1490, 2290])
+    expect(fitted[3]!.endMs).toBe(3270)
+  })
+
+  it('rejects timings whose pace does not match the recording', () => {
+    expect(fitTimedWords(timed([420, 1100, 2000, 3100], 4300), 4500, speech)).toBeNull()
+  })
+
   it('rejects timings made for a different recording', () => {
     expect(fitTimedWords(timed([2400, 2800, 3200, 3600], 3890), 3900, speech)).toBeNull()
     expect(fitTimedWords(timed([100, 300, 500, 700], 1200), 3900, speech)).toBeNull()
