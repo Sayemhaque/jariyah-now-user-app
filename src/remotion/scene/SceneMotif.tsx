@@ -2,6 +2,7 @@ import React from 'react'
 import type { BackgroundScene } from '@/lib/backgroundPresets'
 import { ArchColonnade } from './ArchColonnade'
 import { CelestialMandala } from './CelestialMandala'
+import { JourneyScene } from './journey/JourneyScene'
 import { GoldLattice } from './GoldLattice'
 import { LiquidGold } from './LiquidGold'
 import { RoseHaze } from './RoseHaze'
@@ -34,6 +35,10 @@ export const SceneMotif: React.FC<{ scene: BackgroundScene }> = ({ scene }) => {
       return <MoonlitArch palette={scene.palette} />
     case 'heavenly':
       return <HeavenlyLight palette={scene.palette} />
+    case 'ride':
+    case 'drive':
+    case 'walk':
+      return <JourneyScene scene={scene} />
     case 'silk':
       return <SilkAurora />
     case 'liquid':

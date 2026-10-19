@@ -17,6 +17,9 @@ export type SceneMotif =
   | 'velvet'
   | 'lattice'
   | 'haze'
+  | 'ride'
+  | 'drive'
+  | 'walk'
 
 export interface ScenePalette {
   base: [string, string, string]
@@ -144,6 +147,24 @@ export const backgroundScenes: BackgroundScene[] = [
     label: 'Rose Haze',
     motif: 'haze',
     palette: { base: ['#6b3f6e', '#3b2147', '#140a1c'], pattern: '#ffd9b8', accent: '#ffcf9e', text: '#fff6ef', translation: '#f0dde4' },
+  },
+  {
+    key: 'evening-ride',
+    label: 'Evening Ride',
+    motif: 'ride',
+    palette: { base: ['#2a1d4f', '#8a3f62', '#f08a5d'], pattern: '#ffd9a0', accent: '#ffd28a', text: '#fff7ee', translation: '#fbe6d6' },
+  },
+  {
+    key: 'night-drive',
+    label: 'Night Drive',
+    motif: 'drive',
+    palette: { base: ['#0a1430', '#121f45', '#1d2b57'], pattern: '#e9e4ff', accent: '#ffd88a', text: '#f5f3ff', translation: '#d6dcf2' },
+  },
+  {
+    key: 'masjid-walk',
+    label: 'Walk to the Masjid',
+    motif: 'walk',
+    palette: { base: ['#0f3a3a', '#1f5a52', '#c98b4a'], pattern: '#ffe6b0', accent: '#ffd98c', text: '#f6fbf7', translation: '#e2efe8' },
   },
 ]
 
