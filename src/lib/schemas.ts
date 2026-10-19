@@ -82,6 +82,7 @@ const settingsSchema = z.object({
     .string()
     .regex(/^#[0-9a-fA-F]{6}$/, 'highlightColor must be a #rrggbb hex'),
   videoStyle: z.enum(['visualizer', 'manuscript', 'wordlens', 'cinematic', 'bloom']).optional(),
+  soundAnimation: z.enum(['bars', 'wave', 'circle', 'dots', 'headphones', 'mic', 'none']).optional(),
   wordHighlight: z.boolean().optional(),
   autoColors: z.boolean().optional(),
   translationColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'translationColor must be a #rrggbb hex').optional(),

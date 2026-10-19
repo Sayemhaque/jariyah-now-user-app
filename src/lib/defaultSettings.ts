@@ -12,6 +12,7 @@ export const defaultVideoSettings: VideoSettings = {
   translationColor: defaultScene.palette.translation,
   autoColors: true,
   videoStyle: 'visualizer',
+  soundAnimation: 'bars',
   wordHighlight: true,
   arabicFontSize: autoFontSizes.portrait.arabic,
   translationFontSize: autoFontSizes.portrait.translation,

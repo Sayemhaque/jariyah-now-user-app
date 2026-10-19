@@ -1,32 +1,21 @@
 import React from 'react'
-import { useCurrentFrame, useVideoConfig } from 'remotion'
-import { withAlpha } from '@/lib/color'
-import { useAudioBars } from './useAudioBars'
+import { useVideoConfig } from 'remotion'
+import type { SoundAnimation } from '@/lib/types'
 import { useReelLayout } from './reelLayout'
-
-const halfBars = 20
+import { SoundAnimationView } from './visualizers/SoundAnimationView'
 
 interface RecitationVisualizerProps {
   audioUrl: string
   accent: string
   visibility: number
+  kind?: SoundAnimation
 }
 
-export const RecitationVisualizer: React.FC<RecitationVisualizerProps> = ({ audioUrl, accent, visibility }) => {
-  const frame = useCurrentFrame()
-  const { width, height, fps } = useVideoConfig()
-  const levels = useAudioBars(audioUrl, frame, fps, halfBars)
-  const seconds = frame / fps
+export const RecitationVisualizer: React.FC<RecitationVisualizerProps> = ({ audioUrl, accent, visibility, kind = 'bars' }) => {
+  const { width, height } = useVideoConfig()
   const layout = useReelLayout()
   const boxHeight = height * layout.visualizerHeight
   const boxWidth = width * layout.visualizerWidth
-  const barWidth = (boxWidth / (halfBars * 2)) * 0.55
-  const idle = (index: number) => 0.18 + 0.22 * Math.abs(Math.sin(seconds * 3 + index * 0.55))
-  const levelAt = (index: number) => {
-    const fromCenter = Math.abs(index - halfBars + 0.5) - 0.5
-    const level = levels ? levels[Math.round(fromCenter)] ?? 0 : idle(index)
-    return Math.max(0.08, level * (1 - (fromCenter / halfBars) * 0.35))
-  }
 
   return (
     <div
@@ -38,21 +27,11 @@ export const RecitationVisualizer: React.FC<RecitationVisualizerProps> = ({ audi
         height: boxHeight,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         opacity: visibility,
       }}
     >
-      {Array.from({ length: halfBars * 2 }, (_, index) => (
-        <div
-          key={index}
-          style={{
-            width: barWidth,
-            height: `${levelAt(index) * 100}%`,
-            borderRadius: barWidth,
-            background: `linear-gradient(180deg, ${accent} 0%, ${withAlpha(accent, 0.35)} 100%)`,
-          }}
-        />
-      ))}
+      <SoundAnimationView kind={kind} audioUrl={audioUrl} accent={accent} width={boxWidth} height={boxHeight} />
     </div>
   )
 }

@@ -80,6 +80,8 @@ export type OverlayStyle =
   | 'center-focus'
   | 'none'
 
+export type SoundAnimation = 'bars' | 'wave' | 'circle' | 'dots' | 'headphones' | 'mic' | 'none'
+
 export type VideoStyle = 'visualizer' | 'manuscript' | 'wordlens' | 'cinematic' | 'bloom'
 
 export type TextWidth = 'full' | 'wide' | 'medium' | 'narrow'
@@ -87,6 +89,7 @@ export type TextSpacing = 'compact' | 'normal' | 'spacious'
 
 export interface VideoSettings {
   videoStyle?: VideoStyle
+  soundAnimation?: SoundAnimation
   backgroundImage: string
   backgroundPreset: string
   overlayStyle: OverlayStyle
