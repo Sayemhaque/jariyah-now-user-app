@@ -11,6 +11,21 @@ export type SceneMotif =
   | 'dunes'
   | 'rays'
   | 'arches'
+  | 'silk'
+  | 'liquid'
+  | 'mandala'
+  | 'velvet'
+  | 'lattice'
+  | 'haze'
+  | 'ride'
+  | 'drive'
+  | 'walk'
+  | 'sail'
+  | 'caravan'
+  | 'train'
+  | 'reader'
+  | 'rain'
+  | 'lake'
 
 export interface ScenePalette {
   base: [string, string, string]
@@ -102,6 +117,96 @@ export const backgroundScenes: BackgroundScene[] = [
     label: 'Ocean Depth',
     motif: 'rays',
     palette: { base: ['#0a3d5e', '#06233a', '#020b14'], pattern: '#8fdcff', accent: '#8fdcff', text: '#ecf8ff', translation: '#c7e3f2' },
+  },
+  {
+    key: 'silk-aurora',
+    label: 'Silk Aurora',
+    motif: 'silk',
+    palette: { base: ['#06302b', '#041d1c', '#020c0c'], pattern: '#3fd0b0', accent: '#f2cf86', text: '#f3fbf7', translation: '#cfe9e0' },
+  },
+  {
+    key: 'liquid-gold',
+    label: 'Liquid Gold',
+    motif: 'liquid',
+    palette: { base: ['#1a140b', '#0c0905', '#040302'], pattern: '#e8c27a', accent: '#f0cd85', text: '#fff7e6', translation: '#eadcc0' },
+  },
+  {
+    key: 'celestial-mandala',
+    label: 'Celestial Mandala',
+    motif: 'mandala',
+    palette: { base: ['#101a3a', '#0a1127', '#03060f'], pattern: '#e6c47e', accent: '#ecd08c', text: '#f5f0e2', translation: '#d9d6e8' },
+  },
+  {
+    key: 'velvet-bokeh',
+    label: 'Velvet Bokeh',
+    motif: 'velvet',
+    palette: { base: ['#3a1230', '#1e0a1c', '#0b040b'], pattern: '#f2b8a0', accent: '#f6c9a8', text: '#fff3ef', translation: '#ecd3d0' },
+  },
+  {
+    key: 'gold-lattice',
+    label: 'Gold Lattice',
+    motif: 'lattice',
+    palette: { base: ['#0b2a2e', '#06181b', '#020a0b'], pattern: '#d8b56c', accent: '#e5c27a', text: '#eef8f6', translation: '#cfe3e0' },
+  },
+  {
+    key: 'rose-haze',
+    label: 'Rose Haze',
+    motif: 'haze',
+    palette: { base: ['#6b3f6e', '#3b2147', '#140a1c'], pattern: '#ffd9b8', accent: '#ffcf9e', text: '#fff6ef', translation: '#f0dde4' },
+  },
+  {
+    key: 'evening-ride',
+    label: 'Evening Ride',
+    motif: 'ride',
+    palette: { base: ['#2a1d4f', '#8a3f62', '#f08a5d'], pattern: '#ffd9a0', accent: '#ffd28a', text: '#fff7ee', translation: '#fbe6d6' },
+  },
+  {
+    key: 'night-drive',
+    label: 'Night Drive',
+    motif: 'drive',
+    palette: { base: ['#0a1430', '#121f45', '#1d2b57'], pattern: '#e9e4ff', accent: '#ffd88a', text: '#f5f3ff', translation: '#d6dcf2' },
+  },
+  {
+    key: 'masjid-walk',
+    label: 'Walk to the Masjid',
+    motif: 'walk',
+    palette: { base: ['#0f3a3a', '#1f5a52', '#c98b4a'], pattern: '#ffe6b0', accent: '#ffd98c', text: '#f6fbf7', translation: '#e2efe8' },
+  },
+  {
+    key: 'sunset-sail',
+    label: 'Sunset Sail',
+    motif: 'sail',
+    palette: { base: ['#2b1f52', '#9a4766', '#f3925f'], pattern: '#ffd9a0', accent: '#ffd28a', text: '#fff7ee', translation: '#fbe6d6' },
+  },
+  {
+    key: 'desert-caravan',
+    label: 'Desert Caravan',
+    motif: 'caravan',
+    palette: { base: ['#0b0a2a', '#1b1849', '#3a3170'], pattern: '#ece6ff', accent: '#f1d18c', text: '#f6f3ff', translation: '#dcd7f2' },
+  },
+  {
+    key: 'desert-train',
+    label: 'Desert Train',
+    motif: 'train',
+    palette: { base: ['#3b2a5c', '#c4664a', '#f6b26b'], pattern: '#ffe2a2', accent: '#ffd98a', text: '#fff8ee', translation: '#fde9d4' },
+  },
+  {
+    key: 'quran-under-tree',
+    label: 'Quran Under the Tree',
+    motif: 'reader',
+    palette: { base: ['#1d3550', '#4d6f7a', '#e2b77e'], pattern: '#fff0c8', accent: '#ffd98c', text: '#fbfaf4', translation: '#e8efe9' },
+  },
+  {
+    key: 'rainy-evening',
+    label: 'Rainy Evening',
+    motif: 'rain',
+    palette: { base: ['#0e1426', '#1a2340', '#2b3354'], pattern: '#b9c8e8', accent: '#ffcf8a', text: '#f3f5fb', translation: '#d5dbea' },
+  },
+  {
+    key: 'lantern-lake',
+    label: 'Lantern Lake',
+    motif: 'lake',
+    palette: { base: ['#070d22', '#0e1a38', '#16264a'], pattern: '#e7e2ff', accent: '#ffcf7a', text: '#f5f3ff', translation: '#d8dcf0' },
   },
 ]
 

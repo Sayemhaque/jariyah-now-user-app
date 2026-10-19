@@ -1,4 +1,6 @@
-import type { ArabicFont, BengaliFont, OverlayStyle, TextSpacing, TextWidth } from '@/lib/types'
+import type { LucideIcon } from 'lucide-react'
+import { AudioLines, AudioWaveform, Ban, CircleDot, Ellipsis, Headphones, Mic } from 'lucide-react'
+import type { ArabicFont, BengaliFont, OverlayStyle, SoundAnimation, TextSpacing, TextWidth, VideoStyle } from '@/lib/types'
 
 export interface SelectOption<T extends string> {
   value: T
@@ -34,6 +36,24 @@ export const bengaliFontOptions: SelectOption<BengaliFont>[] = [
   { value: 'sans', label: `${bengaliBismillah} — Noto Sans`, className: 'font-bengali-sans' },
   { value: 'serif', label: `${bengaliBismillah} — Noto Serif`, className: 'font-bengali-serif' },
   { value: 'hind', label: `${bengaliBismillah} — Hind Siliguri`, className: 'font-bengali-hind' },
+]
+
+export const videoStyleOptions: { key: VideoStyle; label: string; description: string }[] = [
+  { key: 'visualizer', label: 'Recitation Visualizer', description: 'Animated scene with a live sound wave' },
+  { key: 'manuscript', label: 'Illuminated Mushaf', description: 'Gold-framed manuscript page' },
+  { key: 'wordlens', label: 'Word by Word', description: 'Each word with its meaning' },
+  { key: 'cinematic', label: 'Cinematic', description: 'Light rays and a focus-pull on every word' },
+  { key: 'bloom', label: 'Geometric Bloom', description: 'Islamic star that blooms with the voice' },
+]
+
+export const soundAnimationOptions: { key: SoundAnimation; label: string; icon: LucideIcon }[] = [
+  { key: 'bars', label: 'Bars', icon: AudioLines },
+  { key: 'wave', label: 'Wave', icon: AudioWaveform },
+  { key: 'circle', label: 'Circle', icon: CircleDot },
+  { key: 'dots', label: 'Dots', icon: Ellipsis },
+  { key: 'headphones', label: 'Headphones', icon: Headphones },
+  { key: 'mic', label: 'Microphone', icon: Mic },
+  { key: 'none', label: 'None', icon: Ban },
 ]
 
 export const textWidthOptions: TextWidth[] = ['full', 'wide', 'medium', 'narrow']

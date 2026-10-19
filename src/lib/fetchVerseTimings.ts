@@ -7,6 +7,7 @@ export function quranComVerseUrl(baseUrl: string, surah: number, ayat: number, r
   const url = new URL(`${baseUrl}/verses/by_key/${surah}:${ayat}`)
   url.searchParams.set('words', 'true')
   url.searchParams.set('word_fields', 'text_uthmani,position,char_type_name')
+  url.searchParams.set('word_translation_language', 'en')
   url.searchParams.set('audio', String(recitationId))
   return url.toString()
 }

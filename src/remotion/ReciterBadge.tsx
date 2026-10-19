@@ -13,7 +13,13 @@ export const ReciterBadge: React.FC<{ name: string; accent: string; text: string
   if (!name) return null
 
   return (
-    <div style={{ position: 'absolute', top: height * layout.badgeTop, left: 0, right: 0, display: 'flex', justifyContent: 'center' }}>
+    <div
+      style={{
+        position: 'absolute',
+        top: height * layout.badgeTop,
+        ...(layout.headerAlign === 'sides' ? { right: width * layout.sideInset } : { left: 0, right: 0, display: 'flex', justifyContent: 'center' }),
+      }}
+    >
       <div
         style={{
           display: 'flex',

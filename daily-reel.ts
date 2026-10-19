@@ -67,6 +67,7 @@ async function main() {
     translationKey: dailyConfig.translationKey,
     maxAyats: dailyConfig.maxAyats,
     postTimes: dailyConfig.postTimes,
+    videoStyles: dailyConfig.videoStyles,
     quality: dailyConfig.quality,
     extraHashtags: dailyConfig.extraHashtags,
   })

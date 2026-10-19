@@ -20,17 +20,17 @@ export const SurahTitle: React.FC<SurahTitleProps> = ({ arabicName, englishName,
   const enter = spring({ frame, fps, config: { damping: 200 }, durationInFrames: Math.round(fps * 0.9) })
   const line = { flex: 1, height: 1, maxWidth: unit * 12 }
   const subtitle = [englishName, meaning].filter(Boolean).join(' · ')
+  const sides = layout.headerAlign === 'sides'
+  const placement = sides ? { left: width * layout.sideInset, alignItems: 'flex-start' as const } : { left: 0, right: 0, alignItems: 'center' as const }
 
   return (
     <div
       style={{
         position: 'absolute',
         top: height * layout.titleTop,
-        left: 0,
-        right: 0,
+        ...placement,
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
         opacity: enter,
         transform: `translateY(${(1 - enter) * -unit * 3}px)`,
       }}
@@ -47,8 +47,8 @@ export const SurahTitle: React.FC<SurahTitleProps> = ({ arabicName, englishName,
       >
         {arabicName}
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: unit * 1.6, width: '80%', justifyContent: 'center' }}>
-        <div style={{ ...line, background: `linear-gradient(90deg, transparent, ${accent})` }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: unit * 1.6, width: sides ? 'auto' : '80%', justifyContent: 'center' }}>
+        {!sides && <div style={{ ...line, background: `linear-gradient(90deg, transparent, ${accent})` }} />}
         <span
           style={{
             fontFamily: uiFontStack,

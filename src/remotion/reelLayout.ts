@@ -11,6 +11,8 @@ export interface ReelLayout {
   textMaxWidth: number
   logoTop: number
   logoHeight: number
+  headerAlign: 'center' | 'sides'
+  sideInset: number
 }
 
 export const safeZone = { top: 0.11, bottom: 0.25, right: 0.16, left: 0.05 }
@@ -26,19 +28,23 @@ export const portraitLayout: ReelLayout = {
   textTop: 0.38,
   textBottom: 0.265,
   textMaxWidth: 0.68,
+  headerAlign: 'center',
+  sideInset: 0,
 }
 
 export const landscapeLayout: ReelLayout = {
-  logoTop: 0.03,
+  logoTop: 0.055,
   logoHeight: 0.1,
-  titleTop: 0.135,
-  badgeTop: 0.3,
-  visualizerCenter: 0.385,
-  visualizerHeight: 0.07,
-  visualizerWidth: 0.64,
-  textTop: 0.44,
-  textBottom: 0.07,
-  textMaxWidth: 0.82,
+  titleTop: 0.055,
+  badgeTop: 0.08,
+  visualizerCenter: 0.895,
+  visualizerHeight: 0.09,
+  visualizerWidth: 0.46,
+  textTop: 0.22,
+  textBottom: 0.17,
+  textMaxWidth: 0.8,
+  headerAlign: 'sides',
+  sideInset: 0.05,
 }
 
 export function useReelLayout(): ReelLayout {
