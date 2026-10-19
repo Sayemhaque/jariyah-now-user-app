@@ -5,7 +5,6 @@ import { backgroundScenes, customPresetKey, scenePreviewUrl, sceneUrl } from '@/
 import { useBackgroundUpload } from '@/hooks/useBackgroundUpload'
 import { Button } from '@/components/ui/button'
 import { BackgroundTile } from './BackgroundTile'
-import { FootageRow } from './FootageRow'
 import { SectionTitle } from './SectionTitle'
 
 export function BackgroundSection() {
@@ -32,7 +31,6 @@ export function BackgroundSection() {
           <BackgroundTile label="Your image" palette={custom} imageUrl={settings.backgroundImage} selected onSelect={() => undefined} />
         )}
       </div>
-      <FootageRow />
       <div className="flex items-center gap-2 mt-2">
         <input
           ref={fileRef}
