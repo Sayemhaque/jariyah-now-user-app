@@ -49,6 +49,14 @@ describe('parseVerseTimings', () => {
     ])
   })
 
+  it('keeps the word-by-word meaning and transliteration', () => {
+    const json = verse([[1, 0, 400], [2, 400, 800], [3, 800, 1300], [4, 1300, 1900]])
+    json.verse.words[3] = { ...json.verse.words[3]!, translation: { text: ' the One ' }, transliteration: { text: 'aḥadun' } } as never
+    const words = parseVerseTimings(json)!.words
+    expect(words[3]).toMatchObject({ meaning: 'the One', transliteration: 'aḥadun' })
+    expect(words[0]).not.toHaveProperty('meaning')
+  })
+
   it('fills a single missing word from its neighbours', () => {
     const result = parseVerseTimings(verse([[1, 0, 500], [2, 500, 900], [4, 1300, 2000]]))
     expect(result?.words[2]).toEqual({ text: 'ٱللَّهُ', startMs: 900, endMs: 1300 })

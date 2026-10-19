@@ -11,7 +11,7 @@ import { themeColors } from '@/lib/theme'
 import { translationCredit } from '@/lib/translations'
 import { maxAyatsPerVideo } from '@/lib/constants'
 import { defaultVideoSettings } from '@/lib/defaultSettings'
-import type { AyatSlide, Reciter, Surah, VideoSettings } from '@/lib/types'
+import type { AyatSlide, Reciter, Surah, VideoSettings, VideoStyle } from '@/lib/types'
 import type { AyatVideoProps } from '@/remotion/types'
 import {
   buildPostMetadata,
@@ -40,6 +40,7 @@ export interface DailyVideoOptions {
   extraHashtags?: string[]
   ffprobeBin?: string
   postTimes?: string[]
+  videoStyles?: VideoStyle[]
 }
 
 export interface DailyVideo {
@@ -74,8 +75,8 @@ export async function probeDurationMs(url: string, ffprobeBin = 'ffprobe'): Prom
   }
 }
 
-function baseSettings(scene: BackgroundScene): VideoSettings {
-  return { ...defaultVideoSettings, backgroundImage: sceneUrl(scene.key), backgroundPreset: scene.key, ...themeColors(scene.palette) }
+function baseSettings(scene: BackgroundScene, videoStyle: VideoStyle): VideoSettings {
+  return { ...defaultVideoSettings, videoStyle, backgroundImage: sceneUrl(scene.key), backgroundPreset: scene.key, ...themeColors(scene.palette) }
 }
 
 export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<DailyVideo> {
@@ -135,7 +136,8 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
     if (slides.length === 0) continue
 
     const toAyat = slides[slides.length - 1]!.ayatNumber
-    const settings = baseSettings(scene)
+    const styles = opts.videoStyles?.length ? opts.videoStyles : ['visualizer' as const]
+    const settings = baseSettings(scene, styles[sequence % styles.length]!)
     return {
       dateKey: dhakaDateKey(now),
       surah,

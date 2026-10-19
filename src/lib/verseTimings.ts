@@ -10,6 +10,8 @@ interface QuranComWord {
   text_uthmani?: string
   text?: string
   char_type_name?: string
+  translation?: { text?: string }
+  transliteration?: { text?: string }
 }
 
 interface QuranComVerse {
@@ -37,6 +39,12 @@ export function parseSegments(segments: unknown[]): Map<number, { startMs: numbe
   return byPosition
 }
 
+function wordExtras(word: QuranComWord): Pick<TimedWord, 'meaning' | 'transliteration'> {
+  const meaning = word.translation?.text?.trim()
+  const transliteration = word.transliteration?.text?.trim()
+  return { ...(meaning ? { meaning } : {}), ...(transliteration ? { transliteration } : {}) }
+}
+
 export function parseVerseTimings(json: unknown): VerseTimings | null {
   const verse = (json as { verse?: QuranComVerse })?.verse
   const audioUrl = verse?.audio?.url
@@ -46,7 +54,7 @@ export function parseVerseTimings(json: unknown): VerseTimings | null {
     .filter((w) => (w.char_type_name ?? 'word') === 'word' && (w.text_uthmani ?? w.text))
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
   const segments = parseSegments(verse.audio.segments)
-  const timed = words.map((w) => ({ text: (w.text_uthmani ?? w.text)!, timing: segments.get(w.position ?? -1) }))
+  const timed = words.map((w) => ({ text: (w.text_uthmani ?? w.text)!, timing: segments.get(w.position ?? -1), extra: wordExtras(w) }))
   if (!timed.length || timed.filter((w) => w.timing).length < timed.length * 0.6) return null
 
   const filled: TimedWord[] = []
@@ -55,7 +63,7 @@ export function parseVerseTimings(json: unknown): VerseTimings | null {
     const next = timed.slice(index + 1).find((w) => w.timing)?.timing
     const startMs = word.timing?.startMs ?? previousEnd
     const endMs = word.timing?.endMs ?? next?.startMs ?? startMs + 400
-    filled.push({ text: word.text, startMs, endMs: Math.max(endMs, startMs + 1) })
+    filled.push({ text: word.text, startMs, endMs: Math.max(endMs, startMs + 1), ...word.extra })
   })
   return { audioUrl: resolveVerseAudioUrl(audioUrl), words: filled }
 }

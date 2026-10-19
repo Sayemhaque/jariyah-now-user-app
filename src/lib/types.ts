@@ -41,6 +41,8 @@ export interface TimedWord {
   text: string
   startMs: number
   endMs: number
+  meaning?: string
+  transliteration?: string
 }
 
 export interface Reciter {
@@ -78,10 +80,13 @@ export type OverlayStyle =
   | 'center-focus'
   | 'none'
 
+export type VideoStyle = 'visualizer' | 'manuscript' | 'wordlens' | 'cinematic' | 'bloom'
+
 export type TextWidth = 'full' | 'wide' | 'medium' | 'narrow'
 export type TextSpacing = 'compact' | 'normal' | 'spacious'
 
 export interface VideoSettings {
+  videoStyle?: VideoStyle
   backgroundImage: string
   backgroundPreset: string
   overlayStyle: OverlayStyle
