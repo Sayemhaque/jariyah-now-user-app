@@ -4,7 +4,7 @@ Three times a day, at **09:00, 15:00 and 22:00 Bangladesh time** (03:00, 09:00 a
 
 1. Picks a surah. It works through a shuffled order of all 114 surahs, so no surah repeats until every surah has been posted (one cycle takes 114 posts, 38 days at three posts a day).
 2. Fetches the ayats and audio, and keeps up to **10 ayats**. Short surahs go out whole. Long surahs get an excerpt that starts at a random ayat.
-3. Renders a 1080×1920 MP4 with Remotion. It uses the same `AyatVideo` composition as the app, with a rotating reciter and background. Backgrounds go through all 12 scenes in a shuffled order and never repeat on consecutive days.
+3. Renders a 1080×1920 MP4 with Remotion. It uses the same `AyatVideo` composition as the app, with a rotating reciter and background. Backgrounds go through all 18 scenes in a shuffled order, so one comes back only after every other scene has been used.
 4. Posts it with a title, description and hashtags to every platform that has credentials set.
 
 The reciter, background and starting ayat all come from the date and post slot. Re-running a slot's job builds the same video, and the job stores no state between runs.

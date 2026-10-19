@@ -11,6 +11,12 @@ export type SceneMotif =
   | 'dunes'
   | 'rays'
   | 'arches'
+  | 'silk'
+  | 'liquid'
+  | 'mandala'
+  | 'velvet'
+  | 'lattice'
+  | 'haze'
 
 export interface ScenePalette {
   base: [string, string, string]
@@ -102,6 +108,42 @@ export const backgroundScenes: BackgroundScene[] = [
     label: 'Ocean Depth',
     motif: 'rays',
     palette: { base: ['#0a3d5e', '#06233a', '#020b14'], pattern: '#8fdcff', accent: '#8fdcff', text: '#ecf8ff', translation: '#c7e3f2' },
+  },
+  {
+    key: 'silk-aurora',
+    label: 'Silk Aurora',
+    motif: 'silk',
+    palette: { base: ['#06302b', '#041d1c', '#020c0c'], pattern: '#3fd0b0', accent: '#f2cf86', text: '#f3fbf7', translation: '#cfe9e0' },
+  },
+  {
+    key: 'liquid-gold',
+    label: 'Liquid Gold',
+    motif: 'liquid',
+    palette: { base: ['#1a140b', '#0c0905', '#040302'], pattern: '#e8c27a', accent: '#f0cd85', text: '#fff7e6', translation: '#eadcc0' },
+  },
+  {
+    key: 'celestial-mandala',
+    label: 'Celestial Mandala',
+    motif: 'mandala',
+    palette: { base: ['#101a3a', '#0a1127', '#03060f'], pattern: '#e6c47e', accent: '#ecd08c', text: '#f5f0e2', translation: '#d9d6e8' },
+  },
+  {
+    key: 'velvet-bokeh',
+    label: 'Velvet Bokeh',
+    motif: 'velvet',
+    palette: { base: ['#3a1230', '#1e0a1c', '#0b040b'], pattern: '#f2b8a0', accent: '#f6c9a8', text: '#fff3ef', translation: '#ecd3d0' },
+  },
+  {
+    key: 'gold-lattice',
+    label: 'Gold Lattice',
+    motif: 'lattice',
+    palette: { base: ['#0b2a2e', '#06181b', '#020a0b'], pattern: '#d8b56c', accent: '#e5c27a', text: '#eef8f6', translation: '#cfe3e0' },
+  },
+  {
+    key: 'rose-haze',
+    label: 'Rose Haze',
+    motif: 'haze',
+    palette: { base: ['#6b3f6e', '#3b2147', '#140a1c'], pattern: '#ffd9b8', accent: '#ffcf9e', text: '#fff6ef', translation: '#f0dde4' },
   },
 ]
 

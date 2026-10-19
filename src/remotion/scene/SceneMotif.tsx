@@ -1,6 +1,12 @@
 import React from 'react'
 import type { BackgroundScene } from '@/lib/backgroundPresets'
 import { ArchColonnade } from './ArchColonnade'
+import { CelestialMandala } from './CelestialMandala'
+import { GoldLattice } from './GoldLattice'
+import { LiquidGold } from './LiquidGold'
+import { RoseHaze } from './RoseHaze'
+import { SilkAurora } from './SilkAurora'
+import { VelvetBokeh } from './VelvetBokeh'
 import { AuroraRibbons } from './AuroraRibbons'
 import { DesertStarlight } from './DesertStarlight'
 import { DuneLayers } from './DuneLayers'
@@ -28,6 +34,18 @@ export const SceneMotif: React.FC<{ scene: BackgroundScene }> = ({ scene }) => {
       return <MoonlitArch palette={scene.palette} />
     case 'heavenly':
       return <HeavenlyLight palette={scene.palette} />
+    case 'silk':
+      return <SilkAurora />
+    case 'liquid':
+      return <LiquidGold palette={scene.palette} />
+    case 'mandala':
+      return <CelestialMandala palette={scene.palette} />
+    case 'velvet':
+      return <VelvetBokeh palette={scene.palette} />
+    case 'lattice':
+      return <GoldLattice palette={scene.palette} />
+    case 'haze':
+      return <RoseHaze palette={scene.palette} />
     case 'girih':
       return <GirihPattern color={pattern} />
     case 'arches':
