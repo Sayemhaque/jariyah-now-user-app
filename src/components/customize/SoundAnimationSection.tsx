@@ -5,7 +5,6 @@ import { SectionTitle } from './SectionTitle'
 
 export function SoundAnimationSection() {
   const { settings, updateSettings } = useSettings()
-  if ((settings.videoStyle ?? 'visualizer') !== 'visualizer') return null
   const current = settings.soundAnimation ?? 'bars'
   return (
     <>

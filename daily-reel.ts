@@ -67,9 +67,9 @@ async function main() {
     translationKey: dailyConfig.translationKey,
     maxAyats: dailyConfig.maxAyats,
     postTimes: dailyConfig.postTimes,
-    videoStyles: dailyConfig.videoStyles,
     quality: dailyConfig.quality,
     extraHashtags: dailyConfig.extraHashtags,
+    ffmpegBin: env.FFMPEG_BIN || 'ffmpeg',
   })
 
   summary(`## Daily reel — ${video.dateKey}`)

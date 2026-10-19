@@ -63,7 +63,6 @@ Facebook Reels must be 3–90 s long. Videos have no length limit, so a long exc
 | `reciterId` | `random` | A reciter id from `src/lib/reciters.ts`, or `random` to rotate through 7 reciters |
 | `translationKey` | `sahiih_international` (English) | Translation shown under the Arabic |
 | `postTimes` | `09:00`, `15:00`, `22:00` | Bangladesh times of the daily posts. Each run works out its slot from the time it starts, so every post gets its own surah, reciter and background. Keep the `cron` lines in the workflow in sync |
-| `videoStyles` | all 5 | Video styles to rotate through, one per post: `visualizer`, `manuscript`, `wordlens`, `cinematic`, `bloom` |
 | `coverAtMs` | `2500` | Moment of the video Instagram uses as the cover (`thumb_offset`), after the title and first ayah have appeared |
 | `maxAyats` | `10` | Most ayat in one video. There is no length limit |
 | `extraHashtags` | `JariyahNow`, `Quran` | Hashtags added to every post |

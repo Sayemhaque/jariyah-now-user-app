@@ -54,7 +54,8 @@ export function parseVerseTimings(json: unknown): VerseTimings | null {
     .filter((w) => (w.char_type_name ?? 'word') === 'word' && (w.text_uthmani ?? w.text))
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
   const segments = parseSegments(verse.audio.segments)
-  const timed = words.map((w) => ({ text: (w.text_uthmani ?? w.text)!, timing: segments.get(w.position ?? -1), extra: wordExtras(w) }))
+  const shift = segments.has(0) && !segments.has(words.length) ? 1 : 0
+  const timed = words.map((w, i) => ({ text: (w.text_uthmani ?? w.text)!, timing: segments.get((w.position ?? i + 1) - shift), extra: wordExtras(w) }))
   if (!timed.length || timed.filter((w) => w.timing).length < timed.length * 0.6) return null
 
   const filled: TimedWord[] = []

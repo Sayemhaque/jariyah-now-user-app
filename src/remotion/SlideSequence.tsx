@@ -1,9 +1,12 @@
 import React from 'react'
+import { Audio, Sequence } from 'remotion'
 import { SlideContent, type SlideContentProps } from './SlideContent'
-import { SlideTrack } from './SlideTrack'
+
+const premountFrames = 45
 
 export const SlideSequence: React.FC<SlideContentProps> = (props) => (
-  <SlideTrack timing={props.timing}>
+  <Sequence from={props.timing.from} durationInFrames={props.timing.durationInFrames} premountFor={premountFrames}>
+    <Audio src={props.timing.slide.audioUrl} pauseWhenBuffering />
     <SlideContent {...props} />
-  </SlideTrack>
+  </Sequence>
 )
