@@ -22,8 +22,8 @@ export const CinematicStyle: React.FC<StyleProps> = ({ sequences, settings, size
           <CinematicSlide timing={timing} settings={settings} sizes={sizes} isBengali={isBengali} />
         </SlideTrack>
       ))}
-      {label(height * (height > width ? 0.185 : 0.15), 26, '0.7em', 'rgba(255,232,190,.75)', titles.surahName.toUpperCase())}
-      {label(height * (height > width ? 0.215 : 0.2), 20, '0.35em', 'rgba(255,255,255,.45)', titles.reciterName.toUpperCase())}
+      {label(height * (height > width ? 0.185 : 0.17), 26, '0.7em', 'rgba(255,232,190,.75)', titles.surahName.toUpperCase())}
+      {label(height * (height > width ? 0.215 : 0.215), 20, '0.35em', 'rgba(255,255,255,.45)', titles.reciterName.toUpperCase())}
       <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(rgba(255,255,255,.5) 1px, transparent 1px)', backgroundSize: `${unit * 3}px ${unit * 3}px` }} />
     </>
   )

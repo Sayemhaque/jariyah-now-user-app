@@ -11,19 +11,21 @@ const gold = '#c9973a'
 
 export function bloomLayout(width: number, height: number) {
   const portrait = height > width
-  const size = portrait ? width * 0.62 : height * 0.56
-  return { portrait, size, left: (width - size) / 2, top: height * (portrait ? 0.27 : 0.24) }
+  if (portrait) {
+    const size = width * 0.62
+    const top = height * 0.27
+    return { size, left: (width - size) / 2, top, text: { top: top + size + height * 0.015, bottom: height * 0.265, left: width * 0.1, width: width * 0.7 } }
+  }
+  const size = height * 0.7
+  return { size, left: width * 0.1, top: height * 0.19, text: { top: height * 0.4, bottom: height * 0.16, left: width * 0.52, width: width * 0.4 } }
 }
 
 export const BloomSlide: React.FC<StyleSlideProps> = ({ timing, settings, sizes, isBengali }) => {
   const { width, height } = useVideoConfig()
-  const { portrait, size, left, top } = bloomLayout(width, height)
-  const translationTop = top + size + height * 0.015
-  const translationBottom = height * (portrait ? 0.265 : 0.04)
-  const area = { maxWidth: size * 0.6, availableHeight: size * 0.5 + (height - translationTop - translationBottom) }
+  const { size, left, top, text } = bloomLayout(width, height)
+  const area = { maxWidth: size * 0.6, availableHeight: size * 0.5 + (height - text.top - text.bottom) }
   const { motion, pages } = useStyleSlide(timing.slide, timing.durationInFrames, settings, sizes, area)
   const font = isBengali ? bengaliFontStacks[settings.bengaliFont] ?? bengaliFontStacks.anek! : displayFontStack
-  const textWidth = portrait ? width * 0.7 : width * 0.6
 
   return (
     <div style={{ position: 'absolute', inset: 0, opacity: motion.visibility }}>
@@ -33,7 +35,7 @@ export const BloomSlide: React.FC<StyleSlideProps> = ({ timing, settings, sizes,
           <StyleArabic slide={timing.slide} settings={settings} pages={pages} motion={motion} color="#ffffff" highlightColor="#ffd27d" />
         </div>
       </div>
-      <div style={{ position: 'absolute', top: translationTop, bottom: translationBottom, left: portrait ? width * 0.1 : (width - textWidth) / 2, width: textWidth, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ position: 'absolute', ...text, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <StyleTranslation pages={pages} color="#e9eef8" fontFamily={font} opacity={motion.translationIn} italic={!isBengali} scale={1.05} />
       </div>
     </div>
