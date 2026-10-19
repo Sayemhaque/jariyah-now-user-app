@@ -20,6 +20,12 @@ export type SceneMotif =
   | 'ride'
   | 'drive'
   | 'walk'
+  | 'sail'
+  | 'caravan'
+  | 'train'
+  | 'reader'
+  | 'rain'
+  | 'lake'
 
 export interface ScenePalette {
   base: [string, string, string]
@@ -165,6 +171,42 @@ export const backgroundScenes: BackgroundScene[] = [
     label: 'Walk to the Masjid',
     motif: 'walk',
     palette: { base: ['#0f3a3a', '#1f5a52', '#c98b4a'], pattern: '#ffe6b0', accent: '#ffd98c', text: '#f6fbf7', translation: '#e2efe8' },
+  },
+  {
+    key: 'sunset-sail',
+    label: 'Sunset Sail',
+    motif: 'sail',
+    palette: { base: ['#2b1f52', '#9a4766', '#f3925f'], pattern: '#ffd9a0', accent: '#ffd28a', text: '#fff7ee', translation: '#fbe6d6' },
+  },
+  {
+    key: 'desert-caravan',
+    label: 'Desert Caravan',
+    motif: 'caravan',
+    palette: { base: ['#0b0a2a', '#1b1849', '#3a3170'], pattern: '#ece6ff', accent: '#f1d18c', text: '#f6f3ff', translation: '#dcd7f2' },
+  },
+  {
+    key: 'desert-train',
+    label: 'Desert Train',
+    motif: 'train',
+    palette: { base: ['#3b2a5c', '#c4664a', '#f6b26b'], pattern: '#ffe2a2', accent: '#ffd98a', text: '#fff8ee', translation: '#fde9d4' },
+  },
+  {
+    key: 'quran-under-tree',
+    label: 'Quran Under the Tree',
+    motif: 'reader',
+    palette: { base: ['#1d3550', '#4d6f7a', '#e2b77e'], pattern: '#fff0c8', accent: '#ffd98c', text: '#fbfaf4', translation: '#e8efe9' },
+  },
+  {
+    key: 'rainy-evening',
+    label: 'Rainy Evening',
+    motif: 'rain',
+    palette: { base: ['#0e1426', '#1a2340', '#2b3354'], pattern: '#b9c8e8', accent: '#ffcf8a', text: '#f3f5fb', translation: '#d5dbea' },
+  },
+  {
+    key: 'lantern-lake',
+    label: 'Lantern Lake',
+    motif: 'lake',
+    palette: { base: ['#070d22', '#0e1a38', '#16264a'], pattern: '#e7e2ff', accent: '#ffcf7a', text: '#f5f3ff', translation: '#d8dcf0' },
   },
 ]
 
