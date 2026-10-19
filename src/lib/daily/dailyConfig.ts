@@ -8,7 +8,7 @@ export const dailyConfig = {
   coverAtMs: 2500,
   quality: '1080p' as const,
   extraHashtags: ['JariyahNow', 'Quran'],
-  platforms: ['instagram'] as Platform[],
+  platforms: ['instagram', 'facebook'] as Platform[],
   youtubePrivacy: 'public',
   tiktokPrivacy: 'SELF_ONLY',
 }
