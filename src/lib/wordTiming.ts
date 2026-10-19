@@ -9,8 +9,10 @@ const tailShare = 0.06
 
 export const splitWords = (text: string) => text.split(/\s+/).filter(Boolean)
 
+export const spokenLetters = (word: string) => word.replace(arabicMarks, '').replace(/[\d٠-٩۰-۹۝]/g, '').length
+
 export function wordWeight(word: string): number {
-  return Math.max(1, word.replace(arabicMarks, '').length)
+  return Math.max(1, spokenLetters(word))
 }
 
 export function computeWordWindows(words: string[], durationMs: number): WordWindow[] {

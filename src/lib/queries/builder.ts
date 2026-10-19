@@ -1,8 +1,10 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { fetchAyatData, fetchAudioPauses, fetchSurahs, getAudioDurationMs } from '@/lib/quranApi'
+import { fetchAyatData, fetchSurahs, getAudioDurationMs } from '@/lib/quranApi'
 import { fetchVerseTimings } from '@/lib/fetchVerseTimings'
+import { analyzeSpeechInBrowser } from '@/lib/speech/browserSpeech'
+import { syncWords } from '@/lib/speech/syncWords'
 import type { AyatData, Surah } from '@/lib/types'
 
 export interface AyatRangeQueryParams {
@@ -58,20 +60,9 @@ export async function fetchAyatRangeData({
       if (!fetched) return null
       const data = timings ? { ...fetched, audioUrl: timings.audioUrl, words: timings.words } : fetched
 
-      const arWordCount = data.arabicText.split(/\s+/).filter(Boolean).length
-      const numBreakpoints = arWordCount > 20 ? Math.ceil(arWordCount / 8) - 1 : 0
-      const [audioDurationMs, audioPauses] = await Promise.all([
-        getAudioDurationMs(data.audioUrl),
-        numBreakpoints > 0
-          ? fetchAudioPauses(data.audioUrl, numBreakpoints)
-          : Promise.resolve([]),
-      ])
-
-      return {
-        ...data,
-        audioDurationMs,
-        ...(audioPauses.length ? { audioPauses } : {}),
-      }
+      const [audioDurationMs, speech] = await Promise.all([getAudioDurationMs(data.audioUrl), analyzeSpeechInBrowser(data.audioUrl)])
+      const words = syncWords({ arabicText: data.arabicText, timedWords: data.words, durationMs: audioDurationMs, speech })
+      return { ...data, audioDurationMs, ...(words ? { words } : {}) }
     }),
   )
 

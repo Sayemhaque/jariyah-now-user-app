@@ -1,17 +1,14 @@
-import { execFile } from 'node:child_process'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-import { promisify } from 'node:util'
 import { fetchAyatData, fetchSurahs } from '@/lib/quranApi'
 import { fetchVerseTimings } from '@/lib/fetchVerseTimings'
+import { syncWords } from '@/lib/speech/syncWords'
+import { analyzeAudio } from './audioAnalysis'
 import { reciters, getReciterById } from '@/lib/reciters'
 import { backgroundScenes, sceneUrl, type BackgroundScene } from '@/lib/backgroundPresets'
 import { themeColors } from '@/lib/theme'
 import { translationCredit } from '@/lib/translations'
 import { maxAyatsPerVideo } from '@/lib/constants'
 import { defaultVideoSettings } from '@/lib/defaultSettings'
-import type { AyatSlide, Reciter, Surah, VideoSettings, VideoStyle } from '@/lib/types'
+import type { AyatSlide, Reciter, Surah, VideoSettings } from '@/lib/types'
 import type { AyatVideoProps } from '@/remotion/types'
 import {
   buildPostMetadata,
@@ -25,8 +22,6 @@ import {
   type PostMetadata,
 } from './plan'
 
-const execFileAsync = promisify(execFile)
-
 export const dailyReciterIds = ['alafasy', 'sudais', 'abdulbasit', 'muaiqly', 'shatri', 'dosari', 'shuraim']
 
 export interface DailyVideoOptions {
@@ -39,8 +34,8 @@ export interface DailyVideoOptions {
   quality?: '480p' | '720p' | '1080p'
   extraHashtags?: string[]
   ffprobeBin?: string
+  ffmpegBin?: string
   postTimes?: string[]
-  videoStyles?: VideoStyle[]
 }
 
 export interface DailyVideo {
@@ -54,29 +49,8 @@ export interface DailyVideo {
   meta: PostMetadata
 }
 
-export async function probeDurationMs(url: string, ffprobeBin = 'ffprobe'): Promise<number> {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Audio download failed (${res.status}): ${url}`)
-  const dir = await mkdtemp(join(tmpdir(), 'daily-audio-'))
-  const file = join(dir, 'a.mp3')
-  try {
-    await writeFile(file, Buffer.from(await res.arrayBuffer()))
-    const { stdout } = await execFileAsync(ffprobeBin, [
-      '-v', 'error',
-      '-show_entries', 'format=duration',
-      '-of', 'default=noprint_wrappers=1:nokey=1',
-      file,
-    ])
-    const sec = parseFloat(stdout.trim())
-    if (!Number.isFinite(sec) || sec <= 0) throw new Error(`ffprobe returned no duration for ${url}`)
-    return Math.round(sec * 1000)
-  } finally {
-    await rm(dir, { recursive: true, force: true })
-  }
-}
-
-function baseSettings(scene: BackgroundScene, videoStyle: VideoStyle): VideoSettings {
-  return { ...defaultVideoSettings, videoStyle, backgroundImage: sceneUrl(scene.key), backgroundPreset: scene.key, ...themeColors(scene.palette) }
+function baseSettings(scene: BackgroundScene): VideoSettings {
+  return { ...defaultVideoSettings, backgroundImage: sceneUrl(scene.key), backgroundPreset: scene.key, ...themeColors(scene.palette) }
 }
 
 export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<DailyVideo> {
@@ -86,7 +60,7 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
   const maxMs = opts.maxDurationSec ? opts.maxDurationSec * 1000 : Infinity
   const maxAyats = opts.maxAyats ?? maxAyatsPerVideo
   const translationKey = opts.translationKey ?? 'bengali'
-  const ffprobeBin = opts.ffprobeBin ?? 'ffprobe'
+  const audioTools = { ffprobeBin: opts.ffprobeBin, ffmpegBin: opts.ffmpegBin }
 
   const reciterPool = dailyReciterIds.map(getReciterById).filter((r): r is Reciter => Boolean(r))
   const reciter =
@@ -116,7 +90,8 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
       ])
       if (!fetched) throw new Error(`Failed to fetch ayat ${surah.number}:${ayat}`)
       const data = timings ? { ...fetched, audioUrl: timings.audioUrl, words: timings.words } : fetched
-      const audioDurationMs = await probeDurationMs(data.audioUrl, ffprobeBin)
+      const { durationMs: audioDurationMs, speech } = await analyzeAudio(data.audioUrl, audioTools)
+      const words = syncWords({ arabicText: data.arabicText, timedWords: data.words, durationMs: audioDurationMs, speech })
       durations.push(audioDurationMs)
       if (countAyatsWithinBudget(durations, maxMs, maxAyats) < durations.length) break
       slides.push({
@@ -129,15 +104,14 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
         surahNumber: surah.number,
         audioUrl: data.audioUrl,
         audioDurationMs,
-        ...(data.words ? { words: data.words } : {}),
+        ...(words ? { words } : {}),
       })
     }
 
     if (slides.length === 0) continue
 
     const toAyat = slides[slides.length - 1]!.ayatNumber
-    const styles = opts.videoStyles?.length ? opts.videoStyles : ['visualizer' as const]
-    const settings = baseSettings(scene, styles[sequence % styles.length]!)
+    const settings = baseSettings(scene)
     return {
       dateKey: dhakaDateKey(now),
       surah,

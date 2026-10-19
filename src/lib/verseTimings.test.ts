@@ -67,3 +67,11 @@ describe('parseVerseTimings', () => {
     expect(parseVerseTimings({})).toBeNull()
   })
 })
+
+describe('parseVerseTimings zero-based segments', () => {
+  it('shifts word indexes that start at 0 onto word positions', () => {
+    const result = parseVerseTimings(verse([[0, 300, 700], [1, 700, 1100], [2, 1100, 1800], [3, 1800, 2600]]))!
+    expect(result.words.map((w) => w.startMs)).toEqual([300, 700, 1100, 1800])
+    expect(result.words[3]!.endMs).toBe(2600)
+  })
+})

@@ -181,38 +181,6 @@ export function getAudioDurationMs(url: string): Promise<number> {
   })
 }
 
-export async function fetchAudioPauses(
-  audioUrl: string,
-  numBreakpoints?: number,
-): Promise<{ start: number; end: number; duration: number }[]> {
-  try {
-    const res = await fetchWithTimeout('/api/audio-breakpoints', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ audioUrl, numBreakpoints }),
-    })
-    if (!res.ok) return []
-
-    const json = (await res.json()) as {
-      breakpoints?: number[]
-      duration?: number
-    }
-    if (!json.breakpoints?.length) return []
-
-    return json.breakpoints.map((t) => ({
-      start: t * 1000 - 100,
-      end: t * 1000 + 100,
-      duration: 200,
-    }))
-  } catch (err) {
-    logger.warn('fetchAudioPauses failed', {
-      audioUrl,
-      error: err instanceof Error ? err.message : String(err),
-    })
-    return []
-  }
-}
-
 function findAudioUrlForReciter(
   audio: UmmahAudioItem[] | undefined,
   reciterId: number,
