@@ -2,9 +2,9 @@ import type { TimedWord } from '@/lib/types'
 import type { SpeechMap } from './speechActivity'
 
 const overrunToleranceMs = 300
-const startToleranceMs = 1200
-const endToleranceMs = 1800
-const minCoverage = 0.6
+const snapToleranceMs = 1500
+const trustedOffsetMs = 150
+const endToleranceMs = 600
 
 function shift(words: TimedWord[], offsetMs: number): TimedWord[] {
   return words.map((w) => ({ ...w, startMs: w.startMs - offsetMs, endMs: w.endMs - offsetMs }))
@@ -20,22 +20,18 @@ function removeOffset(words: TimedWord[], durationMs: number, speech: SpeechMap 
   return shift(words, words[0]!.startMs - (speech?.startMs ?? 0))
 }
 
-function matchesSpeech(words: TimedWord[], speech: SpeechMap): boolean {
-  const first = words[0]!.startMs
-  const last = words[words.length - 1]!.endMs
-  const spoken = speech.endMs - speech.startMs
-  const overlap = Math.min(last, speech.endMs) - Math.max(first, speech.startMs)
-  return (
-    Math.abs(first - speech.startMs) <= startToleranceMs &&
-    Math.abs(last - speech.endMs) <= endToleranceMs &&
-    overlap >= spoken * minCoverage
-  )
+function snapToSpeech(words: TimedWord[], speech: SpeechMap): TimedWord[] | null {
+  const offset = words[0]!.startMs - speech.startMs
+  if (Math.abs(offset) > snapToleranceMs) return null
+  const snapped = Math.abs(offset) <= trustedOffsetMs ? words : shift(words, offset)
+  return Math.abs(snapped[snapped.length - 1]!.endMs - speech.endMs) <= endToleranceMs ? snapped : null
 }
 
 export function fitTimedWords(words: TimedWord[] | undefined, durationMs: number, speech: SpeechMap | null): TimedWord[] | null {
   if (!words?.length || !isOrdered(words)) return null
   const fitted = removeOffset(words, durationMs, speech)
   if (fitted[0]!.startMs < -overrunToleranceMs || fitted[fitted.length - 1]!.endMs > durationMs + overrunToleranceMs) return null
-  if (speech && !matchesSpeech(fitted, speech)) return null
-  return fitted.map((w) => ({ ...w, startMs: Math.max(0, w.startMs), endMs: Math.min(durationMs, Math.max(w.endMs, 1)) }))
+  const matched = speech ? snapToSpeech(fitted, speech) : fitted
+  if (!matched) return null
+  return matched.map((w) => ({ ...w, startMs: Math.max(0, w.startMs), endMs: Math.min(durationMs, Math.max(w.endMs, 1)) }))
 }
