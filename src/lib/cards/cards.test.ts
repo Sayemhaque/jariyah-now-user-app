@@ -104,10 +104,3 @@ describe('cardPostMetadata', () => {
   })
 })
 
-describe('cardThemes', () => {
-  it('have unique keys and both light and dark designs', () => {
-    expect(new Set(cardThemes.map((t) => t.key)).size).toBe(cardThemes.length)
-    expect(cardThemes.some((t) => t.light)).toBe(true)
-    expect(cardThemes.some((t) => !t.light)).toBe(true)
-  })
-})

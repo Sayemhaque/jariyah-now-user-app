@@ -1,6 +1,6 @@
 export type CardFormat = 'portrait' | 'square' | 'story'
 export type CardKind = 'hadith' | 'azkar' | 'dua' | 'masnoon'
-export type CardPattern = 'stars' | 'arch' | 'lattice' | 'rays' | 'none'
+export type CardPattern = 'stars' | 'arch' | 'lattice' | 'rays' | 'marble' | 'rosette' | 'waves' | 'none'
 
 export interface CardSize {
   width: number
@@ -38,6 +38,7 @@ export interface CardTheme {
   background: string
   glow: string
   ink: string
+  arabic: string
   muted: string
   accent: string
   pattern: CardPattern

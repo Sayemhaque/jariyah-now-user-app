@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { textCollections } from '@/lib/collections'
 import type { TextLanguage } from '@/lib/collections/types'
 import { azkarCard, hadithCard } from '@/lib/cards/cardContent'
-import { cardThemes } from '@/lib/cards/themes'
+import { alternatingCardThemes } from '@/lib/cards/themes'
 import type { CardContent, CardFormat, CardProps } from '@/lib/cards/types'
 import { defaultHadithSelection, shareableHadiths } from '@/lib/hadith/hadithPicks'
 import { useHadithSection } from './useHadithSection'
@@ -26,7 +26,7 @@ export function useGalleryCards() {
         : textCollections.azkar.map((item) => ({ id: item.id, content: azkarCard(item, language) }))
     return contents.map(({ id, content }, index) => ({
       id,
-      card: { content, theme: cardThemes[index % cardThemes.length]!, format } as CardProps,
+      card: { content, theme: alternatingCardThemes[index % alternatingCardThemes.length]!, format } as CardProps,
       fileName: `jariyah-${mode}-${id}-${language}-${format}`,
     }))
   }, [mode, language, format, hadithQuery.data])

@@ -19,7 +19,7 @@ export const CardLineText: React.FC<CardLineTextProps> = ({ line, theme, sizes, 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: fitted(sizes.translation * 0.7) }}>
       {line.arabic && (
-        <div dir="rtl" style={{ fontFamily: quranic ? arabicFontStacks.quran : arabicFontStacks.amiri, fontSize: fitted(sizes.arabic), lineHeight: 1.9, color: theme.ink, textAlign: 'center' }}>
+        <div dir="rtl" style={{ fontFamily: quranic ? arabicFontStacks.quran : arabicFontStacks.amiri, fontSize: fitted(sizes.arabic), lineHeight: 1.9, color: theme.arabic, textAlign: 'center' }}>
           {line.arabic}
           {line.ayah !== undefined && <span style={{ color: theme.accent, fontSize: '0.8em' }}>{` ﴿${toArabicDigits(line.ayah)}﴾`}</span>}
         </div>

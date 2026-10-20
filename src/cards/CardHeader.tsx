@@ -22,7 +22,7 @@ export const CardHeader: React.FC<CardHeaderProps> = ({ content, theme, logoSrc 
         {diamond(theme.accent)}
       </div>
       {content.arabicTitle && (
-        <div dir="rtl" style={{ fontFamily: headerArabicStack, fontSize: 78, lineHeight: 1.25, color: theme.accent, marginTop: 4 }}>
+        <div dir="rtl" style={{ fontFamily: headerArabicStack, fontSize: 78, lineHeight: 1.25, color: theme.light ? theme.arabic : theme.accent, marginTop: 4 }}>
           {content.arabicTitle}
         </div>
       )}

@@ -1,5 +1,6 @@
 import React from 'react'
 import type { CardPattern as Pattern } from '@/lib/cards/types'
+import { MarbleVeins, Rosette, Waves } from './CardPatternShapes'
 
 interface CardPatternProps {
   pattern: Pattern
@@ -35,6 +36,9 @@ export const CardPattern: React.FC<CardPatternProps> = ({ pattern, color, opacit
           ))}
         </g>
       )}
+      {pattern === 'marble' && <MarbleVeins color={color} width={width} height={height} />}
+      {pattern === 'rosette' && <Rosette color={color} width={width} height={height} />}
+      {pattern === 'waves' && <Waves color={color} width={width} height={height} />}
       {pattern === 'rays' && (
         <g stroke={color} strokeWidth="1.2">
           {Array.from({ length: 36 }, (_, i) => {
