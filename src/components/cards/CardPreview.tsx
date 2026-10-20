@@ -1,17 +1,20 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { ChevronLeft, ChevronRight, Download, Loader2, Maximize2, SlidersHorizontal } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useCardContents } from '@/hooks/useCardContents'
 import { useCardDownload } from '@/hooks/useCardDownload'
 import { useCardDesign } from '@/hooks/useCardDesign'
+import { useIdleReady } from '@/hooks/useIdleReady'
 import { useContent } from '@/lib/contentStore'
 import { bnDigits } from '@/lib/cards/bangla'
 import { CardStage } from './CardStage'
 import { OffscreenCards } from './OffscreenCards'
-import { PosterPreviewDialog } from './PosterPreviewDialog'
 import { PosterPlaceholder } from './PosterPlaceholder'
+
+const PosterPreviewDialog = dynamic(() => import('./PosterPreviewDialog').then((m) => m.PosterPreviewDialog))
 
 export function CardPreview({ onSettingsClick }: { onSettingsClick: () => void }) {
   const { cardFormat, mode } = useContent()
@@ -21,6 +24,7 @@ export function CardPreview({ onSettingsClick }: { onSettingsClick: () => void }
   const [previewOpen, setPreviewOpen] = useState(false)
   const nodes = useRef<(HTMLDivElement | null)[]>([])
   const { save, isSaving } = useCardDownload()
+  const offscreenReady = useIdleReady()
   const current = Math.min(index, Math.max(0, cards.length - 1))
   const fileName = `jariyah-${mode}-${cards[0]?.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 40) || 'poster'}-${cardFormat}`
 
@@ -28,7 +32,7 @@ export function CardPreview({ onSettingsClick }: { onSettingsClick: () => void }
 
   return (
     <div className="flex h-full flex-col gap-3 p-3 sm:p-6">
-      <OffscreenCards cards={cards} design={design} nodes={nodes} />
+      {offscreenReady && <OffscreenCards cards={cards} design={design} nodes={nodes} />}
       <button type="button" onClick={() => setPreviewOpen(true)} className="relative min-h-0 flex-1" aria-label="বড় করে দেখুন">
         <CardStage {...design} content={cards[current]!} />
       </button>
@@ -44,11 +48,11 @@ export function CardPreview({ onSettingsClick }: { onSettingsClick: () => void }
         <Button variant="secondary" onClick={() => setPreviewOpen(true)} className="h-11 px-4 text-sm font-semibold">
           <Maximize2 className="mr-1.5 h-4 w-4" />বড় করে দেখুন
         </Button>
-        <Button onClick={() => save([nodes.current[current] ?? null], cards.length > 1 ? `${fileName}-${current + 1}` : fileName)} disabled={isSaving} className="h-11 px-5 text-sm font-semibold">
+        <Button onClick={() => save([nodes.current[current] ?? null], cards.length > 1 ? `${fileName}-${current + 1}` : fileName)} disabled={isSaving || !offscreenReady} className="h-11 px-5 text-sm font-semibold">
           {isSaving ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Download className="mr-1.5 h-4 w-4" />}ডাউনলোড করুন
         </Button>
       </div>
-      <PosterPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} cards={cards} design={design} fileName={fileName} />
+      {previewOpen && <PosterPreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} cards={cards} design={design} fileName={fileName} />}
     </div>
   )
 }

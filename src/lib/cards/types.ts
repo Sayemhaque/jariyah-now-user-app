@@ -48,6 +48,7 @@ export interface CardTheme {
 }
 
 export type CardLayout = 'frame' | 'arch' | 'editorial' | 'split' | 'floating' | 'quote' | 'tile' | 'night' | 'botanical' | 'glass' | 'manuscript' | 'minimal'
+  | 'medallion' | 'dome' | 'octagon' | 'khatam' | 'scroll' | 'lantern' | 'ogee' | 'zellige' | 'pillars' | 'halo' | 'dawn' | 'dunes' | 'ocean' | 'stamp' | 'paper' | 'angle' | 'capsule' | 'lattice' | 'folio' | 'crescent'
 
 export type CardAlign = 'center' | 'left'
 

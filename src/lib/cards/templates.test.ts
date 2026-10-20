@@ -4,18 +4,18 @@ import { cardThemes } from './themes'
 import { resolveDecor, variantSpecs } from './variants'
 
 describe('card templates', () => {
-  it('offers 108 layouts: 12 structures in 9 decoration styles', () => {
-    expect(cardLayouts).toHaveLength(12)
-    expect(cardDesigns).toHaveLength(108)
-    expect(new Set(cardDesigns.map((d) => `${d.layout}.${d.variant}`)).size).toBe(108)
-    expect(templateCount).toBe(108 * cardThemes.length)
+  it('offers 288 layouts: 32 structures in 9 decoration styles', () => {
+    expect(cardLayouts).toHaveLength(32)
+    expect(cardDesigns).toHaveLength(288)
+    expect(new Set(cardDesigns.map((d) => `${d.layout}.${d.variant}`)).size).toBe(288)
+    expect(templateCount).toBe(288 * cardThemes.length)
   })
 
   it('varies structure, decoration and colour from one card to the next', () => {
     const first = Array.from({ length: 12 }, (_, i) => templateAt(i))
     expect(new Set(first.map((t) => t.layout)).size).toBe(12)
     expect(new Set(first.map((t) => t.theme.key)).size).toBe(12)
-    const decorations = new Set(Array.from({ length: 108 }, (_, i) => templateAt(i).variant))
+    const decorations = new Set(Array.from({ length: 288 }, (_, i) => templateAt(i).variant))
     expect(decorations.size).toBe(9)
   })
 
