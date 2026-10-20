@@ -4,13 +4,14 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useAyatLoader } from '@/hooks/useAyatLoader'
 import { useSettingsDrawer } from '@/hooks/useSettingsDrawer'
-import { VideoPreview } from '@/components/VideoPreview'
-import { CardPreview } from '@/components/cards/CardPreview'
 import { useContent } from '@/lib/contentStore'
 import { AppHeader } from '@/components/builder/AppHeader'
 import { SettingsDrawer } from '@/components/builder/SettingsDrawer'
 import { SettingsPanel } from '@/components/builder/SettingsPanel'
 
+const previewLoading = () => <div className="m-6 flex-1 animate-pulse rounded-2xl bg-muted/40" />
+const VideoPreview = dynamic(() => import('@/components/VideoPreview').then((m) => m.VideoPreview), { loading: previewLoading })
+const CardPreview = dynamic(() => import('@/components/cards/CardPreview').then((m) => m.CardPreview), { loading: previewLoading })
 const ExportModal = dynamic(() => import('@/components/ExportModal').then((m) => m.ExportModal), {
   ssr: false,
   loading: () => null,

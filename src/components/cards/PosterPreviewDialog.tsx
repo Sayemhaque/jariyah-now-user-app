@@ -29,11 +29,11 @@ export function PosterPreviewDialog({ open, onOpenChange, cards, design, fileNam
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[min(96vw,720px)] gap-4 border-white/10 bg-background/95 p-4 backdrop-blur-xl sm:p-6">
+      <DialogContent className="max-h-[96dvh] max-w-[calc(100%-1rem)] grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto border-white/10 bg-background/95 p-4 backdrop-blur-xl sm:max-w-[min(94vw,720px)] sm:p-6">
         <DialogTitle className="pr-8 text-base sm:text-lg">{cards[current]!.title}</DialogTitle>
         <DialogDescription className="sr-only">পোস্টারের বড় প্রিভিউ</DialogDescription>
         {open && <OffscreenCards cards={cards} design={design} nodes={nodes} />}
-        <div className="relative mx-auto w-full" style={{ maxWidth: `min(100%, calc(64vh * ${width / height}))` }}>
+        <div className="relative mx-auto w-full" style={{ maxWidth: `min(100%, calc(62dvh * ${width / height}))` }}>
           <div className="overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10">
             <ScaledCard {...design} content={cards[current]!} />
           </div>
