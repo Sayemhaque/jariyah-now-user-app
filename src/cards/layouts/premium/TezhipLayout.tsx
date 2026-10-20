@@ -9,12 +9,12 @@ import { pick, tint, type LayoutProps } from '../layoutTypes'
 
 export const TezhipLayout: React.FC<LayoutProps> = (p) => {
   const { width: w, height: h, theme: t } = p
-  const { fonts, decor } = useCardStyle()
+  const { fonts, decor, textSizes } = useCardStyle()
   const svgId = useSvgId('tezhip')
   const pad = cardPadding[p.format]
   const top = pad.top + pick(p.format, 30, 20, 0)
   const panelTop = top - 38
-  const panelBottom = top + cardHeaderHeight(p.content, fonts[titleSlot(p.content.title)].scale, p.format, decor.eyebrow) + 26
+  const panelBottom = top + cardHeaderHeight(p.content, fonts[titleSlot(p.content.title)].scale, p.format, decor.eyebrow, textSizes) + 26
   const [x0, x1] = [76, w - 76]
   const midY = (panelTop + panelBottom) / 2
   return (

@@ -12,8 +12,8 @@ export const SplitLayout: React.FC<LayoutProps> = (p) => {
   const { theme, width, height } = p
   const pad = cardPadding[p.format]
   const band = bandTheme(theme)
-  const { fonts, decor } = useCardStyle()
-  const bandHeight = pad.top + cardHeaderHeight(p.content, fonts[titleSlot(p.content.title)].scale * 1.1, p.format, decor.eyebrow) + 56
+  const { fonts, decor, textSizes } = useCardStyle()
+  const bandHeight = pad.top + cardHeaderHeight(p.content, fonts[titleSlot(p.content.title)].scale * 1.1, p.format, decor.eyebrow, textSizes) + 56
   const cx = width / 2
   return (
     <>

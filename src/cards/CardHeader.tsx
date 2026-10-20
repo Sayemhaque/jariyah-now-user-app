@@ -15,17 +15,17 @@ interface CardHeaderProps {
 }
 
 export const CardHeader: React.FC<CardHeaderProps> = ({ content, theme, logoSrc, align = 'center', eyebrow = true }) => {
-  const { titleStyle, titleGradient, format, decor, fonts } = useCardStyle()
+  const { titleStyle, titleGradient, format, decor, fonts, textSizes } = useCardStyle()
   const compact = format === 'square'
   const font = fonts[titleSlot(content.title)]
-  const titleSize = cardTitleSize(content.title) * font.scale * (compact ? 0.86 : 1)
+  const titleSize = cardTitleSize(content.title) * font.scale * (compact ? 0.86 : 1) * textSizes.title
   const left = align === 'left'
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: left ? 'flex-start' : 'center', gap: compact ? 12 : 18, width: '100%' }}>
-      {logoSrc && <img src={logoSrc} alt="" style={{ height: compact ? 72 : 96, width: 'auto', filter: theme.light ? 'brightness(0)' : 'none', opacity: theme.light ? 0.78 : 0.95 }} />}
+      {logoSrc && <img src={logoSrc} alt="" style={{ height: (compact ? 72 : 96) * textSizes.logo, width: 'auto', filter: theme.light ? 'brightness(0)' : 'none', opacity: theme.light ? 0.78 : 0.95 }} />}
       {eyebrow && <CardEyebrow text={content.eyebrow} theme={theme} style={decor.eyebrow} align={align} />}
       {content.arabicTitle && (
-        <div dir="rtl" style={{ fontFamily: arabicTitleFont(titleStyle, fonts.arabic), fontSize: compact ? 58 : 78, lineHeight: 1.25, color: theme.light ? theme.arabic : theme.accent, marginTop: 4 }}>
+        <div dir="rtl" style={{ fontFamily: arabicTitleFont(titleStyle, fonts.arabic), fontSize: (compact ? 58 : 78) * textSizes.arabicTitle, lineHeight: 1.25, color: theme.light ? theme.arabic : theme.accent, marginTop: 4 }}>
           {content.arabicTitle}
         </div>
       )}

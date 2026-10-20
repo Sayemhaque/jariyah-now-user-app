@@ -2,7 +2,7 @@ import { useContent } from '@/lib/contentStore'
 import { findCardTheme } from '@/lib/cards/themes'
 
 export function useCardDesign() {
-  const { cardThemeKey, cardLayout, cardVariant, eyebrowStyle, titleStyle, titleGradient, cardFormat, fonts, customFonts } = useContent()
+  const { cardThemeKey, cardLayout, cardVariant, eyebrowStyle, titleStyle, titleGradient, cardFormat, fonts, customFonts, cardTextSizes } = useContent()
   return {
     theme: findCardTheme(cardThemeKey),
     format: cardFormat,
@@ -13,5 +13,6 @@ export function useCardDesign() {
     titleGradient,
     fonts,
     customFonts,
+    textSizes: cardTextSizes,
   }
 }

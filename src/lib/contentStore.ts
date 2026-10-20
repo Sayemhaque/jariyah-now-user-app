@@ -6,6 +6,7 @@ import type { CardFormat, CardLayout, CardTitleStyle, CardVariant, EyebrowStyle 
 import { cardThemes } from './cards/themes'
 import { defaultHadithSelection } from './hadith/hadithPicks'
 import type { CardFont, CardFontChoice, FontSlot } from './cards/fontLibrary'
+import type { CardTextPart, CardTextSizes } from './cards/textSizes'
 
 export interface ContentState {
   mode: ContentMode
@@ -22,6 +23,7 @@ export interface ContentState {
   titleGradient: boolean
   fonts: Partial<CardFontChoice>
   customFonts: CardFont[]
+  cardTextSizes: Partial<CardTextSizes>
   hadithBook: string
   hadithSection: number
   hadithNumber: number
@@ -40,6 +42,8 @@ export interface ContentState {
   setTitleGradient: (on: boolean) => void
   setFont: (slot: FontSlot, id: string) => void
   addCustomFont: (font: CardFont, apply?: boolean) => void
+  setCardTextSize: (part: CardTextPart, scale: number) => void
+  resetCardTextSizes: () => void
   setHadithBook: (book: string, section: number) => void
   setHadithSection: (section: number) => void
   setHadithNumber: (number: number) => void
@@ -63,13 +67,14 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [titleGradient, setTitleGradient] = useState(false)
   const [fonts, setFonts] = useState<Partial<CardFontChoice>>({})
   const [customFonts, setCustomFonts] = useState<CardFont[]>([])
+  const [cardTextSizes, setCardTextSizes] = useState<Partial<CardTextSizes>>({})
   const [hadithBook, setHadithBookState] = useState(defaultHadithSelection.book)
   const [hadithSection, setHadithSectionState] = useState(defaultHadithSelection.section)
   const [hadithNumber, setHadithNumber] = useState(0)
   const [shortHadithOnly, setShortHadithOnly] = useState(true)
 
   const value = useMemo<ContentState>(() => ({
-    mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey, cardLayout, cardVariant, eyebrowStyle, titleStyle, titleGradient, fonts, customFonts, hadithBook, hadithSection, hadithNumber, shortHadithOnly,
+    mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey, cardLayout, cardVariant, eyebrowStyle, titleStyle, titleGradient, fonts, customFonts, cardTextSizes, hadithBook, hadithSection, hadithNumber, shortHadithOnly,
     setMode: (next) => {
       setModeState(next)
       setPresetIdState('')
@@ -86,6 +91,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       setFonts(({ titleLatin, titleBangla, ...rest }) => rest)
     },
     setFont: (slot, id) => setFonts((current) => ({ ...current, [slot]: id })),
+    setCardTextSize: (part, scale) => setCardTextSizes((current) => ({ ...current, [part]: scale })),
+    resetCardTextSizes: () => setCardTextSizes({}),
     addCustomFont: (font, apply = true) => {
       setCustomFonts((current) => [...current.filter((f) => f.id !== font.id), font])
       if (apply) setFonts((current) => ({ ...current, titleLatin: font.id, titleBangla: font.id }))
@@ -99,7 +106,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       setHadithSectionState(section)
       setHadithNumber(0)
     },
-  }), [mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey, cardLayout, cardVariant, eyebrowStyle, titleStyle, titleGradient, fonts, customFonts, hadithBook, hadithSection, hadithNumber, shortHadithOnly])
+  }), [mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey, cardLayout, cardVariant, eyebrowStyle, titleStyle, titleGradient, fonts, customFonts, cardTextSizes, hadithBook, hadithSection, hadithNumber, shortHadithOnly])
 
   return createElement(ContentContext.Provider, { value }, children)
 }

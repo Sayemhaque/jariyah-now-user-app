@@ -73,4 +73,5 @@ export interface CardProps {
   titleGradient?: boolean
   fonts?: Partial<import('./fontLibrary').CardFontChoice>
   customFonts?: import('./fontLibrary').CardFont[]
+  textSizes?: Partial<import('./textSizes').CardTextSizes>
 }

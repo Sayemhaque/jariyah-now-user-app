@@ -15,16 +15,18 @@ interface CardFooterProps {
 }
 
 export const CardFooter: React.FC<CardFooterProps> = ({ content, theme, align = 'center', divider = true }) => {
-  const { decor } = useCardStyle()
+  const { decor, textSizes } = useCardStyle()
+  const ref = textSizes.reference
+  const note = textSizes.note
   return (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: align === 'left' ? 'flex-start' : 'center', gap: 16, width: '100%' }}>
     {divider && <StyledDivider style={decor.divider} color={theme.accent} />}
-    <div style={{ ...(isBengaliText(content.reference) ? { fontFamily: bengaliFontStacks.serif, fontSize: 26, letterSpacing: '0.03em' } : { fontFamily: cardCapsStack, fontSize: 22, letterSpacing: '0.24em', paddingLeft: '0.24em' }), color: theme.accent, textTransform: 'uppercase', textAlign: align, fontWeight: 500 }}>
+    <div style={{ ...(isBengaliText(content.reference) ? { fontFamily: bengaliFontStacks.serif, fontSize: 26 * ref, letterSpacing: '0.03em' } : { fontFamily: cardCapsStack, fontSize: 22 * ref, letterSpacing: '0.24em', paddingLeft: '0.24em' }), color: theme.accent, textTransform: 'uppercase', textAlign: align, fontWeight: 500 }}>
       {content.reference}
     </div>
-    {content.note && <div style={{ fontFamily: isBengaliText(content.note) ? bengaliFontStacks.serif : cardDisplayStack, fontStyle: isBengaliText(content.note) ? 'normal' : 'italic', fontSize: isBengaliText(content.note) ? 26 : 30, color: theme.muted }}>{content.note}</div>}
+    {content.note && <div style={{ fontFamily: isBengaliText(content.note) ? bengaliFontStacks.serif : cardDisplayStack, fontStyle: isBengaliText(content.note) ? 'normal' : 'italic', fontSize: (isBengaliText(content.note) ? 26 : 30) * note, color: theme.muted }}>{content.note}</div>}
     {content.slide && (
-      <div style={{ fontFamily: cardCapsStack, fontSize: 18, letterSpacing: '0.3em', color: theme.muted }}>
+      <div style={{ fontFamily: cardCapsStack, fontSize: 18 * ref, letterSpacing: '0.3em', color: theme.muted }}>
         {pad(content.slide.index)} / {pad(content.slide.count)}
       </div>
     )}

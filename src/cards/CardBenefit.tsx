@@ -6,8 +6,9 @@ import { useCardStyle } from './CardStyleContext'
 
 export const CardBenefit: React.FC<{ benefit: NonNullable<CardContent['benefit']>; theme: CardTheme; align: CardAlign }> = ({ benefit, theme, align }) => {
   const bangla = isBengaliText(benefit.text)
-  const compact = useCardStyle().format === 'square'
-  const textSize = (bangla ? 25 : 29) * (compact ? 0.84 : 1)
+  const { format, textSizes } = useCardStyle()
+  const compact = format === 'square'
+  const textSize = (bangla ? 25 : 29) * (compact ? 0.84 : 1) * textSizes.benefit
   return (
     <div
       style={{
@@ -29,7 +30,7 @@ export const CardBenefit: React.FC<{ benefit: NonNullable<CardContent['benefit']
         {benefit.text}
         {compact && <span style={{ fontSize: textSize * 0.72, color: theme.muted, fontStyle: 'normal' }}> — {benefit.source}</span>}
       </div>
-      {!compact && <div style={{ fontFamily: bangla ? bengaliFontStacks.serif : cardDisplayStack, fontSize: bangla ? 19 : 21, letterSpacing: '0.04em', color: theme.muted }}>— {benefit.source}</div>}
+      {!compact && <div style={{ fontFamily: bangla ? bengaliFontStacks.serif : cardDisplayStack, fontSize: (bangla ? 19 : 21) * textSizes.benefit, letterSpacing: '0.04em', color: theme.muted }}>— {benefit.source}</div>}
     </div>
   )
 }

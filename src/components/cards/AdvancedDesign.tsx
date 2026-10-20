@@ -10,7 +10,7 @@ export function AdvancedDesign({ children }: { children: React.ReactNode }) {
         <Settings2 className="h-5 w-5 text-primary" />
         <span className="flex-1">
           <span className="block text-sm font-semibold">আরও ডিজাইন অপশন</span>
-          <span className="block text-xs text-muted-foreground">নকশা, শিরোনামের ধরন ও ফন্ট — না বদলালেও চলবে</span>
+          <span className="block text-xs text-muted-foreground">নকশা, শিরোনামের ধরন, ফন্ট ও লেখার সাইজ — না বদলালেও চলবে</span>
         </span>
         <ChevronDown className={cn('h-5 w-5 transition-transform', open && 'rotate-180')} />
       </button>
