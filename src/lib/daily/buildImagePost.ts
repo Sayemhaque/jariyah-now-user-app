@@ -4,6 +4,7 @@ import { azkarCard, hadithCard, quranCards } from '@/lib/cards/cardContent'
 import { cardPostMetadata } from '@/lib/cards/cardPostMetadata'
 import { fetchCardAyat } from '@/lib/cards/fetchCardAyat'
 import { isBanglaTranslation, presetCardTitle } from '@/lib/cards/presetTitle'
+import { presetBenefits } from '@/lib/collections/benefits'
 import { cardTemplates, titleStyleFor } from '@/lib/cards/templates'
 import type { CardContent } from '@/lib/cards/types'
 import { fetchSurahs } from '@/lib/quranApi'
@@ -29,7 +30,7 @@ async function presetCards(ctx: DailyContext, mode: 'masnoon' | 'duas', turn: nu
   if (!surah) throw new Error(`Surah ${preset.surah} not found`)
   const bangla = isBanglaTranslation(translationKey)
   const title = presetCardTitle(mode, preset, surah.name, bangla)
-  return quranCards({ bangla, kind: mode === 'duas' ? 'dua' : 'masnoon', title, surahName: surah.name, surahNameArabic: surah.arabicName, surahNumber: surah.number, ayat }, 'portrait').slice(0, maxCarouselSlides)
+  return quranCards({ bangla, benefit: presetBenefits[preset.id], kind: mode === 'duas' ? 'dua' : 'masnoon', title, surahName: surah.name, surahNameArabic: surah.arabicName, surahNumber: surah.number, ayat }, 'portrait').slice(0, maxCarouselSlides)
 }
 
 const hadithAttempts = 6

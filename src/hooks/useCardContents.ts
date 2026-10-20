@@ -8,6 +8,7 @@ import { isPresetMode, isTextMode } from '@/lib/collections/types'
 import { azkarCard, hadithCard, quranCards } from '@/lib/cards/cardContent'
 import { fetchCardAyat } from '@/lib/cards/fetchCardAyat'
 import { isBanglaTranslation, presetCardTitle } from '@/lib/cards/presetTitle'
+import { presetBenefits } from '@/lib/collections/benefits'
 import type { CardContent } from '@/lib/cards/types'
 import { useHadithSection } from './useHadithSection'
 
@@ -39,7 +40,7 @@ export function useCardContents() {
     if (!isPresetMode(mode) || !preset || !surah || !ayatQuery.data) return []
     const bangla = isBanglaTranslation(translationKey)
     const title = presetCardTitle(mode, preset, surah.name, bangla)
-    return quranCards({ bangla, kind: mode === 'duas' ? 'dua' : 'masnoon', title, surahName: surah.name, surahNameArabic: surah.arabicName, surahNumber: surah.number, ayat: ayatQuery.data }, cardFormat)
+    return quranCards({ bangla, benefit: presetBenefits[preset.id], kind: mode === 'duas' ? 'dua' : 'masnoon', title, surahName: surah.name, surahNameArabic: surah.arabicName, surahNumber: surah.number, ayat: ayatQuery.data }, cardFormat)
   }, [mode, textItemId, language, preset, surahs, ayatQuery.data, cardFormat, hadithQuery.data, hadithNumber, translationKey])
 
   return { cards, isLoading: ayatQuery.isFetching || (mode === 'hadith' && hadithQuery.isFetching), error: ayatQuery.error }

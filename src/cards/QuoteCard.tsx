@@ -8,7 +8,7 @@ import { CardStyleContext } from './CardStyleContext'
 export const QuoteCard: React.FC<CardProps & { logoSrc: string; onSettled?: () => void }> = ({ content, theme, format, layout = 'frame', titleStyle = 'serif', titleGradient = false, logoSrc, onSettled }) => {
   const { width, height } = cardSizes[format]
   const sizes = React.useMemo(() => fitCardType(content, format), [content, format])
-  const style = React.useMemo(() => ({ titleStyle, titleGradient }), [titleStyle, titleGradient])
+  const style = React.useMemo(() => ({ titleStyle, titleGradient, format }), [titleStyle, titleGradient, format])
   return (
     <CardStyleContext.Provider value={style}>
     <div style={{ position: 'relative', width, height, overflow: 'hidden', background: theme.background }}>

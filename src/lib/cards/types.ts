@@ -28,6 +28,7 @@ export interface CardContent {
   lines: CardLine[]
   reference: string
   note?: string
+  benefit?: { text: string; source: string }
   slide?: { index: number; count: number }
 }
 

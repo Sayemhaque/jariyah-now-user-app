@@ -15,8 +15,8 @@ export const azkarCollection: TextItem[] = [
     title: 'SubhanAllahi wa bihamdihi',
     titleBn: 'সুবহানাল্লাহি ওয়া বিহামদিহি',
     arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
-    english: 'Glory be to Allah and all praise is His. Whoever says it a hundred times a day, his sins are wiped away even if they are like the foam of the sea.',
-    bangla: 'আল্লাহ পবিত্র এবং সকল প্রশংসা তাঁর। যে দিনে একশো বার এটি বলে, তার গুনাহ সমুদ্রের ফেনার মতো হলেও মাফ করে দেওয়া হয়।',
+    english: 'Glory be to Allah and all praise is His.',
+    bangla: 'আল্লাহ পবিত্র এবং সকল প্রশংসা তাঁর।',
     source: '100 times a day · Sahih al-Bukhari 6405',
   },
   {
@@ -114,8 +114,8 @@ export const azkarCollection: TextItem[] = [
     title: 'A treasure of Paradise',
     titleBn: 'জান্নাতের এক ভান্ডার',
     arabic: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
-    english: 'There is no power and no strength except with Allah — a treasure from the treasures of Paradise.',
-    bangla: 'আল্লাহ ছাড়া কোনো শক্তি ও ক্ষমতা নেই — এটি জান্নাতের ভান্ডারসমূহের একটি ভান্ডার।',
+    english: 'There is no power and no strength except with Allah.',
+    bangla: 'আল্লাহ ছাড়া কোনো শক্তি ও ক্ষমতা নেই।',
     source: 'Sahih al-Bukhari 6384, Sahih Muslim 2704',
   },
 ]

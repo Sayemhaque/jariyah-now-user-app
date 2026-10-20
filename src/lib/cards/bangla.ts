@@ -6,6 +6,15 @@ export const bnDigits = (value: number | string) => String(value).replace(/\d/g,
 
 export const banglaEyebrows: Record<CardKind, string> = { hadith: 'হাদিস', azkar: 'আজকার', dua: 'কুরআনের দোয়া', masnoon: 'মাসনূন সূরা' }
 
+const sourceBooks: [string, string][] = [
+  ['Sahih al-Bukhari', 'সহীহ বুখারী'],
+  ['Sahih Muslim', 'সহীহ মুসলিম'],
+  ["Jami' at-Tirmidhi", 'জামে আত-তিরমিজি'],
+  ['Sunan Abi Dawud', 'সুনান আবু দাউদ'],
+]
+
+export const banglaSource = (source: string) => bnDigits(sourceBooks.reduce((text, [en, bn]) => text.replace(en, bn), source))
+
 export const banglaBookNames: Record<string, string> = {
   bukhari: 'সহীহ বুখারী',
   muslim: 'সহীহ মুসলিম',

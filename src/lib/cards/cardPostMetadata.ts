@@ -29,6 +29,7 @@ export function cardPostMetadata(cards: CardContent[], extraHashtags: string[] =
   const reference = isQuran ? quranReference(cards) : first.reference
   const lines = [
     title,
+    ...(first.benefit ? ['', `✦ ${first.benefit.text} (${first.benefit.source})`] : []),
     '',
     ...cards.flatMap(lineText),
     '',

@@ -2,7 +2,8 @@ import { textTranslation } from '@/lib/collections/textTranslation'
 import type { TextItem, TextLanguage } from '@/lib/collections/types'
 import type { Hadith } from '@/lib/hadith/types'
 import type { CardContent, CardFormat, CardLine } from './types'
-import { banglaBookNames, banglaEyebrows, banglaGrade, banglaNote, bnDigits } from './bangla'
+import { banglaBookNames, banglaEyebrows, banglaGrade, banglaNote, banglaSource, bnDigits } from './bangla'
+import { azkarBenefits, type Benefit } from '@/lib/collections/benefits'
 
 export interface CardAyah {
   number: number
@@ -14,6 +15,7 @@ export interface QuranCardInput {
   kind: 'dua' | 'masnoon'
   title: string
   bangla?: boolean
+  benefit?: Benefit
   surahName: string
   surahNameArabic: string
   surahNumber: number
@@ -26,6 +28,9 @@ function splitNote(source: string): { note?: string; reference: string } {
   const parts = source.split(' · ')
   return parts.length > 1 ? { note: parts[0], reference: parts.slice(1).join(' · ') } : { reference: source }
 }
+
+export const cardBenefit = (benefit: Benefit | undefined, bangla: boolean) =>
+  benefit ? { text: bangla ? benefit.bn : benefit.en, source: bangla ? banglaSource(benefit.source) : benefit.source } : undefined
 
 const showsGrade = (hadith: Hadith) => hadith.grade && hadith.book !== 'bukhari' && hadith.book !== 'muslim'
 
@@ -50,6 +55,7 @@ export function azkarCard(item: TextItem, language: TextLanguage): CardContent {
     lines: [{ arabic: item.arabic, translation: textTranslation(item, language) }],
     reference,
     ...(note ? { note: bangla ? banglaNote(note) : note } : {}),
+    ...(azkarBenefits[item.id] ? { benefit: cardBenefit(azkarBenefits[item.id], bangla) } : {}),
   }
 }
 
@@ -83,6 +89,7 @@ export function quranCards(input: QuranCardInput, format: CardFormat): CardConte
     arabicTitle: input.kind === 'masnoon' ? input.surahNameArabic : undefined,
     lines: ayat.map((a): CardLine => ({ arabic: a.arabic, translation: a.translation, ayah: a.number })),
     reference: `Surah ${input.surahName} · ${input.surahNumber}:${ayahRange(ayat)}`,
+    ...(index === 0 && input.benefit ? { benefit: cardBenefit(input.benefit, Boolean(input.bangla)) } : {}),
     ...(slides.length > 1 ? { slide: { index: index + 1, count: slides.length } } : {}),
   }))
 }

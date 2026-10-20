@@ -23,7 +23,7 @@ export const ArchLayout: React.FC<LayoutProps> = (p) => {
         <path d={archPath(l, r, top, bottom)} fill={panelFill(theme)} stroke={theme.accent} strokeWidth="2.2" />
         <path d={archPath(l + 16, r - 16, top + 22, bottom - 16)} fill="none" stroke={theme.accent} strokeWidth="0.9" opacity="0.6" />
       </svg>
-      <div style={column(`${top + 120}px 150px ${height - bottom + 60}px`, 30)}>
+      <div style={column(`${top + (p.format === 'square' ? 92 : 120)}px 150px ${height - bottom + (p.format === 'square' ? 40 : 60)}px`, p.format === 'square' ? 22 : 30)}>
         <CardHeader content={p.content} theme={theme} logoSrc={p.logoSrc} />
         <CardBody {...bodyProps(p)} />
         <CardFooter content={p.content} theme={theme} />

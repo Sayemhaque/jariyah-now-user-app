@@ -8,7 +8,7 @@ import { bodyProps, column, storyInset, type LayoutProps } from './layoutTypes'
 
 export const NightLayout: React.FC<LayoutProps> = (p) => {
   const { theme, width, height } = p
-  const skyline = height * 0.2
+  const skyline = height * (p.format === 'square' ? 0.13 : 0.2)
   return (
     <>
       <CardBackdrop theme={theme} width={width} height={height} pattern={false} />

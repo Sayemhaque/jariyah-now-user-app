@@ -31,9 +31,19 @@ function linesFor(text: string, size: number, width: number, charWidth: number):
   return text ? Math.max(1, Math.ceil((text.length * size * charWidth) / width)) : 0
 }
 
-export function cardHeaderHeight(content: CardContent, titleScale = 1): number {
-  const size = cardTitleSize(content.title) * titleScale
-  return 96 + 18 + 30 + 18 + linesFor(content.title, size, 820, 0.42) * size * 1.1 + (content.arabicTitle ? 98 + 18 : 0)
+function benefitHeight(content: CardContent, format: CardFormat): number {
+  if (!content.benefit) return 0
+  const compact = format === 'square'
+  const text = compact ? `${content.benefit.text} — ${content.benefit.source}` : content.benefit.text
+  const size = compact ? 25 : 29
+  return 18 + (compact ? 20 : 40) + linesFor(text, size, 712, isBengaliText(text) ? 0.5 : 0.42) * size * 1.35 + (compact ? 0 : 30)
+}
+
+export function cardHeaderHeight(content: CardContent, titleScale = 1, format: CardFormat = 'portrait'): number {
+  const compact = format === 'square'
+  const size = cardTitleSize(content.title) * titleScale * (compact ? 0.86 : 1)
+  const gap = compact ? 12 : 18
+  return (compact ? 72 : 96) + gap + 30 + gap + linesFor(content.title, size, 820, 0.42) * size * 1.1 + (content.arabicTitle ? (compact ? 72 : 98) + gap : 0) + benefitHeight(content, format)
 }
 
 function footerHeight(content: CardContent): number {
@@ -42,7 +52,7 @@ function footerHeight(content: CardContent): number {
 
 export function availableBodyHeight(content: CardContent, format: CardFormat): number {
   const padding = cardPadding[format]
-  return cardSizes[format].height - padding.top - padding.bottom - cardHeaderHeight(content) - footerHeight(content) - sectionGap * 2
+  return cardSizes[format].height - padding.top - padding.bottom - cardHeaderHeight(content, 1, format) - footerHeight(content) - sectionGap * 2
 }
 
 type BaseSizes = Omit<CardTypeSizes, 'scale'>
