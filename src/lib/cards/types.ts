@@ -46,8 +46,13 @@ export interface CardTheme {
   grain: number
 }
 
+export type CardLayout = 'frame' | 'arch' | 'editorial' | 'split' | 'floating' | 'quote' | 'tile' | 'night' | 'botanical' | 'glass' | 'manuscript' | 'minimal'
+
+export type CardAlign = 'center' | 'left'
+
 export interface CardProps {
   content: CardContent
   theme: CardTheme
   format: CardFormat
+  layout?: CardLayout
 }

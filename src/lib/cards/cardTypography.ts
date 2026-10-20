@@ -31,7 +31,7 @@ function linesFor(text: string, size: number, width: number, charWidth: number):
   return text ? Math.max(1, Math.ceil((text.length * size * charWidth) / width)) : 0
 }
 
-function headerHeight(content: CardContent): number {
+export function cardHeaderHeight(content: CardContent): number {
   const size = cardTitleSize(content.title)
   return 96 + 18 + 30 + 18 + linesFor(content.title, size, 820, 0.42) * size * 1.1 + (content.arabicTitle ? 98 + 18 : 0)
 }
@@ -42,7 +42,7 @@ function footerHeight(content: CardContent): number {
 
 export function availableBodyHeight(content: CardContent, format: CardFormat): number {
   const padding = cardPadding[format]
-  return cardSizes[format].height - padding.top - padding.bottom - headerHeight(content) - footerHeight(content) - sectionGap * 2
+  return cardSizes[format].height - padding.top - padding.bottom - cardHeaderHeight(content) - footerHeight(content) - sectionGap * 2
 }
 
 type BaseSizes = Omit<CardTypeSizes, 'scale'>
