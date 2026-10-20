@@ -51,6 +51,12 @@ function familyCssUrl(family: string): string {
 }
 
 let fontsLoaded = false
+let resolveFontsReady: () => void = () => {}
+const fontsReadyPromise = new Promise<void>((resolve) => {
+  resolveFontsReady = resolve
+})
+
+export const remotionFontsReady = () => fontsReadyPromise
 
 export function ensureRemotionFonts(): void {
   if (fontsLoaded) return
@@ -82,6 +88,7 @@ export function ensureRemotionFonts(): void {
         await document.fonts.ready
       } catch {
       }
+      resolveFontsReady()
       continueRender(handle)
     })
 }

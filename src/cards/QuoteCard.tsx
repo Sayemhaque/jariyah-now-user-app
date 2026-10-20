@@ -9,7 +9,7 @@ import { CardGrain } from './CardGrain'
 import { CardHeader } from './CardHeader'
 import { CardPattern } from './CardPattern'
 
-export const QuoteCard: React.FC<CardProps & { logoSrc: string }> = ({ content, theme, format, logoSrc }) => {
+export const QuoteCard: React.FC<CardProps & { logoSrc: string; onSettled?: () => void }> = ({ content, theme, format, logoSrc, onSettled }) => {
   const { width, height } = cardSizes[format]
   const sizes = React.useMemo(() => fitCardType(content, format), [content, format])
   const padding = cardPadding[format]
@@ -22,7 +22,7 @@ export const QuoteCard: React.FC<CardProps & { logoSrc: string }> = ({ content, 
       <CardFrame color={theme.accent} width={width} height={height} />
       <div style={{ position: 'absolute', inset: 0, padding: `${padding.top}px ${padding.side}px ${padding.bottom}px`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 36 }}>
         <CardHeader content={content} theme={theme} logoSrc={logoSrc} />
-        <CardBody content={content} theme={theme} sizes={sizes} />
+        <CardBody content={content} theme={theme} sizes={sizes} fitKey={`${format}:${JSON.stringify(content)}`} onSettled={onSettled} />
         <CardFooter content={content} theme={theme} />
       </div>
     </div>

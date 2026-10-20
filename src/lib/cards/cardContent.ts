@@ -17,7 +17,7 @@ export interface QuranCardInput {
   ayat: CardAyah[]
 }
 
-const slideBudgets: Record<CardFormat, number> = { portrait: 560, square: 400, story: 860 }
+const slideBudgets: Record<CardFormat, number> = { portrait: 470, square: 330, story: 760 }
 
 function splitNote(source: string): { note?: string; reference: string } {
   const parts = source.split(' · ')
