@@ -21,4 +21,6 @@ export const bengaliFontStacks: Record<string, string> = {
 
 export const uiFontStack = stack('--font-inter', 'Inter', 'system-ui, sans-serif')
 export const displayFontStack = stack('--font-display', 'EB Garamond', 'serif')
+export const cardDisplayStack = stack('--font-cormorant', 'Cormorant Garamond', 'Georgia, serif')
+export const cardCapsStack = stack('--font-cinzel', 'Cinzel', 'Georgia, serif')
 export const headerArabicStack = arabicFontStacks.uthmani!

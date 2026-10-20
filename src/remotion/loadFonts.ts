@@ -15,6 +15,8 @@ export const remotionFontFamilies: Record<string, string> = {
   'Noto Serif Bengali': 'Noto Serif Bengali',
   'Hind Siliguri': 'Hind Siliguri',
   'Inter': 'Inter',
+  'Cormorant Garamond': 'Cormorant Garamond',
+  'Cinzel': 'Cinzel',
 }
 
 const fontWeights: Record<string, number[]> = {
@@ -32,7 +34,11 @@ const fontWeights: Record<string, number[]> = {
   'Noto Serif Bengali': [400, 500, 600, 700],
   'Hind Siliguri': [300, 400, 500, 600, 700],
   'Inter': [400, 700],
+  'Cormorant Garamond': [400, 500, 600],
+  'Cinzel': [400, 500, 600],
 }
+
+const italicFamilies = new Set(['Cormorant Garamond'])
 
 function cssFamilyName(family: string): string {
   return family.replace(/\s+/g, '+')
@@ -40,7 +46,8 @@ function cssFamilyName(family: string): string {
 
 function familyCssUrl(family: string): string {
   const weights = fontWeights[family] ?? [400]
-  return `https://fonts.googleapis.com/css2?family=${cssFamilyName(family)}:wght@${weights.join(';')}&display=swap`
+  const axes = italicFamilies.has(family) ? `ital,wght@${[0, 1].flatMap((ital) => weights.map((w) => `${ital},${w}`)).join(';')}` : `wght@${weights.join(';')}`
+  return `https://fonts.googleapis.com/css2?family=${cssFamilyName(family)}:${axes}&display=swap`
 }
 
 let fontsLoaded = false

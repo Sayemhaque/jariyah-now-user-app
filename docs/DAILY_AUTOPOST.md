@@ -56,11 +56,9 @@ Facebook Reels must be 3–90 s long. Videos have no length limit, so a long exc
 |---|---|
 | `UMMAHAPI_KEY` | UmmahAPI key, if you use one |
 
-## Hadith and Azkar recordings
+## Image posts
 
-Hadith and azkar videos work without a recording: the text is shown silently, timed to how long it takes to read, with the Arabic words highlighted at reading pace. To use your own voice, record or upload it in the builder (Selection → Hadith or Azkar → pick an item → Record or Upload file). The recording is saved to the private Vercel Blob store as `recordings/{hadith|azkar}/{item}.{ext}`, and from then on the daily job uses it for that item.
-
-Uploads need two Vercel environment variables: `BLOB_READ_WRITE_TOKEN` (already used) and `RECORDINGS_UPLOAD_KEY`, a password of at least 8 characters that you type into the "Upload key" box once per device. The daily job reads recordings with the `BLOB_READ_WRITE_TOKEN` secret it already has.
+Masnoon Surahs, Quranic Duas, Hadith and Azkar are posted as premium image cards (1080×1350 JPEG), not videos. A masnoon surah or dua longer than one card becomes an Instagram carousel and a Facebook multi-photo post of up to 10 slides. Card designs live in `src/cards/` and `src/lib/cards/` and rotate through 8 themes, one per post. Instagram can only fetch images from a URL, so image posts need the `BLOB_READ_WRITE_TOKEN` secret; the images are deleted right after publishing. YouTube and TikTok skip image posts.
 
 ## Settings (`src/lib/daily/dailyConfig.ts`)
 
@@ -70,8 +68,8 @@ Uploads need two Vercel environment variables: `BLOB_READ_WRITE_TOKEN` (already 
 | `translationKey` | `sahiih_international` (English) | Translation shown under the Arabic |
 | `postTimes` | `09:00`, `15:00`, `22:00` | Bangladesh times of the daily posts. Each run works out its slot from the time it starts, so every post gets its own surah, reciter and background. Keep the `cron` lines in the workflow in sync |
 | `coverAtMs` | `2500` | Moment of the video Instagram uses as the cover (`thumb_offset`), after the title and first ayah have appeared |
-| `contentRotation` | `quran`, `masnoon`, `hadith`, `duas`, `azkar` | Content types to rotate through, one per post. `masnoon` and `duas` use the presets in `src/lib/collections/`; `hadith` and `azkar` post silently until you record them |
-| `textLanguage` | `english` | Translation shown in hadith and azkar videos: `english` or `bangla` |
+| `contentRotation` | `quran`, `masnoon`, `hadith`, `duas`, `azkar` | Content types to rotate through, one per post. `quran` is a reel; the others are image posts built from `src/lib/collections/` |
+| `textLanguage` | `english` | Language of hadith and azkar cards: `english` or `bangla` |
 | `maxAyats` | `10` | Most ayat in one video. There is no length limit |
 | `extraHashtags` | `JariyahNow`, `Quran` | Hashtags added to every post |
 | `platforms` | `instagram`, `facebook` | Platforms to post to: `youtube`, `facebook`, `instagram`, `tiktok`. Ones without secrets are skipped |

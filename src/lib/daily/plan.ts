@@ -89,7 +89,6 @@ export interface PostMetadataInput {
   reciterName: string
   translationCredit?: string
   extraHashtags?: string[]
-  headline?: string
 }
 
 export interface PostMetadata {
@@ -133,11 +132,10 @@ export function buildPostMetadata(input: PostMetadataInput): PostMetadata {
   ].filter(Boolean)
   const hashtags = Array.from(new Set(tags))
 
-  const base = input.headline ? `${input.headline} | Surah ${surah.name} ${range}` : `Surah ${surah.name} (${surah.arabicName}) | ${range}`
+  const base = `Surah ${surah.name} (${surah.arabicName}) | ${range}`
   const title = `${base} #Shorts`.length <= 100 ? `${base} #Shorts` : base.slice(0, 100)
 
   const lines = [
-    ...(input.headline ? [input.headline, ''] : []),
     `Surah ${surah.name} — ${surah.englishName}`,
     `Surah ${surah.number}, ${range === 'Full Surah' ? `all ${surah.numberOfAyahs} ayats` : range}`,
     '',

@@ -1,13 +1,9 @@
 'use client'
 
 import { createContext, createElement, useContext, useMemo, useState, type ReactNode } from 'react'
-import type { ContentMode, TextItem, TextLanguage, TextMode } from './collections/types'
-
-export interface LoadedText {
-  mode: TextMode
-  item: TextItem
-  language: TextLanguage
-}
+import type { ContentMode, TextLanguage } from './collections/types'
+import type { CardFormat } from './cards/types'
+import { cardThemes } from './cards/themes'
 
 export interface ContentState {
   mode: ContentMode
@@ -15,13 +11,15 @@ export interface ContentState {
   partIndex: number
   textItemId: string
   language: TextLanguage
-  loadedText: LoadedText | null
+  cardFormat: CardFormat
+  cardThemeKey: string
   setMode: (mode: ContentMode) => void
   setPresetId: (id: string) => void
   setPartIndex: (index: number) => void
   setTextItemId: (id: string) => void
   setLanguage: (language: TextLanguage) => void
-  setLoadedText: (loaded: LoadedText | null) => void
+  setCardFormat: (format: CardFormat) => void
+  setCardThemeKey: (key: string) => void
 }
 
 const ContentContext = createContext<ContentState | null>(null)
@@ -32,10 +30,11 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [partIndex, setPartIndex] = useState(0)
   const [textItemId, setTextItemId] = useState('')
   const [language, setLanguage] = useState<TextLanguage>('english')
-  const [loadedText, setLoadedText] = useState<LoadedText | null>(null)
+  const [cardFormat, setCardFormat] = useState<CardFormat>('portrait')
+  const [cardThemeKey, setCardThemeKey] = useState(cardThemes[0]!.key)
 
   const value = useMemo<ContentState>(() => ({
-    mode, presetId, partIndex, textItemId, language, loadedText,
+    mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey,
     setMode: (next) => {
       setModeState(next)
       setPresetIdState('')
@@ -46,8 +45,8 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       setPresetIdState(id)
       setPartIndex(0)
     },
-    setPartIndex, setTextItemId, setLanguage, setLoadedText,
-  }), [mode, presetId, partIndex, textItemId, language, loadedText])
+    setPartIndex, setTextItemId, setLanguage, setCardFormat, setCardThemeKey,
+  }), [mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey])
 
   return createElement(ContentContext.Provider, { value }, children)
 }

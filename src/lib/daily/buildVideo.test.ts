@@ -1,9 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { surahsFallback } from '@/lib/surahs-fallback'
 
-const recordings = vi.hoisted(() => ({ list: [] as { mode: string; itemId: string; url: string; uploadedAt: string }[] }))
-
-vi.mock('@/lib/recordings/blobRecordings', () => ({ listRecordings: vi.fn(async () => recordings.list) }))
 vi.mock('./audioAnalysis', () => ({ analyzeAudio: vi.fn(async () => ({ durationMs: 5000, speech: { startMs: 400, endMs: 4600, pauses: [] } })) }))
 vi.mock('@/lib/fetchVerseTimings', () => ({ fetchVerseTimings: vi.fn(async () => null) }))
 vi.mock('@/lib/quranApi', () => ({
@@ -12,7 +9,7 @@ vi.mock('@/lib/quranApi', () => ({
     surahNumber: surah,
     ayatNumber: ayat,
     arabicText: 'بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ',
-    translation: 'In the name of Allah',
+    translation: `Translation of ${surah}:${ayat}`,
     transliteration: '',
     audioUrl: `https://everyayah.com/data/x/${surah}-${ayat}.mp3`,
     audioDurationMs: 0,
@@ -21,62 +18,53 @@ vi.mock('@/lib/quranApi', () => ({
   })),
 }))
 
-const { buildDailyVideo } = await import('./buildVideo')
+const { buildDailyPost } = await import('./buildVideo')
 
 const postTimes = ['09:00', '15:00', '22:00']
 const rotation = ['quran', 'masnoon', 'hadith', 'duas', 'azkar'] as const
-const atSlot = (dayOffset: number, hourUtc: number) => new Date(Date.UTC(2026, 9, 20 + dayOffset, hourUtc, 30))
+const slotHours = [3, 9, 16]
+const atSequence = (n: number) => new Date(Date.UTC(2026, 9, 20 + Math.floor(n / 3), slotHours[n % 3]!, 30))
+const post = (n: number, extra = {}) => buildDailyPost({ now: atSequence(n), postTimes, contentRotation: [...rotation], reciterId: 'alafasy', ...extra })
 
-async function modesOver(days: number) {
-  const modes: string[] = []
-  for (let d = 0; d < days; d++) {
-    for (const hour of [3, 9, 16]) {
-      const video = await buildDailyVideo({ now: atSlot(d, hour), postTimes, contentRotation: [...rotation], blobToken: 'token', reciterId: 'alafasy' })
-      modes.push(video.mode)
-    }
+async function firstOfMode(mode: string) {
+  for (let n = 0; n < 15; n++) {
+    const p = await post(n)
+    if (p.mode === mode) return p
   }
-  return modes
+  throw new Error(`no ${mode} post`)
 }
 
-describe('buildDailyVideo content rotation', () => {
-  beforeEach(() => {
-    recordings.list = []
+describe('buildDailyPost', () => {
+  it('rotates a Quran reel with four kinds of image posts', async () => {
+    const posts = await Promise.all([0, 1, 2, 3, 4, 5].map((n) => post(n)))
+    expect(new Set(posts.map((p) => p.mode))).toEqual(new Set(rotation))
+    posts.forEach((p) => expect(p.kind).toBe(p.mode === 'quran' ? 'video' : 'images'))
   })
 
-  it('rotates all five types, posting hadith and azkar without voice when nothing is recorded', async () => {
-    const modes = await modesOver(2)
-    expect(new Set(modes)).toEqual(new Set(rotation))
-    const index = modes.indexOf('azkar')
-    const video = await buildDailyVideo({ now: atSlot(Math.floor(index / 3), [3, 9, 16][index % 3]!), postTimes, contentRotation: [...rotation] })
-    expect(video.props.slides[0]!.audioUrl).toBe('')
-    expect(video.props.slides[0]!.audioDurationMs).toBeGreaterThanOrEqual(7000)
-    expect(video.label).toContain('no voice')
+  it('makes one portrait hadith card with an English caption and no Quran tags', async () => {
+    const p = await firstOfMode('hadith')
+    if (p.kind !== 'images') throw new Error('expected images')
+    expect(p.cards).toHaveLength(1)
+    expect(p.cards[0]!.format).toBe('portrait')
+    expect(p.cards[0]!.content.lines[0]!.arabic).toBeUndefined()
+    expect(p.meta.title.startsWith('Hadith: ')).toBe(true)
+    expect(p.meta.hashtags).toContain('#Hadith')
+    expect(p.meta.hashtags).not.toContain('#Quran')
   })
 
-  it('uses the recorded voice for an item that has a recording', async () => {
-    const { hadithCollection } = await import('@/lib/collections/hadith')
-    recordings.list = hadithCollection.map((h) => ({ mode: 'hadith', itemId: h.id, url: `https://x.private.blob.vercel-storage.com/recordings/hadith/${h.id}.webm`, uploadedAt: '' }))
-    const modes = await modesOver(2)
-    const index = modes.indexOf('hadith')
-    const video = await buildDailyVideo({ now: atSlot(Math.floor(index / 3), [3, 9, 16][index % 3]!), postTimes, contentRotation: [...rotation], blobToken: 'token' })
-    expect(video.props.slides[0]!.audioUrl).toMatch(/recordings\/hadith\//)
-    expect(video.props.slides[0]).toMatchObject({ ayatNumber: 0, audioDurationMs: 5000 })
-    expect(video.props.slides[0]!.arabicText).toBe('')
-    expect(video.props.slides[0]!.words).toBeUndefined()
-    expect(video.meta.title.startsWith('Hadith: ')).toBe(true)
+  it('makes a masnoon carousel of at most ten slides from the preset ayat', async () => {
+    const p = await firstOfMode('masnoon')
+    if (p.kind !== 'images') throw new Error('expected images')
+    expect(p.cards.length).toBeGreaterThanOrEqual(1)
+    expect(p.cards.length).toBeLessThanOrEqual(10)
+    expect(p.cards.every((c) => c.theme.key === p.cards[0]!.theme.key)).toBe(true)
+    expect(p.cards[0]!.content.lines[0]!.translation).toMatch(/^Translation of \d+:\d+$/)
+    expect(p.meta.title.startsWith('Masnoon Surah: ')).toBe(true)
   })
 
-  it('makes masnoon posts from the preset range with a headline in the caption', async () => {
-    const video = await buildDailyVideo({ now: atSlot(0, 9), postTimes, contentRotation: ['masnoon'], reciterId: 'alafasy' })
-    expect(video.mode).toBe('masnoon')
-    expect(video.meta.title.startsWith('Masnoon Surah: ')).toBe(true)
-    expect(video.meta.hashtags).toContain('#MasnoonSurah')
-    expect(video.props.slides.length).toBeLessThanOrEqual(10)
-  })
-
-  it('keeps a manual surah override as a plain Quran post', async () => {
-    const video = await buildDailyVideo({ now: atSlot(0, 3), postTimes, contentRotation: ['hadith'], surahOverride: 112, reciterId: 'alafasy' })
-    expect(video.mode).toBe('quran')
-    expect(video.props.surahName).toBe(surahsFallback.find((s) => s.number === 112)!.name)
+  it('keeps a manual surah override as a Quran reel', async () => {
+    const p = await post(2, { surahOverride: 112 })
+    expect(p.kind).toBe('video')
+    if (p.kind === 'video') expect(p.props.surahName).toBe(surahsFallback.find((s) => s.number === 112)!.name)
   })
 })

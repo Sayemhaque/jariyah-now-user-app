@@ -23,8 +23,7 @@ export async function mixAudio(
 
   try {
     onProgress?.(0.03)
-    const silence = (ms: number) => audioCtx.createBuffer(2, Math.max(1, Math.round((ms / 1000) * audioCtx.sampleRate)), audioCtx.sampleRate)
-    const buffers = await Promise.all(slides.map((s) => (s.audioUrl ? fetchAndDecode(s.audioUrl, audioCtx) : Promise.resolve(silence(s.audioDurationMs)))))
+    const buffers = await Promise.all(slides.map((s) => fetchAndDecode(s.audioUrl, audioCtx)))
     onProgress?.(0.04)
 
     const sampleRate = buffers[0]!.sampleRate

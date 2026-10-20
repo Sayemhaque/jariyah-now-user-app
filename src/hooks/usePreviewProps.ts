@@ -1,20 +1,35 @@
 import { useMemo } from 'react'
 import { useBuilderStore } from '@/lib/store'
+import { reciters } from '@/lib/reciters'
+import { videoAttributionLine } from '@/lib/translations'
 import { computeSlideFrames } from '@/lib/advanceTiming'
 import { videoFps } from '@/lib/constants'
 import { aspectRatios } from '@/remotion/types'
-import { useVideoTitles } from './useVideoTitles'
 
 export function usePreviewProps() {
   const slides = useBuilderStore((s) => s.ayatList)
+  const surahs = useBuilderStore((s) => s.surahs)
+  const selectedSurahNumber = useBuilderStore((s) => s.selectedSurahNumber)
+  const reciterId = useBuilderStore((s) => s.reciterId)
+  const translationKey = useBuilderStore((s) => s.translationKey)
   const settings = useBuilderStore((s) => s.settings)
-  const { titles, attributionLine } = useVideoTitles()
 
   const { totalFrames, offsets } = useMemo(() => computeSlideFrames(slides, videoFps), [slides])
-  const inputProps = useMemo(
-    () => ({ slides, settings, orientation: settings.orientation, attributionLine, ...titles, totalAyats: slides.length }),
-    [slides, settings, titles, attributionLine],
-  )
+  const inputProps = useMemo(() => {
+    const surah = surahs.find((s) => s.number === selectedSurahNumber)
+    const reciter = reciters.find((r) => r.id === reciterId) ?? reciters[0]!
+    return {
+      slides,
+      settings,
+      orientation: settings.orientation,
+      reciterName: reciter.name,
+      attributionLine: videoAttributionLine(translationKey),
+      surahName: surah?.name ?? '',
+      surahNameArabic: surah?.arabicName ?? '',
+      surahMeaning: surah?.englishName ?? '',
+      totalAyats: slides.length,
+    }
+  }, [slides, settings, surahs, selectedSurahNumber, reciterId, translationKey])
 
   return { slides, inputProps, totalFrames, frameOffsets: offsets, aspect: aspectRatios[settings.orientation]! }
 }

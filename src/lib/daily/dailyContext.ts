@@ -1,5 +1,6 @@
 import type { ContentMode, TextLanguage } from '@/lib/collections/types'
 import type { VideoSettings } from '@/lib/types'
+import type { CardProps } from '@/lib/cards/types'
 import type { AyatVideoProps } from '@/remotion/types'
 import type { AudioTools } from './audioAnalysis'
 import type { PostMetadata } from './plan'
@@ -18,10 +19,10 @@ export interface DailyVideoOptions {
   postTimes?: string[]
   contentRotation?: ContentMode[]
   textLanguage?: TextLanguage
-  blobToken?: string
 }
 
 export interface DailyVideo {
+  kind: 'video'
   dateKey: string
   mode: ContentMode
   label: string
@@ -29,6 +30,17 @@ export interface DailyVideo {
   props: AyatVideoProps
   meta: PostMetadata
 }
+
+export interface DailyImagePost {
+  kind: 'images'
+  dateKey: string
+  mode: ContentMode
+  label: string
+  cards: CardProps[]
+  meta: PostMetadata
+}
+
+export type DailyPost = DailyVideo | DailyImagePost
 
 export interface DailyContext {
   opts: DailyVideoOptions

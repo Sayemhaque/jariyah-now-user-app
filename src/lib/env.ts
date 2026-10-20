@@ -20,7 +20,6 @@ const envSchema = z.object({
   FFMPEG_BIN: z.string().default('ffmpeg'),
 
   BLOB_READ_WRITE_TOKEN: z.string().min(1).optional(),
-  RECORDINGS_UPLOAD_KEY: z.string().min(8).optional(),
 
   RENDER_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(6),
   RENDER_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(3_600_000),

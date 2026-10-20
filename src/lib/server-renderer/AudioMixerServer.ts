@@ -57,12 +57,6 @@ async function fetchAndDecode(url: string): Promise<DecodedAudio> {
   })
 }
 
-const silentSampleRate = 44100
-
-function silentAudio(durationMs: number): DecodedAudio {
-  return { pcm: new Float32Array(Math.max(1, Math.round((durationMs / 1000) * silentSampleRate)) * 2), sampleRate: silentSampleRate, channels: 2 }
-}
-
 export async function mixAudio(
   slides: AyatSlide[],
   onProgress?: (p: number) => void,
@@ -70,7 +64,7 @@ export async function mixAudio(
   onProgress?.(0.03)
 
   const decoded = await Promise.all(
-    slides.map((s) => (s.audioUrl ? fetchAndDecode(s.audioUrl) : Promise.resolve(silentAudio(s.audioDurationMs))))
+    slides.map((s) => fetchAndDecode(s.audioUrl))
   )
   onProgress?.(0.04)
 

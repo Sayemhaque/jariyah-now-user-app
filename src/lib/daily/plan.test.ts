@@ -94,12 +94,6 @@ describe('buildPostMetadata', () => {
     numberOfAyahs: 4,
   }
 
-  it('leads with the collection headline for masnoon surahs and duas', () => {
-    const meta = buildPostMetadata({ surah: { number: 67, name: 'Al-Mulk', englishName: 'The Sovereignty', arabicName: 'الملك', numberOfAyahs: 30 }, fromAyat: 1, toAyat: 10, reciterName: 'Mishary Alafasy', headline: 'Masnoon Surah: Al-Mulk' })
-    expect(meta.title).toBe('Masnoon Surah: Al-Mulk | Surah Al-Mulk Ayat 1-10 #Shorts')
-    expect(meta.description.split('\n')[0]).toBe('Masnoon Surah: Al-Mulk')
-  })
-
   it('labels a whole surah and adds surah + reciter hashtags', () => {
     const meta = buildPostMetadata({ surah: ikhlas, fromAyat: 1, toAyat: 4, reciterName: 'Mishary Alafasy' })
     expect(meta.title).toBe('Surah Al-Ikhlas (الإخلاص) | Full Surah #Shorts')
