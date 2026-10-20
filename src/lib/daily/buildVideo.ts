@@ -12,7 +12,7 @@ import type { AyatSlide, Reciter, VideoSettings } from '@/lib/types'
 import type { ContentMode } from '@/lib/collections/types'
 import { buildImagePost } from './buildImagePost'
 import { videoProps, type DailyContext, type DailyPost, type DailyVideo, type DailyVideoOptions } from './dailyContext'
-import { modeTurn, pickContentMode } from './planContent'
+import { modeTurn, pickContentMode, scheduledPost } from './planContent'
 import {
   buildPostMetadata,
   countAyatsWithinBudget,
@@ -45,10 +45,12 @@ export async function buildDailyPost(opts: DailyVideoOptions = {}): Promise<Dail
     audioTools: { ffprobeBin: opts.ffprobeBin, ffmpegBin: opts.ffmpegBin },
   }
   if (opts.surahOverride) return buildQuranDailyVideo(ctx, opts.surahOverride)
-  const rotation: ContentMode[] = opts.contentRotation?.length ? opts.contentRotation : ['quran']
-  const mode = pickContentMode(sequence, rotation)
-  if (mode === 'quran') return buildQuranDailyVideo(ctx, pickSurahNumber(sequence))
-  return buildImagePost(ctx, mode, modeTurn(sequence, rotation, mode))
+  const rotation = opts.contentRotation
+  const { mode, turn } = rotation?.length
+    ? { mode: pickContentMode(sequence, rotation), turn: modeTurn(sequence, rotation, pickContentMode(sequence, rotation)) }
+    : scheduledPost(now, opts.postTimes ?? ['22:00'])
+  if (mode === 'quran') return buildQuranDailyVideo(ctx, pickSurahNumber(turn))
+  return buildImagePost(ctx, mode, turn)
 }
 
 async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number): Promise<DailyVideo> {

@@ -2,12 +2,17 @@ name: Daily Quran reel
 
 on:
   schedule:
-    # Bangladesh time 09:00, 15:00 and 22:00 (Asia/Dhaka is UTC+6, no DST).
+    # Posts go live at Bangladesh time 07:00, 10:00, 13:30, 16:30, 19:30
+    # (two reels and three image posts, shuffled daily) and a reel every night
+    # at 22:00 (Asia/Dhaka is UTC+6, no DST). Each run starts 30 minutes early,
+    # renders, then waits and publishes just before its slot.
     # Keep in sync with postTimes in src/lib/daily/dailyConfig.ts.
-    # GitHub may start scheduled runs a few minutes late at busy times.
-    - cron: '0 3 * * *'
-    - cron: '0 9 * * *'
-    - cron: '0 16 * * *'
+    - cron: '30 0 * * *'
+    - cron: '30 3 * * *'
+    - cron: '0 7 * * *'
+    - cron: '0 10 * * *'
+    - cron: '0 13 * * *'
+    - cron: '30 15 * * *'
   workflow_dispatch:
 
 # Never run two posting jobs at once (avoids double posts).
@@ -18,7 +23,7 @@ concurrency:
 jobs:
   post:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,6 +38,8 @@ jobs:
 
       - name: Render and post
         env:
+          # Manual runs post straight away instead of waiting for a slot.
+          POST_NOW: ${{ github.event_name == 'workflow_dispatch' }}
           NEXT_PUBLIC_UMMAHAPI_KEY: ${{ secrets.UMMAHAPI_KEY }}
           # YouTube Shorts
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}

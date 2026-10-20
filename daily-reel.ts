@@ -2,6 +2,7 @@ import { appendFileSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildDailyPost, type DailyImagePost, type DailyVideo } from '@/lib/daily/buildVideo'
 import { dailyConfig } from '@/lib/daily/dailyConfig'
+import { publishDelayMs, scheduledPostTime } from '@/lib/daily/plan'
 import { loadSocialConfig } from '@/lib/social/config'
 import { uploadToYouTube } from '@/lib/social/youtube'
 import { uploadToFacebookReels, uploadToInstagramReels } from '@/lib/social/meta'
@@ -18,8 +19,19 @@ function summary(line: string) {
   if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `${line}\n`)
 }
 
+const postNow = env.POST_NOW === 'true'
+const slot = postNow ? new Date() : scheduledPostTime(new Date(), dailyConfig.postTimes)
+
+async function waitForSlot(uploadLeadMinutes: number) {
+  const ms = postNow ? 0 : publishDelayMs(new Date(), slot, uploadLeadMinutes * 60_000)
+  if (!ms) return
+  console.log(`Ready early — waiting ${Math.round(ms / 1000)}s to publish for ${slot.toISOString()}`)
+  await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 async function main() {
   const post = await buildDailyPost({
+    now: slot,
     surahOverride: env.SURAH ? Number(env.SURAH) : undefined,
     reciterId: dailyConfig.reciterId,
     translationKey: dailyConfig.translationKey,
@@ -28,7 +40,7 @@ async function main() {
     quality: dailyConfig.quality,
     extraHashtags: dailyConfig.extraHashtags,
     ffmpegBin: env.FFMPEG_BIN || 'ffmpeg',
-    contentRotation: dailyConfig.contentRotation,
+    maxDurationSec: dailyConfig.maxDurationSec,
     textLanguage: dailyConfig.textLanguage,
   })
 
@@ -63,6 +75,7 @@ async function postVideo(video: DailyVideo) {
     TIKTOK_PRIVACY_LEVEL: dailyConfig.tiktokPrivacy,
   })
   const input: UploadInput = { video: buf, meta: video.meta, coverAtMs: dailyConfig.coverAtMs }
+  await waitForSlot(dailyConfig.reelUploadLeadMinutes)
   const uploaders: Record<Platform, (() => Promise<UploadResult>) | null> = {
     youtube: cfg.youtube && (() => uploadToYouTube(cfg.youtube!, input)),
     facebook: cfg.facebook && (() => uploadToFacebookReels(cfg.facebook!, input)),
@@ -85,6 +98,7 @@ async function postImages(post: DailyImagePost) {
   if (!token) throw new Error('Image posts need the BLOB_READ_WRITE_TOKEN secret so Instagram and Facebook can fetch the images')
   const cfg = loadSocialConfig({ ...env })
   const files = images.map((data) => ({ data, contentType: 'image/jpeg', extension: 'jpg' }))
+  await waitForSlot(dailyConfig.imageUploadLeadMinutes)
   await withTemporaryUrls(files, token, async (imageUrls) => {
     const input: ImagePostInput = { imageUrls, meta: post.meta }
     await runUploads({

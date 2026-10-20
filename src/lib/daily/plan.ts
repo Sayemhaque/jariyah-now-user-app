@@ -154,3 +154,13 @@ export function buildPostMetadata(input: PostMetadataInput): PostMetadata {
     shortCaption: `${base} — ${reciterName}\n${hashtags.join(' ')}`,
   }
 }
+
+export function scheduledPostTime(now: Date, postTimes: readonly string[], lookbackMs = 60 * 60_000): Date {
+  const dayStart = Math.floor((now.getTime() + dhakaOffsetMs) / dayMs) * dayMs - dhakaOffsetMs
+  const slots = [0, 1].flatMap((d) => postTimes.map((t) => dayStart + d * dayMs + toMinutes(t) * 60_000))
+  return new Date(slots.find((t) => t > now.getTime() - lookbackMs) ?? now.getTime())
+}
+
+export function publishDelayMs(now: Date, slot: Date, uploadLeadMs: number): number {
+  return Math.max(0, slot.getTime() - uploadLeadMs - now.getTime())
+}
