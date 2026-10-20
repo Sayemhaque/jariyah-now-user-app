@@ -27,3 +27,9 @@ export function bandTheme(theme: CardTheme): CardTheme {
 }
 
 export const column = (padding: string, gap = 36): React.CSSProperties => ({ position: 'absolute', inset: 0, padding, display: 'flex', flexDirection: 'column', alignItems: 'center', gap })
+
+export const pick = <T,>(format: CardFormat, portrait: T, square: T, story: T): T => (format === 'story' ? story : format === 'square' ? square : portrait)
+
+export const tint = (color: string, alpha: number) => `${color.slice(0, 7)}${Math.round(Math.min(1, Math.max(0, alpha)) * 255).toString(16).padStart(2, '0')}`
+
+export const fullSvg = (width: number, height: number): React.SVGProps<SVGSVGElement> => ({ width, height, style: { position: 'absolute', inset: 0 } })
