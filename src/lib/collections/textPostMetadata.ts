@@ -1,5 +1,5 @@
 import { defaultHashtags, toHashtag, type PostMetadata } from '@/lib/daily/plan'
-import { textTranslation } from './textSlide'
+import { slideArabic, textTranslation } from './textSlide'
 import type { TextItem, TextLanguage, TextMode } from './types'
 
 const modeTags: Record<TextMode, string[]> = {
@@ -24,8 +24,7 @@ export function buildTextPostMetadata({ mode, item, language, extraHashtags = []
   const lines = [
     item.title,
     '',
-    item.arabic,
-    '',
+    ...(slideArabic(mode, item) ? [item.arabic, ''] : []),
     textTranslation(item, language),
     '',
     `Source: ${item.source}`,

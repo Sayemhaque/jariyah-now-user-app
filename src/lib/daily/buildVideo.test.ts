@@ -61,7 +61,8 @@ describe('buildDailyVideo content rotation', () => {
     const video = await buildDailyVideo({ now: atSlot(Math.floor(index / 3), [3, 9, 16][index % 3]!), postTimes, contentRotation: [...rotation], blobToken: 'token' })
     expect(video.props.slides[0]!.audioUrl).toMatch(/recordings\/hadith\//)
     expect(video.props.slides[0]).toMatchObject({ ayatNumber: 0, audioDurationMs: 5000 })
-    expect(video.props.slides[0]!.words?.[0]!.startMs).toBe(400)
+    expect(video.props.slides[0]!.arabicText).toBe('')
+    expect(video.props.slides[0]!.words).toBeUndefined()
     expect(video.meta.title.startsWith('Hadith: ')).toBe(true)
   })
 

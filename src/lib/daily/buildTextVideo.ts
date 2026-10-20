@@ -1,4 +1,4 @@
-import { buildTextSlide, silentTextAudio, textVideoTitles, type RecordedAudio } from '@/lib/collections/textSlide'
+import { buildTextSlide, silentTextAudio, slideArabic, textVideoTitles, type RecordedAudio } from '@/lib/collections/textSlide'
 import { buildTextPostMetadata } from '@/lib/collections/textPostMetadata'
 import type { TextItem, TextMode } from '@/lib/collections/types'
 import { syncWords } from '@/lib/speech/syncWords'
@@ -7,14 +7,14 @@ import { analyzeAudio } from './audioAnalysis'
 import { videoProps, type DailyContext, type DailyVideo } from './dailyContext'
 import { dhakaDateKey } from './plan'
 
-async function recordedAudio(ctx: DailyContext, item: TextItem, url: string): Promise<RecordedAudio> {
+async function recordedAudio(ctx: DailyContext, mode: TextMode, item: TextItem, url: string): Promise<RecordedAudio> {
   const { durationMs, speech } = await analyzeAudio(url, ctx.audioTools)
-  return { url, durationMs, words: syncWords({ arabicText: item.arabic, durationMs, speech }) }
+  return { url, durationMs, words: syncWords({ arabicText: slideArabic(mode, item), durationMs, speech }) }
 }
 
 export async function buildTextDailyVideo(ctx: DailyContext, mode: TextMode, item: TextItem, recordingUrl: string | null): Promise<DailyVideo> {
   const language = ctx.opts.textLanguage ?? 'english'
-  const audio = recordingUrl ? await recordedAudio(ctx, item, recordingUrl) : silentTextAudio(item, language)
+  const audio = recordingUrl ? await recordedAudio(ctx, mode, item, recordingUrl) : silentTextAudio(mode, item, language)
   const durationMs = audio.durationMs
   const slide = buildTextSlide(mode, item, language, audio) as AyatSlide
   return {

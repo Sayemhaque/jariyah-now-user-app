@@ -18,13 +18,15 @@ export interface RecordedAudio {
 const arabicHeadings: Record<TextMode, string> = { hadith: 'حديث', azkar: 'أذكار' }
 const englishHeadings: Record<TextMode, string> = { hadith: 'Hadith', azkar: 'Azkar' }
 
+export const slideArabic = (mode: TextMode, item: TextItem) => (mode === 'hadith' ? '' : item.arabic)
+
 export const textTranslation = (item: TextItem, language: TextLanguage) => (language === 'bangla' ? item.bangla : item.english)
 
 export function buildTextSlide(mode: TextMode, item: TextItem, language: TextLanguage, audio: RecordedAudio): AyatData {
   return {
     surahNumber: 0,
     ayatNumber: 0,
-    arabicText: item.arabic,
+    arabicText: slideArabic(mode, item),
     translation: textTranslation(item, language),
     transliteration: '',
     audioUrl: audio.url,
@@ -44,6 +46,7 @@ export const isTextSlide = (slide: { surahNumber: number } | undefined) => slide
 const leadInMs = 900
 const msPerArabicWord = 700
 const msPerTranslationWord = 260
+const msPerMainTextWord = 420
 const tailMs = 1500
 const minSilentMs = 7000
 
@@ -58,10 +61,10 @@ function evenlyTimedWords(words: string[], startMs: number, spanMs: number): Tim
   })
 }
 
-export function silentTextAudio(item: TextItem, language: TextLanguage): RecordedAudio {
-  const arabicWords = splitWords(item.arabic)
+export function silentTextAudio(mode: TextMode, item: TextItem, language: TextLanguage): RecordedAudio {
+  const arabicWords = splitWords(slideArabic(mode, item))
   const arabicMs = arabicWords.length * msPerArabicWord
-  const translationMs = splitWords(textTranslation(item, language)).length * msPerTranslationWord
+  const translationMs = splitWords(textTranslation(item, language)).length * (arabicWords.length ? msPerTranslationWord : msPerMainTextWord)
   const durationMs = Math.max(minSilentMs, leadInMs + arabicMs + translationMs + tailMs)
-  return { url: '', durationMs, words: evenlyTimedWords(arabicWords, leadInMs, arabicMs) }
+  return { url: '', durationMs, ...(arabicWords.length ? { words: evenlyTimedWords(arabicWords, leadInMs, arabicMs) } : {}) }
 }
