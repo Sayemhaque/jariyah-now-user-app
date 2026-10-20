@@ -8,7 +8,7 @@ interface BrandLogoProps {
   priority?: boolean
 }
 
-export function BrandLogo({ size, className, alt = 'Jariyah Now logo', priority }: BrandLogoProps) {
+export function BrandLogo({ size, className, alt = 'Jariyah Now লোগো', priority }: BrandLogoProps) {
   return (
     <Image
       src="/logo.png"

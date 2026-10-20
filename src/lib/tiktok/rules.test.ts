@@ -15,7 +15,7 @@ const form = { ...emptyPostForm, title: 'Surah Al-Ikhlas' }
 
 describe('postBlockers', () => {
   it('requires the user to choose a privacy level', () => {
-    expect(postBlockers(form, creator, 30)).toContain('Choose who can view this video.')
+    expect(postBlockers(form, creator, 30)).toContain('ভিডিওটি কারা দেখতে পারবে তা বেছে নিন।')
     expect(postBlockers({ ...form, privacyLevel: 'PUBLIC_TO_EVERYONE' }, creator, 30)).toEqual([])
   })
 
@@ -31,7 +31,7 @@ describe('postBlockers', () => {
   it('does not allow private branded content', () => {
     const branded = { ...form, commercial: true, brandedContent: true, privacyLevel: 'SELF_ONLY' }
     expect(isPrivacyAllowed(branded, 'SELF_ONLY')).toBe(false)
-    expect(postBlockers(branded, creator, 30)).toContain('Branded content visibility cannot be set to private.')
+    expect(postBlockers(branded, creator, 30)).toContain('ব্র্যান্ডেড কনটেন্ট “শুধু আমি” রাখা যায় না।')
   })
 })
 

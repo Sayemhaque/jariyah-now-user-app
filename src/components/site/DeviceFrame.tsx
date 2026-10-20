@@ -9,7 +9,7 @@ export function DeviceFrame({ device }: DeviceFrameProps) {
     return (
       <div className="rounded-[2rem] border-[6px] border-foreground/85 bg-foreground/85 p-1 shadow-2xl">
         <div className="rounded-[1.5rem] overflow-hidden bg-background">
-          <Image src="/landing/app-mobile.png" alt="Jariyah Now app — mobile view" width={390} height={844} sizes="200px" className="w-full h-auto block" />
+          <Image src="/landing/app-mobile.png" alt="Jariyah Now অ্যাপ — মোবাইলে যেমন দেখায়" width={390} height={844} sizes="200px" className="w-full h-auto block" />
         </div>
       </div>
     )
@@ -30,7 +30,7 @@ export function DeviceFrame({ device }: DeviceFrameProps) {
       </div>
       <Image
         src="/landing/app-desktop.png"
-        alt="Jariyah Now app — desktop view"
+        alt="Jariyah Now অ্যাপ — কম্পিউটারে যেমন দেখায়"
         width={1440}
         height={900}
         sizes="(max-width: 1024px) 100vw, 960px"

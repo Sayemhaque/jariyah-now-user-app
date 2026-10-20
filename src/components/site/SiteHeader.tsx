@@ -34,7 +34,7 @@ export function SiteHeader({ links }: { links: NavItem[] }) {
             href="/app"
             className="qv-btn-primary inline-flex items-center gap-2 h-10 px-5 rounded-xl text-sm font-semibold ml-1"
           >
-            Open App
+            অ্যাপ খুলুন
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>

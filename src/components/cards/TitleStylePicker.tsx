@@ -6,9 +6,9 @@ import type { CardTitleStyle } from '@/lib/cards/types'
 import { titleFont } from '@/cards/titleFonts'
 
 const styles: { key: CardTitleStyle; label: string }[] = [
-  { key: 'serif', label: 'Elegant' },
-  { key: 'script', label: 'Calligraphy' },
-  { key: 'display', label: 'Bold display' },
+  { key: 'serif', label: 'মার্জিত' },
+  { key: 'script', label: 'ক্যালিগ্রাফি' },
+  { key: 'display', label: 'মোটা অক্ষর' },
 ]
 
 export function TitleStylePicker() {
@@ -30,7 +30,7 @@ export function TitleStylePicker() {
           )
         })}
       </div>
-      <SwitchField label="Gradient title" icon={Palette} checked={titleGradient} onChange={setTitleGradient} />
+      <SwitchField label="রঙিন (গ্রেডিয়েন্ট) শিরোনাম" icon={Palette} checked={titleGradient} onChange={setTitleGradient} />
     </div>
   )
 }

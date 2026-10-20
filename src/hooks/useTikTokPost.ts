@@ -29,7 +29,7 @@ export function useTikTokPost(jobId: string, creator: CreatorInfo, durationSec: 
       const { status, failReason } = await fetchTikTokStatus(publishId).catch(() => ({ status: 'PROCESSING', failReason: null }))
       if (status === 'PUBLISH_COMPLETE') return setPhase('published')
       if (status === 'FAILED') {
-        setMessage(failReason ?? 'TikTok could not publish this video.')
+        setMessage(failReason ?? 'TikTok ভিডিওটি পোস্ট করতে পারেনি।')
         return setPhase('failed')
       }
     }
@@ -44,7 +44,7 @@ export function useTikTokPost(jobId: string, creator: CreatorInfo, durationSec: 
       setPhase('processing')
       await follow(publishId)
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'TikTok could not publish this video.')
+      setMessage(error instanceof Error ? error.message : 'TikTok ভিডিওটি পোস্ট করতে পারেনি।')
       setPhase('failed')
     }
   }

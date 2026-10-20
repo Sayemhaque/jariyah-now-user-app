@@ -18,7 +18,7 @@ export function ReadyVideoCard({ video, downloading, onDownload }: ReadyVideoCar
         {playing ? (
           <video src={video.previewUrl} poster={video.thumbUrl} controls autoPlay playsInline className="h-full w-full object-cover" />
         ) : (
-          <button type="button" onClick={() => setPlaying(true)} className="absolute inset-0" aria-label={`Play ${video.title}`}>
+          <button type="button" onClick={() => setPlaying(true)} className="absolute inset-0" aria-label={`${video.title} চালু করুন`}>
             <img src={video.thumbUrl} alt="" loading="lazy" className="h-full w-full object-cover" />
             <span className="absolute inset-0 grid place-items-center bg-black/10 transition group-hover:bg-black/25">
               <span className="grid h-14 w-14 place-items-center rounded-full bg-white/90 text-black shadow-lg"><Play className="ml-1 h-6 w-6" /></span>
@@ -34,7 +34,7 @@ export function ReadyVideoCard({ video, downloading, onDownload }: ReadyVideoCar
         </div>
         <Button onClick={onDownload} disabled={downloading} size="sm" className="w-full font-semibold">
           {downloading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Download className="mr-1.5 h-4 w-4" />}
-          Download video
+          ভিডিও ডাউনলোড
         </Button>
       </div>
     </article>

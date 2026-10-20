@@ -7,15 +7,15 @@ export interface CardDecor {
 }
 
 export const variantSpecs: Record<CardVariant, CardDecor & { label: string }> = {
-  signature: { label: 'Signature', eyebrow: 'diamonds', divider: 'jewel', corners: 'none' },
-  ribbon: { label: 'Ribbon', eyebrow: 'ribbon', divider: 'star', corners: 'none' },
-  pill: { label: 'Badge', eyebrow: 'pill', divider: 'dots', corners: 'none' },
-  brackets: { label: 'Arabesque', eyebrow: 'brackets', divider: 'line', corners: 'stars' },
-  seal: { label: 'Seal', eyebrow: 'seal', divider: 'jewel', corners: 'arabesque' },
-  hairline: { label: 'Hairline', eyebrow: 'lines', divider: 'line', corners: 'none' },
-  crescent: { label: 'Crescent', eyebrow: 'crescent', divider: 'star', corners: 'crescents' },
-  lantern: { label: 'Lantern', eyebrow: 'stacked', divider: 'wave', corners: 'lanterns' },
-  dots: { label: 'Starlit', eyebrow: 'dots', divider: 'dots', corners: 'stars' },
+  signature: { label: 'সিগনেচার', eyebrow: 'diamonds', divider: 'jewel', corners: 'none' },
+  ribbon: { label: 'রিবন', eyebrow: 'ribbon', divider: 'star', corners: 'none' },
+  pill: { label: 'ব্যাজ', eyebrow: 'pill', divider: 'dots', corners: 'none' },
+  brackets: { label: 'আরাবেস্ক', eyebrow: 'brackets', divider: 'line', corners: 'stars' },
+  seal: { label: 'সিল', eyebrow: 'seal', divider: 'jewel', corners: 'arabesque' },
+  hairline: { label: 'সূক্ষ্ম রেখা', eyebrow: 'lines', divider: 'line', corners: 'none' },
+  crescent: { label: 'চাঁদ', eyebrow: 'crescent', divider: 'star', corners: 'crescents' },
+  lantern: { label: 'লণ্ঠন', eyebrow: 'stacked', divider: 'wave', corners: 'lanterns' },
+  dots: { label: 'তারকা', eyebrow: 'dots', divider: 'dots', corners: 'stars' },
 }
 
 export const cardVariants = Object.keys(variantSpecs) as CardVariant[]
@@ -32,13 +32,13 @@ export function resolveDecor(layout: CardLayout, variant: CardVariant, eyebrowOv
 }
 
 export const eyebrowStyles: { key: EyebrowStyle; label: string }[] = [
-  { key: 'diamonds', label: 'Diamonds' },
-  { key: 'ribbon', label: 'Ribbon' },
-  { key: 'pill', label: 'Badge' },
-  { key: 'brackets', label: 'Arabesque' },
-  { key: 'seal', label: 'Seal' },
-  { key: 'lines', label: 'Hairlines' },
-  { key: 'crescent', label: 'Crescent' },
-  { key: 'stacked', label: 'Swash' },
-  { key: 'dots', label: 'Starlit' },
+  { key: 'diamonds', label: 'ডায়মন্ড' },
+  { key: 'ribbon', label: 'রিবন' },
+  { key: 'pill', label: 'ব্যাজ' },
+  { key: 'brackets', label: 'আরাবেস্ক' },
+  { key: 'seal', label: 'সিল' },
+  { key: 'lines', label: 'রেখা' },
+  { key: 'crescent', label: 'চাঁদ' },
+  { key: 'stacked', label: 'ঢেউ' },
+  { key: 'dots', label: 'তারকা' },
 ]

@@ -21,7 +21,7 @@ export function TemplateGrid({ templates, onSelect }: TemplateGridProps) {
             <div className="grid place-items-center h-14 w-14 rounded-2xl bg-muted text-muted-foreground mx-auto mb-4">
               <LayoutGrid className="h-7 w-7" />
             </div>
-            <p className="text-muted-foreground">No templates in this category yet.</p>
+            <p className="text-muted-foreground">এই ভাগে এখনো কোনো টেমপ্লেট নেই।</p>
           </div>
         )}
       </div>

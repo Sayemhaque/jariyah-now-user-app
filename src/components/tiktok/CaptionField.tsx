@@ -10,7 +10,7 @@ export function CaptionField({ value, onChange }: CaptionFieldProps) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <Label htmlFor="tiktok-caption" className="text-sm font-medium">Caption</Label>
+        <Label htmlFor="tiktok-caption" className="text-sm font-medium">ক্যাপশন</Label>
         <span className="text-[11px] text-muted-foreground">{value.length}/{maxTitleLength}</span>
       </div>
       <textarea

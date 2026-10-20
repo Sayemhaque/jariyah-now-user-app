@@ -10,7 +10,7 @@ export function PreviewPlaceholder() {
       {loading ? (
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <span className="text-sm">Loading ayat data…</span>
+          <span className="text-sm">আয়াত লোড হচ্ছে…</span>
         </div>
       ) : error ? (
         <div className="space-y-3">
@@ -22,10 +22,10 @@ export function PreviewPlaceholder() {
             <Sparkles className="h-7 w-7 text-primary" />
           </div>
           <div className="space-y-1.5">
-            <p className="text-sm font-medium text-white/90">Your recitation video will appear here</p>
+            <p className="text-sm font-medium text-white/90">আপনার কুরআন ভিডিও এখানে দেখা যাবে</p>
             <p className="text-xs text-white/55 leading-relaxed">
-              Pick a surah and ayat range, choose a reciter, then click{' '}
-              <span className="text-primary font-medium">Load ayats</span> to preview the recitation.
+              সূরা, আয়াত ও কারী বেছে নিন, তারপর{' '}
+              <span className="text-primary font-medium">আয়াত লোড করুন</span> চাপুন। এখানে প্রিভিউ দেখতে পাবেন।
             </p>
           </div>
         </div>

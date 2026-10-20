@@ -10,16 +10,16 @@ export function CtaSection() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[420px] h-[320px] bg-primary/8 rounded-full blur-3xl pointer-events-none" aria-hidden />
           <div className="absolute -bottom-16 -right-10 w-56 h-56 bg-primary/10 rounded-full blur-3xl pointer-events-none" aria-hidden />
           <BrandLogo size={56} className="h-14 w-14 rounded-2xl mx-auto mb-6 qv-logo-glow relative" />
-          <h2 className="relative text-3xl sm:text-4xl font-bold mb-4 tracking-tight font-display">Start creating now</h2>
+          <h2 className="relative text-3xl sm:text-4xl font-bold mb-4 tracking-tight font-display">এখনই বানানো শুরু করুন</h2>
           <p className="relative text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
-            No sign-up, completely free. Your first Quran reel is seconds away — and every share is Sadaqah Jariyah.
+            কোনো অ্যাকাউন্ট লাগবে না, একদম ফ্রি। কয়েক সেকেন্ডেই আপনার প্রথম কুরআন ভিডিও তৈরি — আর প্রতিটি শেয়ার হতে পারে সদকায়ে জারিয়া।
           </p>
           <Link
             href="/app"
             className="qv-btn-primary relative inline-flex items-center justify-center gap-2 h-14 px-8 rounded-2xl text-lg font-semibold"
           >
             <Film className="h-6 w-6" />
-            Open the builder
+            অ্যাপ খুলুন
             <ArrowRight className="h-5 w-5" />
           </Link>
         </div>

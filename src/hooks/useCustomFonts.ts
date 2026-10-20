@@ -47,13 +47,13 @@ export function useCustomFonts() {
   }, [])
 
   return async (file: File) => {
-    if (!fontFileTypes.test(file.name)) return toast.error('Please choose a .ttf, .otf, .woff or .woff2 font file')
-    if (file.size > maxFontBytes) return toast.error('Font file is larger than 8 MB')
+    if (!fontFileTypes.test(file.name)) return toast.error('অনুগ্রহ করে .ttf, .otf, .woff বা .woff2 ফন্ট ফাইল বেছে নিন')
+    if (file.size > maxFontBytes) return toast.error('ফন্ট ফাইলটি ৮ MB-এর চেয়ে বড়')
     const font = { name: fontNameFromFile(file.name), dataUrl: await readAsDataUrl(file) }
     installFont(font)
     await document.fonts.load(`40px '${customFontFromName(font.name).family.split(',')[0]!.replace(/'/g, '')}'`).catch(() => [])
     store(font)
     addCustomFont(customFontFromName(font.name))
-    toast.success(`${font.name} added — it is now your title font`)
+    toast.success(`${font.name} যোগ হয়েছে — এখন এটি আপনার শিরোনামের ফন্ট`)
   }
 }

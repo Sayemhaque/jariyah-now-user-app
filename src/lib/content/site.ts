@@ -18,19 +18,19 @@ export interface FeatureItem {
 export const siteUrl = 'https://jariyahnow.com'
 
 export const legalDisclaimer =
-  'Jariyah Now is an independent tool and is not affiliated with or endorsed by any Quran recitation rights holder, translation publisher, or religious authority. Translations and audio recitations used in this app are credited to their respective sources. Users are responsible for the content they create and share using this platform.'
+  'Jariyah Now একটি স্বাধীন অ্যাপ। কোনো কারী, অনুবাদ প্রকাশক বা ধর্মীয় প্রতিষ্ঠানের সাথে এর কোনো সম্পর্ক নেই এবং তাদের অনুমোদনও নেওয়া হয়নি। অ্যাপে ব্যবহৃত অনুবাদ ও তিলাওয়াত তাদের নিজ নিজ উৎসের নামে উল্লেখ করা আছে। আপনি যা তৈরি ও শেয়ার করবেন, তার দায়িত্ব আপনার নিজের।'
 
-export const copyrightText = () => `© ${new Date().getFullYear()} Jariyah Now — All rights reserved`
+export const copyrightText = () => `© ${new Date().getFullYear()} Jariyah Now — সর্বস্বত্ব সংরক্ষিত`
 
-const shareTitle = 'Jariyah Now — Share once, earn forever.'
+const shareTitle = 'Jariyah Now (জারিয়াহ নাও) — একবার শেয়ার, সওয়াব চিরকাল।'
 const shareDescription =
-  'Turn Quran verses into beautiful shareable reels with recitation, translation, and your own style.'
+  'কুরআনের আয়াত দিয়ে সুন্দর কুরআন ভিডিও ও রিলস বানান — তিলাওয়াত, অনুবাদ আর নিজের পছন্দের ডিজাইনসহ।'
 const ogImage = `${siteUrl}/og-image.png`
 
 export const landingMetadata: Metadata = {
-  title: 'Jariyah Now — Turn Quran Verses Into Shareable Reels',
+  title: 'Jariyah Now — কুরআনের আয়াত দিয়ে সহজে রিলস বানান',
   description:
-    'Create Quran verse reels in seconds — pick a Surah, choose your ayat, add recitation audio and translation, then share on Instagram, TikTok & YouTube.',
+    'কয়েক সেকেন্ডেই কুরআন ভিডিও বানান — সূরা ও আয়াত বেছে নিন, তিলাওয়াত আর অনুবাদ যোগ করুন, তারপর ফেসবুক, ইনস্টাগ্রাম, টিকটক ও ইউটিউবে শেয়ার করুন।',
   alternates: { canonical: siteUrl },
   openGraph: {
     title: shareTitle,
@@ -73,64 +73,64 @@ export const rootMetadata: Metadata = {
 }
 
 export const landingHeaderLinks: NavItem[] = [
-  { href: '/#hadith', label: 'Hadith', hideBelow: 'sm' },
-  { href: '/templates', label: 'Templates', hideBelow: 'sm' },
-  { href: '/about', label: 'About', hideBelow: 'sm' },
-  { href: '/terms', label: 'Terms', hideBelow: 'md' },
-  { href: '/privacy', label: 'Privacy', hideBelow: 'md' },
+  { href: '/#hadith', label: 'হাদিস', hideBelow: 'sm' },
+  { href: '/templates', label: 'টেমপ্লেট', hideBelow: 'sm' },
+  { href: '/about', label: 'আমাদের কথা', hideBelow: 'sm' },
+  { href: '/terms', label: 'শর্তাবলি', hideBelow: 'md' },
+  { href: '/privacy', label: 'গোপনীয়তা', hideBelow: 'md' },
 ]
 
 export const templatesHeaderLinks: NavItem[] = [
-  { href: '/app', label: 'Builder', hideBelow: 'sm' },
-  { href: '/about', label: 'About', hideBelow: 'sm' },
+  { href: '/app', label: 'ভিডিও বানান', hideBelow: 'sm' },
+  { href: '/about', label: 'আমাদের কথা', hideBelow: 'sm' },
 ]
 
 export const landingFooterLinks: NavItem[] = [
-  { href: '/app', label: 'App' },
-  { href: '/templates', label: 'Templates' },
-  { href: '/about', label: 'About' },
-  { href: '/terms', label: 'Terms' },
-  { href: '/privacy', label: 'Privacy' },
+  { href: '/app', label: 'অ্যাপ' },
+  { href: '/templates', label: 'টেমপ্লেট' },
+  { href: '/about', label: 'আমাদের কথা' },
+  { href: '/terms', label: 'শর্তাবলি' },
+  { href: '/privacy', label: 'গোপনীয়তা' },
 ]
 
 export const templatesFooterLinks: NavItem[] = [
-  { href: '/app', label: 'Builder' },
-  { href: '/about', label: 'About' },
-  { href: '/terms', label: 'Terms' },
-  { href: '/privacy', label: 'Privacy' },
+  { href: '/app', label: 'ভিডিও বানান' },
+  { href: '/about', label: 'আমাদের কথা' },
+  { href: '/terms', label: 'শর্তাবলি' },
+  { href: '/privacy', label: 'গোপনীয়তা' },
 ]
 
 export const legalFooterLinks: NavItem[] = [
-  { href: '/about', label: 'About' },
-  { href: '/terms', label: 'Terms' },
-  { href: '/privacy', label: 'Privacy' },
+  { href: '/about', label: 'আমাদের কথা' },
+  { href: '/terms', label: 'শর্তাবলি' },
+  { href: '/privacy', label: 'গোপনীয়তা' },
 ]
 
-export const heroHighlights = ['114 Surahs', '13 reciters', 'Animated backgrounds', '12 translations']
+export const heroHighlights = ['১১৪টি সূরা', '১৩ জন কারী', 'চলমান ব্যাকগ্রাউন্ড', '১২টি অনুবাদ']
 
 export const landingSteps: FeatureItem[] = [
-  { icon: BookOpen, step: '1', title: 'Pick a Surah', description: 'Choose from all 114 Surahs and set your ayat range (up to 10 ayats).' },
-  { icon: Mic2, step: '2', title: 'Choose a reciter', description: 'Alafasy, Sudais, Abdul Basit, Muaiqly, Ghamdi and more — 13 iconic voices to pick from.' },
-  { icon: Palette, step: '3', title: 'Customize the look', description: 'Background, fonts, colors, overlays — tweak everything with a live preview.' },
-  { icon: Download, step: '4', title: 'Export & share', description: 'Download in one click — ready for Reels, Shorts, or YouTube.' },
+  { icon: BookOpen, step: '1', title: 'সূরা বেছে নিন', description: '১১৪টি সূরা থেকে একটি বেছে নিন। তারপর কোন আয়াত থেকে কোন আয়াত পর্যন্ত চান, তা ঠিক করুন (সর্বোচ্চ ১০টি আয়াত)।' },
+  { icon: Mic2, step: '2', title: 'কারী বেছে নিন', description: 'আফাসি, সুদাইস, আবদুল বাসিত, মুয়াইকলি, গামদিসহ ১৩ জন প্রিয় কারীর তিলাওয়াত থেকে বেছে নিন।' },
+  { icon: Palette, step: '3', title: 'ডিজাইন সাজিয়ে নিন', description: 'ব্যাকগ্রাউন্ড, ফন্ট, রং — সবকিছু নিজের মতো বদলান। বদলালেই সাথে সাথে প্রিভিউতে দেখতে পাবেন।' },
+  { icon: Download, step: '4', title: 'ডাউনলোড ও শেয়ার করুন', description: 'একটি চাপেই ডাউনলোড করুন। ফেসবুক, ইনস্টাগ্রাম রিলস বা ইউটিউবে দেওয়ার জন্য তৈরি।' },
 ]
 
 export const landingFeatures: FeatureItem[] = [
-  { icon: Sparkles, title: 'Beautiful Arabic typography', description: 'Premium Arabic fonts with smooth RTL rendering, perfectly centered for reels and shorts.' },
-  { icon: Mic2, title: '13 world-class reciters', description: 'From Mishary Alafasy to Abdul Basit — every iconic voice in one place, streamed from everyayah.com.' },
-  { icon: Languages, title: '12 translations', description: 'Bengali, English, Urdu, Turkish, Indonesian, French, German, Spanish, Malay, and Bosnian — via UmmahAPI.' },
-  { icon: Palette, title: 'Full customization', description: '27 animated backgrounds that pick matching colors for you, custom uploads, font controls — make every reel your own.' },
-  { icon: Film, title: 'Reels & Shorts ready', description: 'Export portrait or landscape, 720p or 1080p — perfectly sized for every platform.' },
-  { icon: Globe, title: 'Runs in your browser', description: 'No software to install, no uploads, fully private — your video renders right on your device.' },
+  { icon: Sparkles, title: 'সুন্দর আরবি লেখা', description: 'উন্নত মানের আরবি ফন্ট, পরিষ্কার ও সুন্দরভাবে ভিডিওর মাঝখানে সাজানো।' },
+  { icon: Mic2, title: '১৩ জন বিখ্যাত কারী', description: 'মিশারি আফাসি থেকে আবদুল বাসিত — প্রিয় সব কারীর তিলাওয়াত এক জায়গায়। তিলাওয়াত আসে everyayah.com থেকে।' },
+  { icon: Languages, title: '১২টি অনুবাদ', description: 'বাংলা, ইংরেজি, উর্দু, তুর্কি, ইন্দোনেশীয়, ফরাসি, জার্মান, স্প্যানিশ, মালয় ও বসনীয় ভাষায় অনুবাদ — UmmahAPI থেকে।' },
+  { icon: Palette, title: 'নিজের মতো সাজান', description: '২৭টি চলমান ব্যাকগ্রাউন্ড, যা নিজেই মানানসই রং বেছে নেয়। নিজের ছবিও দিতে পারেন, ফন্টও বদলাতে পারেন।' },
+  { icon: Film, title: 'রিলস ও শর্টসের জন্য তৈরি', description: 'লম্বা বা চওড়া, 720p বা 1080p — যেকোনো সাইজে ডাউনলোড করুন। সব জায়গায় ঠিকঠাক মানাবে।' },
+  { icon: Globe, title: 'ব্রাউজারেই চলে', description: 'কিছু ইনস্টল করতে হবে না, কিছু আপলোডও হয় না। ভিডিও আপনার নিজের ফোন বা কম্পিউটারেই তৈরি হয়।' },
 ]
 
 export const templateSteps: FeatureItem[] = [
-  { icon: LayoutGrid, step: '1', title: 'Pick a template', description: 'Browse Quran verses, duas, and more. Each card shows you exactly what you’ll get.' },
-  { icon: Sparkles, step: '2', title: 'It auto-configures', description: 'The builder loads the surah, ayat range, reciter, font, background, and colors from the template.' },
-  { icon: Film, step: '3', title: 'Tweak + export', description: 'Adjust anything you want, then export an MP4 ready for Instagram Reels, TikTok, and YouTube Shorts.' },
+  { icon: LayoutGrid, step: '1', title: 'টেমপ্লেট বেছে নিন', description: 'কুরআনের আয়াত, দোয়া ও আরও অনেক কিছু দেখুন। প্রতিটি কার্ডে দেখানো আছে কেমন ভিডিও পাবেন।' },
+  { icon: Sparkles, step: '2', title: 'সব নিজে থেকেই সেট হয়ে যায়', description: 'সূরা, আয়াত, কারী, ফন্ট, ব্যাকগ্রাউন্ড ও রং — টেমপ্লেট থেকে সব আপনাআপনি বসে যায়।' },
+  { icon: Film, step: '3', title: 'একটু বদলে ডাউনলোড করুন', description: 'চাইলে যেকোনো কিছু বদলে নিন, তারপর ভিডিও ডাউনলোড করুন। ফেসবুক, ইনস্টাগ্রাম, টিকটক ও ইউটিউবে দেওয়ার জন্য তৈরি।' },
 ]
 
 export const appMenuLinks: NavItem[] = [
-  { href: '/templates', label: 'Templates' },
+  { href: '/templates', label: 'টেমপ্লেট' },
   ...legalFooterLinks,
 ]

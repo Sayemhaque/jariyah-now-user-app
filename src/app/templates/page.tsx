@@ -32,14 +32,14 @@ export default function TemplatesPage() {
         <SectionHeader
           centered
           className="mb-10"
-          title="How templates work"
-          subtitle="Pick a template → it loads everything → you tweak + export"
+          title="টেমপ্লেট কীভাবে কাজ করে"
+          subtitle="টেমপ্লেট বেছে নিন → সব নিজে থেকেই বসে যাবে → চাইলে বদলে ডাউনলোড করুন"
         />
         <FeatureGrid items={templateSteps} className="grid sm:grid-cols-3 gap-6" />
       </PageSection>
-      <MissionBanner size="medium" title="Every share is Sadaqah Jariyah">
-        When someone benefits from a Quran reel you shared, you earn reward for every view. Pick a template, customize
-        it, and share — the reward keeps growing long after you click post.
+      <MissionBanner size="medium" title="প্রতিটি শেয়ার হতে পারে সদকায়ে জারিয়া">
+        আপনার শেয়ার করা কুরআন ভিডিও থেকে কেউ উপকার পেলে, প্রতিটি দেখার জন্য আপনিও সওয়াব পাবেন। একটি টেমপ্লেট
+        বেছে নিন, নিজের মতো সাজিয়ে শেয়ার করুন — পোস্ট করার পরেও সওয়াব বাড়তেই থাকবে।
       </MissionBanner>
       <MarketingFooter links={templatesFooterLinks} />
     </div>

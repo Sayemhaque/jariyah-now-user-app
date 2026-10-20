@@ -12,7 +12,7 @@ export default function Loading() {
             <Loader2 className="h-7 w-7 animate-spin text-primary" />
           </div>
         </div>
-        <p className="text-sm font-medium">Loading Jariyah Now…</p>
+        <p className="text-sm font-medium">Jariyah Now খুলছে…</p>
       </div>
     </div>
   )

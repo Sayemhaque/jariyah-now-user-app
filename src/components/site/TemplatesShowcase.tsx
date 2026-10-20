@@ -12,9 +12,9 @@ export function TemplatesShowcase() {
         className="mb-12"
         narrowSubtitle
         pillIcon={LayoutGrid}
-        pillLabel="One-click starting points"
-        title="Start from a template"
-        subtitle="Pre-configured reels for Quran verses, duas, and more. Each template auto-loads the surah, reciter, font, and colors — so you can publish in minutes."
+        pillLabel="এক চাপেই শুরু করুন"
+        title="টেমপ্লেট দিয়ে শুরু করুন"
+        subtitle="কুরআনের আয়াত, দোয়া ও আরও অনেক কিছুর আগে থেকে সাজানো ভিডিও। সূরা, কারী, ফন্ট ও রং নিজে থেকেই বসে যায় — কয়েক মিনিটেই শেয়ার করতে পারবেন।"
       />
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {getFeaturedTemplates().map((template) => (
@@ -27,7 +27,7 @@ export function TemplatesShowcase() {
           className="qv-btn-secondary inline-flex items-center gap-2 h-11 px-6 rounded-xl text-sm font-semibold"
         >
           <LayoutGrid className="h-4 w-4 text-primary" />
-          Browse all {templatePresets.length} templates
+          সব {templatePresets.length}টি টেমপ্লেট দেখুন
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

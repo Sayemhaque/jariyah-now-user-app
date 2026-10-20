@@ -9,12 +9,12 @@ export interface SelectOption<T extends string> {
 }
 
 export const overlayPresets: { key: OverlayStyle; label: string; swatch: string }[] = [
-  { key: 'solid', label: 'Solid', swatch: 'linear-gradient(#000,#000)' },
-  { key: 'bottom-gradient', label: 'Bottom Fade', swatch: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 60%, #000 100%)' },
-  { key: 'top-gradient', label: 'Top Fade', swatch: 'linear-gradient(180deg, #000 0%, rgba(0,0,0,0.4) 40%, transparent 100%)' },
-  { key: 'vignette', label: 'Vignette', swatch: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)' },
-  { key: 'center-focus', label: 'Spotlight', swatch: 'radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, transparent 70%)' },
-  { key: 'none', label: 'None', swatch: 'repeating-linear-gradient(45deg, #1f2937 0 6px, #111827 6px 12px)' },
+  { key: 'solid', label: 'পুরো', swatch: 'linear-gradient(#000,#000)' },
+  { key: 'bottom-gradient', label: 'নিচে গাঢ়', swatch: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 60%, #000 100%)' },
+  { key: 'top-gradient', label: 'উপরে গাঢ়', swatch: 'linear-gradient(180deg, #000 0%, rgba(0,0,0,0.4) 40%, transparent 100%)' },
+  { key: 'vignette', label: 'চারপাশে গাঢ়', swatch: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)' },
+  { key: 'center-focus', label: 'মাঝে গাঢ়', swatch: 'radial-gradient(ellipse at center, rgba(0,0,0,0.85) 0%, transparent 70%)' },
+  { key: 'none', label: 'নেই', swatch: 'repeating-linear-gradient(45deg, #1f2937 0 6px, #111827 6px 12px)' },
 ]
 
 const bismillah = 'بِسْمِ ٱللَّهِ'
@@ -39,14 +39,17 @@ export const bengaliFontOptions: SelectOption<BengaliFont>[] = [
 ]
 
 export const soundAnimationOptions: { key: SoundAnimation; label: string; icon: LucideIcon }[] = [
-  { key: 'bars', label: 'Bars', icon: AudioLines },
-  { key: 'wave', label: 'Wave', icon: AudioWaveform },
-  { key: 'circle', label: 'Circle', icon: CircleDot },
-  { key: 'dots', label: 'Dots', icon: Ellipsis },
-  { key: 'headphones', label: 'Headphones', icon: Headphones },
-  { key: 'mic', label: 'Microphone', icon: Mic },
-  { key: 'none', label: 'None', icon: Ban },
+  { key: 'bars', label: 'দাগ', icon: AudioLines },
+  { key: 'wave', label: 'ঢেউ', icon: AudioWaveform },
+  { key: 'circle', label: 'বৃত্ত', icon: CircleDot },
+  { key: 'dots', label: 'বিন্দু', icon: Ellipsis },
+  { key: 'headphones', label: 'হেডফোন', icon: Headphones },
+  { key: 'mic', label: 'মাইক', icon: Mic },
+  { key: 'none', label: 'নেই', icon: Ban },
 ]
 
 export const textWidthOptions: TextWidth[] = ['full', 'wide', 'medium', 'narrow']
 export const textSpacingOptions: TextSpacing[] = ['compact', 'normal', 'spacious']
+
+export const textWidthLabels: Record<TextWidth, string> = { full: 'পুরো', wide: 'চওড়া', medium: 'মাঝারি', narrow: 'সরু' }
+export const textSpacingLabels: Record<TextSpacing, string> = { compact: 'ঘন', normal: 'স্বাভাবিক', spacious: 'ফাঁকা' }

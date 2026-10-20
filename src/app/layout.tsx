@@ -8,7 +8,7 @@ export const metadata = rootMetadata
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="bn" suppressHydrationWarning>
       <body className={`${siteFontVariables} antialiased bg-background text-foreground`}>
         <Providers>
           {children}

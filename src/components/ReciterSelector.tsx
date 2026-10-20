@@ -12,8 +12,8 @@ export function ReciterSelector() {
   const { reciterId, setReciter } = useSurahRange()
   return (
     <div className="space-y-1.5">
-      <FieldLabel icon={Mic2}>Reciter</FieldLabel>
-      <PickerSelect value={reciterId} onChange={setReciter} placeholder="Choose a reciter">
+      <FieldLabel icon={Mic2}>কারী</FieldLabel>
+      <PickerSelect value={reciterId} onChange={setReciter} placeholder="একজন কারী বেছে নিন">
         {reciters.map((reciter) => (
           <SelectItem key={reciter.id} value={reciter.id} className="py-2.5">
             <TwoLineOption title={reciter.name} subtitle={reciter.style} />

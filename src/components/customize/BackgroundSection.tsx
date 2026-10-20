@@ -15,7 +15,7 @@ export function BackgroundSection() {
 
   return (
     <>
-      <SectionTitle>Background</SectionTitle>
+      <SectionTitle>ব্যাকগ্রাউন্ড</SectionTitle>
       <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1 snap-x snap-mandatory">
         {backgroundScenes.map((scene) => (
           <BackgroundTile
@@ -28,7 +28,7 @@ export function BackgroundSection() {
           />
         ))}
         {custom && (
-          <BackgroundTile label="Your image" palette={custom} imageUrl={settings.backgroundImage} selected onSelect={() => undefined} />
+          <BackgroundTile label="আপনার ছবি" palette={custom} imageUrl={settings.backgroundImage} selected onSelect={() => undefined} />
         )}
       </div>
       <div className="flex items-center gap-2 mt-2">
@@ -41,7 +41,7 @@ export function BackgroundSection() {
         />
         <Button variant="outline" size="sm" className="w-full bg-card/40 hover:bg-card/70" onClick={() => fileRef.current?.click()}>
           <Upload className="h-3.5 w-3.5 mr-1.5" />
-          Upload custom background
+          নিজের ছবি দিন
         </Button>
       </div>
     </>

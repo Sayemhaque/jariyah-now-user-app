@@ -14,7 +14,7 @@ export function FontSelect({ label, sample, value, fonts, onChange }: FontSelect
   return (
     <div className="space-y-1">
       <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
-      <PickerSelect value={value} onChange={onChange} placeholder="Choose a font" contentClassName="max-h-80">
+      <PickerSelect value={value} onChange={onChange} placeholder="ফন্ট বেছে নিন" contentClassName="max-h-80">
         {fonts.map((font) => (
           <SelectItem key={font.id} value={font.id} className="py-2">
             <span className="flex w-full items-baseline justify-between gap-3">

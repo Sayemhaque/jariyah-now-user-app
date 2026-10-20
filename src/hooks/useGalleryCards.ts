@@ -13,7 +13,7 @@ const previewCount = 8
 
 export function useGalleryCards() {
   const [mode, setMode] = useState<GalleryMode>('hadith')
-  const [language, setLanguage] = useState<TextLanguage>('english')
+  const [language, setLanguage] = useState<TextLanguage>('bangla')
   const [format, setFormat] = useState<CardFormat>('portrait')
   const [selection, setSelection] = useState(defaultHadithSelection)
   const [visible, setVisible] = useState(previewCount)

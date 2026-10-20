@@ -3,10 +3,10 @@ import { useBuilderStore } from '@/lib/store'
 import { useSurahsQuery } from '@/lib/queries/builder'
 import type { useAyatRange } from './useAyatRange'
 
-export const emptyAyatMessage = 'Could not load ayat data. Check your connection and try again.'
+export const emptyAyatMessage = 'আয়াত লোড করা যায়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।'
 
 export const errorMessage = (error: unknown) =>
-  error instanceof Error ? error.message : 'Failed to load ayat data'
+  error instanceof Error ? error.message : 'আয়াত লোড করা যায়নি'
 
 export function useBuilderDataSync(query: ReturnType<typeof useAyatRange>['query']) {
   const setSurahs = useBuilderStore((s) => s.setSurahs)

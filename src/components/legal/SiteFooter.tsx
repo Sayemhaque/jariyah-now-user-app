@@ -13,12 +13,12 @@ export function SiteFooter() {
           <span className="font-medium text-foreground/70">Jariyah Now</span>
           {dot}
           <span>
-            Quran text from <ExternalLink href="https://ummahapi.com" className={linkClass}>ummahapi.com</ExternalLink>{' '}
-            & <ExternalLink href="https://quran.com" className={linkClass}>quran.com</ExternalLink>
+            কুরআনের লেখা: <ExternalLink href="https://ummahapi.com" className={linkClass}>ummahapi.com</ExternalLink>{' '}
+            ও <ExternalLink href="https://quran.com" className={linkClass}>quran.com</ExternalLink>
           </span>
           {dot}
           <span>
-            Audio from <ExternalLink href="https://everyayah.com" className={linkClass}>everyayah.com</ExternalLink>
+            তিলাওয়াত: <ExternalLink href="https://everyayah.com" className={linkClass}>everyayah.com</ExternalLink>
           </span>
         </div>
         <DotNav links={legalFooterLinks} linkClassName="hover:text-foreground transition" />

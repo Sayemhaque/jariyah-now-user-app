@@ -7,10 +7,10 @@ export function IdlePanel() {
         <Film className="h-7 w-7" />
       </div>
       <div>
-        <p className="font-medium text-sm">Ready to process</p>
+        <p className="font-medium text-sm">ভিডিও তৈরির জন্য প্রস্তুত</p>
         <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-w-[240px]">
-          Pick your settings on the left, then hit <span className="font-medium text-foreground">Process video</span>{' '}
-          to render directly in your browser.
+          মান বেছে নিন, তারপর <span className="font-medium text-foreground">ভিডিও তৈরি করুন</span>{' '}
+          বোতামে চাপুন।
         </p>
       </div>
     </div>

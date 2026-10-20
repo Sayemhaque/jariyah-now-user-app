@@ -6,20 +6,20 @@ export function CaptionsSection() {
   const { settings, updateSettings } = useSettings()
   return (
     <>
-      <SectionTitle>Captions</SectionTitle>
+      <SectionTitle>লেখা</SectionTitle>
       <div className="space-y-2.5">
         <SwitchField
-          label="Highlight words while reciting"
+          label="তিলাওয়াতের সাথে শব্দ হাইলাইট"
           checked={settings.wordHighlight ?? true}
           onChange={(wordHighlight) => updateSettings({ wordHighlight })}
         />
         <SwitchField
-          label="Show translation"
+          label="অনুবাদ দেখান"
           checked={settings.showTranslation}
           onChange={(showTranslation) => updateSettings({ showTranslation })}
         />
         <SwitchField
-          label="Show transliteration"
+          label="উচ্চারণ দেখান"
           checked={settings.showTransliteration}
           onChange={(showTransliteration) => updateSettings({ showTransliteration })}
         />

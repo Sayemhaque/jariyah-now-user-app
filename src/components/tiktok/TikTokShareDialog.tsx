@@ -22,8 +22,8 @@ export function TikTokShareDialog({ open, onOpenChange, videoUrl, durationMs, de
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[92vh] w-[95vw] !max-w-3xl overflow-y-auto bg-card max-sm:h-[100dvh] max-sm:max-h-none max-sm:w-screen max-sm:rounded-none">
         <DialogHeader>
-          <DialogTitle>Post to TikTok</DialogTitle>
-          <DialogDescription>Review your video and choose how it appears on TikTok.</DialogDescription>
+          <DialogTitle>TikTok-এ পোস্ট করুন</DialogTitle>
+          <DialogDescription>ভিডিওটি দেখে নিন এবং TikTok-এ কীভাবে দেখাবে তা বেছে নিন।</DialogDescription>
         </DialogHeader>
         {connection.status === 'ready' && connection.creator && jobId ? (
           <TikTokPostPanel

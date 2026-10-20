@@ -5,13 +5,13 @@ const linkClass = 'font-medium text-primary underline-offset-2 hover:underline'
 export function PostDeclaration({ form }: { form: TikTokPostForm }) {
   return (
     <p className="text-xs text-muted-foreground">
-      By posting, you agree to TikTok&apos;s{' '}
+      পোস্ট করলে আপনি TikTok-এর{' '}
       {needsBrandedContentPolicy(form) && (
         <>
-          <a href={brandedContentUrl} target="_blank" rel="noreferrer" className={linkClass}>Branded Content Policy</a> and{' '}
+          <a href={brandedContentUrl} target="_blank" rel="noreferrer" className={linkClass}>ব্র্যান্ডেড কনটেন্ট নীতি</a> এবং{' '}
         </>
       )}
-      <a href={musicUsageUrl} target="_blank" rel="noreferrer" className={linkClass}>Music Usage Confirmation</a>.
+      <a href={musicUsageUrl} target="_blank" rel="noreferrer" className={linkClass}>মিউজিক ব্যবহারের শর্তে</a> সম্মতি দিচ্ছেন।
     </p>
   )
 }

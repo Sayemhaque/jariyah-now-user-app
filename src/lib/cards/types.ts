@@ -9,9 +9,9 @@ export interface CardSize {
 }
 
 export const cardSizes: Record<CardFormat, CardSize> = {
-  portrait: { width: 1080, height: 1350, label: '4:5 Feed' },
-  square: { width: 1080, height: 1080, label: '1:1 Square' },
-  story: { width: 1080, height: 1920, label: '9:16 Story' },
+  portrait: { width: 1080, height: 1350, label: '৪:৫ ফিড' },
+  square: { width: 1080, height: 1080, label: '১:১ বর্গ' },
+  story: { width: 1080, height: 1920, label: '৯:১৬ স্টোরি' },
 }
 
 export interface CardLine {

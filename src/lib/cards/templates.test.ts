@@ -22,7 +22,7 @@ describe('card templates', () => {
   it('round-trips a template id', () => {
     const template = templateAt(250)
     expect(findCardTemplate(template.id)).toEqual(template)
-    expect(findCardTemplate('arch.ribbon--sage-mist')).toMatchObject({ layout: 'arch', variant: 'ribbon', label: 'Arch Window · Ribbon · Sage Mist' })
+    expect(findCardTemplate('arch.ribbon--sage-mist')).toMatchObject({ layout: 'arch', variant: 'ribbon', label: 'মেহরাব খিলান · রিবন · Sage Mist' })
     expect(findCardTemplate('nope')).toBeUndefined()
   })
 

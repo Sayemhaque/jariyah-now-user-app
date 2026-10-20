@@ -12,7 +12,7 @@ export function TextItemPicker({ mode }: { mode: TextMode }) {
   return (
     <div className="space-y-1.5">
       <FieldLabel icon={ScrollText}>{contentModeLabels[mode]}</FieldLabel>
-      <PickerSelect value={textItemId} onChange={setTextItemId} placeholder="Choose one">
+      <PickerSelect value={textItemId} onChange={setTextItemId} placeholder="এখানে চাপুন ও একটি জিকির বেছে নিন">
         {textCollections[mode].map((item) => (
           <SelectItem key={item.id} value={item.id} className="py-2.5">
             <TwoLineOption title={item.title} subtitle={item.source} truncateSubtitle />

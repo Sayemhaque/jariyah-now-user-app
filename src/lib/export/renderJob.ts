@@ -2,7 +2,7 @@ import type { AyatData, AyatSlide, Surah } from '@/lib/types'
 
 export const pollIntervalMs = 2000
 
-export const messageOf = (error: unknown) => (error instanceof Error ? error.message : 'Render failed')
+export const messageOf = (error: unknown) => (error instanceof Error ? error.message : 'ভিডিও তৈরি করা যায়নি')
 
 export function isLowPowerDevice(): boolean {
   if (typeof navigator === 'undefined') return false
@@ -50,16 +50,16 @@ export async function startRenderJob(body: object): Promise<string> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
-  const { jobId } = await readJson(res, 'Server error')
-  if (!jobId) throw new Error('Server did not return a job ID')
+  const { jobId } = await readJson(res, 'সার্ভারে সমস্যা হয়েছে')
+  if (!jobId) throw new Error('সার্ভার থেকে সাড়া পাওয়া যায়নি। আবার চেষ্টা করুন।')
   return jobId
 }
 
 export async function fetchRenderProgress(jobId: string) {
   const res = await fetch(`/api/render/progress?jobId=${encodeURIComponent(jobId)}`)
-  const data = await readJson(res, 'Poll error')
+  const data = await readJson(res, 'অগ্রগতি জানা যায়নি')
   if (data.stage === 'error' || data.stage === 'expired') {
-    throw new Error(data.message ?? 'Render failed or sandbox expired')
+    throw new Error(data.message ?? 'ভিডিও তৈরি করা যায়নি। আবার চেষ্টা করুন।')
   }
   return data as { stage: string; url?: string; overallProgress?: number }
 }

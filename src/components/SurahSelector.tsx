@@ -22,32 +22,32 @@ export function SurahSelector() {
 
   return (
     <div className="space-y-1.5">
-      <FieldLabel icon={BookOpen}>Surah</FieldLabel>
+      <FieldLabel icon={BookOpen}>সূরা</FieldLabel>
       <PickerSelect
         value={selectedSurahNumber ? String(selectedSurahNumber) : ''}
         onChange={(value) => setSurah(Number(value))}
         disabled={waiting}
-        placeholder={waiting ? 'Loading surahs…' : 'Choose a surah'}
+        placeholder={waiting ? 'সূরার তালিকা আসছে…' : 'একটি সূরা বেছে নিন'}
         contentClassName="max-h-96"
       >
         <SurahSearch query={query} onChange={setQuery} />
         <SelectGroup>
           <SelectLabel className="text-[10px] uppercase tracking-[0.12em] text-muted-foreground px-2 py-1.5">
-            {filtered.length} surahs
+            {filtered.length}টি সূরা
           </SelectLabel>
           <div className="max-h-[260px] overflow-y-auto scrollbar-thin">
             {filtered.map((surah) => (
               <SurahOption key={surah.number} surah={surah} />
             ))}
             {!filtered.length && (
-              <div className="py-6 text-center text-xs text-muted-foreground">No surah matches “{query}”.</div>
+              <div className="py-6 text-center text-xs text-muted-foreground">“{query}” নামে কোনো সূরা পাওয়া যায়নি।</div>
             )}
           </div>
         </SelectGroup>
       </PickerSelect>
       {surahsQuery.error && (
         <p className="text-xs text-destructive">
-          {surahsQuery.error instanceof Error ? surahsQuery.error.message : 'Failed to load surahs'}
+          {surahsQuery.error instanceof Error ? surahsQuery.error.message : 'সূরার তালিকা আনা যায়নি'}
         </p>
       )}
       {selectedSurah && <SurahSummary surah={selectedSurah} />}

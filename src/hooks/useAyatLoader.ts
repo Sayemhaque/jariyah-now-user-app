@@ -12,11 +12,11 @@ export function useAyatLoader() {
 
   const loadAyats = async () => {
     if (!selectedSurah) {
-      toast.error('Please pick a surah first')
+      toast.error('আগে একটি সূরা বেছে নিন')
       return
     }
     if (!validation.ok) {
-      toast.error(validation.error ?? 'Invalid ayat range')
+      toast.error(validation.error ?? 'আয়াত বাছাই ঠিক হয়নি')
       return
     }
     setAyatError(null)
@@ -30,7 +30,7 @@ export function useAyatLoader() {
       toast.error(emptyAyatMessage)
       return
     }
-    toast.success('Ayat data loaded — press play in the preview.')
+    toast.success('আয়াত লোড হয়েছে। প্রিভিউতে প্লে চাপুন।')
   }
 
   return {

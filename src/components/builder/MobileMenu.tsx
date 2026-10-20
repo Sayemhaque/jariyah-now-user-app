@@ -10,13 +10,13 @@ export function MobileMenu() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9 sm:hidden">
+        <Button variant="ghost" size="icon" className="h-9 w-9 sm:hidden" aria-label="মেনু খুলুন">
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-72 p-5">
         <SheetHeader>
-          <SheetTitle>Menu</SheetTitle>
+          <SheetTitle>মেনু</SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-1 mt-4">
           {appMenuLinks.map((link) => (

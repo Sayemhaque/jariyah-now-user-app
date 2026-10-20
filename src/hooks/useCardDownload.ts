@@ -22,8 +22,9 @@ export function useCardDownload() {
         const url = await toPng(node, { pixelRatio: 1, cacheBust: true, width: node.offsetWidth, height: node.offsetHeight })
         saveDataUrl(url, nodes.length > 1 ? `${baseName}-${index + 1}.png` : `${baseName}.png`)
       }
+      toast.success(nodes.length > 1 ? 'সবগুলো ছবি ডাউনলোড হয়েছে' : 'ছবি ডাউনলোড হয়েছে')
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Could not save the image')
+      toast.error('ছবিটি সেভ করা যায়নি। আবার চেষ্টা করুন।')
     } finally {
       setIsSaving(false)
     }

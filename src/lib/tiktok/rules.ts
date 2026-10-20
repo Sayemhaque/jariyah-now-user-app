@@ -46,17 +46,17 @@ export const isPrivacyAllowed = (form: TikTokPostForm, level: string) => !(level
 export function postBlockers(form: TikTokPostForm, creator: CreatorInfo, durationSec: number): string[] {
   const blockers: string[] = []
   if (durationSec > creator.maxDurationSec) blockers.push(`This video is longer than the ${creator.maxDurationSec}s your account can post.`)
-  if (!form.privacyLevel) blockers.push('Choose who can view this video.')
-  if (form.privacyLevel && !isPrivacyAllowed(form, form.privacyLevel)) blockers.push('Branded content visibility cannot be set to private.')
-  if (form.commercial && !form.yourBrand && !form.brandedContent) blockers.push('Choose whether you are promoting yourself, a third party, or both.')
-  if (form.title.length > maxTitleLength) blockers.push(`Keep the caption under ${maxTitleLength} characters.`)
+  if (!form.privacyLevel) blockers.push('ভিডিওটি কারা দেখতে পারবে তা বেছে নিন।')
+  if (form.privacyLevel && !isPrivacyAllowed(form, form.privacyLevel)) blockers.push('ব্র্যান্ডেড কনটেন্ট “শুধু আমি” রাখা যায় না।')
+  if (form.commercial && !form.yourBrand && !form.brandedContent) blockers.push('আপনি নিজের, অন্য কারও, নাকি দুটোরই প্রচার করছেন তা বেছে নিন।')
+  if (form.title.length > maxTitleLength) blockers.push(`ক্যাপশন ${maxTitleLength} অক্ষরের মধ্যে রাখুন।`)
   return blockers
 }
 
 export function commercialLabel(form: TikTokPostForm): string | null {
   if (!form.commercial) return null
-  if (form.brandedContent) return "Your video will be labeled as 'Paid partnership'."
-  if (form.yourBrand) return "Your video will be labeled as 'Promotional content'."
+  if (form.brandedContent) return "আপনার ভিডিওতে 'Paid partnership' লেবেল দেখানো হবে।"
+  if (form.yourBrand) return "আপনার ভিডিওতে 'Promotional content' লেবেল দেখানো হবে।"
   return null
 }
 

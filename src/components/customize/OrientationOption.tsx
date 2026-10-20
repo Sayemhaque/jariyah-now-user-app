@@ -41,7 +41,7 @@ export function OrientationOption({ orientation, selected, onSelect }: Orientati
             selected ? 'text-primary' : 'text-foreground',
           )}
         >
-          {orientation}
+          {portrait ? 'লম্বা' : 'চওড়া'}
         </span>
         <span className="text-[9px] font-medium text-muted-foreground/60 uppercase tracking-[0.12em]">
           {portrait ? '9:16' : '16:9'}

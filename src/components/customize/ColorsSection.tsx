@@ -9,9 +9,9 @@ import { SwitchField } from './SwitchField'
 type ColorKey = 'fontColor' | 'highlightColor' | 'translationColor'
 
 const colorFields: { key: ColorKey; label: string }[] = [
-  { key: 'fontColor', label: 'Arabic text' },
-  { key: 'highlightColor', label: 'Highlight' },
-  { key: 'translationColor', label: 'Translation' },
+  { key: 'fontColor', label: 'আরবি লেখা' },
+  { key: 'highlightColor', label: 'হাইলাইট' },
+  { key: 'translationColor', label: 'অনুবাদ' },
 ]
 
 export function ColorsSection() {
@@ -21,13 +21,13 @@ export function ColorsSection() {
 
   return (
     <>
-      <SectionTitle>Colors</SectionTitle>
+      <SectionTitle>রং</SectionTitle>
       <div className="space-y-2.5">
-        <SwitchField icon={Palette} label="Match colors to background" checked={auto} onChange={(autoColors) => updateSettings({ autoColors })} />
+        <SwitchField icon={Palette} label="ব্যাকগ্রাউন্ড মিলিয়ে রং" checked={auto} onChange={(autoColors) => updateSettings({ autoColors })} />
         <p className="text-[11px] text-muted-foreground leading-relaxed">
           {auto
-            ? 'Text and highlight colors follow the selected background. Pick a color below to set it yourself.'
-            : 'Using your own colors. Turn the switch on to match the background again.'}
+            ? 'লেখা ও হাইলাইটের রং ব্যাকগ্রাউন্ড দেখে নিজে থেকেই বসে যায়। নিজে রং দিতে চাইলে নিচ থেকে বেছে নিন।'
+            : 'এখন আপনার বেছে নেওয়া রং চলছে। আবার ব্যাকগ্রাউন্ড মিলিয়ে রং পেতে সুইচটি চালু করুন।'}
         </p>
         {colorFields.map((field) => (
           <ColorField

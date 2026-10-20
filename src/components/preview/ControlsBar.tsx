@@ -25,7 +25,7 @@ export function ControlsBar({ currentMs, totalMs, muted, disabled, onSeek, onTog
           className="lg:hidden flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 backdrop-blur-md text-sm font-semibold text-white hover:bg-white/25 transition-colors pointer-events-auto shadow-lg"
         >
           <Settings className="h-4 w-4" />
-          Customize
+          সাজান
         </button>
       </div>
       <Slider
@@ -46,6 +46,7 @@ export function ControlsBar({ currentMs, totalMs, muted, disabled, onSeek, onTog
             event.stopPropagation()
             onToggleMute()
           }}
+          aria-label={muted ? 'শব্দ চালু করুন' : 'শব্দ বন্ধ করুন'}
           className="text-white/80 hover:text-white transition-colors pointer-events-auto"
         >
           {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}

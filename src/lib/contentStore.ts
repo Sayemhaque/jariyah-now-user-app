@@ -53,7 +53,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [presetId, setPresetIdState] = useState('')
   const [partIndex, setPartIndex] = useState(0)
   const [textItemId, setTextItemId] = useState('')
-  const [language, setLanguage] = useState<TextLanguage>('english')
+  const [language, setLanguage] = useState<TextLanguage>('bangla')
   const [cardFormat, setCardFormat] = useState<CardFormat>('portrait')
   const [cardThemeKey, setCardThemeKey] = useState(cardThemes[0]!.key)
   const [cardLayout, setCardLayout] = useState<CardLayout>('frame')

@@ -26,22 +26,22 @@ export default function Error({
           </div>
           <div className="flex-1 min-w-0">
             <h2 className="text-base font-semibold text-foreground">
-              Something went wrong
+              কিছু একটা সমস্যা হয়েছে
             </h2>
             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              An unexpected error occurred while rendering this page. Try
-              again — if it keeps happening, refresh the tab.
+              পেজটি দেখাতে গিয়ে একটি সমস্যা হয়েছে। নিচের বোতাম চেপে আবার
+              চেষ্টা করুন। বারবার হলে পেজটি রিফ্রেশ করুন।
             </p>
           </div>
         </div>
         {error.digest && (
           <p className="text-[10px] font-mono text-muted-foreground/60 break-all">
-            ref: {error.digest}
+            কোড: {error.digest}
           </p>
         )}
         <Button onClick={reset} className="w-full" size="sm">
           <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
-          Try again
+          আবার চেষ্টা করুন
         </Button>
       </div>
     </div>

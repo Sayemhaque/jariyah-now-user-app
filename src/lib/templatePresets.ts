@@ -24,8 +24,8 @@ const quranTemplates: TemplatePreset[] = [
   {
     id: 'ayat-al-kursi',
     type: 'quran',
-    title: 'Ayat al-Kursi',
-    description: 'The Throne Verse — Surah Al-Baqarah 2:255. The most powerful verse for protection.',
+    title: 'আয়াতুল কুরসি',
+    description: 'সূরা আল-বাকারা ২:২৫৫। হেফাজতের জন্য সবচেয়ে মর্যাদাপূর্ণ আয়াত।',
     icon: '🛡️',
     gradient: 'from-indigo-500 to-purple-700',
     config: {
@@ -41,8 +41,8 @@ const quranTemplates: TemplatePreset[] = [
   {
     id: 'al-mulk',
     type: 'quran',
-    title: 'Surah Al-Mulk',
-    description: 'The Sovereignty — 30 verses of protection from the grave punishment. Recite before sleep.',
+    title: 'সূরা আল-মুলক',
+    description: 'কবরের আজাব থেকে রক্ষার ৩০ আয়াতের সূরা। ঘুমানোর আগে পড়ুন।',
     icon: '👑',
     gradient: 'from-amber-500 to-orange-700',
     config: {
@@ -58,8 +58,8 @@ const quranTemplates: TemplatePreset[] = [
   {
     id: 'al-imran-ayat-185',
     type: 'quran',
-    title: 'Al-Imran 3:185',
-    description: 'Reflection on the Hereafter — every soul shall taste death. A reminder of what truly matters.',
+    title: 'আলে ইমরান ৩:১৮৫',
+    description: 'প্রত্যেক প্রাণকেই মৃত্যুর স্বাদ নিতে হবে। আখিরাতের কথা মনে করিয়ে দেওয়া একটি আয়াত।',
     icon: '🌿',
     gradient: 'from-emerald-500 to-teal-700',
     config: {
@@ -75,8 +75,8 @@ const quranTemplates: TemplatePreset[] = [
   {
     id: 'al-fatihah',
     type: 'quran',
-    title: 'Surah Al-Fatihah',
-    description: 'The Opening — 7 verses recited in every prayer. The foundation of the Quran.',
+    title: 'সূরা আল-ফাতিহা',
+    description: 'প্রতি নামাজে পড়া ৭ আয়াতের সূরা। কুরআনের শুরু ও মূল ভিত্তি।',
     icon: '🌟',
     gradient: 'from-rose-500 to-pink-700',
     config: {
@@ -92,8 +92,8 @@ const quranTemplates: TemplatePreset[] = [
   {
     id: 'al-ikhlas',
     type: 'quran',
-    title: 'Surah Al-Ikhlas',
-    description: 'Sincerity — 4 verses on the absolute oneness of Allah. Equals one-third of the Quran.',
+    title: 'সূরা আল-ইখলাস',
+    description: 'আল্লাহর একত্ব নিয়ে ৪ আয়াতের সূরা। কুরআনের এক-তৃতীয়াংশের সমান।',
     icon: '💎',
     gradient: 'from-cyan-500 to-blue-700',
     config: {
@@ -109,8 +109,8 @@ const quranTemplates: TemplatePreset[] = [
   {
     id: 'ar-rahman',
     type: 'quran',
-    title: 'Surah Ar-Rahman',
-    description: 'The Most Merciful — the verse of blessings repeated 31 times. A meditation on Allah\u2019s favors.',
+    title: 'সূরা আর-রহমান',
+    description: 'নিয়ামতের কথা বলা আয়াতটি এখানে ৩১ বার এসেছে। আল্লাহর অনুগ্রহ নিয়ে ভাবার সূরা।',
     icon: '🌺',
     gradient: 'from-fuchsia-500 to-purple-700',
     config: {
@@ -128,8 +128,8 @@ const quranTemplates: TemplatePreset[] = [
 const namesTemplate: TemplatePreset = {
   id: '99-names',
   type: 'names',
-  title: '99 Names of Allah',
-  description: 'Asma ul Husna — the 99 beautiful names. A meditative reel cycling through each name with meaning.',
+  title: 'আল্লাহর ৯৯ নাম',
+  description: 'আসমাউল হুসনা — আল্লাহর ৯৯টি সুন্দর নাম। প্রতিটি নাম অর্থসহ একে একে দেখানো হয়।',
   icon: '✨',
   gradient: 'from-amber-400 via-orange-500 to-rose-600',
   config: {
@@ -146,8 +146,8 @@ const namesTemplate: TemplatePreset = {
 const hadithTemplate: TemplatePreset = {
   id: 'daily-hadith',
   type: 'hadith',
-  title: 'Daily Hadith',
-  description: 'A new hadith each day from the 40 Hadith of Imam Nawawi. Bite-sized wisdom for sharing.',
+  title: 'প্রতিদিনের হাদিস',
+  description: 'ইমাম নববীর ৪০ হাদিস থেকে প্রতিদিন একটি নতুন হাদিস। ছোট, সহজ আর শেয়ার করার মতো।',
   icon: '📜',
   gradient: 'from-emerald-600 to-green-800',
   config: {
@@ -165,8 +165,8 @@ const duaTemplates: TemplatePreset[] = [
   {
     id: 'dua-travel',
     type: 'dua',
-    title: 'Dua for Travel',
-    description: 'Recited when setting out on a journey — Surah Az-Zukhruf 43:13-14. Protection on the road.',
+    title: 'সফরের দোয়া',
+    description: 'সফরে বের হওয়ার সময় পড়ার দোয়া — সূরা আয-যুখরুফ ৪৩:১৩-১৪। পথে হেফাজতের জন্য।',
     icon: '🚗',
     gradient: 'from-sky-500 to-blue-700',
     config: {
@@ -182,8 +182,8 @@ const duaTemplates: TemplatePreset[] = [
   {
     id: 'dua-morning',
     type: 'dua',
-    title: 'Morning Dua',
-    description: 'Recite after Fajr — Surah Al-Imran 3:190-191 for protection and barakah through the day.',
+    title: 'সকালের দোয়া',
+    description: 'ফজরের পর পড়ুন — সূরা আলে ইমরান ৩:১৯০-১৯১। সারাদিনের হেফাজত ও বরকতের জন্য।',
     icon: '🌅',
     gradient: 'from-orange-400 to-amber-600',
     config: {
@@ -199,8 +199,8 @@ const duaTemplates: TemplatePreset[] = [
   {
     id: 'dua-evening',
     type: 'dua',
-    title: 'Evening Dua',
-    description: 'Recite after Maghrib — Surah Al-Falaq (113) + An-Nas (114) for overnight protection.',
+    title: 'সন্ধ্যার দোয়া',
+    description: 'মাগরিবের পর পড়ুন — সূরা আল-ফালাক (১১৩) ও আন-নাস (১১৪)। রাতভর হেফাজতের জন্য।',
     icon: '🌆',
     gradient: 'from-indigo-600 to-slate-800',
     config: {
@@ -234,18 +234,18 @@ export function isQuranTemplate(
 }
 
 export const templateCategories: { key: TemplateType | 'all'; label: string; icon: string }[] = [
-  { key: 'all', label: 'All', icon: '✨' },
-  { key: 'quran', label: 'Quran', icon: '📖' },
-  { key: 'dua', label: 'Dua', icon: '🤲' },
-  { key: 'names', label: '99 Names', icon: '✨' },
-  { key: 'hadith', label: 'Hadith', icon: '📜' },
+  { key: 'all', label: 'সব', icon: '✨' },
+  { key: 'quran', label: 'কুরআন', icon: '📖' },
+  { key: 'dua', label: 'দোয়া', icon: '🤲' },
+  { key: 'names', label: '৯৯ নাম', icon: '✨' },
+  { key: 'hadith', label: 'হাদিস', icon: '📜' },
 ]
 
 export const templateTypeLabels: Record<TemplateType, string> = {
-  quran: '📖 Quran',
-  dua: '🤲 Dua',
-  names: '✨ Names',
-  hadith: '📜 Hadith',
+  quran: '📖 কুরআন',
+  dua: '🤲 দোয়া',
+  names: '✨ নাম',
+  hadith: '📜 হাদিস',
 }
 
 const featuredTemplateIds = ['ayat-al-kursi', 'al-fatihah', 'ar-rahman', 'dua-morning', '99-names', 'daily-hadith']

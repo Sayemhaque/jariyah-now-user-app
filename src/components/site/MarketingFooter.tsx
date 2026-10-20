@@ -18,7 +18,7 @@ export function MarketingFooter({ links, showCredits }: MarketingFooterProps) {
             <BrandLogo size={36} className="h-9 w-9 rounded-xl qv-logo-glow" />
             <div>
               <div className="font-bold text-sm">Jariyah Now</div>
-              <div className="text-xs text-muted-foreground">Share once, earn forever.</div>
+              <div className="text-xs text-muted-foreground">একবার শেয়ার, সওয়াব চিরকাল।</div>
             </div>
           </div>
           <nav className="flex flex-wrap items-center justify-center gap-1 sm:gap-2 text-sm">
