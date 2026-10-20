@@ -47,7 +47,7 @@ export async function buildDailyPost(opts: DailyVideoOptions = {}): Promise<Dail
   if (opts.surahOverride) return buildQuranDailyVideo(ctx, opts.surahOverride)
   const rotation: ContentMode[] = opts.contentRotation?.length ? opts.contentRotation : ['quran']
   const mode = pickContentMode(sequence, rotation)
-  if (mode === 'quran') return buildQuranDailyVideo(ctx, pickSurahNumber(sequence))
+  if (mode === 'quran') return buildQuranDailyVideo(ctx, pickSurahNumber(modeTurn(sequence, rotation, mode)))
   return buildImagePost(ctx, mode, modeTurn(sequence, rotation, mode))
 }
 

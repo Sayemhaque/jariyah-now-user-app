@@ -2,12 +2,16 @@ name: Daily Quran reel
 
 on:
   schedule:
-    # Bangladesh time 09:00, 15:00 and 22:00 (Asia/Dhaka is UTC+6, no DST).
+    # Bangladesh time 07:00 reel, 10:00 image, 14:00 reel, 17:00 image,
+    # 21:00 reel and 22:30 image (Asia/Dhaka is UTC+6, no DST).
     # Keep in sync with postTimes in src/lib/daily/dailyConfig.ts.
     # GitHub may start scheduled runs a few minutes late at busy times.
-    - cron: '0 3 * * *'
-    - cron: '0 9 * * *'
-    - cron: '0 16 * * *'
+    - cron: '0 1 * * *'
+    - cron: '0 4 * * *'
+    - cron: '0 8 * * *'
+    - cron: '0 11 * * *'
+    - cron: '0 15 * * *'
+    - cron: '30 16 * * *'
   workflow_dispatch:
 
 # Never run two posting jobs at once (avoids double posts).

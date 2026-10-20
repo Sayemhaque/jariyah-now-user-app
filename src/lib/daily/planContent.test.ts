@@ -5,6 +5,8 @@ import { presetCollections } from '@/lib/collections'
 import { presetParts } from '@/lib/collections/presetParts'
 import type { ContentMode } from '@/lib/collections/types'
 import { modeTurn, pickContentMode, pickFrom, pickHadithSource, pickPreset, pickTextItem } from './planContent'
+import { dailyConfig } from './dailyConfig'
+import { postIndex } from './plan'
 
 const rotation: ContentMode[] = ['quran', 'masnoon', 'hadith', 'duas', 'azkar']
 
@@ -64,5 +66,20 @@ describe('pickHadithSource', () => {
   it('picks deterministically from a list and handles an empty one', () => {
     expect(pickFrom([1, 2, 3], 5)).toBe(pickFrom([1, 2, 3], 5))
     expect(pickFrom([], 5)).toBeUndefined()
+  })
+})
+
+describe('daily schedule', () => {
+  const slotAt = (day: number, time: string) => new Date(Date.UTC(2026, 9, 21 + day, Number(time.slice(0, 2)) - 6, Number(time.slice(3)) + 5))
+  const plan = (day: number) => dailyConfig.postTimes.map((t) => pickContentMode(postIndex(slotAt(day, t), dailyConfig.postTimes), dailyConfig.contentRotation))
+
+  it('posts three Quran reels and three image posts every day', () => {
+    for (let day = 0; day < 4; day++) {
+      const modes = plan(day)
+      expect(modes.filter((m) => m === 'quran')).toHaveLength(3)
+      expect(modes.filter((m) => m !== 'quran')).toHaveLength(3)
+      expect(modes.slice(1, 4)).toEqual(['hadith', 'quran', 'azkar'])
+    }
+    expect(new Set([plan(0)[5], plan(1)[5]])).toEqual(new Set(['duas', 'masnoon']))
   })
 })
