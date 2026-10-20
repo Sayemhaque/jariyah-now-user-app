@@ -73,6 +73,7 @@ export const rootMetadata: Metadata = {
 }
 
 export const landingHeaderLinks: NavItem[] = [
+  { href: '/#hadith', label: 'Hadith', hideBelow: 'sm' },
   { href: '/templates', label: 'Templates', hideBelow: 'sm' },
   { href: '/about', label: 'About', hideBelow: 'sm' },
   { href: '/terms', label: 'Terms', hideBelow: 'md' },

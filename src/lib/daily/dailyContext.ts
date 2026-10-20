@@ -8,6 +8,8 @@ import type { PostMetadata } from './plan'
 export interface DailyVideoOptions {
   now?: Date
   surahOverride?: number
+  range?: { fromAyat: number; toAyat: number }
+  sceneKey?: string
   reciterId?: string
   translationKey?: string
   maxDurationSec?: number

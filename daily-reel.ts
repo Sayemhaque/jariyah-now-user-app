@@ -1,7 +1,4 @@
-import { bundle } from '@remotion/bundler'
-import { renderMedia, renderStill, selectComposition } from '@remotion/renderer'
-import { execFileSync } from 'node:child_process'
-import { appendFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs'
+import { appendFileSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildDailyPost, type DailyImagePost, type DailyVideo } from '@/lib/daily/buildVideo'
 import { dailyConfig } from '@/lib/daily/dailyConfig'
@@ -10,7 +7,7 @@ import { uploadToYouTube } from '@/lib/social/youtube'
 import { uploadToFacebookReels, uploadToInstagramReels } from '@/lib/social/meta'
 import { postImagesToFacebook, postImagesToInstagram, type ImagePostInput } from '@/lib/social/metaImages'
 import { withTemporaryUrls } from '@/lib/social/temporaryVideoUrl'
-import type { CardProps } from '@/lib/cards/types'
+import { makeReelSafe, renderCards, renderVideo } from '@/lib/render/remotionRender'
 import { uploadToTikTok } from '@/lib/social/tiktok'
 import type { Platform, UploadInput, UploadResult } from '@/lib/social/types'
 
@@ -19,71 +16,6 @@ const env = process.env
 function summary(line: string) {
   console.log(line)
   if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `${line}\n`)
-}
-
-let serveUrlPromise: Promise<string> | null = null
-
-function bundledServeUrl(): Promise<string> {
-  if (serveUrlPromise) return serveUrlPromise
-  console.log('Bundling Remotion entry point...')
-  serveUrlPromise = bundle({
-    entryPoint: join(process.cwd(), 'src/remotion/Root.tsx'),
-    webpackOverride: (config) => {
-      config.resolve = config.resolve ?? {}
-      config.resolve.alias = { ...(config.resolve.alias as object), '@': join(process.cwd(), 'src') }
-      return config
-    },
-  })
-  return serveUrlPromise
-}
-
-async function renderCards(cards: CardProps[], outDir: string): Promise<Buffer[]> {
-  const serveUrl = await bundledServeUrl()
-  const browserExecutable = env.BROWSER_EXECUTABLE || null
-  const images: Buffer[] = []
-  for (const [index, card] of cards.entries()) {
-    const inputProps = card as unknown as Record<string, unknown>
-    const composition = await selectComposition({ serveUrl, id: 'QuoteCard', inputProps, browserExecutable })
-    const output = join(outDir, `card-${index + 1}.jpg`)
-    await renderStill({ composition, serveUrl, inputProps, output, imageFormat: 'jpeg', jpegQuality: 95, browserExecutable })
-    images.push(readFileSync(output))
-    console.log(`Rendered ${output}`)
-  }
-  return images
-}
-
-async function render(props: object, outPath: string) {
-  const serveUrl = await bundledServeUrl()
-  const inputProps = props as Record<string, unknown>
-  const browserExecutable = env.BROWSER_EXECUTABLE || null
-  const composition = await selectComposition({ serveUrl, id: 'AyatVideo', inputProps, browserExecutable })
-  console.log(`Rendering ${composition.durationInFrames} frames at ${composition.width}x${composition.height}...`)
-  let lastPct = -10
-  await renderMedia({
-    composition,
-    serveUrl,
-    codec: 'h264',
-    outputLocation: outPath,
-    inputProps,
-    imageFormat: 'jpeg',
-    pixelFormat: 'yuv420p',
-    colorSpace: 'bt709',
-    audioBitrate: '128k',
-    enforceAudioTrack: true,
-    browserExecutable,
-    onProgress: ({ progress }) => {
-      const pct = Math.floor(progress * 100)
-      if (pct >= lastPct + 10) {
-        lastPct = pct
-        console.log(`  render ${pct}%`)
-      }
-    },
-  })
-}
-
-function makeReelSafe(rawPath: string, outPath: string) {
-  execFileSync(env.FFMPEG_BIN || 'ffmpeg', ['-v', 'error', '-y', '-i', rawPath, '-c', 'copy', '-use_editlist', '0', '-movflags', '+faststart', outPath])
-  rmSync(rawPath)
 }
 
 async function main() {
@@ -115,7 +47,7 @@ async function postVideo(video: DailyVideo) {
   const outPath = join(outDir, `daily-${video.dateKey}.mp4`)
 
   const rawPath = join(outDir, `raw-${video.dateKey}.mp4`)
-  await render(video.props, rawPath)
+  await renderVideo(video.props, rawPath)
   makeReelSafe(rawPath, outPath)
   const buf = readFileSync(outPath)
   console.log(`Rendered ${outPath} (${(buf.length / 1024 / 1024).toFixed(1)} MB)`)

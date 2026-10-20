@@ -35,7 +35,7 @@ function baseSettings(scene: BackgroundScene): VideoSettings {
 export async function buildDailyPost(opts: DailyVideoOptions = {}): Promise<DailyPost> {
   const now = opts.now ?? new Date()
   const sequence = postIndex(now, opts.postTimes ?? ['22:00'])
-  const scene = backgroundScenes[pickSceneIndex(sequence, backgroundScenes.length)] ?? backgroundScenes[0]!
+  const scene = backgroundScenes.find((s) => s.key === opts.sceneKey) ?? backgroundScenes[pickSceneIndex(sequence, backgroundScenes.length)] ?? backgroundScenes[0]!
   const ctx: DailyContext = {
     opts,
     now,
@@ -52,6 +52,7 @@ export async function buildDailyPost(opts: DailyVideoOptions = {}): Promise<Dail
 }
 
 async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number): Promise<DailyVideo> {
+  const range = ctx.opts.range
   const { opts, rand, audioTools, now } = ctx
   const maxMs = opts.maxDurationSec ? opts.maxDurationSec * 1000 : Infinity
   const maxAyats = opts.maxAyats ?? maxAyatsPerVideo
@@ -71,11 +72,11 @@ async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number): Pro
   if (!surah) throw new Error(`Surah ${surahNumber} not found`)
 
   for (let attempt = 0; attempt < 5; attempt++) {
-    const fromAyat = pickStartAyat(surah.numberOfAyahs, maxAyats, rand)
+    const fromAyat = range?.fromAyat ?? pickStartAyat(surah.numberOfAyahs, maxAyats, rand)
     const slides: AyatSlide[] = []
     const durations: number[] = []
 
-    for (let ayat = fromAyat; ayat <= surah.numberOfAyahs && slides.length < maxAyats; ayat++) {
+    for (let ayat = fromAyat; ayat <= (range?.toAyat ?? surah.numberOfAyahs) && slides.length < maxAyats; ayat++) {
       const [fetched, timings] = await Promise.all([
         fetchAyatData(surah.number, ayat, reciter.recitationId, reciter.audioKey, surah.name, surah.arabicName, translationKey),
         reciter.quranComId ? fetchVerseTimings(surah.number, ayat, reciter.quranComId) : Promise.resolve(null),

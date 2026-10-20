@@ -13,6 +13,7 @@ import { SectionHeader } from '@/components/site/SectionHeader'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { TemplateGrid } from '@/components/site/TemplateGrid'
 import { TemplatesHero } from '@/components/site/TemplatesHero'
+import { ReadyVideos } from '@/components/templates/ReadyVideos'
 
 export default function TemplatesPage() {
   const [activeCategory, setActiveCategory] = useState<TemplateCategory>('all')
@@ -24,6 +25,7 @@ export default function TemplatesPage() {
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       <SiteHeader links={templatesHeaderLinks} />
       <TemplatesHero />
+      <ReadyVideos />
       <CategoryTabs active={activeCategory} onChange={setActiveCategory} />
       <TemplateGrid templates={templates} onSelect={applyTemplate} />
       <PageSection className="py-12 sm:py-16 bg-card border-y border-border">
