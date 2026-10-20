@@ -18,7 +18,7 @@ export const SlideContent: React.FC<SlideContentProps> = ({ timing, settings, si
   const motion = useSlideMotion(timing.durationInFrames)
   return (
     <>
-      <RecitationVisualizer audioUrl={timing.slide.audioUrl} accent={settings.highlightColor} visibility={motion.visibility} kind={settings.soundAnimation} />
+      {timing.slide.audioUrl && <RecitationVisualizer audioUrl={timing.slide.audioUrl} accent={settings.highlightColor} visibility={motion.visibility} kind={settings.soundAnimation} />}
       <SlideText
         slide={timing.slide}
         settings={settings}

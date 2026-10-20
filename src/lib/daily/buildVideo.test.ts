@@ -43,21 +43,26 @@ describe('buildDailyVideo content rotation', () => {
     recordings.list = []
   })
 
-  it('rotates Quran, masnoon surahs and duas when no voice recordings exist yet', async () => {
-    const modes = await modesOver(3)
-    expect(new Set(modes)).toEqual(new Set(['quran', 'masnoon', 'duas']))
+  it('rotates all five types, posting hadith and azkar without voice when nothing is recorded', async () => {
+    const modes = await modesOver(2)
+    expect(new Set(modes)).toEqual(new Set(rotation))
+    const index = modes.indexOf('azkar')
+    const video = await buildDailyVideo({ now: atSlot(Math.floor(index / 3), [3, 9, 16][index % 3]!), postTimes, contentRotation: [...rotation] })
+    expect(video.props.slides[0]!.audioUrl).toBe('')
+    expect(video.props.slides[0]!.audioDurationMs).toBeGreaterThanOrEqual(7000)
+    expect(video.label).toContain('no voice')
   })
 
-  it('posts a hadith with the recorded voice once a recording is saved', async () => {
-    recordings.list = [{ mode: 'hadith', itemId: 'purity', url: 'https://x.private.blob.vercel-storage.com/recordings/hadith/purity.webm', uploadedAt: '' }]
+  it('uses the recorded voice for an item that has a recording', async () => {
+    const { hadithCollection } = await import('@/lib/collections/hadith')
+    recordings.list = hadithCollection.map((h) => ({ mode: 'hadith', itemId: h.id, url: `https://x.private.blob.vercel-storage.com/recordings/hadith/${h.id}.webm`, uploadedAt: '' }))
     const modes = await modesOver(2)
-    expect(modes).toContain('hadith')
-    const hadithIndex = modes.indexOf('hadith')
-    const video = await buildDailyVideo({ now: atSlot(Math.floor(hadithIndex / 3), [3, 9, 16][hadithIndex % 3]!), postTimes, contentRotation: [...rotation], blobToken: 'token' })
-    expect(video.props.slides[0]).toMatchObject({ ayatNumber: 0, audioUrl: recordings.list[0]!.url, audioDurationMs: 5000 })
+    const index = modes.indexOf('hadith')
+    const video = await buildDailyVideo({ now: atSlot(Math.floor(index / 3), [3, 9, 16][index % 3]!), postTimes, contentRotation: [...rotation], blobToken: 'token' })
+    expect(video.props.slides[0]!.audioUrl).toMatch(/recordings\/hadith\//)
+    expect(video.props.slides[0]).toMatchObject({ ayatNumber: 0, audioDurationMs: 5000 })
     expect(video.props.slides[0]!.words?.[0]!.startMs).toBe(400)
-    expect(video.props.surahName).toBe('Purity is half of faith')
-    expect(video.meta.title).toBe('Hadith: Purity is half of faith #Shorts')
+    expect(video.meta.title.startsWith('Hadith: ')).toBe(true)
   })
 
   it('makes masnoon posts from the preset range with a headline in the caption', async () => {

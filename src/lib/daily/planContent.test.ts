@@ -9,18 +9,12 @@ const rotation: ContentMode[] = ['quran', 'masnoon', 'hadith', 'duas', 'azkar']
 
 describe('pickContentMode', () => {
   it('walks through the rotation, one type per post', () => {
-    const picks = [0, 1, 2, 3, 4, 5].map((s) => pickContentMode(s, rotation, () => true))
+    const picks = [0, 1, 2, 3, 4, 5].map((s) => pickContentMode(s, rotation))
     expect(picks).toEqual(['quran', 'masnoon', 'hadith', 'duas', 'azkar', 'quran'])
   })
 
-  it('skips hadith and azkar until a recording exists', () => {
-    const picks = [0, 1, 2, 3, 4].map((s) => pickContentMode(s, rotation, () => false))
-    picks.forEach((mode) => expect(['quran', 'masnoon', 'duas']).toContain(mode))
-    expect(pickContentMode(2, rotation, (m) => m === 'hadith')).toBe('hadith')
-  })
-
-  it('falls back to Quran when nothing in the rotation can be made', () => {
-    expect(pickContentMode(0, ['hadith'], () => false)).toBe('quran')
+  it('falls back to Quran for an empty rotation', () => {
+    expect(pickContentMode(3, [])).toBe('quran')
   })
 })
 
@@ -48,9 +42,8 @@ describe('pickPreset', () => {
 })
 
 describe('pickTextItem', () => {
-  it('only picks items that have a recording', () => {
-    const recorded = new Set(['purity', 'smile'])
-    for (let t = 0; t < 6; t++) expect(recorded.has(pickTextItem(hadithCollection, recorded, t)!.id)).toBe(true)
-    expect(pickTextItem(hadithCollection, new Set(), 0)).toBeNull()
+  it('shows every hadith once before repeating', () => {
+    const seen = new Set(hadithCollection.map((_, t) => pickTextItem(hadithCollection, t).id))
+    expect(seen.size).toBe(hadithCollection.length)
   })
 })

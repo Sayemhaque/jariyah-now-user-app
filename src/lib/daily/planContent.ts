@@ -1,6 +1,6 @@
 import { presetCollections } from '@/lib/collections'
 import { presetParts, type PresetPart } from '@/lib/collections/presetParts'
-import { isTextMode, type ContentMode, type PresetMode, type QuranPreset, type TextItem } from '@/lib/collections/types'
+import { type ContentMode, type PresetMode, type QuranPreset, type TextItem } from '@/lib/collections/types'
 import { seededShuffle } from './plan'
 
 export interface PresetPick {
@@ -8,12 +8,9 @@ export interface PresetPick {
   part: PresetPart
 }
 
-export function pickContentMode(sequence: number, rotation: ContentMode[], hasRecordings: (mode: ContentMode) => boolean): ContentMode {
-  const usable = rotation.filter((mode) => !isTextMode(mode) || hasRecordings(mode))
-  if (!usable.length) return 'quran'
-  const wanted = rotation[((sequence % rotation.length) + rotation.length) % rotation.length]!
-  if (usable.includes(wanted)) return wanted
-  return usable[((sequence % usable.length) + usable.length) % usable.length]!
+export function pickContentMode(sequence: number, rotation: ContentMode[]): ContentMode {
+  if (!rotation.length) return 'quran'
+  return rotation[((sequence % rotation.length) + rotation.length) % rotation.length]!
 }
 
 function cyclePick<T>(items: T[], turn: number, seed: number): T {
@@ -27,9 +24,8 @@ export function pickPreset(mode: PresetMode, turn: number): PresetPick {
   return cyclePick(choices, turn, mode === 'masnoon' ? 0x3a5 : 0xd0a)
 }
 
-export function pickTextItem(items: TextItem[], recordedIds: Set<string>, turn: number): TextItem | null {
-  const recorded = items.filter((item) => recordedIds.has(item.id))
-  return recorded.length ? cyclePick(recorded, turn, 0x7e47) : null
+export function pickTextItem(items: TextItem[], turn: number): TextItem {
+  return cyclePick(items, turn, 0x7e47)
 }
 
 export function modeTurn(sequence: number, rotation: ContentMode[], mode: ContentMode): number {

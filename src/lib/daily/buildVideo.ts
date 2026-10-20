@@ -67,14 +67,13 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
 
   const rotation = opts.contentRotation?.length ? opts.contentRotation : ['quran' as const]
   const recordings = await storedRecordings(opts, rotation)
-  const recordedIds = (mode: ContentMode) => new Set(recordings.filter((r) => r.mode === mode).map((r) => r.itemId))
-  const mode = pickContentMode(sequence, rotation, (m) => recordedIds(m).size > 0)
+  const mode = pickContentMode(sequence, rotation)
   const turn = modeTurn(sequence, rotation, mode)
 
   if (isTextMode(mode)) {
-    const item = pickTextItem(textCollections[mode], recordedIds(mode), turn)!
-    const recording = recordings.find((r) => r.mode === mode && r.itemId === item.id)!
-    return buildTextDailyVideo(ctx, mode, item, recording.url)
+    const item = pickTextItem(textCollections[mode], turn)
+    const recording = recordings.find((r) => r.mode === mode && r.itemId === item.id)
+    return buildTextDailyVideo(ctx, mode, item, recording?.url ?? null)
   }
   if (isPresetMode(mode)) {
     const { preset, part } = pickPreset(mode, turn)

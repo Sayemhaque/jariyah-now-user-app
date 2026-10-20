@@ -19,7 +19,7 @@ export function TextSelection({ mode }: { mode: TextMode }) {
       {textItemId && <VoicePanel {...recordings} />}
       <Button onClick={loader.load} disabled={!loader.canLoad || loader.isLoading} className="w-full font-semibold">
         {loader.isLoading ? <Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> : <Download className="mr-1.5 h-4 w-4" />}
-        {loader.canLoad || !textItemId ? 'Load into preview' : 'Record your voice first'}
+        {loader.hasVoice || !textItemId ? 'Load into preview' : 'Load without voice'}
       </Button>
     </div>
   )

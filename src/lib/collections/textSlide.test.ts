@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { hadithCollection } from './hadith'
-import { buildTextSlide, isTextSlide, textVideoTitles } from './textSlide'
+import { buildTextSlide, isTextSlide, silentTextAudio, textVideoTitles } from './textSlide'
 import { buildTextPostMetadata } from './textPostMetadata'
 
 const item = hadithCollection[0]!
@@ -36,5 +36,19 @@ describe('buildTextPostMetadata', () => {
     expect(meta.hashtags).toContain('#Hadith')
     expect(meta.hashtags).toContain('#JariyahNow')
     expect(meta.hashtags).not.toContain('#Quran')
+  })
+})
+
+describe('silentTextAudio', () => {
+  it('gives a silent slide enough time to read the Arabic and the translation', () => {
+    const long = hadithCollection.find((h) => h.id === 'anger')!
+    const short = silentTextAudio(hadithCollection.find((h) => h.id === 'purity')!, 'english')
+    const audio = silentTextAudio(long, 'bangla')
+    expect(short.url).toBe('')
+    expect(short.durationMs).toBe(7000)
+    expect(audio.durationMs).toBeGreaterThan(short.durationMs)
+    expect(audio.words!.map((w) => w.text)).toEqual(long.arabic.split(' '))
+    expect(audio.words![0]!.startMs).toBe(900)
+    expect(audio.words![audio.words!.length - 1]!.endMs).toBeLessThan(audio.durationMs - 1500)
   })
 })

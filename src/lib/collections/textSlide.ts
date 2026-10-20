@@ -1,4 +1,5 @@
 import type { AyatData, TimedWord } from '@/lib/types'
+import { splitWords, wordWeight } from '@/lib/wordTiming'
 import type { TextItem, TextLanguage, TextMode } from './types'
 
 export interface VideoTitles {
@@ -39,3 +40,28 @@ export function textVideoTitles(mode: TextMode, item: TextItem): VideoTitles {
 }
 
 export const isTextSlide = (slide: { surahNumber: number } | undefined) => slide?.surahNumber === 0
+
+const leadInMs = 900
+const msPerArabicWord = 700
+const msPerTranslationWord = 260
+const tailMs = 1500
+const minSilentMs = 7000
+
+function evenlyTimedWords(words: string[], startMs: number, spanMs: number): TimedWord[] {
+  const total = words.reduce((sum, w) => sum + wordWeight(w), 0)
+  let cursor = startMs
+  return words.map((text) => {
+    const lengthMs = (wordWeight(text) / total) * spanMs
+    const word = { text, startMs: cursor, endMs: cursor + lengthMs }
+    cursor += lengthMs
+    return word
+  })
+}
+
+export function silentTextAudio(item: TextItem, language: TextLanguage): RecordedAudio {
+  const arabicWords = splitWords(item.arabic)
+  const arabicMs = arabicWords.length * msPerArabicWord
+  const translationMs = splitWords(textTranslation(item, language)).length * msPerTranslationWord
+  const durationMs = Math.max(minSilentMs, leadInMs + arabicMs + translationMs + tailMs)
+  return { url: '', durationMs, words: evenlyTimedWords(arabicWords, leadInMs, arabicMs) }
+}
