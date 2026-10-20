@@ -113,7 +113,8 @@ async function postImages(post: DailyImagePost) {
 async function runUploads(uploaders: Record<Platform, (() => Promise<UploadResult>) | null>) {
   const failures: string[] = []
   summary('| Platform | Result |\n|---|---|')
-  for (const platform of dailyConfig.platforms) {
+  const only = env.PLATFORMS?.split(',').map((p) => p.trim()).filter(Boolean)
+  for (const platform of only?.length ? dailyConfig.platforms.filter((p) => only.includes(p)) : dailyConfig.platforms) {
     const upload = uploaders[platform]
     if (!upload) {
       summary(`| ${platform} | skipped (no credentials) |`)

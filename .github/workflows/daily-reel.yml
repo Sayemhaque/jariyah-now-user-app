@@ -14,6 +14,15 @@ on:
     - cron: '0 13 * * *'
     - cron: '30 15 * * *'
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Only post to these (comma separated, e.g. youtube). Empty = all'
+        required: false
+        default: ''
+      surah:
+        description: 'Post a reel of this surah number now (empty = today''s plan)'
+        required: false
+        default: ''
 
 # Never run two posting jobs at once (avoids double posts).
 concurrency:
@@ -40,6 +49,8 @@ jobs:
         env:
           # Manual runs post straight away instead of waiting for a slot.
           POST_NOW: ${{ github.event_name == 'workflow_dispatch' }}
+          PLATFORMS: ${{ inputs.platforms }}
+          SURAH: ${{ inputs.surah }}
           NEXT_PUBLIC_UMMAHAPI_KEY: ${{ secrets.UMMAHAPI_KEY }}
           # YouTube Shorts
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
