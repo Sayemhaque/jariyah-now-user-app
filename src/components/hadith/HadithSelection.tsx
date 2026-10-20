@@ -17,7 +17,7 @@ export function HadithSelection() {
       <LanguageToggle />
       <SwitchField label="Short hadith only" icon={Ruler} checked={content.shortHadithOnly} onChange={content.setShortHadithOnly} />
       <HadithPicker hadiths={hadiths} value={content.hadithNumber} onChange={content.setHadithNumber} isLoading={query.isLoading} failed={query.isError} />
-      <p className="text-[11px] leading-snug text-muted-foreground">From the open Hadith API (fawazahmed0/hadith-api). Only hadith graded Sahih or Hasan are shown.</p>
+      <p className="text-[11px] leading-snug text-muted-foreground">From the open Hadith API (fawazahmed0/hadith-api). Only hadith graded Sahih or Hasan are shown, and each always fits on one card — narrations too long for one card are left out.</p>
     </div>
   )
 }

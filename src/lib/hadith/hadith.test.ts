@@ -55,6 +55,17 @@ describe('toHadiths', () => {
   })
 })
 
+describe('shareableHadiths', () => {
+  const make = (length: number, authentic = true) => ({ book: 'bukhari', bookName: 'b', number: length, section: 1, chapter: 'c', text: 'x'.repeat(length), grade: 'Sahih', authentic, language: 'english' as const })
+
+  it('keeps every hadith to one card, even with short-only off', async () => {
+    const { shareableHadiths } = await import('./hadithPicks')
+    const list = [make(300), make(700), make(1500), make(300, false)]
+    expect(shareableHadiths(list).map((h) => h.number)).toEqual([300])
+    expect(shareableHadiths(list, false).map((h) => h.number)).toEqual([300, 700])
+  })
+})
+
 describe('hadith helpers', () => {
   it("prefers Al-Albani's grade and rejects weak or fabricated ones", () => {
     expect(hadithGrade('tirmidhi', [{ name: 'Zubair Ali Zai', grade: 'Daif' }, { name: 'Al-Albani', grade: 'Hasan Sahih' }])).toEqual({ grade: 'Hasan Sahih', authentic: true })

@@ -22,6 +22,16 @@ export const remotionFontFamilies: Record<string, string> = {
   'Great Vibes': 'Great Vibes',
   'Playfair Display': 'Playfair Display',
   'Aref Ruqaa': 'Aref Ruqaa',
+  'Cinzel Decorative': 'Cinzel Decorative',
+  'Marcellus': 'Marcellus',
+  'Italiana': 'Italiana',
+  'DM Serif Display': 'DM Serif Display',
+  'Bodoni Moda': 'Bodoni Moda',
+  'Pinyon Script': 'Pinyon Script',
+  'Allura': 'Allura',
+  'Lora': 'Lora',
+  'Mina': 'Mina',
+  'Baloo Da 2': 'Baloo Da 2',
 }
 
 const fontWeights: Record<string, number[]> = {
@@ -46,9 +56,19 @@ const fontWeights: Record<string, number[]> = {
   'Great Vibes': [400],
   'Playfair Display': [600, 700, 800],
   'Aref Ruqaa': [400, 700],
+  'Cinzel Decorative': [400, 700],
+  'Marcellus': [400],
+  'Italiana': [400],
+  'DM Serif Display': [400],
+  'Bodoni Moda': [500, 700],
+  'Pinyon Script': [400],
+  'Allura': [400],
+  'Lora': [400, 500, 600],
+  'Mina': [400, 700],
+  'Baloo Da 2': [500, 600, 700],
 }
 
-const italicFamilies = new Set(['Cormorant Garamond', 'Playfair Display'])
+const italicFamilies = new Set(['Cormorant Garamond', 'Playfair Display', 'DM Serif Display', 'Bodoni Moda', 'Lora'])
 
 function cssFamilyName(family: string): string {
   return family.replace(/\s+/g, '+')

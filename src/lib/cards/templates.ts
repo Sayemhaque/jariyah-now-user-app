@@ -1,5 +1,6 @@
 import { cardThemes } from './themes'
-import type { CardLayout, CardTheme, CardTitleStyle } from './types'
+import type { CardLayout, CardTheme, CardTitleStyle, CardVariant } from './types'
+import { cardVariants, variantSpecs } from './variants'
 
 export interface CardLayoutInfo {
   key: CardLayout
@@ -25,20 +26,36 @@ export const cardLayouts: CardLayoutInfo[] = [
 export interface CardTemplate {
   id: string
   layout: CardLayout
+  variant: CardVariant
   theme: CardTheme
   label: string
 }
 
-export const cardTemplates: CardTemplate[] = cardLayouts.flatMap((layout, l) =>
-  cardThemes.map((_, t) => {
-    const theme = cardThemes[(t + l * 5) % cardThemes.length]!
-    return { id: `${layout.key}--${theme.key}`, layout: layout.key, theme, label: `${layout.label} · ${theme.label}` }
-  }),
+export interface CardDesign {
+  layout: CardLayout
+  variant: CardVariant
+  label: string
+}
+
+export const cardDesigns: CardDesign[] = cardVariants.flatMap((variant) =>
+  cardLayouts.map((layout) => ({ layout: layout.key, variant, label: `${layout.label} · ${variantSpecs[variant].label}` })),
 )
 
-export const interleavedTemplates: CardTemplate[] = cardThemes.flatMap((_, round) => cardLayouts.map((_, l) => cardTemplates[l * cardThemes.length + round]!))
+export const templateCount = cardDesigns.length * cardThemes.length
 
-export const findCardTemplate = (id: string) => cardTemplates.find((t) => t.id === id)
+export function templateAt(index: number): CardTemplate {
+  const i = ((index % templateCount) + templateCount) % templateCount
+  const design = cardDesigns[(i % cardLayouts.length) + cardLayouts.length * (Math.floor(i / cardLayouts.length) % cardVariants.length)]!
+  const theme = cardThemes[(i * 37 + Math.floor(i / cardThemes.length)) % cardThemes.length]!
+  return { id: `${design.layout}.${design.variant}--${theme.key}`, layout: design.layout, variant: design.variant, theme, label: `${design.label} · ${theme.label}` }
+}
+
+export function findCardTemplate(id: string): CardTemplate | undefined {
+  const match = /^([a-z]+)\.([a-z]+)--(.+)$/.exec(id)
+  const design = cardDesigns.find((d) => d.layout === match?.[1] && d.variant === match?.[2])
+  const theme = cardThemes.find((t) => t.key === match?.[3])
+  return design && theme ? { id, layout: design.layout, variant: design.variant, theme, label: `${design.label} · ${theme.label}` } : undefined
+}
 
 const titleStyles: CardTitleStyle[] = ['serif', 'script', 'display']
 

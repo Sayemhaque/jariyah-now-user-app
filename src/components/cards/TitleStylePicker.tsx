@@ -22,8 +22,8 @@ export function TitleStylePicker() {
           return (
             <OptionButton key={key} selected={titleStyle === key} onSelect={() => setTitleStyle(key)} glow className="flex flex-col items-center gap-1 rounded-xl px-1 py-2.5">
               <span className="flex items-baseline gap-1.5 text-[22px] leading-none">
-                <span style={{ fontFamily: latin.fontFamily, fontWeight: latin.fontWeight, fontStyle: latin.fontStyle }}>Aa</span>
-                <span style={{ fontFamily: bangla.fontFamily, fontWeight: bangla.fontWeight }}>আল</span>
+                <span style={{ fontFamily: latin.family, fontWeight: latin.weight, fontStyle: latin.style }}>Aa</span>
+                <span style={{ fontFamily: bangla.family, fontWeight: bangla.weight }}>আল</span>
               </span>
               <span className="text-[10px] font-medium leading-none">{label}</span>
             </OptionButton>

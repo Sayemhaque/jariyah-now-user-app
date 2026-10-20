@@ -6,14 +6,14 @@ import { CardFooter } from '../CardFooter'
 import { CardHeader } from '../CardHeader'
 import { bandTheme, bodyProps, column, type LayoutProps } from './layoutTypes'
 import { useCardStyle } from '../CardStyleContext'
-import { titleFont } from '../titleFonts'
+import { titleSlot } from '../titleFonts'
 
 export const SplitLayout: React.FC<LayoutProps> = (p) => {
   const { theme, width, height } = p
   const pad = cardPadding[p.format]
   const band = bandTheme(theme)
-  const { titleStyle } = useCardStyle()
-  const bandHeight = pad.top + cardHeaderHeight(p.content, titleFont(titleStyle, p.content.title).scale * 1.1, p.format) + 56
+  const { fonts, decor } = useCardStyle()
+  const bandHeight = pad.top + cardHeaderHeight(p.content, fonts[titleSlot(p.content.title)].scale * 1.1, p.format, decor.eyebrow) + 56
   const cx = width / 2
   return (
     <>

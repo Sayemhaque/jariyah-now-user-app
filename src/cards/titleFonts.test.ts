@@ -4,15 +4,15 @@ import { findCardTheme } from '@/lib/cards/themes'
 
 describe('titleFont', () => {
   it('uses calligraphic script fonts for both Bangla and English titles', () => {
-    expect(titleFont('script', 'Good Manners').fontFamily).toContain('Great Vibes')
-    expect(titleFont('script', 'সহীহ বুখারী').fontFamily).toContain('Galada')
-    expect(arabicTitleFont('script')).toContain('Aref Ruqaa')
+    expect(titleFont('script', 'Good Manners').family).toContain('Great Vibes')
+    expect(titleFont('script', 'সহীহ বুখারী').family).toContain('Galada')
+    expect(arabicTitleFont('script', titleFont('serif', 'x'))).toContain('Aref Ruqaa')
   })
 
   it('uses bold display fonts and the elegant serif by default', () => {
-    expect(titleFont('display', 'Hadith').fontFamily).toContain('Playfair Display')
-    expect(titleFont('display', 'হাদিস').fontFamily).toContain('Atma')
-    expect(titleFont('serif', 'Hadith').fontFamily).toContain('Cormorant')
+    expect(titleFont('display', 'Hadith').family).toContain('Playfair Display')
+    expect(titleFont('display', 'হাদিস').family).toContain('Atma')
+    expect(titleFont('serif', 'Hadith').family).toContain('Cormorant')
   })
 
   it('builds a text gradient from the theme colours', () => {

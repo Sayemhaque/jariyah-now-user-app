@@ -2,9 +2,10 @@
 
 import { createContext, createElement, useContext, useMemo, useState, type ReactNode } from 'react'
 import type { ContentMode, TextLanguage } from './collections/types'
-import type { CardFormat, CardLayout, CardTitleStyle } from './cards/types'
+import type { CardFormat, CardLayout, CardTitleStyle, CardVariant, EyebrowStyle } from './cards/types'
 import { cardThemes } from './cards/themes'
 import { defaultHadithSelection } from './hadith/hadithPicks'
+import type { CardFont, CardFontChoice, FontSlot } from './cards/fontLibrary'
 
 export interface ContentState {
   mode: ContentMode
@@ -15,8 +16,12 @@ export interface ContentState {
   cardFormat: CardFormat
   cardThemeKey: string
   cardLayout: CardLayout
+  cardVariant: CardVariant
+  eyebrowStyle: EyebrowStyle | null
   titleStyle: CardTitleStyle
   titleGradient: boolean
+  fonts: Partial<CardFontChoice>
+  customFonts: CardFont[]
   hadithBook: string
   hadithSection: number
   hadithNumber: number
@@ -29,8 +34,12 @@ export interface ContentState {
   setCardFormat: (format: CardFormat) => void
   setCardThemeKey: (key: string) => void
   setCardLayout: (layout: CardLayout) => void
+  setCardVariant: (variant: CardVariant) => void
+  setEyebrowStyle: (style: EyebrowStyle | null) => void
   setTitleStyle: (style: CardTitleStyle) => void
   setTitleGradient: (on: boolean) => void
+  setFont: (slot: FontSlot, id: string) => void
+  addCustomFont: (font: CardFont, apply?: boolean) => void
   setHadithBook: (book: string, section: number) => void
   setHadithSection: (section: number) => void
   setHadithNumber: (number: number) => void
@@ -48,15 +57,19 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [cardFormat, setCardFormat] = useState<CardFormat>('portrait')
   const [cardThemeKey, setCardThemeKey] = useState(cardThemes[0]!.key)
   const [cardLayout, setCardLayout] = useState<CardLayout>('frame')
+  const [cardVariant, setCardVariant] = useState<CardVariant>('signature')
+  const [eyebrowStyle, setEyebrowStyle] = useState<EyebrowStyle | null>(null)
   const [titleStyle, setTitleStyle] = useState<CardTitleStyle>('serif')
   const [titleGradient, setTitleGradient] = useState(false)
+  const [fonts, setFonts] = useState<Partial<CardFontChoice>>({})
+  const [customFonts, setCustomFonts] = useState<CardFont[]>([])
   const [hadithBook, setHadithBookState] = useState(defaultHadithSelection.book)
   const [hadithSection, setHadithSectionState] = useState(defaultHadithSelection.section)
   const [hadithNumber, setHadithNumber] = useState(0)
   const [shortHadithOnly, setShortHadithOnly] = useState(true)
 
   const value = useMemo<ContentState>(() => ({
-    mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey, cardLayout, titleStyle, titleGradient, hadithBook, hadithSection, hadithNumber, shortHadithOnly,
+    mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey, cardLayout, cardVariant, eyebrowStyle, titleStyle, titleGradient, fonts, customFonts, hadithBook, hadithSection, hadithNumber, shortHadithOnly,
     setMode: (next) => {
       setModeState(next)
       setPresetIdState('')
@@ -67,7 +80,16 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       setPresetIdState(id)
       setPartIndex(0)
     },
-    setPartIndex, setTextItemId, setLanguage, setCardFormat, setCardThemeKey, setCardLayout, setTitleStyle, setTitleGradient, setHadithNumber, setShortHadithOnly,
+    setPartIndex, setTextItemId, setLanguage, setCardFormat, setCardThemeKey, setCardLayout, setCardVariant, setEyebrowStyle, setTitleGradient, setHadithNumber, setShortHadithOnly,
+    setTitleStyle: (style) => {
+      setTitleStyle(style)
+      setFonts(({ titleLatin, titleBangla, ...rest }) => rest)
+    },
+    setFont: (slot, id) => setFonts((current) => ({ ...current, [slot]: id })),
+    addCustomFont: (font, apply = true) => {
+      setCustomFonts((current) => [...current.filter((f) => f.id !== font.id), font])
+      if (apply) setFonts((current) => ({ ...current, titleLatin: font.id, titleBangla: font.id }))
+    },
     setHadithBook: (book, section) => {
       setHadithBookState(book)
       setHadithSectionState(section)
@@ -77,7 +99,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       setHadithSectionState(section)
       setHadithNumber(0)
     },
-  }), [mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey, cardLayout, titleStyle, titleGradient, hadithBook, hadithSection, hadithNumber, shortHadithOnly])
+  }), [mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey, cardLayout, cardVariant, eyebrowStyle, titleStyle, titleGradient, fonts, customFonts, hadithBook, hadithSection, hadithNumber, shortHadithOnly])
 
   return createElement(ContentContext.Provider, { value }, children)
 }

@@ -5,12 +5,12 @@ import { cardPostMetadata } from '@/lib/cards/cardPostMetadata'
 import { fetchCardAyat } from '@/lib/cards/fetchCardAyat'
 import { isBanglaTranslation, presetCardTitle } from '@/lib/cards/presetTitle'
 import { presetBenefits } from '@/lib/collections/benefits'
-import { cardTemplates, titleStyleFor } from '@/lib/cards/templates'
+import { templateAt, templateCount, titleStyleFor } from '@/lib/cards/templates'
 import type { CardContent } from '@/lib/cards/types'
 import { fetchSurahs } from '@/lib/quranApi'
 import { translationCredit } from '@/lib/translations'
 import type { DailyContext, DailyImagePost } from './dailyContext'
-import { dhakaDateKey, seededShuffle } from './plan'
+import { dhakaDateKey, mulberry32 } from './plan'
 import { pickFrom, pickHadithSource, pickPreset, pickTextItem } from './planContent'
 import { fetchHadithSection } from '@/lib/hadith/hadithApi'
 import { shareableHadiths } from '@/lib/hadith/hadithPicks'
@@ -18,8 +18,7 @@ import { shareableHadiths } from '@/lib/hadith/hadithPicks'
 const maxCarouselSlides = 10
 
 function pickTemplate(sequence: number) {
-  const order = seededShuffle(cardTemplates, 0xca7d + Math.floor(sequence / cardTemplates.length))
-  return order[((sequence % cardTemplates.length) + cardTemplates.length) % cardTemplates.length]!
+  return templateAt(Math.floor(mulberry32(0xca7d + sequence)() * templateCount))
 }
 
 async function presetCards(ctx: DailyContext, mode: 'masnoon' | 'duas', turn: number): Promise<CardContent[]> {
@@ -58,7 +57,7 @@ export async function buildImagePost(ctx: DailyContext, mode: Exclude<ContentMod
     dateKey: dhakaDateKey(ctx.now),
     mode,
     label: `${contents[0]!.eyebrow}: ${contents[0]!.title} · ${contents[0]!.reference} · ${contents.length} image${contents.length > 1 ? 's' : ''} · ${template.label}`,
-    cards: contents.map((content) => ({ content, theme: template.theme, layout: template.layout, ...titleStyleFor(ctx.sequence), format: 'portrait' })),
+    cards: contents.map((content) => ({ content, theme: template.theme, layout: template.layout, variant: template.variant, ...titleStyleFor(ctx.sequence), format: 'portrait' })),
     meta: cardPostMetadata(contents, ctx.opts.extraHashtags, credit),
   }
 }

@@ -53,11 +53,20 @@ export type CardAlign = 'center' | 'left'
 
 export type CardTitleStyle = 'serif' | 'script' | 'display'
 
+export type CardVariant = 'signature' | 'ribbon' | 'pill' | 'brackets' | 'seal' | 'hairline' | 'crescent' | 'lantern' | 'dots'
+export type EyebrowStyle = 'diamonds' | 'ribbon' | 'pill' | 'brackets' | 'seal' | 'lines' | 'crescent' | 'stacked' | 'dots'
+export type DividerStyle = 'jewel' | 'star' | 'dots' | 'wave' | 'line'
+export type CornerStyle = 'none' | 'stars' | 'crescents' | 'lanterns' | 'arabesque'
+
 export interface CardProps {
   content: CardContent
   theme: CardTheme
   format: CardFormat
   layout?: CardLayout
+  variant?: CardVariant
+  eyebrowStyle?: EyebrowStyle
   titleStyle?: CardTitleStyle
   titleGradient?: boolean
+  fonts?: Partial<import('./fontLibrary').CardFontChoice>
+  customFonts?: import('./fontLibrary').CardFont[]
 }
