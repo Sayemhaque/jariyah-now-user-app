@@ -1,6 +1,8 @@
 import type { CardTheme } from './types'
+import { colourFamilies } from './colourFamilies'
+import { familyThemes } from './themeFactory'
 
-export const cardThemes: CardTheme[] = [
+const signatureThemes: CardTheme[] = [
   {
     key: 'midnight-ink',
     label: 'Midnight Ink',
@@ -254,6 +256,8 @@ export const cardThemes: CardTheme[] = [
     grain: 0.07,
   },
 ]
+
+export const cardThemes: CardTheme[] = [...signatureThemes, ...familyThemes(colourFamilies)]
 
 export const findCardTheme = (key: string) => cardThemes.find((t) => t.key === key) ?? cardThemes[0]!
 

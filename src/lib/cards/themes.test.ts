@@ -25,9 +25,9 @@ const contrast = (a: number[], b: number[]) => {
 
 describe('card themes', () => {
   it('offer plenty of light designs as well as dark ones', () => {
-    expect(cardThemes.length).toBeGreaterThanOrEqual(18)
-    expect(lightCardThemes.length).toBeGreaterThanOrEqual(10)
-    expect(darkCardThemes.length).toBeGreaterThanOrEqual(8)
+    expect(cardThemes).toHaveLength(100)
+    expect(lightCardThemes.length).toBeGreaterThanOrEqual(45)
+    expect(darkCardThemes.length).toBeGreaterThanOrEqual(45)
     expect(new Set(cardThemes.map((t) => t.key)).size).toBe(cardThemes.length)
   })
 
