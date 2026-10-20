@@ -3,7 +3,7 @@ import { presetParts, type PresetPart } from '@/lib/collections/presetParts'
 import { type ContentMode, type PresetMode, type QuranPreset, type TextItem } from '@/lib/collections/types'
 import { hadithBooks } from '@/lib/hadith/hadithBooks'
 import type { HadithSelection } from '@/lib/hadith/types'
-import { mulberry32, seededShuffle } from './plan'
+import { dhakaDayIndex, mulberry32, postSlot, seededShuffle } from './plan'
 
 export interface PresetPick {
   preset: QuranPreset
@@ -33,6 +33,21 @@ export function pickTextItem(items: TextItem[], turn: number): TextItem {
 export function modeTurn(sequence: number, rotation: ContentMode[], mode: ContentMode): number {
   const perCycle = Math.max(1, rotation.filter((m) => m === mode).length)
   return Math.floor(sequence / Math.max(1, rotation.length)) * perCycle + rotation.slice(0, ((sequence % rotation.length) + rotation.length) % rotation.length).filter((m) => m === mode).length
+}
+
+export function dailyModes(dayIndex: number): ContentMode[] {
+  const shuffled = seededShuffle<ContentMode>(['quran', 'quran', 'hadith', 'azkar', dayIndex % 2 ? 'masnoon' : 'duas'], 0x5ced + dayIndex)
+  return [...shuffled, 'quran']
+}
+
+export function scheduledPost(date: Date, postTimes: readonly string[]): { mode: ContentMode; turn: number } {
+  const day = dhakaDayIndex(date)
+  const modes = dailyModes(day)
+  const slot = Math.min(postSlot(date, postTimes), modes.length - 1)
+  const mode = modes[slot]!
+  const earlier = modes.slice(0, slot).filter((m) => m === mode).length
+  const turn = mode === 'quran' ? day * 3 + earlier : mode === 'duas' || mode === 'masnoon' ? Math.floor(day / 2) : day
+  return { mode, turn }
 }
 
 const dailyHadithBooks = ['bukhari', 'muslim', 'tirmidhi', 'abudawud', 'bukhari', 'nawawi', 'muslim', 'ibnmajah', 'nasai', 'malik']

@@ -28,7 +28,7 @@ async function main() {
     quality: dailyConfig.quality,
     extraHashtags: dailyConfig.extraHashtags,
     ffmpegBin: env.FFMPEG_BIN || 'ffmpeg',
-    contentRotation: dailyConfig.contentRotation,
+    maxDurationSec: dailyConfig.maxDurationSec,
     textLanguage: dailyConfig.textLanguage,
   })
 

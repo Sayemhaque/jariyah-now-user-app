@@ -4,9 +4,8 @@ import { findHadithBook } from '@/lib/hadith/hadithApi'
 import { presetCollections } from '@/lib/collections'
 import { presetParts } from '@/lib/collections/presetParts'
 import type { ContentMode } from '@/lib/collections/types'
-import { modeTurn, pickContentMode, pickFrom, pickHadithSource, pickPreset, pickTextItem } from './planContent'
+import { modeTurn, pickContentMode, pickFrom, scheduledPost, pickHadithSource, pickPreset, pickTextItem } from './planContent'
 import { dailyConfig } from './dailyConfig'
-import { postIndex } from './plan'
 
 const rotation: ContentMode[] = ['quran', 'masnoon', 'hadith', 'duas', 'azkar']
 
@@ -71,15 +70,21 @@ describe('pickHadithSource', () => {
 
 describe('daily schedule', () => {
   const slotAt = (day: number, time: string) => new Date(Date.UTC(2026, 9, 21 + day, Number(time.slice(0, 2)) - 6, Number(time.slice(3)) + 5))
-  const plan = (day: number) => dailyConfig.postTimes.map((t) => pickContentMode(postIndex(slotAt(day, t), dailyConfig.postTimes), dailyConfig.contentRotation))
+  const plan = (day: number) => dailyConfig.postTimes.map((t) => scheduledPost(slotAt(day, t), dailyConfig.postTimes))
 
-  it('posts three Quran reels and three image posts every day', () => {
-    for (let day = 0; day < 4; day++) {
-      const modes = plan(day)
+  it('posts three one-minute reels and three image posts a day, with a reel every night', () => {
+    const days = Array.from({ length: 14 }, (_, day) => plan(day).map((p) => p.mode))
+    for (const modes of days) {
       expect(modes.filter((m) => m === 'quran')).toHaveLength(3)
       expect(modes.filter((m) => m !== 'quran')).toHaveLength(3)
-      expect(modes.slice(1, 4)).toEqual(['hadith', 'quran', 'azkar'])
+      expect(modes.at(-1)).toBe('quran')
     }
-    expect(new Set([plan(0)[5], plan(1)[5]])).toEqual(new Set(['duas', 'masnoon']))
+    expect(new Set(days.map((m) => m.join()))).not.toHaveProperty('size', 1)
+    expect(dailyConfig.maxDurationSec).toBe(60)
+  })
+
+  it('never repeats a surah within a day', () => {
+    const turns = Array.from({ length: 6 }, (_, day) => plan(day).filter((p) => p.mode === 'quran').map((p) => p.turn)).flat()
+    expect(new Set(turns).size).toBe(turns.length)
   })
 })
