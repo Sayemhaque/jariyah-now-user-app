@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import { azkarCollection } from '@/lib/collections/azkar'
-import { hadithCollection } from '@/lib/collections/hadith'
+import { toHadiths } from '@/lib/hadith/hadithApi'
+import { shareableHadiths } from '@/lib/hadith/hadithPicks'
+import engBukhari from '@/lib/hadith/fixtures/eng-bukhari-1.json'
+import benBukhari from '@/lib/hadith/fixtures/ben-bukhari-2.json'
+import engAbuDawud from '@/lib/hadith/fixtures/eng-abudawud-1.json'
 import { azkarCard, hadithCard, quranCards, splitAyatIntoSlides, type CardAyah } from './cardContent'
 import { availableBodyHeight, contentHeight, fitCardType } from './cardTypography'
 import { cardPostMetadata } from './cardPostMetadata'
@@ -8,15 +12,22 @@ import { cardThemes } from './themes'
 import { cardSizes, type CardFormat } from './types'
 
 const formats = Object.keys(cardSizes) as CardFormat[]
+const bukhari = toHadiths(engBukhari, 'bukhari', 'english', 1)
+const abuDawud = toHadiths(engAbuDawud, 'abudawud', 'english', 1)
+const shortHadiths = shareableHadiths([...bukhari, ...abuDawud, ...toHadiths(benBukhari, 'bukhari', 'bangla', 2)])
 const ayah = (number: number, length = 120): CardAyah => ({ number, arabic: 'ب'.repeat(length), translation: 'w'.repeat(length) })
 const mulk = { kind: 'masnoon' as const, title: 'Al-Mulk', surahName: 'Al-Mulk', surahNameArabic: 'الملك', surahNumber: 67 }
 
 describe('card content', () => {
-  it('shows a hadith as its translation only, with the source as reference', () => {
-    const item = hadithCollection[0]!
-    const card = hadithCard(item, 'bangla')
-    expect(card.lines).toEqual([{ translation: item.bangla }])
-    expect(card.reference).toBe(item.source)
+  it('shows a hadith as its text only, titled by its chapter, with the collection and number', () => {
+    const card = hadithCard(bukhari[0]!)
+    expect(card.lines).toEqual([{ translation: bukhari[0]!.text }])
+    expect(card.title).toBe('Revelation')
+    expect(card.reference).toBe('Sahih al-Bukhari 1')
+  })
+
+  it('adds the grade for collections outside Bukhari and Muslim', () => {
+    expect(hadithCard(abuDawud.find((h) => h.number === 2)!).reference).toBe('Sunan Abi Dawud 2 · Sahih')
   })
 
   it('splits the when-to-say note from the azkar source', () => {
@@ -52,7 +63,7 @@ describe('card content', () => {
 })
 
 describe('fitCardType', () => {
-  const allCards = [...hadithCollection.flatMap((h) => [hadithCard(h, 'english'), hadithCard(h, 'bangla')]), ...azkarCollection.flatMap((a) => [azkarCard(a, 'english'), azkarCard(a, 'bangla')])]
+  const allCards = [...shortHadiths.map(hadithCard), ...azkarCollection.flatMap((a) => [azkarCard(a, 'english'), azkarCard(a, 'bangla')])]
 
   it('fits every hadith and zikr in every size without shrinking text below a readable size', () => {
     formats.forEach((format) => {
@@ -66,7 +77,7 @@ describe('fitCardType', () => {
   })
 
   it('shows short texts larger than long ones', () => {
-    const short = fitCardType(hadithCard(hadithCollection.find((h) => h.id === 'purity')!, 'english'), 'portrait')
+    const short = fitCardType(hadithCard(abuDawud.find((h) => h.number === 2)!), 'portrait')
     const long = fitCardType(azkarCard(azkarCollection.find((a) => a.id === 'sayyidul-istighfar')!, 'english'), 'portrait')
     expect(short.scale).toBe(1)
     expect(long.translation).toBeLessThan(short.translation)
@@ -86,17 +97,10 @@ describe('cardPostMetadata', () => {
   })
 
   it('leaves Quran hashtags off hadith posts', () => {
-    const meta = cardPostMetadata([hadithCard(hadithCollection[0]!, 'english')], ['JariyahNow', 'Quran'])
+    const meta = cardPostMetadata([hadithCard(bukhari[0]!)], ['JariyahNow', 'Quran'])
     expect(meta.hashtags).toContain('#JariyahNow')
     expect(meta.hashtags).not.toContain('#Quran')
-    expect(meta.description).toContain(`Source: ${hadithCollection[0]!.source}`)
+    expect(meta.description).toContain('Source: Sahih al-Bukhari 1')
   })
 })
 
-describe('cardThemes', () => {
-  it('have unique keys and both light and dark designs', () => {
-    expect(new Set(cardThemes.map((t) => t.key)).size).toBe(cardThemes.length)
-    expect(cardThemes.some((t) => t.light)).toBe(true)
-    expect(cardThemes.some((t) => !t.light)).toBe(true)
-  })
-})

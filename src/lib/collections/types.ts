@@ -1,11 +1,12 @@
 export type ContentMode = 'quran' | 'masnoon' | 'duas' | 'hadith' | 'azkar'
 export type PresetMode = 'masnoon' | 'duas'
-export type TextMode = 'hadith' | 'azkar'
+export type TextMode = 'azkar'
 export type TextLanguage = 'english' | 'bangla'
 
 export interface QuranPreset {
   id: string
   title: string
+  titleBn?: string
   note: string
   surah: number
   fromAyat: number
@@ -15,6 +16,7 @@ export interface QuranPreset {
 export interface TextItem {
   id: string
   title: string
+  titleBn?: string
   arabic: string
   english: string
   bangla: string
@@ -22,4 +24,4 @@ export interface TextItem {
 }
 
 export const isPresetMode = (mode: ContentMode): mode is PresetMode => mode === 'masnoon' || mode === 'duas'
-export const isTextMode = (mode: ContentMode): mode is TextMode => mode === 'hadith' || mode === 'azkar'
+export const isTextMode = (mode: ContentMode): mode is TextMode => mode === 'azkar'

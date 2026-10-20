@@ -3,19 +3,23 @@ import { isPresetMode, type ContentMode } from '@/lib/collections/types'
 import { azkarCard, hadithCard, quranCards } from '@/lib/cards/cardContent'
 import { cardPostMetadata } from '@/lib/cards/cardPostMetadata'
 import { fetchCardAyat } from '@/lib/cards/fetchCardAyat'
-import { cardThemes } from '@/lib/cards/themes'
+import { isBanglaTranslation, presetCardTitle } from '@/lib/cards/presetTitle'
+import { presetBenefits } from '@/lib/collections/benefits'
+import { cardTemplates, titleStyleFor } from '@/lib/cards/templates'
 import type { CardContent } from '@/lib/cards/types'
 import { fetchSurahs } from '@/lib/quranApi'
 import { translationCredit } from '@/lib/translations'
 import type { DailyContext, DailyImagePost } from './dailyContext'
 import { dhakaDateKey, seededShuffle } from './plan'
-import { pickPreset, pickTextItem } from './planContent'
+import { pickFrom, pickHadithSource, pickPreset, pickTextItem } from './planContent'
+import { fetchHadithSection } from '@/lib/hadith/hadithApi'
+import { shareableHadiths } from '@/lib/hadith/hadithPicks'
 
 const maxCarouselSlides = 10
 
-function pickTheme(sequence: number) {
-  const order = seededShuffle(cardThemes, 0xca7d + Math.floor(sequence / cardThemes.length))
-  return order[((sequence % cardThemes.length) + cardThemes.length) % cardThemes.length]!
+function pickTemplate(sequence: number) {
+  const order = seededShuffle(cardTemplates, 0xca7d + Math.floor(sequence / cardTemplates.length))
+  return order[((sequence % cardTemplates.length) + cardTemplates.length) % cardTemplates.length]!
 }
 
 async function presetCards(ctx: DailyContext, mode: 'masnoon' | 'duas', turn: number): Promise<CardContent[]> {
@@ -24,26 +28,37 @@ async function presetCards(ctx: DailyContext, mode: 'masnoon' | 'duas', turn: nu
   const [surahs, ayat] = await Promise.all([fetchSurahs(), fetchCardAyat(preset.surah, part.fromAyat, part.toAyat, translationKey)])
   const surah = surahs.find((s) => s.number === preset.surah)
   if (!surah) throw new Error(`Surah ${preset.surah} not found`)
-  const title = mode === 'duas' ? preset.title : surah.name
-  return quranCards({ kind: mode === 'duas' ? 'dua' : 'masnoon', title, surahName: surah.name, surahNameArabic: surah.arabicName, surahNumber: surah.number, ayat }, 'portrait').slice(0, maxCarouselSlides)
+  const bangla = isBanglaTranslation(translationKey)
+  const title = presetCardTitle(mode, preset, surah.name, bangla)
+  return quranCards({ bangla, benefit: presetBenefits[preset.id], kind: mode === 'duas' ? 'dua' : 'masnoon', title, surahName: surah.name, surahNameArabic: surah.arabicName, surahNumber: surah.number, ayat }, 'portrait').slice(0, maxCarouselSlides)
 }
 
-function textCards(ctx: DailyContext, mode: 'hadith' | 'azkar', turn: number): CardContent[] {
-  const item = pickTextItem(textCollections[mode], turn)
+const hadithAttempts = 6
+
+async function hadithCards(ctx: DailyContext, turn: number): Promise<CardContent[]> {
   const language = ctx.opts.textLanguage ?? 'english'
-  return [mode === 'hadith' ? hadithCard(item, language) : azkarCard(item, language)]
+  for (let attempt = 0; attempt < hadithAttempts; attempt++) {
+    const { book, section } = pickHadithSource(turn, attempt)
+    const hadith = pickFrom(shareableHadiths(await fetchHadithSection(book, language, section).catch(() => [])), turn)
+    if (hadith) return [hadithCard(hadith)]
+  }
+  throw new Error('Could not find a short authentic hadith to post')
+}
+
+function azkarCards(ctx: DailyContext, turn: number): CardContent[] {
+  return [azkarCard(pickTextItem(textCollections.azkar, turn), ctx.opts.textLanguage ?? 'english')]
 }
 
 export async function buildImagePost(ctx: DailyContext, mode: Exclude<ContentMode, 'quran'>, turn: number): Promise<DailyImagePost> {
-  const contents = isPresetMode(mode) ? await presetCards(ctx, mode, turn) : textCards(ctx, mode, turn)
-  const theme = pickTheme(ctx.sequence)
+  const contents = isPresetMode(mode) ? await presetCards(ctx, mode, turn) : mode === 'hadith' ? await hadithCards(ctx, turn) : azkarCards(ctx, turn)
+  const template = pickTemplate(ctx.sequence)
   const credit = isPresetMode(mode) ? translationCredit(ctx.opts.translationKey ?? 'sahiih_international') : undefined
   return {
     kind: 'images',
     dateKey: dhakaDateKey(ctx.now),
     mode,
-    label: `${contents[0]!.eyebrow}: ${contents[0]!.title} · ${contents[0]!.reference} · ${contents.length} image${contents.length > 1 ? 's' : ''} · ${theme.label}`,
-    cards: contents.map((content) => ({ content, theme, format: 'portrait' })),
+    label: `${contents[0]!.eyebrow}: ${contents[0]!.title} · ${contents[0]!.reference} · ${contents.length} image${contents.length > 1 ? 's' : ''} · ${template.label}`,
+    cards: contents.map((content) => ({ content, theme: template.theme, layout: template.layout, ...titleStyleFor(ctx.sequence), format: 'portrait' })),
     meta: cardPostMetadata(contents, ctx.opts.extraHashtags, credit),
   }
 }

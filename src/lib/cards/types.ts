@@ -1,6 +1,6 @@
 export type CardFormat = 'portrait' | 'square' | 'story'
 export type CardKind = 'hadith' | 'azkar' | 'dua' | 'masnoon'
-export type CardPattern = 'stars' | 'arch' | 'lattice' | 'rays' | 'none'
+export type CardPattern = 'stars' | 'arch' | 'lattice' | 'rays' | 'marble' | 'rosette' | 'waves' | 'none'
 
 export interface CardSize {
   width: number
@@ -28,6 +28,7 @@ export interface CardContent {
   lines: CardLine[]
   reference: string
   note?: string
+  benefit?: { text: string; source: string }
   slide?: { index: number; count: number }
 }
 
@@ -38,6 +39,7 @@ export interface CardTheme {
   background: string
   glow: string
   ink: string
+  arabic: string
   muted: string
   accent: string
   pattern: CardPattern
@@ -45,8 +47,17 @@ export interface CardTheme {
   grain: number
 }
 
+export type CardLayout = 'frame' | 'arch' | 'editorial' | 'split' | 'floating' | 'quote' | 'tile' | 'night' | 'botanical' | 'glass' | 'manuscript' | 'minimal'
+
+export type CardAlign = 'center' | 'left'
+
+export type CardTitleStyle = 'serif' | 'script' | 'display'
+
 export interface CardProps {
   content: CardContent
   theme: CardTheme
   format: CardFormat
+  layout?: CardLayout
+  titleStyle?: CardTitleStyle
+  titleGradient?: boolean
 }

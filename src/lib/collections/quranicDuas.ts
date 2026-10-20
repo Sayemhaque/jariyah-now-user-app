@@ -1,6 +1,37 @@
 import type { QuranPreset } from './types'
 
-const dua = (id: string, title: string, note: string, surah: number, fromAyat: number, toAyat = fromAyat): QuranPreset => ({ id, title, note, surah, fromAyat, toAyat })
+const banglaTitles: Record<string, string> = {
+  'dunya-akhirah': 'দুনিয়া ও আখিরাতের কল্যাণ',
+  'accept-from-us': 'আমাদের পক্ষ থেকে কবুল করুন',
+  'patience-victory': 'আমাদের ধৈর্য দান করুন',
+  'do-not-burden': 'আমাদের উপর বোঝা চাপাবেন না',
+  'steady-hearts': 'আমাদের অন্তর অবিচল রাখুন',
+  'forgive-sins': 'আমাদের গুনাহ ক্ষমা করুন',
+  'steady-feet': 'আমাদের পা দৃঢ় রাখুন',
+  'ulul-albab': 'জ্ঞানীদের দোয়া',
+  'adam': 'আদম (আ.)-এর দোয়া',
+  'musa-sadr': 'আমার বক্ষ প্রশস্ত করে দিন',
+  'knowledge': 'আমার জ্ঞান বৃদ্ধি করে দিন',
+  'yunus': 'ইউনুস (আ.)-এর দোয়া',
+  'ayyub': 'আইয়ুব (আ.)-এর দোয়া',
+  'parents': 'পিতা-মাতার জন্য রহমত',
+  'truthful-entry': 'সত্যের সাথে প্রবেশ',
+  'cave': 'রহমত ও সঠিক পথ',
+  'ibrahim-salah': 'আমাকে সালাত কায়েমকারী করুন',
+  'shayatin': 'শয়তান থেকে আশ্রয়',
+  'mercy': 'ক্ষমা করুন ও দয়া করুন',
+  'family': 'চোখের শীতলতা',
+  'hellfire': 'জাহান্নামের আযাব থেকে রক্ষা',
+  'musa-need': 'আমি কল্যাণের মুখাপেক্ষী',
+  'sulaiman': 'শুকরিয়া আদায়ের তাওফিক দিন',
+  'righteous-child': 'নেককার সন্তান দান করুন',
+  'gratitude-parents': 'পিতা-মাতার জন্য কৃতজ্ঞতা',
+  'brothers': 'ঈমানদার ভাইদের জন্য',
+  'light': 'আমাদের নূর পূর্ণ করুন',
+  'nuh': 'নূহ (আ.)-এর দোয়া',
+}
+
+const dua = (id: string, title: string, note: string, surah: number, fromAyat: number, toAyat = fromAyat): QuranPreset => ({ id, title, titleBn: banglaTitles[id], note, surah, fromAyat, toAyat })
 
 export const quranicDuas: QuranPreset[] = [
   dua('dunya-akhirah', 'Good in this world and the next', 'Rabbana atina fid-dunya hasanah', 2, 201),
