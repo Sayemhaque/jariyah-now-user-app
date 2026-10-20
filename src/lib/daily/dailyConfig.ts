@@ -4,7 +4,9 @@ import type { Platform } from '@/lib/social/types'
 export const dailyConfig = {
   reciterId: 'random',
   translationKey: 'sahiih_international',
-  postTimes: ['07:00', '10:00', '13:30', '16:30', '19:30', '21:40'],
+  postTimes: ['07:00', '10:00', '13:30', '16:30', '19:30', '22:00'],
+  reelUploadLeadMinutes: 4,
+  imageUploadLeadMinutes: 1,
   maxDurationSec: 60,
   maxAyats: 10,
   textLanguage: 'english' as TextLanguage,
