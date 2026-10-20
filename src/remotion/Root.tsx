@@ -1,6 +1,9 @@
-import { registerRoot, Composition } from 'remotion'
+import { registerRoot, Composition, Still } from 'remotion'
 import { AyatVideo } from './AyatVideo'
 import { ScenePreview } from './ScenePreview'
+import { QuoteCardStill } from './QuoteCardStill'
+import { cardSizes, type CardProps } from '@/lib/cards/types'
+import { cardThemes } from '@/lib/cards/themes'
 import type { AyatVideoProps } from './types'
 import { resolutions, renderQualityScale } from './types'
 import { computeSlideFrames } from '@/lib/advanceTiming'
@@ -59,6 +62,17 @@ const RemotionRoot: React.FC = () => {
         width={360}
         height={640}
         defaultProps={{ sceneKey: 'golden-dusk' }}
+      />
+      <Still
+        id="QuoteCard"
+        component={QuoteCardStill as unknown as React.FC<Record<string, unknown>>}
+        width={cardSizes.portrait.width}
+        height={cardSizes.portrait.height}
+        defaultProps={{ content: { kind: 'hadith', eyebrow: 'Hadith', title: '', lines: [], reference: '' }, theme: cardThemes[0]!, format: 'portrait' } as unknown as Record<string, unknown>}
+        calculateMetadata={({ props }) => {
+          const size = cardSizes[(props as unknown as CardProps).format] ?? cardSizes.portrait
+          return { width: size.width, height: size.height }
+        }}
       />
     </>
   )

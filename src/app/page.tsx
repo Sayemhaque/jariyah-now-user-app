@@ -10,6 +10,7 @@ import { PageSection } from '@/components/site/PageSection'
 import { SectionHeader } from '@/components/site/SectionHeader'
 import { SiteHeader } from '@/components/site/SiteHeader'
 import { TemplatesShowcase } from '@/components/site/TemplatesShowcase'
+import { HadithGallery } from '@/components/templates/HadithGallery'
 
 export const metadata = landingMetadata
 
@@ -19,6 +20,7 @@ export default function LandingPage() {
       <SiteHeader links={landingHeaderLinks} />
       <LandingHero />
       <AppPreview />
+      <HadithGallery />
       <PageSection id="how-it-works" className="py-16 sm:py-24 bg-card/70 border-y border-border/80 backdrop-blur-sm">
         <SectionHeader
           className="mb-14"

@@ -1,0 +1,46 @@
+name: Template videos
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Only these (comma separated): duas, masnoon, a preset id like mulk, or a key like duas/dunya-akhirah. Empty = all'
+        required: false
+        default: ''
+      force:
+        description: 'Re-render videos that already exist'
+        type: boolean
+        default: false
+      limit:
+        description: 'Render at most this many in this run (empty = no limit)'
+        required: false
+        default: ''
+
+concurrency:
+  group: template-videos
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Install ffmpeg
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+
+      - name: Render and store template videos
+        env:
+          NEXT_PUBLIC_UMMAHAPI_KEY: ${{ secrets.UMMAHAPI_KEY }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+          ONLY: ${{ inputs.only }}
+          FORCE: ${{ inputs.force }}
+          LIMIT: ${{ inputs.limit }}
+        run: npx tsx template-videos.ts

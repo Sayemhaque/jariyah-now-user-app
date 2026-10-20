@@ -8,8 +8,11 @@ import { themeColors } from '@/lib/theme'
 import { translationCredit } from '@/lib/translations'
 import { maxAyatsPerVideo } from '@/lib/constants'
 import { defaultVideoSettings } from '@/lib/defaultSettings'
-import type { AyatSlide, Reciter, Surah, VideoSettings } from '@/lib/types'
-import type { AyatVideoProps } from '@/remotion/types'
+import type { AyatSlide, Reciter, VideoSettings } from '@/lib/types'
+import type { ContentMode } from '@/lib/collections/types'
+import { buildImagePost } from './buildImagePost'
+import { videoProps, type DailyContext, type DailyPost, type DailyVideo, type DailyVideoOptions } from './dailyContext'
+import { modeTurn, pickContentMode } from './planContent'
 import {
   buildPostMetadata,
   countAyatsWithinBudget,
@@ -19,48 +22,41 @@ import {
   pickSceneIndex,
   pickStartAyat,
   pickSurahNumber,
-  type PostMetadata,
 } from './plan'
 
+export type { DailyImagePost, DailyPost, DailyVideo, DailyVideoOptions } from './dailyContext'
+
 export const dailyReciterIds = ['alafasy', 'sudais', 'abdulbasit', 'muaiqly', 'shatri', 'dosari', 'shuraim']
-
-export interface DailyVideoOptions {
-  now?: Date
-  surahOverride?: number
-  reciterId?: string
-  translationKey?: string
-  maxDurationSec?: number
-  maxAyats?: number
-  quality?: '480p' | '720p' | '1080p'
-  extraHashtags?: string[]
-  ffprobeBin?: string
-  ffmpegBin?: string
-  postTimes?: string[]
-}
-
-export interface DailyVideo {
-  dateKey: string
-  surah: Surah
-  fromAyat: number
-  toAyat: number
-  reciter: Reciter
-  durationMs: number
-  props: AyatVideoProps
-  meta: PostMetadata
-}
 
 function baseSettings(scene: BackgroundScene): VideoSettings {
   return { ...defaultVideoSettings, backgroundImage: sceneUrl(scene.key), backgroundPreset: scene.key, ...themeColors(scene.palette) }
 }
 
-export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<DailyVideo> {
+export async function buildDailyPost(opts: DailyVideoOptions = {}): Promise<DailyPost> {
   const now = opts.now ?? new Date()
   const sequence = postIndex(now, opts.postTimes ?? ['22:00'])
-  const rand = mulberry32(sequence * 2654435761)
+  const scene = backgroundScenes.find((s) => s.key === opts.sceneKey) ?? backgroundScenes[pickSceneIndex(sequence, backgroundScenes.length)] ?? backgroundScenes[0]!
+  const ctx: DailyContext = {
+    opts,
+    now,
+    sequence,
+    rand: mulberry32(sequence * 2654435761),
+    settings: baseSettings(scene),
+    audioTools: { ffprobeBin: opts.ffprobeBin, ffmpegBin: opts.ffmpegBin },
+  }
+  if (opts.surahOverride) return buildQuranDailyVideo(ctx, opts.surahOverride)
+  const rotation: ContentMode[] = opts.contentRotation?.length ? opts.contentRotation : ['quran']
+  const mode = pickContentMode(sequence, rotation)
+  if (mode === 'quran') return buildQuranDailyVideo(ctx, pickSurahNumber(sequence))
+  return buildImagePost(ctx, mode, modeTurn(sequence, rotation, mode))
+}
+
+async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number): Promise<DailyVideo> {
+  const range = ctx.opts.range
+  const { opts, rand, audioTools, now } = ctx
   const maxMs = opts.maxDurationSec ? opts.maxDurationSec * 1000 : Infinity
   const maxAyats = opts.maxAyats ?? maxAyatsPerVideo
   const translationKey = opts.translationKey ?? 'bengali'
-  const audioTools = { ffprobeBin: opts.ffprobeBin, ffmpegBin: opts.ffmpegBin }
 
   const reciterPool = dailyReciterIds.map(getReciterById).filter((r): r is Reciter => Boolean(r))
   const reciter =
@@ -71,19 +67,16 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
     throw new Error(`Unknown reciter "${opts.reciterId}". Valid: ${reciters.map((r) => r.id).join(', ')}`)
   }
 
-  const scene = backgroundScenes[pickSceneIndex(sequence, backgroundScenes.length)] ?? backgroundScenes[0]!
-
   const surahs = await fetchSurahs()
-  const surahNumber = opts.surahOverride ?? pickSurahNumber(sequence)
   const surah = surahs.find((s) => s.number === surahNumber)
   if (!surah) throw new Error(`Surah ${surahNumber} not found`)
 
   for (let attempt = 0; attempt < 5; attempt++) {
-    const fromAyat = pickStartAyat(surah.numberOfAyahs, maxAyats, rand)
+    const fromAyat = range?.fromAyat ?? pickStartAyat(surah.numberOfAyahs, maxAyats, rand)
     const slides: AyatSlide[] = []
     const durations: number[] = []
 
-    for (let ayat = fromAyat; ayat <= surah.numberOfAyahs && slides.length < maxAyats; ayat++) {
+    for (let ayat = fromAyat; ayat <= (range?.toAyat ?? surah.numberOfAyahs) && slides.length < maxAyats; ayat++) {
       const [fetched, timings] = await Promise.all([
         fetchAyatData(surah.number, ayat, reciter.recitationId, reciter.audioKey, surah.name, surah.arabicName, translationKey),
         reciter.quranComId ? fetchVerseTimings(surah.number, ayat, reciter.quranComId) : Promise.resolve(null),
@@ -111,27 +104,14 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
     if (slides.length === 0) continue
 
     const toAyat = slides[slides.length - 1]!.ayatNumber
-    const settings = baseSettings(scene)
+    const durationMs = slides.reduce((sum, x) => sum + x.audioDurationMs, 0)
     return {
+      kind: 'video',
       dateKey: dhakaDateKey(now),
-      surah,
-      fromAyat,
-      toAyat,
-      reciter,
-      durationMs: slides.reduce((s, x) => s + x.audioDurationMs, 0),
-      props: {
-        slides,
-        settings,
-        orientation: 'portrait',
-        reciterName: reciter.name,
-        attributionLine: '',
-        surahName: surah.name,
-        surahNameArabic: surah.arabicName,
-        surahMeaning: surah.englishName,
-        totalAyats: slides.length,
-        quality: opts.quality ?? '1080p',
-        isExport: true,
-      },
+      mode: 'quran',
+      label: `Surah ${surah.number} ${surah.name}, ayat ${fromAyat}-${toAyat} · ${reciter.name} · ${(durationMs / 1000).toFixed(1)}s`,
+      durationMs,
+      props: videoProps(ctx, { slides, reciterName: reciter.name, surahName: surah.name, surahNameArabic: surah.arabicName, surahMeaning: surah.englishName }),
       meta: buildPostMetadata({
         surah,
         fromAyat,

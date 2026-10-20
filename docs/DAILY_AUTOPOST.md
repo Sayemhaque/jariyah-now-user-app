@@ -56,6 +56,10 @@ Facebook Reels must be 3–90 s long. Videos have no length limit, so a long exc
 |---|---|
 | `UMMAHAPI_KEY` | UmmahAPI key, if you use one |
 
+## Image posts
+
+Masnoon Surahs, Quranic Duas, Hadith and Azkar are posted as premium image cards (1080×1350 JPEG), not videos. A masnoon surah or dua longer than one card becomes an Instagram carousel and a Facebook multi-photo post of up to 10 slides. Card designs live in `src/cards/` and `src/lib/cards/` and rotate through 8 themes, one per post. Instagram can only fetch images from a URL, so image posts need the `BLOB_READ_WRITE_TOKEN` secret; the images are deleted right after publishing. YouTube and TikTok skip image posts.
+
 ## Settings (`src/lib/daily/dailyConfig.ts`)
 
 | Field | Default | Purpose |
@@ -64,6 +68,8 @@ Facebook Reels must be 3–90 s long. Videos have no length limit, so a long exc
 | `translationKey` | `sahiih_international` (English) | Translation shown under the Arabic |
 | `postTimes` | `09:00`, `15:00`, `22:00` | Bangladesh times of the daily posts. Each run works out its slot from the time it starts, so every post gets its own surah, reciter and background. Keep the `cron` lines in the workflow in sync |
 | `coverAtMs` | `2500` | Moment of the video Instagram uses as the cover (`thumb_offset`), after the title and first ayah have appeared |
+| `contentRotation` | `quran`, `masnoon`, `hadith`, `duas`, `azkar` | Content types to rotate through, one per post. `quran` is a reel; the others are image posts built from `src/lib/collections/` |
+| `textLanguage` | `english` | Language of hadith and azkar cards: `english` or `bangla` |
 | `maxAyats` | `10` | Most ayat in one video. There is no length limit |
 | `extraHashtags` | `JariyahNow`, `Quran` | Hashtags added to every post |
 | `platforms` | `instagram`, `facebook` | Platforms to post to: `youtube`, `facebook`, `instagram`, `tiktok`. Ones without secrets are skipped |

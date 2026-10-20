@@ -4,6 +4,8 @@ import {
   Tiro_Bangla,
   Amiri_Quran,
   Cairo,
+  Cinzel,
+  Cormorant_Garamond,
   Hind_Siliguri,
   Markazi_Text,
   Noto_Naskh_Arabic,
@@ -20,6 +22,8 @@ const markazi = Markazi_Text({ variable: '--font-markazi-text', subsets: ['arabi
 const notoNaskhArabic = Noto_Naskh_Arabic({ variable: '--font-noto-naskh-arabic', subsets: ['arabic', 'latin'], weight: ['400', '500', '600', '700'] })
 const reemKufi = Reem_Kufi({ variable: '--font-reem-kufi', subsets: ['arabic', 'latin'], weight: ['400', '500', '600', '700'] })
 const cairo = Cairo({ variable: '--font-cairo', subsets: ['arabic', 'latin'], weight: ['400', '500', '600', '700'] })
+const cormorant = Cormorant_Garamond({ variable: '--font-cormorant', subsets: ['latin'], weight: ['400', '500', '600'], style: ['normal', 'italic'] })
+const cinzel = Cinzel({ variable: '--font-cinzel', subsets: ['latin'], weight: ['400', '500', '600'] })
 const anekBangla = Anek_Bangla({ variable: '--font-anek-bangla', subsets: ['bengali'], weight: ['400', '500', '600'] })
 const tiroBangla = Tiro_Bangla({ variable: '--font-tiro-bangla', subsets: ['bengali'], weight: ['400'] })
 const notoBengali = Noto_Sans_Bengali({ variable: '--font-noto-sans-bengali', subsets: ['bengali'], weight: ['400', '500', '600', '700'] })
@@ -34,6 +38,8 @@ export const appFontVariables = [
   notoNaskhArabic,
   reemKufi,
   cairo,
+  cormorant,
+  cinzel,
   anekBangla,
   tiroBangla,
   notoBengali,

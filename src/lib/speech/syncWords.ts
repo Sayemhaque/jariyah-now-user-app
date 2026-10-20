@@ -17,6 +17,7 @@ export function syncWords({ arabicText, timedWords, durationMs, speech }: WordSy
   if (fitted) return fitted
   if (!speech) return undefined
   const texts = timedWords?.length ? timedWords.map((w) => w.text) : splitWords(arabicText)
+  if (!texts.length) return undefined
   const windows = alignWordsToSpeech(texts, speech)
   return texts.map((text, i) => ({ ...(timedWords?.[i] ?? {}), text, ...windows[i]! }))
 }

@@ -98,7 +98,7 @@ export interface PostMetadata {
   shortCaption: string
 }
 
-const defaultHashtags = [
+export const defaultHashtags = [
   '#Quran',
   '#QuranRecitation',
   '#Islam',
@@ -110,7 +110,7 @@ const defaultHashtags = [
   '#Shorts',
 ]
 
-function toHashtag(raw: string): string {
+export function toHashtag(raw: string): string {
   const cleaned = raw.trim().replace(/^#+/, '').replace(/[^\p{L}\p{N}_]/gu, '')
   return cleaned ? `#${cleaned}` : ''
 }
