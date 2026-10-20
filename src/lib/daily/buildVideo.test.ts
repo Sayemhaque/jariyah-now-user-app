@@ -18,6 +18,12 @@ vi.mock('@/lib/quranApi', () => ({
   })),
 }))
 
+vi.mock('@/lib/hadith/hadithApi', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/hadith/hadithApi')>()
+  const fixture = (await import('@/lib/hadith/fixtures/eng-abudawud-1.json')).default
+  return { ...actual, fetchHadithSection: vi.fn(async () => actual.toHadiths(fixture, 'abudawud', 'english', 1)) }
+})
+
 const { buildDailyPost } = await import('./buildVideo')
 
 const postTimes = ['09:00', '15:00', '22:00']
@@ -48,6 +54,7 @@ describe('buildDailyPost', () => {
     expect(p.cards[0]!.format).toBe('portrait')
     expect(p.cards[0]!.content.lines[0]!.arabic).toBeUndefined()
     expect(p.meta.title.startsWith('Hadith: ')).toBe(true)
+    expect(p.cards[0]!.content.reference).toMatch(/^Sunan Abi Dawud \d+ · (Sahih|Hasan)/)
     expect(p.meta.hashtags).toContain('#Hadith')
     expect(p.meta.hashtags).not.toContain('#Quran')
   })

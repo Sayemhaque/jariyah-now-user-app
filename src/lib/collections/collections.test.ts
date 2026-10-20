@@ -23,7 +23,7 @@ describe('preset collections', () => {
 })
 
 describe('text collections', () => {
-  const items = [...textCollections.hadith, ...textCollections.azkar]
+  const items = textCollections.azkar
 
   it('have Arabic, English, Bangla and a source for every item', () => {
     items.forEach((item) => {

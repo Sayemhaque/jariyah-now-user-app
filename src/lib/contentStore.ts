@@ -4,6 +4,7 @@ import { createContext, createElement, useContext, useMemo, useState, type React
 import type { ContentMode, TextLanguage } from './collections/types'
 import type { CardFormat } from './cards/types'
 import { cardThemes } from './cards/themes'
+import { defaultHadithSelection } from './hadith/hadithPicks'
 
 export interface ContentState {
   mode: ContentMode
@@ -13,6 +14,10 @@ export interface ContentState {
   language: TextLanguage
   cardFormat: CardFormat
   cardThemeKey: string
+  hadithBook: string
+  hadithSection: number
+  hadithNumber: number
+  shortHadithOnly: boolean
   setMode: (mode: ContentMode) => void
   setPresetId: (id: string) => void
   setPartIndex: (index: number) => void
@@ -20,6 +25,10 @@ export interface ContentState {
   setLanguage: (language: TextLanguage) => void
   setCardFormat: (format: CardFormat) => void
   setCardThemeKey: (key: string) => void
+  setHadithBook: (book: string, section: number) => void
+  setHadithSection: (section: number) => void
+  setHadithNumber: (number: number) => void
+  setShortHadithOnly: (on: boolean) => void
 }
 
 const ContentContext = createContext<ContentState | null>(null)
@@ -32,9 +41,13 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<TextLanguage>('english')
   const [cardFormat, setCardFormat] = useState<CardFormat>('portrait')
   const [cardThemeKey, setCardThemeKey] = useState(cardThemes[0]!.key)
+  const [hadithBook, setHadithBookState] = useState(defaultHadithSelection.book)
+  const [hadithSection, setHadithSectionState] = useState(defaultHadithSelection.section)
+  const [hadithNumber, setHadithNumber] = useState(0)
+  const [shortHadithOnly, setShortHadithOnly] = useState(true)
 
   const value = useMemo<ContentState>(() => ({
-    mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey,
+    mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey, hadithBook, hadithSection, hadithNumber, shortHadithOnly,
     setMode: (next) => {
       setModeState(next)
       setPresetIdState('')
@@ -45,8 +58,17 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       setPresetIdState(id)
       setPartIndex(0)
     },
-    setPartIndex, setTextItemId, setLanguage, setCardFormat, setCardThemeKey,
-  }), [mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey])
+    setPartIndex, setTextItemId, setLanguage, setCardFormat, setCardThemeKey, setHadithNumber, setShortHadithOnly,
+    setHadithBook: (book, section) => {
+      setHadithBookState(book)
+      setHadithSectionState(section)
+      setHadithNumber(0)
+    },
+    setHadithSection: (section) => {
+      setHadithSectionState(section)
+      setHadithNumber(0)
+    },
+  }), [mode, presetId, partIndex, textItemId, language, cardFormat, cardThemeKey, hadithBook, hadithSection, hadithNumber, shortHadithOnly])
 
   return createElement(ContentContext.Provider, { value }, children)
 }

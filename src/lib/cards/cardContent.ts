@@ -1,5 +1,6 @@
 import { textTranslation } from '@/lib/collections/textTranslation'
 import type { TextItem, TextLanguage } from '@/lib/collections/types'
+import type { Hadith } from '@/lib/hadith/types'
 import type { CardContent, CardFormat, CardLine } from './types'
 
 export interface CardAyah {
@@ -24,8 +25,11 @@ function splitNote(source: string): { note?: string; reference: string } {
   return parts.length > 1 ? { note: parts[0], reference: parts.slice(1).join(' · ') } : { reference: source }
 }
 
-export function hadithCard(item: TextItem, language: TextLanguage): CardContent {
-  return { kind: 'hadith', eyebrow: 'Hadith', title: item.title, lines: [{ translation: textTranslation(item, language) }], reference: item.source }
+const showsGrade = (hadith: Hadith) => hadith.grade && hadith.book !== 'bukhari' && hadith.book !== 'muslim'
+
+export function hadithCard(hadith: Hadith): CardContent {
+  const reference = `${hadith.bookName} ${hadith.number}${showsGrade(hadith) ? ` · ${hadith.grade}` : ''}`
+  return { kind: 'hadith', eyebrow: 'Hadith', title: hadith.chapter || hadith.bookName, lines: [{ translation: hadith.text }], reference }
 }
 
 export function azkarCard(item: TextItem, language: TextLanguage): CardContent {

@@ -1,27 +1,51 @@
 import { useMemo, useState } from 'react'
 import { textCollections } from '@/lib/collections'
-import type { TextLanguage, TextMode } from '@/lib/collections/types'
+import type { TextLanguage } from '@/lib/collections/types'
 import { azkarCard, hadithCard } from '@/lib/cards/cardContent'
 import { cardThemes } from '@/lib/cards/themes'
-import type { CardFormat, CardProps } from '@/lib/cards/types'
+import type { CardContent, CardFormat, CardProps } from '@/lib/cards/types'
+import { defaultHadithSelection, shareableHadiths } from '@/lib/hadith/hadithPicks'
+import { useHadithSection } from './useHadithSection'
+
+export type GalleryMode = 'hadith' | 'azkar'
 
 const previewCount = 8
 
 export function useGalleryCards() {
-  const [mode, setMode] = useState<TextMode>('hadith')
+  const [mode, setMode] = useState<GalleryMode>('hadith')
   const [language, setLanguage] = useState<TextLanguage>('english')
   const [format, setFormat] = useState<CardFormat>('portrait')
-  const [showAll, setShowAll] = useState(false)
+  const [selection, setSelection] = useState(defaultHadithSelection)
+  const [visible, setVisible] = useState(previewCount)
+  const hadithQuery = useHadithSection(selection.book, selection.section, language)
 
-  const items = useMemo(
-    () =>
-      textCollections[mode].map((item, index) => ({
-        id: item.id,
-        card: { content: mode === 'hadith' ? hadithCard(item, language) : azkarCard(item, language), theme: cardThemes[index % cardThemes.length]!, format } as CardProps,
-        fileName: `jariyah-${mode}-${item.id}-${language}-${format}`,
-      })),
-    [mode, language, format],
-  )
+  const items = useMemo(() => {
+    const contents: { id: string; content: CardContent }[] =
+      mode === 'hadith'
+        ? shareableHadiths(hadithQuery.data ?? []).map((h) => ({ id: `${h.book}-${h.number}`, content: hadithCard(h) }))
+        : textCollections.azkar.map((item) => ({ id: item.id, content: azkarCard(item, language) }))
+    return contents.map(({ id, content }, index) => ({
+      id,
+      card: { content, theme: cardThemes[index % cardThemes.length]!, format } as CardProps,
+      fileName: `jariyah-${mode}-${id}-${language}-${format}`,
+    }))
+  }, [mode, language, format, hadithQuery.data])
 
-  return { mode, setMode, language, setLanguage, format, setFormat, items: showAll ? items : items.slice(0, previewCount), hasMore: !showAll && items.length > previewCount, showMore: () => setShowAll(true) }
+  return {
+    mode,
+    setMode: (next: GalleryMode) => { setMode(next); setVisible(previewCount) },
+    language,
+    setLanguage,
+    format,
+    setFormat,
+    selection,
+    setBook: (book: string, section: number) => { setSelection({ book, section }); setVisible(previewCount) },
+    setSection: (section: number) => { setSelection((s) => ({ ...s, section })); setVisible(previewCount) },
+    items: items.slice(0, visible),
+    total: items.length,
+    hasMore: items.length > visible,
+    showMore: () => setVisible((v) => v + previewCount * 2),
+    isLoading: mode === 'hadith' && hadithQuery.isLoading,
+    failed: mode === 'hadith' && hadithQuery.isError,
+  }
 }

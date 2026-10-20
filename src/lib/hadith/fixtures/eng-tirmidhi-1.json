@@ -1,0 +1,95 @@
+{
+ "metadata": {
+  "name": "Jami At Tirmidhi",
+  "section": {
+   "1": "The Book on Purification"
+  },
+  "section_detail": {
+   "1": {
+    "hadithnumber_first": 1,
+    "hadithnumber_last": 148,
+    "arabicnumber_first": 1,
+    "arabicnumber_last": 148
+   }
+  }
+ },
+ "hadiths": [
+  {
+   "hadithnumber": 1,
+   "arabicnumber": 1,
+   "text": "Ibn `Umar narrated that:the Prophet said: \"Salat will not be accepted without purification, nor Charity from Ghulul.\" Hannad said in his narration, \"except with purification\" [Abu `Eisa said: This Hadith is the most correct thing on this topic, and the best. There are also narrations on this topic from Abu Al-Malih, from his father; and Abu Hurairah and Anas. And Abu Al-Malih bin Usamah's name is `Amir, and they also say it was Zaid bin Usamah bin `Umair Al-Hudhali]",
+   "grades": [
+    {
+     "name": "Ahmad Muhammad Shakir",
+     "grade": "Sahih"
+    },
+    {
+     "name": "Al-Albani",
+     "grade": "Sahih"
+    },
+    {
+     "name": "Zubair Ali Zai",
+     "grade": "Sahih - Bukhari And Muslim"
+    }
+   ],
+   "reference": {
+    "book": 1,
+    "hadith": 1
+   }
+  },
+  {
+   "hadithnumber": 2,
+   "arabicnumber": 2,
+   "text": "Abu Hurairah narrated that :Allah's Messenger said: \"When a Muslim, or believer, performs Wudu', washing his face, every evil that he looked at with his eyes leaves with the water - or with the last drop of water, or an expression similar to that - and when he washes his hands, every evil he did with his hands leaves with the water - or with the last drop of water - until he becomes free of sin",
+   "grades": [
+    {
+     "name": "Ahmad Muhammad Shakir",
+     "grade": "Sahih"
+    },
+    {
+     "name": "Al-Albani",
+     "grade": "Sahih"
+    },
+    {
+     "name": "Bashar Awad Maarouf",
+     "grade": "Hasan Sahih"
+    },
+    {
+     "name": "Zubair Ali Zai",
+     "grade": "Sahih Muslim"
+    }
+   ],
+   "reference": {
+    "book": 1,
+    "hadith": 2
+   }
+  },
+  {
+   "hadithnumber": 3,
+   "arabicnumber": 3,
+   "text": "Ali narrated that :the Prophet, said: \"The key to Salat is the purification, its Tahrlm is the Takblr, and its Tahlil is the Taslim",
+   "grades": [
+    {
+     "name": "Ahmad Muhammad Shakir",
+     "grade": "Hasan Sahih"
+    },
+    {
+     "name": "Al-Albani",
+     "grade": "Hasan Sahih"
+    },
+    {
+     "name": "Bashar Awad Maarouf",
+     "grade": "Hasan"
+    },
+    {
+     "name": "Zubair Ali Zai",
+     "grade": "Hasan"
+    }
+   ],
+   "reference": {
+    "book": 1,
+    "hadith": 3
+   }
+  }
+ ]
+}

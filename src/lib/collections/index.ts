@@ -1,11 +1,10 @@
 import { azkarCollection } from './azkar'
-import { hadithCollection } from './hadith'
 import { masnoonSurahs } from './masnoonSurahs'
 import { quranicDuas } from './quranicDuas'
 import type { ContentMode, PresetMode, QuranPreset, TextItem, TextMode } from './types'
 
 export const presetCollections: Record<PresetMode, QuranPreset[]> = { masnoon: masnoonSurahs, duas: quranicDuas }
-export const textCollections: Record<TextMode, TextItem[]> = { hadith: hadithCollection, azkar: azkarCollection }
+export const textCollections: Record<TextMode, TextItem[]> = { azkar: azkarCollection }
 
 export const contentModeLabels: Record<ContentMode, string> = {
   quran: 'Quran',
