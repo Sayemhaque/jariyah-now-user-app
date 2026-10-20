@@ -28,7 +28,7 @@ Each platform is optional. A platform with missing secrets is skipped.
 ### YouTube Shorts
 | Secret | How to get it |
 |---|---|
-| `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | In Google Cloud Console, enable **YouTube Data API v3**. Create an OAuth client of type **Desktop app**. |
+| `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` | In Google Cloud Console, enable **YouTube Data API v3**. Create an OAuth client of type **Web application** and add `https://developers.google.com/oauthplayground` under **Authorized redirect URIs** (a Desktop app client fails in the Playground with `redirect_uri_mismatch`). |
 | `YOUTUBE_REFRESH_TOKEN` | Authorize that client once with scope `https://www.googleapis.com/auth/youtube.upload`, signed in as the channel owner. The [OAuth Playground](https://developers.google.com/oauthplayground) works: click the gear icon and choose "Use your own OAuth credentials". Copy the refresh token. |
 
 ⚠️ Until your Google Cloud project passes YouTube's **API compliance audit**, YouTube forces every video uploaded through the API to **private**. Request the audit from the YouTube API Services form. While the OAuth consent screen is in "Testing" mode, refresh tokens expire after 7 days, so publish the app to production.
@@ -72,7 +72,7 @@ Masnoon Surahs, Quranic Duas, Hadith and Azkar are posted as premium image cards
 | `textLanguage` | `english` | Language of hadith and azkar cards: `english` or `bangla` |
 | `maxAyats` | `10` | Most ayat in one video. There is no length limit |
 | `extraHashtags` | `JariyahNow`, `Quran` | Hashtags added to every post |
-| `platforms` | `instagram`, `facebook` | Platforms to post to: `youtube`, `facebook`, `instagram`, `tiktok`. Ones without secrets are skipped |
+| `platforms` | `instagram`, `facebook`, `youtube` | Platforms to post to: `youtube`, `facebook`, `instagram`, `tiktok`. Ones without secrets are skipped |
 | `youtubePrivacy` | `public` | `public`, `unlisted` or `private` |
 | `tiktokPrivacy` | `SELF_ONLY` | `PUBLIC_TO_EVERYONE` after TikTok approves the app |
 
