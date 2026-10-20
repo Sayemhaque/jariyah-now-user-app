@@ -2,6 +2,7 @@ import React from 'react'
 import { isBengaliText } from '@/lib/cards/cardTypography'
 import type { CardAlign, CardTheme, EyebrowStyle } from '@/lib/cards/types'
 import { arabicFontStacks, banglaDisplayStack, cardCapsStack } from '@/remotion/fontStacks'
+import { useCardStyle } from './CardStyleContext'
 import { EyebrowRibbon, EyebrowSeal, EyebrowSwash, Crescent } from './EyebrowShapes'
 
 interface CardEyebrowProps {
@@ -17,10 +18,11 @@ const dot = (color: string) => <span style={{ width: 5, height: 5, borderRadius:
 
 export const CardEyebrow: React.FC<CardEyebrowProps> = ({ text, theme, style, align }) => {
   const bangla = isBengaliText(text)
+  const scale = useCardStyle().textSizes.eyebrow
   const left = align === 'left'
   const base: React.CSSProperties = bangla
-    ? { fontFamily: banglaDisplayStack, fontSize: 28, letterSpacing: '0.06em' }
-    : { fontFamily: cardCapsStack, fontSize: 22, letterSpacing: '0.42em', paddingLeft: left ? 0 : '0.42em', textTransform: 'uppercase' }
+    ? { fontFamily: banglaDisplayStack, fontSize: 28 * scale, letterSpacing: '0.06em' }
+    : { fontFamily: cardCapsStack, fontSize: 22 * scale, letterSpacing: '0.42em', paddingLeft: left ? 0 : '0.42em', textTransform: 'uppercase' }
   const label = <span style={{ ...base, fontWeight: 500, color: style === 'pill' ? (theme.light ? '#ffffff' : '#1b140a') : theme.accent }}>{text}</span>
   const row = (children: React.ReactNode) => <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>{children}</div>
 

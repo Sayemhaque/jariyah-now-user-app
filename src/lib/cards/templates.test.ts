@@ -4,18 +4,24 @@ import { cardThemes } from './themes'
 import { resolveDecor, variantSpecs } from './variants'
 
 describe('card templates', () => {
-  it('offers 288 layouts: 32 structures in 9 decoration styles', () => {
-    expect(cardLayouts).toHaveLength(32)
-    expect(cardDesigns).toHaveLength(288)
-    expect(new Set(cardDesigns.map((d) => `${d.layout}.${d.variant}`)).size).toBe(288)
-    expect(templateCount).toBe(288 * cardThemes.length)
+  it('offers 738 layouts: 82 structures in 9 decoration styles', () => {
+    expect(cardLayouts).toHaveLength(82)
+    expect(cardDesigns).toHaveLength(738)
+    expect(new Set(cardDesigns.map((d) => `${d.layout}.${d.variant}`)).size).toBe(738)
+    expect(templateCount).toBe(738 * cardThemes.length)
+  })
+
+  it('names every structure with a lowercase key that survives a template id', () => {
+    expect(new Set(cardLayouts.map((l) => l.key)).size).toBe(cardLayouts.length)
+    expect(cardLayouts.every((l) => /^[a-z]+$/.test(l.key) && l.label && l.description)).toBe(true)
+    expect(findCardTemplate('ribbonframe.seal--sage-mist')).toMatchObject({ layout: 'ribbonframe', variant: 'seal' })
   })
 
   it('varies structure, decoration and colour from one card to the next', () => {
     const first = Array.from({ length: 12 }, (_, i) => templateAt(i))
     expect(new Set(first.map((t) => t.layout)).size).toBe(12)
     expect(new Set(first.map((t) => t.theme.key)).size).toBe(12)
-    const decorations = new Set(Array.from({ length: 288 }, (_, i) => templateAt(i).variant))
+    const decorations = new Set(Array.from({ length: 738 }, (_, i) => templateAt(i).variant))
     expect(decorations.size).toBe(9)
   })
 
@@ -28,6 +34,8 @@ describe('card templates', () => {
 
   it('drops corner ornaments on layouts that already decorate their corners', () => {
     expect(resolveDecor('frame', 'lantern').corners).toBe('none')
+    expect(resolveDecor('pearl', 'lantern').corners).toBe('none')
+    expect(resolveDecor('shamsa', 'lantern').corners).toBe('lanterns')
     expect(resolveDecor('arch', 'lantern')).toEqual({ eyebrow: 'stacked', divider: 'wave', corners: 'lanterns' })
     expect(resolveDecor('arch', 'lantern', 'pill').eyebrow).toBe('pill')
     expect(Object.keys(variantSpecs)).toHaveLength(9)

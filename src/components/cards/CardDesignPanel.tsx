@@ -6,6 +6,7 @@ import { EyebrowPicker } from './EyebrowPicker'
 import { FontPicker } from './FontPicker'
 import { FormatPicker } from './FormatPicker'
 import { DecorationPicker, StructurePicker } from './LayoutPicker'
+import { TextSizePicker } from './TextSizePicker'
 import { ThemePicker } from './ThemePicker'
 import { TitleStylePicker } from './TitleStylePicker'
 
@@ -27,6 +28,8 @@ export function CardDesignPanel() {
         <TitleStylePicker />
         <SectionTitle>ফন্ট</SectionTitle>
         <FontPicker />
+        <SectionTitle>লেখার সাইজ</SectionTitle>
+        <TextSizePicker />
       </AdvancedDesign>
       <p className="text-xs text-muted-foreground">{bnDigits(cardDesigns.length)}টি লেআউট × {bnDigits(100)}টি রং = {bnDigits(templateCount)}টি টেমপ্লেট</p>
     </div>

@@ -1,4 +1,5 @@
 import type { CardContent, CardFormat, EyebrowStyle } from './types'
+import { defaultTextSizes, type CardTextSizes } from './textSizes'
 import { cardSizes } from './types'
 
 export interface CardTypeSizes {
@@ -31,21 +32,21 @@ function linesFor(text: string, size: number, width: number, charWidth: number):
   return text ? Math.max(1, Math.ceil((text.length * size * charWidth) / width)) : 0
 }
 
-function benefitHeight(content: CardContent, format: CardFormat): number {
+function benefitHeight(content: CardContent, format: CardFormat, scale = 1): number {
   if (!content.benefit) return 0
   const compact = format === 'square'
   const text = compact ? `${content.benefit.text} — ${content.benefit.source}` : content.benefit.text
-  const size = compact ? 25 : 29
+  const size = (compact ? 25 : 29) * scale
   return 18 + (compact ? 20 : 40) + linesFor(text, size, 712, isBengaliText(text) ? 0.5 : 0.42) * size * 1.35 + (compact ? 0 : 30)
 }
 
 const eyebrowExtra: Partial<Record<EyebrowStyle, number>> = { seal: 54, ribbon: 30, pill: 22, stacked: 26, brackets: 18 }
 
-export function cardHeaderHeight(content: CardContent, titleScale = 1, format: CardFormat = 'portrait', eyebrow: EyebrowStyle = 'diamonds'): number {
+export function cardHeaderHeight(content: CardContent, titleScale = 1, format: CardFormat = 'portrait', eyebrow: EyebrowStyle = 'diamonds', parts: CardTextSizes = defaultTextSizes): number {
   const compact = format === 'square'
-  const size = cardTitleSize(content.title) * titleScale * (compact ? 0.86 : 1)
+  const size = cardTitleSize(content.title) * titleScale * (compact ? 0.86 : 1) * parts.title
   const gap = compact ? 12 : 18
-  return (compact ? 72 : 96) + gap + 30 + (eyebrowExtra[eyebrow] ?? 0) + gap + linesFor(content.title, size, 820, 0.42) * size * 1.1 + (content.arabicTitle ? (compact ? 72 : 98) + gap : 0) + benefitHeight(content, format)
+  return (compact ? 72 : 96) * parts.logo + gap + 30 * parts.eyebrow + (eyebrowExtra[eyebrow] ?? 0) + gap + linesFor(content.title, size, 820, 0.42) * size * 1.1 + (content.arabicTitle ? (compact ? 72 : 98) * parts.arabicTitle + gap : 0) + benefitHeight(content, format, parts.benefit)
 }
 
 function footerHeight(content: CardContent): number {

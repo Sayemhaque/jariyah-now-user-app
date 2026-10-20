@@ -49,6 +49,9 @@ export interface CardTheme {
 
 export type CardLayout = 'frame' | 'arch' | 'editorial' | 'split' | 'floating' | 'quote' | 'tile' | 'night' | 'botanical' | 'glass' | 'manuscript' | 'minimal'
   | 'medallion' | 'dome' | 'octagon' | 'khatam' | 'scroll' | 'lantern' | 'ogee' | 'zellige' | 'pillars' | 'halo' | 'dawn' | 'dunes' | 'ocean' | 'stamp' | 'paper' | 'angle' | 'capsule' | 'lattice' | 'folio' | 'crescent'
+  | PremiumCardLayout
+
+export type PremiumCardLayout = 'shamsa' | 'carpet' | 'cartouche' | 'tezhip' | 'marble' | 'minaret' | 'window' | 'triplearch' | 'horseshoe' | 'iwan' | 'multifoil' | 'rosette' | 'girih' | 'hexagon' | 'compass' | 'eclipse' | 'bookmark' | 'pennant' | 'tablet' | 'letter' | 'gallery' | 'cover' | 'gazette' | 'sidebar' | 'stack' | 'deckle' | 'cropmarks' | 'ribbonframe' | 'spotlight' | 'aurora' | 'dotgrid' | 'ripple' | 'orbit' | 'constellation' | 'mountains' | 'palms' | 'garden' | 'laurel' | 'tulip' | 'rain' | 'bracket' | 'meander' | 'chevron' | 'sunset' | 'moonphase' | 'garland' | 'watercolor' | 'prism' | 'pearl' | 'lace'
 
 export type CardAlign = 'center' | 'left'
 
@@ -70,4 +73,5 @@ export interface CardProps {
   titleGradient?: boolean
   fonts?: Partial<import('./fontLibrary').CardFontChoice>
   customFonts?: import('./fontLibrary').CardFont[]
+  textSizes?: Partial<import('./textSizes').CardTextSizes>
 }

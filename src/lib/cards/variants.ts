@@ -20,7 +20,11 @@ export const variantSpecs: Record<CardVariant, CardDecor & { label: string }> = 
 
 export const cardVariants = Object.keys(variantSpecs) as CardVariant[]
 
-const busyCorners: CardLayout[] = ['frame', 'botanical', 'night', 'editorial', 'tile', 'quote']
+const busyCorners: CardLayout[] = [
+  'frame', 'botanical', 'night', 'editorial', 'tile', 'quote',
+  'carpet', 'tezhip', 'marble', 'iwan', 'multifoil', 'rosette', 'bookmark', 'letter', 'gallery', 'cover', 'gazette', 'sidebar', 'stack', 'deckle',
+  'cropmarks', 'ribbonframe', 'dotgrid', 'constellation', 'tulip', 'meander', 'chevron', 'moonphase', 'garland', 'watercolor', 'prism', 'pearl', 'lace', 'garden',
+]
 
 export function resolveDecor(layout: CardLayout, variant: CardVariant, eyebrowOverride?: EyebrowStyle): CardDecor {
   const spec = variantSpecs[variant]

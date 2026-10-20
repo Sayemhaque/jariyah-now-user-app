@@ -33,6 +33,7 @@ import { StampLayout } from './StampLayout'
 import { TileLayout } from './TileLayout'
 import { ZelligeLayout } from './ZelligeLayout'
 import type { LayoutProps } from './layoutTypes'
+import { premiumLayoutViews } from './premium/premiumLayouts'
 
 const layoutViews: Record<CardLayout, React.FC<LayoutProps>> = {
   frame: FrameLayout,
@@ -67,6 +68,7 @@ const layoutViews: Record<CardLayout, React.FC<LayoutProps>> = {
   lattice: LatticeLayout,
   folio: FolioLayout,
   crescent: CrescentLayout,
+  ...premiumLayoutViews,
 }
 
 export const CardLayoutView: React.FC<LayoutProps & { layout: CardLayout }> = ({ layout, ...props }) => {
