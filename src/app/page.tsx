@@ -25,9 +25,9 @@ export default function LandingPage() {
         <SectionHeader
           className="mb-14"
           pillIcon={Sparkles}
-          pillLabel="Four simple steps"
-          title="Your reel in 4 steps"
-          subtitle="Simple, fast, and completely free"
+          pillLabel="চারটি সহজ ধাপ"
+          title="৪ ধাপে আপনার ভিডিও"
+          subtitle="সহজ, দ্রুত এবং একদম ফ্রি"
         />
         <FeatureGrid items={landingSteps} delayStepMs={80} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6" />
       </PageSection>
@@ -35,18 +35,18 @@ export default function LandingPage() {
         <SectionHeader
           className="mb-14"
           pillIcon={Sparkles}
-          pillLabel="Why creators choose us"
-          title="Built for impact, designed for sharing"
+          pillLabel="কেন সবাই আমাদের বেছে নেন"
+          title="মানুষের উপকারে, শেয়ারের জন্য তৈরি"
         />
         <FeatureGrid items={landingFeatures} delayStepMs={60} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6" />
       </PageSection>
       <TemplatesShowcase />
-      <MissionBanner size="large" title="Why we're called Jariyah Now">
-        <strong className="text-foreground">Sadaqah Jariyah</strong> is the ongoing charity that keeps rewarding you —
-        long after the original act. When someone benefits from a Quran reel you shared, you earn reward for every
-        view, every heart, every share.{' '}
-        <span className="qv-gradient-text font-semibold">Share once, earn forever.</span> That’s the mission behind
-        Jariyah Now: make it effortless to turn the words of Allah into beautiful, shareable content that keeps giving.
+      <MissionBanner size="large" title="আমাদের নাম কেন Jariyah Now">
+        <strong className="text-foreground">সদকায়ে জারিয়া</strong> হলো এমন দান, যার সওয়াব কাজ শেষ হওয়ার পরেও চলতে
+        থাকে। আপনার শেয়ার করা কুরআন ভিডিও থেকে কেউ উপকার পেলে, প্রতিটি দেখা, প্রতিটি লাইক, প্রতিটি শেয়ারের জন্য
+        আপনিও সওয়াব পাবেন।{' '}
+        <span className="qv-gradient-text font-semibold">একবার শেয়ার, সওয়াব চিরকাল।</span> এটাই Jariyah Now-এর
+        লক্ষ্য: আল্লাহর বাণীকে খুব সহজে সুন্দর ভিডিও ও ছবিতে রূপ দেওয়া, যা মানুষের কাছে পৌঁছে উপকার করতেই থাকবে।
       </MissionBanner>
       <CtaSection />
       <MarketingFooter links={landingFooterLinks} showCredits />

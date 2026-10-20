@@ -28,7 +28,7 @@ export function ProcessingPanel({ progress, phase }: { progress: number; phase: 
         <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
       </div>
       <ProgressMeter percent={percent} phase={phase} />
-      <p className="text-center text-[10px] text-muted-foreground/70 mt-5">Do not close this tab while processing</p>
+      <p className="text-center text-[10px] text-muted-foreground/70 mt-5">ভিডিও তৈরি হওয়ার সময় এই পেজটি বন্ধ করবেন না</p>
     </GlowPanel>
   )
 }

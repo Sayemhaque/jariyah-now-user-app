@@ -9,7 +9,7 @@ export function LayoutSection() {
   const { settings, setOrientation } = useSettings()
   return (
     <>
-      <SectionTitle>Layout</SectionTitle>
+      <SectionTitle>লেআউট</SectionTitle>
       <div className="grid grid-cols-2 gap-2.5">
         {orientations.map((orientation) => (
           <OrientationOption

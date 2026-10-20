@@ -13,7 +13,7 @@ export function OverlaySection() {
 
   return (
     <>
-      <SectionTitle>Overlay</SectionTitle>
+      <SectionTitle>ছবির উপর ছায়া</SectionTitle>
       <div className="space-y-2.5">
         <div className="flex gap-2 overflow-x-auto scrollbar-thin pb-1 snap-x snap-mandatory">
           {overlayPresets.map((preset) => (
@@ -27,13 +27,13 @@ export function OverlaySection() {
           ))}
         </div>
         <ColorField
-          label="Color"
+          label="রং"
           value={settings.overlayColor}
           onChange={(overlayColor) => updateSettings({ overlayColor })}
           disabled={disabled}
         />
         <SliderField
-          label="Opacity"
+          label="গাঢ়তা"
           valueLabel={disabled ? '—' : `${settings.overlayOpacity}%`}
           value={settings.overlayOpacity}
           min={0}

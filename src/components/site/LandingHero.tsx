@@ -13,21 +13,21 @@ export function LandingHero() {
         <div className="max-w-3xl">
           <div className="qv-pill-premium mb-6">
             <BrandLogo size={14} alt="" className="h-3.5 w-3.5 rounded-sm ring-1 ring-primary/20" />
-            Free — No account required
+            বিনামূল্যে — কোনো অ্যাকাউন্ট লাগবে না
           </div>
           <p className="qv-tagline mb-4">
             <span className="qv-divider-accent inline-block w-6 h-[2px] rounded-full" aria-hidden />
-            Share once, earn forever.
+            একবার শেয়ার, সওয়াব চিরকাল।
           </p>
           <h1 className="qv-hero-title font-display mb-6">
-            Turn Quran verses into
+            কুরআনের আয়াত দিয়ে বানান
             <br />
-            <span className="qv-gradient-text">shareable reels</span>
+            <span className="qv-gradient-text">সুন্দর রিলস</span>
           </h1>
           <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-9 max-w-2xl">
-            Every reel you publish is Sadaqah Jariyah — ongoing charity that keeps earning reward long after
-            you hit share. Pick a Surah, choose a reciter, customize the look, and export a perfectly synced
-            video with Arabic text and translation. Built for Instagram Reels, TikTok, and YouTube Shorts.
+            আপনার শেয়ার করা প্রতিটি ভিডিও হতে পারে সদকায়ে জারিয়া — এমন দান, যার সওয়াব শেয়ারের পরেও চলতে
+            থাকে। সূরা বেছে নিন, কারী বেছে নিন, ডিজাইন সাজিয়ে নিন। তারপর আরবি লেখা ও অনুবাদসহ ভিডিও ডাউনলোড
+            করুন। ফেসবুক, ইনস্টাগ্রাম, টিকটক ও ইউটিউবের জন্য একদম তৈরি।
           </p>
           <div className="flex flex-col sm:flex-row gap-3">
             <Link
@@ -35,7 +35,7 @@ export function LandingHero() {
               className="qv-btn-primary inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-base font-semibold"
             >
               <Film className="h-5 w-5" />
-              Create your reel
+              ভিডিও বানান
               <ArrowRight className="h-4 w-4" />
             </Link>
             <a
@@ -43,7 +43,7 @@ export function LandingHero() {
               className="qv-btn-secondary inline-flex items-center justify-center gap-2 h-12 px-7 rounded-xl text-base font-semibold"
             >
               <Play className="h-4 w-4 text-primary" />
-              See how it works
+              কীভাবে কাজ করে দেখুন
             </a>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-10">

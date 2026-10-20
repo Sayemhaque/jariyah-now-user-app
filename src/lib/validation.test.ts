@@ -51,13 +51,13 @@ describe('validateAyatRange', () => {
     it('rejects an 11-ayat range with the correct message', () => {
       const result = validateAyatRange(1, 11, alBaqarah)
       expect(result.ok).toBe(false)
-      expect(result.error).toMatch(/maximum 10 ayats/i)
+      expect(result.error).toMatch(/সর্বোচ্চ 10টি আয়াত/)
     })
 
     it('rejects a 50-ayat range', () => {
       const result = validateAyatRange(1, 50, alBaqarah)
       expect(result.ok).toBe(false)
-      expect(result.error).toMatch(/maximum 10 ayats/i)
+      expect(result.error).toMatch(/সর্বোচ্চ 10টি আয়াত/)
     })
 
     it('reports the max count in the error message', () => {
@@ -70,7 +70,7 @@ describe('validateAyatRange', () => {
     it('rejects from > to', () => {
       const result = validateAyatRange(5, 3, alBaqarah)
       expect(result.ok).toBe(false)
-      expect(result.error).toMatch(/from must be less than to/i)
+      expect(result.error).toMatch(/শুরুর আয়াত শেষের আয়াতের চেয়ে ছোট/)
     })
 
     it('rejects from === 0', () => {
@@ -88,13 +88,13 @@ describe('validateAyatRange', () => {
     it('rejects to > surah.numberOfAyahs', () => {
       const result = validateAyatRange(1, 8, alFatihah)
       expect(result.ok).toBe(false)
-      expect(result.error).toMatch(/only has 7 ayats/i)
+      expect(result.error).toMatch(/মোট 7টি আয়াত আছে/)
     })
 
     it('rejects from > surah.numberOfAyahs (when to is also out of bounds)', () => {
       const result = validateAyatRange(10, 10, alFatihah)
       expect(result.ok).toBe(false)
-      expect(result.error).toMatch(/7 ayats/i)
+      expect(result.error).toMatch(/7টি আয়াত/)
     })
 
     it('rejects from > surah.numberOfAyahs (when to is in bounds)', () => {

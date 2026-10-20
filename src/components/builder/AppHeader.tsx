@@ -20,7 +20,7 @@ export function AppHeader({ canExport, onExport }: AppHeaderProps) {
           />
           <div className="flex items-baseline gap-2">
             <span className="text-[15px] font-bold tracking-tight">Jariyah Now</span>
-            <span className="hidden sm:inline text-[11px] text-muted-foreground font-medium">Quran Reels</span>
+            <span className="hidden sm:inline text-[11px] text-muted-foreground font-medium">কুরআন ভিডিও</span>
           </div>
         </Link>
         <div className="flex items-center gap-2">
@@ -28,11 +28,11 @@ export function AppHeader({ canExport, onExport }: AppHeaderProps) {
             href="/templates"
             className="hidden sm:inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-primary/5 transition"
           >
-            Templates
+            টেমপ্লেট
           </Link>
           <Button onClick={onExport} disabled={!canExport} size="sm" className="font-semibold">
             <Film className="h-4 w-4 mr-1.5" />
-            <span className="hidden sm:inline">Export video</span>
+            <span className="hidden sm:inline">ভিডিও তৈরি করুন</span>
           </Button>
           <MobileMenu />
         </div>

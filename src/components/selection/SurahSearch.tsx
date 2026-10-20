@@ -14,7 +14,7 @@ export function SurahSearch({ query, onChange }: SurahSearchProps) {
         <Input
           value={query}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Search by name or number…"
+          placeholder="নাম বা নম্বর লিখে খুঁজুন…"
           className="pl-9 h-9 bg-background/60"
           onKeyDown={(event) => event.stopPropagation()}
           onPointerDown={(event) => event.stopPropagation()}

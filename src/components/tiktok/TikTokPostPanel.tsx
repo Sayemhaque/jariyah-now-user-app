@@ -43,7 +43,7 @@ export function TikTokPostPanel({ jobId, videoUrl, creator, durationSec, default
               onClick={post.submit}
               className="qv-btn-primary inline-flex h-11 w-full items-center justify-center rounded-xl text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {post.phase === 'posting' ? 'Posting…' : 'Post to TikTok'}
+              {post.phase === 'posting' ? 'পোস্ট হচ্ছে…' : 'TikTok-এ পোস্ট করুন'}
             </button>
           </>
         )}

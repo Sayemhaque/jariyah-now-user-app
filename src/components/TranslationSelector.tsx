@@ -13,8 +13,8 @@ export function TranslationSelector() {
   const { translationKey, setTranslation } = useSurahRange()
   return (
     <div className="space-y-1.5">
-      <FieldLabel icon={BookText}>Translation</FieldLabel>
-      <PickerSelect value={translationKey} onChange={setTranslation} placeholder="Choose a translation">
+      <FieldLabel icon={BookText}>অনুবাদ</FieldLabel>
+      <PickerSelect value={translationKey} onChange={setTranslation} placeholder="একটি অনুবাদ বেছে নিন">
         {translationEditions.map((edition) => (
           <SelectItem key={edition.key} value={edition.key} className="py-2.5">
             <TwoLineOption

@@ -6,7 +6,7 @@ export function FontSizeFields() {
   return (
     <>
       <SliderField
-        label="Arabic font size"
+        label="আরবি ফন্টের সাইজ"
         valueLabel={`${settings.arabicFontSize}px`}
         value={settings.arabicFontSize}
         min={24}
@@ -15,7 +15,7 @@ export function FontSizeFields() {
         onChange={(arabicFontSize) => updateSettings({ arabicFontSize })}
       />
       <SliderField
-        label="Translation font size"
+        label="অনুবাদের ফন্টের সাইজ"
         valueLabel={`${settings.translationFontSize}px`}
         value={settings.translationFontSize}
         min={14}

@@ -15,9 +15,9 @@ export function HadithSelection() {
     <div className="space-y-3">
       <HadithBookPicker book={content.hadithBook} section={content.hadithSection} onBook={content.setHadithBook} onSection={content.setHadithSection} />
       <LanguageToggle />
-      <SwitchField label="Short hadith only" icon={Ruler} checked={content.shortHadithOnly} onChange={content.setShortHadithOnly} />
+      <SwitchField label="শুধু ছোট হাদিস" icon={Ruler} checked={content.shortHadithOnly} onChange={content.setShortHadithOnly} />
       <HadithPicker hadiths={hadiths} value={content.hadithNumber} onChange={content.setHadithNumber} isLoading={query.isLoading} failed={query.isError} />
-      <p className="text-[11px] leading-snug text-muted-foreground">From the open Hadith API (fawazahmed0/hadith-api). Only hadith graded Sahih or Hasan are shown.</p>
+      <p className="text-[11px] leading-snug text-muted-foreground">হাদিসগুলো উন্মুক্ত হাদিস API (fawazahmed0/hadith-api) থেকে নেওয়া। শুধু সহীহ ও হাসান হাদিস দেখানো হয়, আর প্রতিটি হাদিস একটি পোস্টারেই পুরোটা আঁটে — যেগুলো এক পোস্টারে আঁটে না সেগুলো বাদ রাখা হয়।</p>
     </div>
   )
 }

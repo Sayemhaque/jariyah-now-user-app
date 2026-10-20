@@ -14,8 +14,8 @@ import { GalleryStatus } from './GalleryStatus'
 import { PillTabs } from './PillTabs'
 
 const modes: { key: GalleryMode; label: string }[] = [
-  { key: 'hadith', label: 'Hadith' },
-  { key: 'azkar', label: 'Azkar' },
+  { key: 'hadith', label: 'হাদিস' },
+  { key: 'azkar', label: 'জিকির' },
 ]
 const languages: { key: TextLanguage; label: string }[] = [
   { key: 'english', label: 'English' },
@@ -31,9 +31,9 @@ export function HadithGallery() {
         centered
         className="mb-8"
         pillIcon={BookHeart}
-        pillLabel="Free to share"
-        title="Hadith & Azkar for your page"
-        subtitle="Thousands of authentic hadith from Bukhari, Muslim and the Sunan, plus daily azkar — as beautiful posts. Pick one, download it and share it anywhere."
+        pillLabel="ফ্রি শেয়ার করুন"
+        title="আপনার পেজের জন্য হাদিস ও জিকির"
+        subtitle="বুখারি, মুসলিম ও সুনান গ্রন্থ থেকে হাজারো সহিহ হাদিস, আর প্রতিদিনের জিকির — সুন্দর ছবির পোস্ট হিসেবে। একটি বেছে নিন, ডাউনলোড করুন, তারপর যেখানে খুশি শেয়ার করুন।"
       />
       <div className="mb-8 space-y-3">
         <PillTabs options={modes} active={gallery.mode} onChange={gallery.setMode} />
@@ -55,7 +55,7 @@ export function HadithGallery() {
       </div>
       {gallery.hasMore && (
         <div className="mt-8 text-center">
-          <Button variant="secondary" onClick={gallery.showMore} className="font-semibold">Show more ({gallery.total - gallery.items.length} left)</Button>
+          <Button variant="secondary" onClick={gallery.showMore} className="font-semibold">আরও দেখুন (আরও {gallery.total - gallery.items.length}টি বাকি)</Button>
         </div>
       )}
     </PageSection>

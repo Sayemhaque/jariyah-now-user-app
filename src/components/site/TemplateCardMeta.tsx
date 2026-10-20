@@ -14,7 +14,7 @@ export function TemplateCardMeta({ template, detailed }: TemplateCardMetaProps) 
     <div className="mt-auto pt-3 border-t border-border/60 flex items-center gap-2 text-[11px] text-muted-foreground">
       <span className="font-mono font-semibold text-foreground/80">{formatTemplateRange(config)}</span>
       {separator}
-      <span className="capitalize">{detailed ? `${font} font` : font}</span>
+      <span className="capitalize">{detailed ? `${font} ফন্ট` : font}</span>
       {detailed && config.reciterId && (
         <>
           {separator}

@@ -31,9 +31,9 @@ export function ExportModal({ open, onOpenChange }: ExportModalProps) {
               <div className="grid place-items-center h-8 w-8 rounded-lg bg-primary/15 text-primary shrink-0">
                 <Film className="h-4 w-4" />
               </div>
-              Export video
+              ভিডিও তৈরি করুন
             </DialogTitle>
-            <DialogDescription className="text-[13px]">Rendered on the server as H.264 MP4.</DialogDescription>
+            <DialogDescription className="text-[13px]">আমাদের সার্ভারে MP4 ভিডিও তৈরি হবে।</DialogDescription>
           </DialogHeader>
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-thin px-6 py-4">

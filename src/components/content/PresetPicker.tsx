@@ -13,7 +13,7 @@ export function PresetPicker({ mode }: { mode: PresetMode }) {
     <div className="space-y-2.5">
       <div className="space-y-1.5">
         <FieldLabel icon={BookOpenCheck}>{contentModeLabels[mode]}</FieldLabel>
-        <PickerSelect value={preset?.id ?? ''} onChange={selectPreset} placeholder="Choose one">
+        <PickerSelect value={preset?.id ?? ''} onChange={selectPreset} placeholder="এখানে চাপুন ও বেছে নিন">
           {presets.map((p) => (
             <SelectItem key={p.id} value={p.id} className="py-2.5">
               <TwoLineOption title={p.title} subtitle={`${p.surah}:${p.fromAyat}${p.toAyat > p.fromAyat ? `–${p.toAyat}` : ''} · ${p.note}`} truncateSubtitle />
@@ -23,8 +23,8 @@ export function PresetPicker({ mode }: { mode: PresetMode }) {
       </div>
       {parts.length > 1 && (
         <div className="space-y-1.5">
-          <FieldLabel icon={Layers}>Part</FieldLabel>
-          <PickerSelect value={String(partIndex)} onChange={(v) => selectPart(Number(v))} placeholder="Choose a part">
+          <FieldLabel icon={Layers}>অংশ</FieldLabel>
+          <PickerSelect value={String(partIndex)} onChange={(v) => selectPart(Number(v))} placeholder="অংশ বেছে নিন">
             {parts.map((part, index) => (
               <SelectItem key={part.label} value={String(index)}>
                 {part.label}

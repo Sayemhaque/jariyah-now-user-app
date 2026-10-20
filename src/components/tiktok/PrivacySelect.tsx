@@ -11,10 +11,10 @@ interface PrivacySelectProps {
 export function PrivacySelect({ form, options, onChange }: PrivacySelectProps) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-sm font-medium">Who can view this video</Label>
+      <Label className="text-sm font-medium">ভিডিওটি কারা দেখতে পারবেন</Label>
       <Select value={form.privacyLevel ?? ''} onValueChange={onChange}>
         <SelectTrigger className="h-10 w-full bg-background/60">
-          <SelectValue placeholder="Select privacy" />
+          <SelectValue placeholder="কারা দেখবেন বেছে নিন" />
         </SelectTrigger>
         <SelectContent>
           {options.map((level) => {
@@ -22,7 +22,7 @@ export function PrivacySelect({ form, options, onChange }: PrivacySelectProps) {
             return (
               <SelectItem key={level} value={level} disabled={!allowed}>
                 {privacyLabels[level] ?? level}
-                {!allowed && <span className="ml-2 text-xs text-muted-foreground">Branded content can&apos;t be private</span>}
+                {!allowed && <span className="ml-2 text-xs text-muted-foreground">অন্যের ব্র্যান্ডের প্রচার শুধু নিজের জন্য রাখা যায় না</span>}
               </SelectItem>
             )
           })}

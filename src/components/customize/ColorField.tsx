@@ -23,7 +23,7 @@ export function ColorField({ label, value, onChange, disabled }: ColorFieldProps
               disabled={disabled}
               className="h-7 w-9 rounded-md border border-border ring-1 ring-inset ring-white/5 disabled:cursor-not-allowed"
               style={{ backgroundColor: value }}
-              aria-label={`Pick ${label}`}
+              aria-label={`${label} রং বেছে নিন`}
             />
           </PopoverTrigger>
           <PopoverContent className="w-auto p-2 bg-popover border-border">

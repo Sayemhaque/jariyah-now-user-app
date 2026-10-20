@@ -8,7 +8,7 @@ export function SoundAnimationSection() {
   const current = settings.soundAnimation ?? 'bars'
   return (
     <>
-      <SectionTitle>Sound animation</SectionTitle>
+      <SectionTitle>শব্দের অ্যানিমেশন</SectionTitle>
       <div className="grid grid-cols-4 gap-2">
         {soundAnimationOptions.map(({ key, label, icon: Icon }) => (
           <OptionButton

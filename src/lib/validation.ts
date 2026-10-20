@@ -15,29 +15,29 @@ export function validateAyatRange(
   surah: Surah | undefined,
 ): RangeValidation {
   if (!Number.isFinite(from) || !Number.isFinite(to)) {
-    return { ok: false, error: 'Enter valid ayat numbers' }
+    return { ok: false, error: 'সঠিক আয়াত নম্বর দিন' }
   }
   if (from < 1 || to < 1) {
-    return { ok: false, error: 'Ayat numbers must be 1 or greater' }
+    return { ok: false, error: 'আয়াত নম্বর ১ বা তার বেশি হতে হবে' }
   }
   if (from > to) {
-    return { ok: false, error: 'From must be less than To' }
+    return { ok: false, error: 'শুরুর আয়াত শেষের আয়াতের চেয়ে ছোট হতে হবে' }
   }
   const count = to - from + 1
   if (count > maxAyatsPerVideo) {
-    return { ok: false, error: `Maximum ${maxAyatsPerVideo} ayats allowed per video` }
+    return { ok: false, error: `একটি ভিডিওতে সর্বোচ্চ ${maxAyatsPerVideo}টি আয়াত নেওয়া যায়` }
   }
   if (surah && surah.numberOfAyahs > 0) {
     if (to > surah.numberOfAyahs) {
       return {
         ok: false,
-        error: `This surah only has ${surah.numberOfAyahs} ayats`,
+        error: `এই সূরায় মোট ${surah.numberOfAyahs}টি আয়াত আছে`,
       }
     }
     if (from > surah.numberOfAyahs) {
       return {
         ok: false,
-        error: `From exceeds the surah's ${surah.numberOfAyahs} ayats`,
+        error: `শুরুর আয়াত সূরার মোট ${surah.numberOfAyahs}টি আয়াতের বেশি হয়ে গেছে`,
       }
     }
   }

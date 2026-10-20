@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { textCollections } from '@/lib/collections'
 import type { TextLanguage } from '@/lib/collections/types'
 import { azkarCard, hadithCard } from '@/lib/cards/cardContent'
-import { interleavedTemplates, titleStyleFor } from '@/lib/cards/templates'
+import { templateAt, titleStyleFor } from '@/lib/cards/templates'
 import type { CardContent, CardFormat, CardProps } from '@/lib/cards/types'
 import { defaultHadithSelection, shareableHadiths } from '@/lib/hadith/hadithPicks'
 import { useHadithSection } from './useHadithSection'
@@ -13,7 +13,7 @@ const previewCount = 8
 
 export function useGalleryCards() {
   const [mode, setMode] = useState<GalleryMode>('hadith')
-  const [language, setLanguage] = useState<TextLanguage>('english')
+  const [language, setLanguage] = useState<TextLanguage>('bangla')
   const [format, setFormat] = useState<CardFormat>('portrait')
   const [selection, setSelection] = useState(defaultHadithSelection)
   const [visible, setVisible] = useState(previewCount)
@@ -26,7 +26,7 @@ export function useGalleryCards() {
         : textCollections.azkar.map((item) => ({ id: item.id, content: azkarCard(item, language) }))
     return contents.map(({ id, content }, index) => ({
       id,
-      card: { content, theme: interleavedTemplates[index % interleavedTemplates.length]!.theme, layout: interleavedTemplates[index % interleavedTemplates.length]!.layout, ...titleStyleFor(index), format } as CardProps,
+      card: { content, theme: templateAt(index).theme, layout: templateAt(index).layout, variant: templateAt(index).variant, ...titleStyleFor(index), format } as CardProps,
       fileName: `jariyah-${mode}-${id}-${language}-${format}`,
     }))
   }, [mode, language, format, hadithQuery.data])

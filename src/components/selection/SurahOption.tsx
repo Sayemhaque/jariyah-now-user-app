@@ -11,7 +11,7 @@ export function SurahOption({ surah }: { surah: Surah }) {
         </span>
         <TwoLineOption
           title={surah.name}
-          subtitle={`${surah.englishName} · ${surah.numberOfAyahs} ayats · ${surah.revelationType}`}
+          subtitle={`${surah.englishName} · ${surah.numberOfAyahs}টি আয়াত · ${surah.revelationType === 'Medinan' ? 'মাদানী' : 'মাক্কী'}`}
           truncateSubtitle
         />
       </div>

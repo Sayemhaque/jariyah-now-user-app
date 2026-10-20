@@ -6,9 +6,9 @@ import type { CardTitleStyle } from '@/lib/cards/types'
 import { titleFont } from '@/cards/titleFonts'
 
 const styles: { key: CardTitleStyle; label: string }[] = [
-  { key: 'serif', label: 'Elegant' },
-  { key: 'script', label: 'Calligraphy' },
-  { key: 'display', label: 'Bold display' },
+  { key: 'serif', label: 'মার্জিত' },
+  { key: 'script', label: 'ক্যালিগ্রাফি' },
+  { key: 'display', label: 'মোটা অক্ষর' },
 ]
 
 export function TitleStylePicker() {
@@ -22,15 +22,15 @@ export function TitleStylePicker() {
           return (
             <OptionButton key={key} selected={titleStyle === key} onSelect={() => setTitleStyle(key)} glow className="flex flex-col items-center gap-1 rounded-xl px-1 py-2.5">
               <span className="flex items-baseline gap-1.5 text-[22px] leading-none">
-                <span style={{ fontFamily: latin.fontFamily, fontWeight: latin.fontWeight, fontStyle: latin.fontStyle }}>Aa</span>
-                <span style={{ fontFamily: bangla.fontFamily, fontWeight: bangla.fontWeight }}>আল</span>
+                <span style={{ fontFamily: latin.family, fontWeight: latin.weight, fontStyle: latin.style }}>Aa</span>
+                <span style={{ fontFamily: bangla.family, fontWeight: bangla.weight }}>আল</span>
               </span>
               <span className="text-[10px] font-medium leading-none">{label}</span>
             </OptionButton>
           )
         })}
       </div>
-      <SwitchField label="Gradient title" icon={Palette} checked={titleGradient} onChange={setTitleGradient} />
+      <SwitchField label="রঙিন (গ্রেডিয়েন্ট) শিরোনাম" icon={Palette} checked={titleGradient} onChange={setTitleGradient} />
     </div>
   )
 }

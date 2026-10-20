@@ -19,9 +19,9 @@ export function DonePanel({ filename, orientation, onDownload, onShareTikTok }: 
         </div>
       </div>
       <div className="relative space-y-1.5 mb-6">
-        <p className="font-bold text-lg text-foreground">Video ready!</p>
+        <p className="font-bold text-lg text-foreground">ভিডিও তৈরি হয়ে গেছে!</p>
         <p className="text-xs text-muted-foreground">
-          Your video has been processed as MP4 · {orientation === 'portrait' ? 'Portrait 9:16' : 'Landscape 16:9'}
+          আপনার ভিডিও MP4 হিসেবে তৈরি হয়েছে · {orientation === 'portrait' ? 'লম্বা (৯:১৬)' : 'চওড়া (১৬:৯)'}
         </p>
       </div>
       <button
@@ -30,14 +30,14 @@ export function DonePanel({ filename, orientation, onDownload, onShareTikTok }: 
         className="qv-btn-primary relative inline-flex items-center justify-center gap-2 w-full h-12 rounded-xl text-base font-semibold"
       >
         <Download className="h-5 w-5" />
-        Download {filename}
+        ভিডিও ডাউনলোড করুন
       </button>
       <button
         type="button"
         onClick={onShareTikTok}
         className="relative mt-3 inline-flex h-11 w-full items-center justify-center rounded-xl bg-black text-sm font-semibold text-white hover:bg-black/85"
       >
-        Post to TikTok
+        TikTok-এ পোস্ট করুন
       </button>
       <div className="relative flex items-center justify-center gap-2 mt-4">
         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/15 text-emerald-600 border border-emerald-500/30">

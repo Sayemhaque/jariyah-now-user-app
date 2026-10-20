@@ -6,9 +6,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-inter), var(--font-ui-bangla), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-display);
+  --font-display: var(--font-display), var(--font-display-bangla), serif;
   --font-arabic-amiri: var(--font-amiri);
   --font-arabic-scheherazade: var(--font-scheherazade);
   --font-arabic-markazi: var(--font-markazi-text);

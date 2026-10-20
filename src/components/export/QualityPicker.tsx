@@ -4,7 +4,7 @@ import { OptionButton } from '@/components/common/OptionButton'
 export type ExportQuality = '480p' | '720p' | '1080p'
 
 const qualityOptions: { value: ExportQuality; tag?: string }[] = [
-  { value: '480p', tag: 'Lite' },
+  { value: '480p', tag: 'হালকা' },
   { value: '720p' },
   { value: '1080p', tag: 'HD' },
 ]
@@ -18,10 +18,10 @@ interface QualityPickerProps {
 export function QualityPicker({ quality, onChange, showMobileWarning }: QualityPickerProps) {
   return (
     <div className="space-y-2">
-      <Label className="qv-section-title !mb-0">Quality</Label>
+      <Label className="qv-section-title !mb-0">মান</Label>
       {showMobileWarning && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] text-amber-600 dark:text-amber-400 leading-relaxed">
-          Mobile export may be slow. For best results, use a desktop browser.
+          মোবাইলে ভিডিও তৈরি হতে একটু বেশি সময় লাগতে পারে। কম্পিউটারে করলে আরও ভালো হয়।
         </div>
       )}
       <div className="grid grid-cols-3 gap-2">

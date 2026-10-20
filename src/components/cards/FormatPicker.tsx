@@ -13,7 +13,7 @@ export function FormatPicker() {
         return (
           <OptionButton key={format} selected={cardFormat === format} onSelect={() => setCardFormat(format)} glow className="flex flex-col items-center gap-1.5 rounded-xl py-2.5">
             <span className="rounded-[3px] border-2 border-current" style={{ width: (width / height) * 22, height: 22 }} />
-            <span className="text-[11px] font-medium leading-none">{label}</span>
+            <span className="text-xs font-medium leading-none">{label}</span>
           </OptionButton>
         )
       })}

@@ -22,12 +22,12 @@ export function LegalPage({ title, lastUpdated, blocks }: LegalPageProps) {
         <Button asChild variant="ghost" size="sm" className="mb-6 -ml-2 text-muted-foreground hover:text-foreground">
           <Link href="/app">
             <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Back to builder
+            বিল্ডারে ফিরে যান
           </Link>
         </Button>
         <div className="qv-card rounded-2xl p-6 sm:p-8 mb-2">
           <h1 className="text-3xl font-bold tracking-tight mb-2">{title}</h1>
-          <p className="text-sm text-muted-foreground mb-8">Last updated: {lastUpdated}</p>
+          <p className="text-sm text-muted-foreground mb-8">সর্বশেষ হালনাগাদ: {lastUpdated}</p>
           <div className={proseClass}>
             {blocks.map((block, index) => (
               <ContentBlockItem key={index} block={block} />

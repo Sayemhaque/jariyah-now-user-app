@@ -10,6 +10,16 @@ import {
   Great_Vibes,
   Playfair_Display,
   Aref_Ruqaa,
+  Cinzel_Decorative,
+  Marcellus,
+  Italiana,
+  DM_Serif_Display,
+  Bodoni_Moda,
+  Pinyon_Script,
+  Allura,
+  Lora,
+  Mina,
+  Baloo_Da_2,
   Cormorant_Garamond,
   Hind_Siliguri,
   Markazi_Text,
@@ -34,6 +44,16 @@ const atma = Atma({ variable: '--font-atma', subsets: ['bengali', 'latin'], weig
 const greatVibes = Great_Vibes({ variable: '--font-great-vibes', subsets: ['latin'], weight: ['400'] })
 const playfair = Playfair_Display({ variable: '--font-playfair', subsets: ['latin'], weight: ['600', '700', '800'], style: ['normal', 'italic'] })
 const arefRuqaa = Aref_Ruqaa({ variable: '--font-aref-ruqaa', subsets: ['arabic', 'latin'], weight: ['400', '700'] })
+const cinzelDecorative = Cinzel_Decorative({ variable: '--font-cinzel-decorative', subsets: ['latin'], weight: ['400', '700'] })
+const marcellus = Marcellus({ variable: '--font-marcellus', subsets: ['latin'], weight: ['400'] })
+const italiana = Italiana({ variable: '--font-italiana', subsets: ['latin'], weight: ['400'] })
+const dmSerif = DM_Serif_Display({ variable: '--font-dm-serif', subsets: ['latin'], weight: ['400'], style: ['normal', 'italic'] })
+const bodoni = Bodoni_Moda({ variable: '--font-bodoni', subsets: ['latin'], weight: ['500', '700'], style: ['normal', 'italic'] })
+const pinyon = Pinyon_Script({ variable: '--font-pinyon', subsets: ['latin'], weight: ['400'] })
+const allura = Allura({ variable: '--font-allura', subsets: ['latin'], weight: ['400'] })
+const lora = Lora({ variable: '--font-lora', subsets: ['latin'], weight: ['400', '500', '600'], style: ['normal', 'italic'] })
+const mina = Mina({ variable: '--font-mina', subsets: ['bengali', 'latin'], weight: ['400', '700'] })
+const balooDa = Baloo_Da_2({ variable: '--font-baloo-da', subsets: ['bengali', 'latin'], weight: ['500', '600', '700'] })
 const anekBangla = Anek_Bangla({ variable: '--font-anek-bangla', subsets: ['bengali'], weight: ['400', '500', '600'] })
 const tiroBangla = Tiro_Bangla({ variable: '--font-tiro-bangla', subsets: ['bengali'], weight: ['400'] })
 const notoBengali = Noto_Sans_Bengali({ variable: '--font-noto-sans-bengali', subsets: ['bengali'], weight: ['400', '500', '600', '700'] })
@@ -55,6 +75,16 @@ export const appFontVariables = [
   greatVibes,
   playfair,
   arefRuqaa,
+  cinzelDecorative,
+  marcellus,
+  italiana,
+  dmSerif,
+  bodoni,
+  pinyon,
+  allura,
+  lora,
+  mina,
+  balooDa,
   anekBangla,
   tiroBangla,
   notoBengali,

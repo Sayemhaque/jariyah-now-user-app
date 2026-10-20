@@ -4,11 +4,19 @@ import { cardSizes } from '@/lib/cards/types'
 import { fitCardType } from '@/lib/cards/cardTypography'
 import { CardLayoutView } from './layouts/CardLayoutView'
 import { CardStyleContext } from './CardStyleContext'
+import { CornerOrnaments } from './CornerOrnaments'
+import { resolveDecor } from '@/lib/cards/variants'
+import { defaultFonts, findFont, fontsForStyle, type FontSlot } from '@/lib/cards/fontLibrary'
 
-export const QuoteCard: React.FC<CardProps & { logoSrc: string; onSettled?: () => void }> = ({ content, theme, format, layout = 'frame', titleStyle = 'serif', titleGradient = false, logoSrc, onSettled }) => {
+export const QuoteCard: React.FC<CardProps & { logoSrc: string; onSettled?: () => void }> = ({ content, theme, format, layout = 'frame', variant = 'signature', eyebrowStyle, titleStyle = 'serif', titleGradient = false, fonts, customFonts, logoSrc, onSettled }) => {
   const { width, height } = cardSizes[format]
   const sizes = React.useMemo(() => fitCardType(content, format), [content, format])
-  const style = React.useMemo(() => ({ titleStyle, titleGradient, format }), [titleStyle, titleGradient, format])
+  const decor = React.useMemo(() => resolveDecor(layout, variant, eyebrowStyle), [layout, variant, eyebrowStyle])
+  const resolvedFonts = React.useMemo(() => {
+    const choice = { ...defaultFonts, ...fontsForStyle[titleStyle], ...fonts }
+    return Object.fromEntries((Object.keys(choice) as FontSlot[]).map((slot) => [slot, findFont(choice[slot], slot, customFonts)])) as Record<FontSlot, ReturnType<typeof findFont>>
+  }, [titleStyle, fonts, customFonts])
+  const style = React.useMemo(() => ({ titleStyle, titleGradient, format, decor, fonts: resolvedFonts }), [titleStyle, titleGradient, format, decor, resolvedFonts])
   return (
     <CardStyleContext.Provider value={style}>
     <div style={{ position: 'relative', width, height, overflow: 'hidden', background: theme.background }}>
@@ -20,10 +28,11 @@ export const QuoteCard: React.FC<CardProps & { logoSrc: string; onSettled?: () =
         width={width}
         height={height}
         sizes={sizes}
-        fitKey={`${layout}:${titleStyle}:${format}:${JSON.stringify(content)}`}
+        fitKey={`${layout}:${variant}:${decor.eyebrow}:${titleStyle}:${JSON.stringify(fonts ?? {})}:${format}:${JSON.stringify(content)}`}
         onSettled={onSettled}
         logoSrc={logoSrc}
       />
+      <CornerOrnaments style={decor.corners} theme={theme} width={width} height={height} />
     </div>
     </CardStyleContext.Provider>
   )

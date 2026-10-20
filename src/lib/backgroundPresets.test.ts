@@ -16,7 +16,7 @@ describe('background scenes', () => {
     expect(sceneUrl('night-gold')).toBe('scene:night-gold')
     expect(isSceneUrl('scene:night-gold')).toBe(true)
     expect(isSceneUrl('data:image/png;base64,abc')).toBe(false)
-    expect(sceneForUrl('scene:ocean-depth')?.label).toBe('Ocean Depth')
+    expect(sceneForUrl('scene:ocean-depth')?.label).toBe('সাগরের গভীরতা')
     expect(sceneForUrl('scene:missing')).toBeUndefined()
     expect(getScene('desert-dawn')?.motif).toBe('dunes')
   })

@@ -11,9 +11,9 @@ export function AppPreview() {
         display={false}
         className="mb-12"
         pillIcon={Sparkles}
-        pillLabel="Live in the browser"
-        title="Everything runs in your browser"
-        subtitle="No software to install. Preview, edit, and export — all without leaving the page."
+        pillLabel="ব্রাউজারেই চলে"
+        title="সবকিছু আপনার ব্রাউজারেই চলে"
+        subtitle="কোনো সফটওয়্যার ইনস্টল করতে হবে না। প্রিভিউ দেখা, বদলানো আর ডাউনলোড — সব এই পেজেই।"
       />
       <div className="grid lg:grid-cols-[1fr_auto] gap-8 items-center">
         <div className="relative">

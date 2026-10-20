@@ -5,7 +5,7 @@ export function ProgressMeter({ percent, phase }: { percent: number; phase: Proc
   return (
     <div className="space-y-2">
       <div className="flex justify-between items-baseline">
-        <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">MP4 · Processing</span>
+        <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">MP4 · তৈরি হচ্ছে</span>
         <span
           className="font-mono font-bold text-lg text-primary tabular-nums"
           style={{ textShadow: '0 0 12px hsl(var(--primary) / 0.4)' }}

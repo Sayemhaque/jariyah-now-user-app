@@ -13,7 +13,7 @@ export function LanguageToggle() {
   const { language, setLanguage } = useContent()
   return (
     <div className="space-y-1.5">
-      <FieldLabel icon={Languages}>Translation</FieldLabel>
+      <FieldLabel icon={Languages}>পোস্টারের ভাষা</FieldLabel>
       <div className="grid grid-cols-2 gap-2">
         {languages.map(({ key, label }) => (
           <OptionButton key={key} selected={language === key} onSelect={() => setLanguage(key)} className="rounded-lg py-2 text-sm font-medium">

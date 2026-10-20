@@ -3,10 +3,10 @@ export type ProcessingPhase = 'composing' | 'uploading' | 'encoding' | 'finalizi
 export const phaseOrder: ProcessingPhase[] = ['composing', 'uploading', 'encoding', 'finalizing']
 
 export const phaseLabels: Record<ProcessingPhase, { title: string; subtitle: string }> = {
-  composing: { title: 'Preparing render', subtitle: 'Staging assets and validating the export job' },
-  uploading: { title: 'Building audio', subtitle: 'Collecting recitation audio and preparing the timeline' },
-  encoding: { title: 'Encoding video', subtitle: 'Compositing the background, overlays, and final audio' },
-  finalizing: { title: 'Finalizing', subtitle: 'Almost done — preparing the finished MP4 download' },
+  composing: { title: 'প্রস্তুতি চলছে', subtitle: 'ভিডিও তৈরির জন্য সব কিছু গুছিয়ে নেওয়া হচ্ছে' },
+  uploading: { title: 'অডিও সাজানো হচ্ছে', subtitle: 'তিলাওয়াতের অডিও একসাথে করা হচ্ছে' },
+  encoding: { title: 'ভিডিও তৈরি হচ্ছে', subtitle: 'ব্যাকগ্রাউন্ড, লেখা আর অডিও মিলিয়ে ভিডিও বানানো হচ্ছে' },
+  finalizing: { title: 'প্রায় শেষ', subtitle: 'আর একটু অপেক্ষা করুন, ডাউনলোড প্রস্তুত হচ্ছে' },
 }
 
 export function stageToPhase(stage: string, overall: number): { phase: ProcessingPhase; progress: number } | null {

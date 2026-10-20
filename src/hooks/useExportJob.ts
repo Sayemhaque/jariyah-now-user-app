@@ -41,7 +41,7 @@ export function useExportJob(open: boolean) {
       if (data.stage === 'done') {
         stopPolling()
         setJob((current) => ({ ...current, status: 'done', progress: 1, phase: 'finalizing', downloadUrl: data.url ?? null }))
-        toast.success('Video ready as MP4!')
+        toast.success('আপনার ভিডিও তৈরি হয়ে গেছে!')
         return
       }
       const next = stageToPhase(data.stage, data.overallProgress ?? 0)

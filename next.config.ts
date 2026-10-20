@@ -10,7 +10,7 @@ const securityHeaders = [
       "img-src 'self' data: https: https://*.blob.vercel-storage.com",
       "media-src 'self' https://everyayah.com https://download.quranicaudio.com https://verses.quran.com https://audio.qurancdn.com https://*.blob.vercel-storage.com",
       "connect-src 'self' https://cdn.jsdelivr.net https://raw.githubusercontent.com https://ummahapi.com https://api.quran.com https://everyayah.com https://download.quranicaudio.com https://verses.quran.com https://audio.qurancdn.com https://*.blob.vercel-storage.com",
-      "font-src 'self' https://fonts.gstatic.com",
+      "font-src 'self' data: blob: https://fonts.gstatic.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

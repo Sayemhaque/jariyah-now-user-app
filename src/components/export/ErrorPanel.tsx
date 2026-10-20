@@ -6,7 +6,7 @@ export function ErrorPanel({ message }: { message: string | null }) {
       <div className="flex items-start gap-3 text-sm text-destructive">
         <AlertCircle className="h-6 w-6 mt-0.5 shrink-0" />
         <div className="space-y-1">
-          <p className="font-medium">Processing failed</p>
+          <p className="font-medium">ভিডিও তৈরি করা যায়নি</p>
           <p className="text-xs leading-relaxed text-muted-foreground">{message}</p>
         </div>
       </div>

@@ -7,9 +7,9 @@ export function SurahSummary({ surah }: { surah: Surah }) {
       <Badge variant="secondary" className="font-mono bg-primary/10 text-primary border-primary/20">
         {surah.number}
       </Badge>
-      <span className="tabular-nums">{surah.numberOfAyahs} ayats</span>
+      <span className="tabular-nums">{surah.numberOfAyahs}টি আয়াত</span>
       <span className="opacity-50">·</span>
-      <span>{surah.revelationType}</span>
+      <span>{surah.revelationType === 'Medinan' ? 'মাদানী' : 'মাক্কী'}</span>
     </div>
   )
 }

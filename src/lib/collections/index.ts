@@ -7,11 +7,11 @@ export const presetCollections: Record<PresetMode, QuranPreset[]> = { masnoon: m
 export const textCollections: Record<TextMode, TextItem[]> = { azkar: azkarCollection }
 
 export const contentModeLabels: Record<ContentMode, string> = {
-  quran: 'Quran',
-  masnoon: 'Masnoon Surahs',
-  duas: 'Quranic Duas',
-  hadith: 'Hadith',
-  azkar: 'Azkar',
+  quran: 'কুরআন ভিডিও',
+  masnoon: 'মাসনূন সূরা',
+  duas: 'কুরআনের দোয়া',
+  hadith: 'হাদিস',
+  azkar: 'জিকির',
 }
 
 export const findPreset = (mode: PresetMode, id: string) => presetCollections[mode].find((p) => p.id === id)
