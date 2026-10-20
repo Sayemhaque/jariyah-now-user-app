@@ -4,6 +4,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'sayyidul-istighfar',
     title: 'Sayyidul Istighfar',
+    titleBn: 'সাইয়্যিদুল ইস্তিগফার',
     arabic: 'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ لَكَ بِذَنْبِي فَاغْفِرْ لِي، فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ',
     english: 'O Allah, You are my Lord, there is no god but You. You created me and I am Your servant, and I keep Your covenant and promise as best I can. I seek refuge in You from the evil of what I have done. I acknowledge Your favour upon me and I acknowledge my sin, so forgive me, for none forgives sins but You.',
     bangla: 'হে আল্লাহ, তুমি আমার রব, তুমি ছাড়া কোনো ইলাহ নেই। তুমি আমাকে সৃষ্টি করেছ, আমি তোমার বান্দা। আমি সাধ্যমতো তোমার অঙ্গীকার ও প্রতিশ্রুতির উপর আছি। আমার কৃতকর্মের অনিষ্ট থেকে তোমার আশ্রয় চাই। আমার প্রতি তোমার নিয়ামত স্বীকার করছি এবং আমার গুনাহও স্বীকার করছি, তাই আমাকে ক্ষমা করো, কারণ তুমি ছাড়া কেউ গুনাহ ক্ষমা করতে পারে না।',
@@ -12,6 +13,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'subhanallah-wa-bihamdihi',
     title: 'SubhanAllahi wa bihamdihi',
+    titleBn: 'সুবহানাল্লাহি ওয়া বিহামদিহি',
     arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
     english: 'Glory be to Allah and all praise is His. Whoever says it a hundred times a day, his sins are wiped away even if they are like the foam of the sea.',
     bangla: 'আল্লাহ পবিত্র এবং সকল প্রশংসা তাঁর। যে দিনে একশো বার এটি বলে, তার গুনাহ সমুদ্রের ফেনার মতো হলেও মাফ করে দেওয়া হয়।',
@@ -20,6 +22,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'bismillah-protection',
     title: 'Protection by the name of Allah',
+    titleBn: 'আল্লাহর নামে সুরক্ষা',
     arabic: 'بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ',
     english: 'In the name of Allah, with whose name nothing on earth or in the heavens can cause harm, and He is the All-Hearing, the All-Knowing.',
     bangla: 'আল্লাহর নামে, যাঁর নামের সাথে আসমান ও জমিনের কোনো কিছুই ক্ষতি করতে পারে না, আর তিনি সর্বশ্রোতা, সর্বজ্ঞ।',
@@ -28,6 +31,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'tahlil',
     title: 'La ilaha illallah wahdahu',
+    titleBn: 'লা ইলাহা ইল্লাল্লাহু ওয়াহদাহু',
     arabic: 'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ، وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',
     english: 'There is no god but Allah alone, without partner. His is the dominion and His is the praise, and He has power over all things.',
     bangla: 'আল্লাহ ছাড়া কোনো ইলাহ নেই, তিনি এক, তাঁর কোনো শরিক নেই। রাজত্ব তাঁরই, প্রশংসাও তাঁরই, এবং তিনি সব কিছুর উপর ক্ষমতাবান।',
@@ -36,6 +40,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'hasbiyallah',
     title: 'Allah is sufficient for me',
+    titleBn: 'আল্লাহই আমার জন্য যথেষ্ট',
     arabic: 'حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ',
     english: 'Allah is sufficient for me. There is no god but Him. In Him I put my trust, and He is the Lord of the Mighty Throne.',
     bangla: 'আল্লাহই আমার জন্য যথেষ্ট, তিনি ছাড়া কোনো ইলাহ নেই। তাঁর উপরই ভরসা করি, আর তিনি মহান আরশের রব।',
@@ -44,6 +49,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'radhitu',
     title: 'Pleased with Allah as Lord',
+    titleBn: 'রব হিসেবে আল্লাহকে পেয়ে সন্তুষ্ট',
     arabic: 'رَضِيتُ بِاللَّهِ رَبًّا، وَبِالْإِسْلَامِ دِينًا، وَبِمُحَمَّدٍ صَلَّى اللَّهُ عَلَيْهِ وَسَلَّمَ نَبِيًّا',
     english: 'I am pleased with Allah as my Lord, with Islam as my religion and with Muhammad ﷺ as my Prophet.',
     bangla: 'আমি সন্তুষ্ট আল্লাহকে রব হিসেবে, ইসলামকে দ্বীন হিসেবে এবং মুহাম্মাদ ﷺ-কে নবী হিসেবে পেয়ে।',
@@ -52,6 +58,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'after-salah',
     title: 'After every salah',
+    titleBn: 'প্রতি সালাতের পর',
     arabic: 'أَسْتَغْفِرُ اللَّهَ، أَسْتَغْفِرُ اللَّهَ، أَسْتَغْفِرُ اللَّهَ، اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ، تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ',
     english: 'I seek Allah’s forgiveness (three times). O Allah, You are Peace and from You is peace. Blessed are You, O Owner of majesty and honour.',
     bangla: 'আমি আল্লাহর কাছে ক্ষমা চাই (তিনবার)। হে আল্লাহ, তুমিই শান্তি, তোমার কাছ থেকেই শান্তি। তুমি বরকতময়, হে মহিমা ও সম্মানের অধিকারী।',
@@ -60,6 +67,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'before-sleep',
     title: 'Before sleep',
+    titleBn: 'ঘুমানোর আগে',
     arabic: 'بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا',
     english: 'In Your name, O Allah, I die and I live.',
     bangla: 'হে আল্লাহ, তোমার নামেই আমি মৃত্যুবরণ করি এবং জীবিত হই।',
@@ -68,6 +76,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'on-waking',
     title: 'On waking up',
+    titleBn: 'ঘুম থেকে উঠে',
     arabic: 'الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ',
     english: 'All praise is for Allah who gave us life after causing us to die, and to Him is the return.',
     bangla: 'সকল প্রশংসা আল্লাহর, যিনি আমাদের মৃত্যুর পর জীবিত করেছেন, আর তাঁর কাছেই পুনরুত্থান।',
@@ -76,6 +85,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'leaving-home',
     title: 'Leaving the home',
+    titleBn: 'ঘর থেকে বের হওয়ার সময়',
     arabic: 'بِسْمِ اللَّهِ، تَوَكَّلْتُ عَلَى اللَّهِ، وَلَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
     english: 'In the name of Allah, I put my trust in Allah, and there is no power and no strength except with Allah.',
     bangla: 'আল্লাহর নামে, আল্লাহর উপর ভরসা করলাম, আল্লাহ ছাড়া কোনো শক্তি ও ক্ষমতা নেই।',
@@ -84,6 +94,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'help-me-remember',
     title: 'Help me remember You',
+    titleBn: 'আপনার জিকিরে সাহায্য করুন',
     arabic: 'اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ',
     english: 'O Allah, help me to remember You, to thank You and to worship You well.',
     bangla: 'হে আল্লাহ, তোমার জিকির, তোমার শুকরিয়া এবং সুন্দরভাবে তোমার ইবাদত করতে আমাকে সাহায্য করো।',
@@ -92,6 +103,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'four-words',
     title: 'The four best words',
+    titleBn: 'সর্বোত্তম চারটি বাক্য',
     arabic: 'سُبْحَانَ اللَّهِ، وَالْحَمْدُ لِلَّهِ، وَلَا إِلَهَ إِلَّا اللَّهُ، وَاللَّهُ أَكْبَرُ',
     english: 'Glory be to Allah, all praise is for Allah, there is no god but Allah, and Allah is the Greatest.',
     bangla: 'আল্লাহ পবিত্র, সকল প্রশংসা আল্লাহর, আল্লাহ ছাড়া কোনো ইলাহ নেই, আল্লাহ সবচেয়ে মহান।',
@@ -100,6 +112,7 @@ export const azkarCollection: TextItem[] = [
   {
     id: 'hawqala',
     title: 'A treasure of Paradise',
+    titleBn: 'জান্নাতের এক ভান্ডার',
     arabic: 'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',
     english: 'There is no power and no strength except with Allah — a treasure from the treasures of Paradise.',
     bangla: 'আল্লাহ ছাড়া কোনো শক্তি ও ক্ষমতা নেই — এটি জান্নাতের ভান্ডারসমূহের একটি ভান্ডার।',

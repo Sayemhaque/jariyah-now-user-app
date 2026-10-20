@@ -23,6 +23,7 @@ export interface Hadith {
   text: string
   grade: string
   authentic: boolean
+  language: HadithLanguage
 }
 
 export interface HadithSelection {

@@ -10,7 +10,7 @@ import { ScaledCard } from './ScaledCard'
 const sample = azkarCard(textCollections.azkar.find((a) => a.id === 'hawqala')!, 'english')
 
 export function LayoutPicker() {
-  const { cardLayout, setCardLayout, cardThemeKey } = useContent()
+  const { cardLayout, setCardLayout, cardThemeKey, titleStyle, titleGradient } = useContent()
   const { cards } = useCardContents()
   const theme = findCardTheme(cardThemeKey)
   const content = cards[0] ?? sample
@@ -19,7 +19,7 @@ export function LayoutPicker() {
       {cardLayouts.map((layout) => (
         <OptionButton key={layout.key} selected={cardLayout === layout.key} onSelect={() => setCardLayout(layout.key)} glow className="flex flex-col gap-1.5 rounded-xl p-1.5">
           <span aria-hidden className="pointer-events-none block overflow-hidden rounded-md">
-            <ScaledCard content={content} theme={theme} format="portrait" layout={layout.key} />
+            <ScaledCard content={content} theme={theme} format="portrait" layout={layout.key} titleStyle={titleStyle} titleGradient={titleGradient} />
           </span>
           <span className="text-[10px] font-medium leading-tight">{layout.label}</span>
         </OptionButton>

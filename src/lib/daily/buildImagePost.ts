@@ -3,7 +3,8 @@ import { isPresetMode, type ContentMode } from '@/lib/collections/types'
 import { azkarCard, hadithCard, quranCards } from '@/lib/cards/cardContent'
 import { cardPostMetadata } from '@/lib/cards/cardPostMetadata'
 import { fetchCardAyat } from '@/lib/cards/fetchCardAyat'
-import { cardTemplates } from '@/lib/cards/templates'
+import { isBanglaTranslation, presetCardTitle } from '@/lib/cards/presetTitle'
+import { cardTemplates, titleStyleFor } from '@/lib/cards/templates'
 import type { CardContent } from '@/lib/cards/types'
 import { fetchSurahs } from '@/lib/quranApi'
 import { translationCredit } from '@/lib/translations'
@@ -26,8 +27,9 @@ async function presetCards(ctx: DailyContext, mode: 'masnoon' | 'duas', turn: nu
   const [surahs, ayat] = await Promise.all([fetchSurahs(), fetchCardAyat(preset.surah, part.fromAyat, part.toAyat, translationKey)])
   const surah = surahs.find((s) => s.number === preset.surah)
   if (!surah) throw new Error(`Surah ${preset.surah} not found`)
-  const title = mode === 'duas' ? preset.title : surah.name
-  return quranCards({ kind: mode === 'duas' ? 'dua' : 'masnoon', title, surahName: surah.name, surahNameArabic: surah.arabicName, surahNumber: surah.number, ayat }, 'portrait').slice(0, maxCarouselSlides)
+  const bangla = isBanglaTranslation(translationKey)
+  const title = presetCardTitle(mode, preset, surah.name, bangla)
+  return quranCards({ bangla, kind: mode === 'duas' ? 'dua' : 'masnoon', title, surahName: surah.name, surahNameArabic: surah.arabicName, surahNumber: surah.number, ayat }, 'portrait').slice(0, maxCarouselSlides)
 }
 
 const hadithAttempts = 6
@@ -55,7 +57,7 @@ export async function buildImagePost(ctx: DailyContext, mode: Exclude<ContentMod
     dateKey: dhakaDateKey(ctx.now),
     mode,
     label: `${contents[0]!.eyebrow}: ${contents[0]!.title} · ${contents[0]!.reference} · ${contents.length} image${contents.length > 1 ? 's' : ''} · ${template.label}`,
-    cards: contents.map((content) => ({ content, theme: template.theme, layout: template.layout, format: 'portrait' })),
+    cards: contents.map((content) => ({ content, theme: template.theme, layout: template.layout, ...titleStyleFor(ctx.sequence), format: 'portrait' })),
     meta: cardPostMetadata(contents, ctx.opts.extraHashtags, credit),
   }
 }

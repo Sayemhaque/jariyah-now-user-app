@@ -12,7 +12,7 @@ import { CardStage } from './CardStage'
 import { OffscreenCards } from './OffscreenCards'
 
 export function CardPreview({ onSettingsClick }: { onSettingsClick: () => void }) {
-  const { cardFormat, cardThemeKey, cardLayout, mode } = useContent()
+  const { cardFormat, cardThemeKey, cardLayout, titleStyle, titleGradient, mode } = useContent()
   const { cards, isLoading } = useCardContents()
   const [index, setIndex] = useState(0)
   const nodes = useRef<(HTMLDivElement | null)[]>([])
@@ -25,9 +25,9 @@ export function CardPreview({ onSettingsClick }: { onSettingsClick: () => void }
 
   return (
     <div className="flex h-full flex-col gap-3 p-3 sm:p-6">
-      <OffscreenCards cards={cards} theme={theme} format={cardFormat} layout={cardLayout} nodes={nodes} />
+      <OffscreenCards cards={cards} theme={theme} format={cardFormat} layout={cardLayout} titleStyle={titleStyle} titleGradient={titleGradient} nodes={nodes} />
       <div className="relative min-h-0 flex-1">
-        <CardStage content={cards[current]!} theme={theme} format={cardFormat} layout={cardLayout} />
+        <CardStage content={cards[current]!} theme={theme} format={cardFormat} layout={cardLayout} titleStyle={titleStyle} titleGradient={titleGradient} />
       </div>
       <div className="flex flex-wrap items-center justify-center gap-2">
         <Button size="icon" variant="secondary" onClick={onSettingsClick} className="lg:hidden" aria-label="Settings"><SlidersHorizontal className="h-4 w-4" /></Button>

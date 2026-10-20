@@ -32,6 +32,7 @@ export function toHadiths(json: unknown, book: string, language: HadithLanguage,
     number: h.hadithnumber,
     section,
     chapter,
+    language,
     text: cleanHadithText(h.text, language),
     ...hadithGrade(book, h.grades),
   }))

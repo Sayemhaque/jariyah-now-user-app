@@ -50,9 +50,13 @@ export type CardLayout = 'frame' | 'arch' | 'editorial' | 'split' | 'floating' |
 
 export type CardAlign = 'center' | 'left'
 
+export type CardTitleStyle = 'serif' | 'script' | 'display'
+
 export interface CardProps {
   content: CardContent
   theme: CardTheme
   format: CardFormat
   layout?: CardLayout
+  titleStyle?: CardTitleStyle
+  titleGradient?: boolean
 }

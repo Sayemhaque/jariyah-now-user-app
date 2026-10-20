@@ -1,5 +1,5 @@
 import { cardThemes } from './themes'
-import type { CardLayout, CardTheme } from './types'
+import type { CardLayout, CardTheme, CardTitleStyle } from './types'
 
 export interface CardLayoutInfo {
   key: CardLayout
@@ -39,3 +39,10 @@ export const cardTemplates: CardTemplate[] = cardLayouts.flatMap((layout, l) =>
 export const interleavedTemplates: CardTemplate[] = cardThemes.flatMap((_, round) => cardLayouts.map((_, l) => cardTemplates[l * cardThemes.length + round]!))
 
 export const findCardTemplate = (id: string) => cardTemplates.find((t) => t.id === id)
+
+const titleStyles: CardTitleStyle[] = ['serif', 'script', 'display']
+
+export const titleStyleFor = (index: number): { titleStyle: CardTitleStyle; titleGradient: boolean } => ({
+  titleStyle: titleStyles[index % titleStyles.length]!,
+  titleGradient: index % 4 === 1,
+})

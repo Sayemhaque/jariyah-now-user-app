@@ -2,6 +2,7 @@ import { textTranslation } from '@/lib/collections/textTranslation'
 import type { TextItem, TextLanguage } from '@/lib/collections/types'
 import type { Hadith } from '@/lib/hadith/types'
 import type { CardContent, CardFormat, CardLine } from './types'
+import { banglaBookNames, banglaEyebrows, banglaGrade, banglaNote, bnDigits } from './bangla'
 
 export interface CardAyah {
   number: number
@@ -12,6 +13,7 @@ export interface CardAyah {
 export interface QuranCardInput {
   kind: 'dua' | 'masnoon'
   title: string
+  bangla?: boolean
   surahName: string
   surahNameArabic: string
   surahNumber: number
@@ -27,13 +29,28 @@ function splitNote(source: string): { note?: string; reference: string } {
 
 const showsGrade = (hadith: Hadith) => hadith.grade && hadith.book !== 'bukhari' && hadith.book !== 'muslim'
 
+function banglaHadithCard(hadith: Hadith): CardContent {
+  const reference = `হাদিস নং ${bnDigits(hadith.number)}${showsGrade(hadith) ? ` · ${banglaGrade(hadith.grade)}` : ''}`
+  return { kind: 'hadith', eyebrow: banglaEyebrows.hadith, title: banglaBookNames[hadith.book] ?? hadith.bookName, lines: [{ translation: hadith.text }], reference }
+}
+
 export function hadithCard(hadith: Hadith): CardContent {
+  if (hadith.language === 'bangla') return banglaHadithCard(hadith)
   const reference = `${hadith.bookName} ${hadith.number}${showsGrade(hadith) ? ` · ${hadith.grade}` : ''}`
   return { kind: 'hadith', eyebrow: 'Hadith', title: hadith.chapter || hadith.bookName, lines: [{ translation: hadith.text }], reference }
 }
 
 export function azkarCard(item: TextItem, language: TextLanguage): CardContent {
-  return { kind: 'azkar', eyebrow: 'Azkar', title: item.title, lines: [{ arabic: item.arabic, translation: textTranslation(item, language) }], ...splitNote(item.source) }
+  const { note, reference } = splitNote(item.source)
+  const bangla = language === 'bangla'
+  return {
+    kind: 'azkar',
+    eyebrow: bangla ? banglaEyebrows.azkar : 'Azkar',
+    title: bangla ? item.titleBn ?? item.title : item.title,
+    lines: [{ arabic: item.arabic, translation: textTranslation(item, language) }],
+    reference,
+    ...(note ? { note: bangla ? banglaNote(note) : note } : {}),
+  }
 }
 
 const ayahWeight = (a: CardAyah) => a.arabic.length + a.translation.length * 0.8
@@ -61,7 +78,7 @@ export function quranCards(input: QuranCardInput, format: CardFormat): CardConte
   const slides = splitAyatIntoSlides(input.ayat, format)
   return slides.map((ayat, index) => ({
     kind: input.kind,
-    eyebrow: input.kind === 'dua' ? 'Quranic Dua' : 'Masnoon Surah',
+    eyebrow: input.bangla ? banglaEyebrows[input.kind] : input.kind === 'dua' ? 'Quranic Dua' : 'Masnoon Surah',
     title: input.title,
     arabicTitle: input.kind === 'masnoon' ? input.surahNameArabic : undefined,
     lines: ayat.map((a): CardLine => ({ arabic: a.arabic, translation: a.translation, ayah: a.number })),

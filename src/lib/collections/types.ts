@@ -6,6 +6,7 @@ export type TextLanguage = 'english' | 'bangla'
 export interface QuranPreset {
   id: string
   title: string
+  titleBn?: string
   note: string
   surah: number
   fromAyat: number
@@ -15,6 +16,7 @@ export interface QuranPreset {
 export interface TextItem {
   id: string
   title: string
+  titleBn?: string
   arabic: string
   english: string
   bangla: string

@@ -31,8 +31,8 @@ function linesFor(text: string, size: number, width: number, charWidth: number):
   return text ? Math.max(1, Math.ceil((text.length * size * charWidth) / width)) : 0
 }
 
-export function cardHeaderHeight(content: CardContent): number {
-  const size = cardTitleSize(content.title)
+export function cardHeaderHeight(content: CardContent, titleScale = 1): number {
+  const size = cardTitleSize(content.title) * titleScale
   return 96 + 18 + 30 + 18 + linesFor(content.title, size, 820, 0.42) * size * 1.1 + (content.arabicTitle ? 98 + 18 : 0)
 }
 
