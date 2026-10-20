@@ -8,8 +8,13 @@ import { themeColors } from '@/lib/theme'
 import { translationCredit } from '@/lib/translations'
 import { maxAyatsPerVideo } from '@/lib/constants'
 import { defaultVideoSettings } from '@/lib/defaultSettings'
-import type { AyatSlide, Reciter, Surah, VideoSettings } from '@/lib/types'
-import type { AyatVideoProps } from '@/remotion/types'
+import type { AyatSlide, Reciter, VideoSettings } from '@/lib/types'
+import { presetHeadline, textCollections } from '@/lib/collections'
+import { isPresetMode, isTextMode, type ContentMode, type PresetMode } from '@/lib/collections/types'
+import { listRecordings, type StoredRecording } from '@/lib/recordings/blobRecordings'
+import { buildTextDailyVideo } from './buildTextVideo'
+import { videoProps, type DailyContext, type DailyVideo, type DailyVideoOptions } from './dailyContext'
+import { modeTurn, pickContentMode, pickPreset, pickTextItem } from './planContent'
 import {
   buildPostMetadata,
   countAyatsWithinBudget,
@@ -19,48 +24,70 @@ import {
   pickSceneIndex,
   pickStartAyat,
   pickSurahNumber,
-  type PostMetadata,
 } from './plan'
 
+export type { DailyVideo, DailyVideoOptions } from './dailyContext'
+
 export const dailyReciterIds = ['alafasy', 'sudais', 'abdulbasit', 'muaiqly', 'shatri', 'dosari', 'shuraim']
-
-export interface DailyVideoOptions {
-  now?: Date
-  surahOverride?: number
-  reciterId?: string
-  translationKey?: string
-  maxDurationSec?: number
-  maxAyats?: number
-  quality?: '480p' | '720p' | '1080p'
-  extraHashtags?: string[]
-  ffprobeBin?: string
-  ffmpegBin?: string
-  postTimes?: string[]
-}
-
-export interface DailyVideo {
-  dateKey: string
-  surah: Surah
-  fromAyat: number
-  toAyat: number
-  reciter: Reciter
-  durationMs: number
-  props: AyatVideoProps
-  meta: PostMetadata
-}
 
 function baseSettings(scene: BackgroundScene): VideoSettings {
   return { ...defaultVideoSettings, backgroundImage: sceneUrl(scene.key), backgroundPreset: scene.key, ...themeColors(scene.palette) }
 }
 
+interface QuranPick {
+  surahNumber: number
+  range?: { fromAyat: number; toAyat: number }
+  headline?: string
+  hashtags?: string[]
+}
+
+const presetHashtags: Record<PresetMode, string[]> = { masnoon: ['MasnoonSurah', 'Sunnah'], duas: ['QuranicDua', 'Dua'] }
+
+async function storedRecordings(opts: DailyVideoOptions, rotation: ContentMode[]): Promise<StoredRecording[]> {
+  if (!opts.blobToken || !rotation.some(isTextMode)) return []
+  return listRecordings(opts.blobToken).catch((err) => {
+    console.warn('Could not list recordings:', err instanceof Error ? err.message : err)
+    return []
+  })
+}
+
 export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<DailyVideo> {
   const now = opts.now ?? new Date()
   const sequence = postIndex(now, opts.postTimes ?? ['22:00'])
-  const rand = mulberry32(sequence * 2654435761)
+  const scene = backgroundScenes[pickSceneIndex(sequence, backgroundScenes.length)] ?? backgroundScenes[0]!
+  const ctx: DailyContext = {
+    opts,
+    now,
+    sequence,
+    rand: mulberry32(sequence * 2654435761),
+    settings: baseSettings(scene),
+    audioTools: { ffprobeBin: opts.ffprobeBin, ffmpegBin: opts.ffmpegBin },
+  }
+  if (opts.surahOverride) return buildQuranDailyVideo(ctx, 'quran', { surahNumber: opts.surahOverride })
+
+  const rotation = opts.contentRotation?.length ? opts.contentRotation : ['quran' as const]
+  const recordings = await storedRecordings(opts, rotation)
+  const recordedIds = (mode: ContentMode) => new Set(recordings.filter((r) => r.mode === mode).map((r) => r.itemId))
+  const mode = pickContentMode(sequence, rotation, (m) => recordedIds(m).size > 0)
+  const turn = modeTurn(sequence, rotation, mode)
+
+  if (isTextMode(mode)) {
+    const item = pickTextItem(textCollections[mode], recordedIds(mode), turn)!
+    const recording = recordings.find((r) => r.mode === mode && r.itemId === item.id)!
+    return buildTextDailyVideo(ctx, mode, item, recording.url)
+  }
+  if (isPresetMode(mode)) {
+    const { preset, part } = pickPreset(mode, turn)
+    return buildQuranDailyVideo(ctx, mode, { surahNumber: preset.surah, range: part, headline: presetHeadline(mode, preset.id), hashtags: presetHashtags[mode] })
+  }
+  return buildQuranDailyVideo(ctx, 'quran', { surahNumber: pickSurahNumber(sequence) })
+}
+
+async function buildQuranDailyVideo(ctx: DailyContext, mode: ContentMode, pick: QuranPick): Promise<DailyVideo> {
+  const { opts, rand, audioTools, now } = ctx
   const maxMs = opts.maxDurationSec ? opts.maxDurationSec * 1000 : Infinity
   const maxAyats = opts.maxAyats ?? maxAyatsPerVideo
   const translationKey = opts.translationKey ?? 'bengali'
-  const audioTools = { ffprobeBin: opts.ffprobeBin, ffmpegBin: opts.ffmpegBin }
 
   const reciterPool = dailyReciterIds.map(getReciterById).filter((r): r is Reciter => Boolean(r))
   const reciter =
@@ -71,19 +98,17 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
     throw new Error(`Unknown reciter "${opts.reciterId}". Valid: ${reciters.map((r) => r.id).join(', ')}`)
   }
 
-  const scene = backgroundScenes[pickSceneIndex(sequence, backgroundScenes.length)] ?? backgroundScenes[0]!
-
   const surahs = await fetchSurahs()
-  const surahNumber = opts.surahOverride ?? pickSurahNumber(sequence)
-  const surah = surahs.find((s) => s.number === surahNumber)
-  if (!surah) throw new Error(`Surah ${surahNumber} not found`)
+  const surah = surahs.find((s) => s.number === pick.surahNumber)
+  if (!surah) throw new Error(`Surah ${pick.surahNumber} not found`)
+  const lastAyat = pick.range?.toAyat ?? surah.numberOfAyahs
 
   for (let attempt = 0; attempt < 5; attempt++) {
-    const fromAyat = pickStartAyat(surah.numberOfAyahs, maxAyats, rand)
+    const fromAyat = pick.range?.fromAyat ?? pickStartAyat(surah.numberOfAyahs, maxAyats, rand)
     const slides: AyatSlide[] = []
     const durations: number[] = []
 
-    for (let ayat = fromAyat; ayat <= surah.numberOfAyahs && slides.length < maxAyats; ayat++) {
+    for (let ayat = fromAyat; ayat <= lastAyat && slides.length < maxAyats; ayat++) {
       const [fetched, timings] = await Promise.all([
         fetchAyatData(surah.number, ayat, reciter.recitationId, reciter.audioKey, surah.name, surah.arabicName, translationKey),
         reciter.quranComId ? fetchVerseTimings(surah.number, ayat, reciter.quranComId) : Promise.resolve(null),
@@ -111,34 +136,21 @@ export async function buildDailyVideo(opts: DailyVideoOptions = {}): Promise<Dai
     if (slides.length === 0) continue
 
     const toAyat = slides[slides.length - 1]!.ayatNumber
-    const settings = baseSettings(scene)
+    const durationMs = slides.reduce((sum, x) => sum + x.audioDurationMs, 0)
     return {
       dateKey: dhakaDateKey(now),
-      surah,
-      fromAyat,
-      toAyat,
-      reciter,
-      durationMs: slides.reduce((s, x) => s + x.audioDurationMs, 0),
-      props: {
-        slides,
-        settings,
-        orientation: 'portrait',
-        reciterName: reciter.name,
-        attributionLine: '',
-        surahName: surah.name,
-        surahNameArabic: surah.arabicName,
-        surahMeaning: surah.englishName,
-        totalAyats: slides.length,
-        quality: opts.quality ?? '1080p',
-        isExport: true,
-      },
+      mode,
+      label: `${pick.headline ? `${pick.headline} · ` : ''}Surah ${surah.number} ${surah.name}, ayat ${fromAyat}-${toAyat} · ${reciter.name} · ${(durationMs / 1000).toFixed(1)}s`,
+      durationMs,
+      props: videoProps(ctx, { slides, reciterName: reciter.name, surahName: surah.name, surahNameArabic: surah.arabicName, surahMeaning: surah.englishName }),
       meta: buildPostMetadata({
         surah,
         fromAyat,
         toAyat,
         reciterName: reciter.name,
         translationCredit: translationCredit(translationKey),
-        extraHashtags: opts.extraHashtags,
+        extraHashtags: [...(pick.hashtags ?? []), ...(opts.extraHashtags ?? [])],
+        headline: pick.headline,
       }),
     }
   }

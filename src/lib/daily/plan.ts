@@ -89,6 +89,7 @@ export interface PostMetadataInput {
   reciterName: string
   translationCredit?: string
   extraHashtags?: string[]
+  headline?: string
 }
 
 export interface PostMetadata {
@@ -98,7 +99,7 @@ export interface PostMetadata {
   shortCaption: string
 }
 
-const defaultHashtags = [
+export const defaultHashtags = [
   '#Quran',
   '#QuranRecitation',
   '#Islam',
@@ -110,7 +111,7 @@ const defaultHashtags = [
   '#Shorts',
 ]
 
-function toHashtag(raw: string): string {
+export function toHashtag(raw: string): string {
   const cleaned = raw.trim().replace(/^#+/, '').replace(/[^\p{L}\p{N}_]/gu, '')
   return cleaned ? `#${cleaned}` : ''
 }
@@ -132,10 +133,11 @@ export function buildPostMetadata(input: PostMetadataInput): PostMetadata {
   ].filter(Boolean)
   const hashtags = Array.from(new Set(tags))
 
-  const base = `Surah ${surah.name} (${surah.arabicName}) | ${range}`
+  const base = input.headline ? `${input.headline} | Surah ${surah.name} ${range}` : `Surah ${surah.name} (${surah.arabicName}) | ${range}`
   const title = `${base} #Shorts`.length <= 100 ? `${base} #Shorts` : base.slice(0, 100)
 
   const lines = [
+    ...(input.headline ? [input.headline, ''] : []),
     `Surah ${surah.name} — ${surah.englishName}`,
     `Surah ${surah.number}, ${range === 'Full Surah' ? `all ${surah.numberOfAyahs} ayats` : range}`,
     '',

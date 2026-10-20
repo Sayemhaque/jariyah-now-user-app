@@ -56,6 +56,12 @@ Facebook Reels must be 3–90 s long. Videos have no length limit, so a long exc
 |---|---|
 | `UMMAHAPI_KEY` | UmmahAPI key, if you use one |
 
+## Hadith and Azkar recordings
+
+Hadith and azkar videos use your own voice. Record or upload it in the builder (Selection → Hadith or Azkar → pick an item → Record or Upload file). The recording is saved to the private Vercel Blob store as `recordings/{hadith|azkar}/{item}.{ext}`, and the daily job only posts items that have a recording.
+
+Uploads need two Vercel environment variables: `BLOB_READ_WRITE_TOKEN` (already used) and `RECORDINGS_UPLOAD_KEY`, a password of at least 8 characters that you type into the "Upload key" box once per device. The daily job reads recordings with the `BLOB_READ_WRITE_TOKEN` secret it already has.
+
 ## Settings (`src/lib/daily/dailyConfig.ts`)
 
 | Field | Default | Purpose |
@@ -64,6 +70,8 @@ Facebook Reels must be 3–90 s long. Videos have no length limit, so a long exc
 | `translationKey` | `sahiih_international` (English) | Translation shown under the Arabic |
 | `postTimes` | `09:00`, `15:00`, `22:00` | Bangladesh times of the daily posts. Each run works out its slot from the time it starts, so every post gets its own surah, reciter and background. Keep the `cron` lines in the workflow in sync |
 | `coverAtMs` | `2500` | Moment of the video Instagram uses as the cover (`thumb_offset`), after the title and first ayah have appeared |
+| `contentRotation` | `quran`, `masnoon`, `hadith`, `duas`, `azkar` | Content types to rotate through, one per post. `masnoon` and `duas` use the presets in `src/lib/collections/`; `hadith` and `azkar` are skipped until a recording exists |
+| `textLanguage` | `english` | Translation shown in hadith and azkar videos: `english` or `bangla` |
 | `maxAyats` | `10` | Most ayat in one video. There is no length limit |
 | `extraHashtags` | `JariyahNow`, `Quran` | Hashtags added to every post |
 | `platforms` | `instagram`, `facebook` | Platforms to post to: `youtube`, `facebook`, `instagram`, `tiktok`. Ones without secrets are skipped |

@@ -1,4 +1,4 @@
-const audioHosts = ['everyayah.com', 'download.quranicaudio.com', 'verses.quran.com', 'audio.qurancdn.com', 'mirrors.quranicaudio.com', 'cdn.islamic.network', 'ummahapi.com']
+const audioHosts = ['everyayah.com', 'download.quranicaudio.com', 'verses.quran.com', 'audio.qurancdn.com', 'mirrors.quranicaudio.com', 'cdn.islamic.network', 'ummahapi.com', 'blob.vercel-storage.com']
 
 export const maxAudioBytes = 15 * 1024 * 1024
 

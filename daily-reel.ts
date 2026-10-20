@@ -70,13 +70,13 @@ async function main() {
     quality: dailyConfig.quality,
     extraHashtags: dailyConfig.extraHashtags,
     ffmpegBin: env.FFMPEG_BIN || 'ffmpeg',
+    contentRotation: dailyConfig.contentRotation,
+    textLanguage: dailyConfig.textLanguage,
+    blobToken: env.BLOB_READ_WRITE_TOKEN,
   })
 
   summary(`## Daily reel — ${video.dateKey}`)
-  summary(
-    `Surah ${video.surah.number} ${video.surah.name}, ayat ${video.fromAyat}-${video.toAyat} · ` +
-      `${video.reciter.name} · ${(video.durationMs / 1000).toFixed(1)}s`,
-  )
+  summary(video.label)
   summary(`**Title:** ${video.meta.title}\n`)
 
   const outDir = join(process.cwd(), 'out')

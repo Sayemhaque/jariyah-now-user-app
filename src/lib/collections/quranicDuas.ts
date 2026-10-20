@@ -1,0 +1,34 @@
+import type { QuranPreset } from './types'
+
+const dua = (id: string, title: string, note: string, surah: number, fromAyat: number, toAyat = fromAyat): QuranPreset => ({ id, title, note, surah, fromAyat, toAyat })
+
+export const quranicDuas: QuranPreset[] = [
+  dua('dunya-akhirah', 'Good in this world and the next', 'Rabbana atina fid-dunya hasanah', 2, 201),
+  dua('accept-from-us', 'Accept from us', 'Dua of Ibrahim and Ismail at the Kabah', 2, 127, 128),
+  dua('patience-victory', 'Pour patience upon us', 'Dua before facing Jalut', 2, 250),
+  dua('do-not-burden', 'Do not burden us', 'The closing dua of Al-Baqarah', 2, 286),
+  dua('steady-hearts', 'Keep our hearts firm', 'Rabbana la tuzigh qulubana', 3, 8),
+  dua('forgive-sins', 'Forgive our sins', 'Protect us from the Fire', 3, 16),
+  dua('steady-feet', 'Make our feet firm', 'Dua of the believers in battle', 3, 147),
+  dua('ulul-albab', 'Dua of people of understanding', 'Rabbana innana samina', 3, 193, 194),
+  dua('adam', 'Dua of Adam', 'We have wronged ourselves', 7, 23),
+  dua('musa-sadr', 'Expand my chest', 'Dua of Musa', 20, 25, 28),
+  dua('knowledge', 'Increase me in knowledge', 'Rabbi zidni ilma', 20, 114),
+  dua('yunus', 'Dua of Yunus', 'La ilaha illa anta subhanaka', 21, 87),
+  dua('ayyub', 'Dua of Ayyub', 'Harm has touched me', 21, 83),
+  dua('parents', 'Mercy for parents', 'Rabbir hamhuma', 17, 24),
+  dua('truthful-entry', 'A truthful entrance', 'Dua for every journey and new beginning', 17, 80),
+  dua('cave', 'Mercy and guidance', 'Dua of the people of the cave', 18, 10),
+  dua('ibrahim-salah', 'Make me establish salah', 'Dua of Ibrahim for his family', 14, 40, 41),
+  dua('shayatin', 'Refuge from the devils', 'Rabbi audhu bika', 23, 97, 98),
+  dua('mercy', 'Forgive and have mercy', 'You are the best of the merciful', 23, 118),
+  dua('family', 'Coolness of our eyes', 'Spouses and children', 25, 74),
+  dua('hellfire', 'Avert the punishment of Hell', 'Dua of the servants of the Most Merciful', 25, 65, 66),
+  dua('musa-need', 'I am in need of any good', 'Dua of Musa in Madyan', 28, 24),
+  dua('sulaiman', 'Inspire me to be grateful', 'Dua of Sulaiman', 27, 19),
+  dua('righteous-child', 'Grant me righteous children', 'Dua of Ibrahim', 37, 100),
+  dua('gratitude-parents', 'Gratitude for parents', 'At forty years', 46, 15),
+  dua('brothers', 'For our brothers in faith', 'No rancour in our hearts', 59, 10),
+  dua('light', 'Perfect our light', 'Dua of the believers on the Day of Judgement', 66, 8),
+  dua('nuh', 'Dua of Nuh', 'Forgive me, my parents and the believers', 71, 28),
+]

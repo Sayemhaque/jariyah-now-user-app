@@ -1,4 +1,5 @@
 import type { AyatData, AyatSlide, Surah } from '@/lib/types'
+import { isTextSlide } from '@/lib/collections/textSlide'
 
 export const pollIntervalMs = 2000
 
@@ -15,8 +16,8 @@ export function toExportSlides(ayatList: AyatData[], surah: Surah | undefined): 
     arabicText: a.arabicText,
     translation: a.translation,
     transliteration: a.transliteration || '',
-    surahName: surah?.name ?? '',
-    surahNameArabic: surah?.arabicName ?? '',
+    surahName: isTextSlide(a) ? a.surahName : surah?.name ?? '',
+    surahNameArabic: isTextSlide(a) ? a.surahNameArabic : surah?.arabicName ?? '',
     ayatNumber: a.ayatNumber,
     surahNumber: a.surahNumber,
     audioUrl: a.audioUrl,
