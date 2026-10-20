@@ -72,7 +72,7 @@ Masnoon Surahs, Quranic Duas, Hadith and Azkar are posted as premium image cards
 | `textLanguage` | `english` | Language of hadith and azkar cards: `english` or `bangla` |
 | `maxAyats` | `10` | Most ayat in one video. There is no length limit |
 | `extraHashtags` | `JariyahNow`, `Quran` | Hashtags added to every post |
-| `platforms` | `instagram`, `facebook` | Platforms to post to: `youtube`, `facebook`, `instagram`, `tiktok`. Ones without secrets are skipped |
+| `platforms` | `instagram`, `facebook`, `youtube` | Platforms to post to: `youtube`, `facebook`, `instagram`, `tiktok`. Ones without secrets are skipped |
 | `youtubePrivacy` | `public` | `public`, `unlisted` or `private` |
 | `tiktokPrivacy` | `SELF_ONLY` | `PUBLIC_TO_EVERYONE` after TikTok approves the app |
 
