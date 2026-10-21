@@ -8,6 +8,7 @@ export interface UploadInput {
   video: Buffer
   meta: PostMetadata
   coverAtMs?: number
+  cover?: Buffer
 }
 
 export interface UploadResult {

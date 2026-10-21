@@ -75,6 +75,11 @@ export async function renderStillFrame(props: object, frame: number, output: str
   await renderStill({ composition, serveUrl, inputProps, frame: Math.min(frame, composition.durationInFrames - 1), output, imageFormat: 'jpeg', jpegQuality: 88, scale: 0.5, browserExecutable })
 }
 
+export function extractCover(videoPath: string, atMs: number, outPath: string): Buffer {
+  execFileSync(env.FFMPEG_BIN || 'ffmpeg', ['-v', 'error', '-y', '-ss', (atMs / 1000).toFixed(2), '-i', videoPath, '-frames:v', '1', '-q:v', '2', outPath])
+  return readFileSync(outPath)
+}
+
 export function makeReelSafe(rawPath: string, outPath: string) {
   execFileSync(env.FFMPEG_BIN || 'ffmpeg', ['-v', 'error', '-y', '-i', rawPath, '-c', 'copy', '-use_editlist', '0', '-movflags', '+faststart', outPath])
   rmSync(rawPath)
