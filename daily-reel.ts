@@ -21,7 +21,8 @@ function summary(line: string) {
 }
 
 const postNow = env.POST_NOW === 'true'
-const slot = postNow ? new Date() : scheduledPostTime(new Date(), dailyConfig.postTimes)
+const plannedSlot = postNow ? new Date() : scheduledPostTime(new Date(), dailyConfig.postTimes)
+const slot = plannedSlot ?? new Date()
 
 async function waitForSlot(uploadLeadMinutes: number) {
   const ms = postNow ? 0 : publishDelayMs(new Date(), slot, uploadLeadMinutes * 60_000)
@@ -33,6 +34,10 @@ async function waitForSlot(uploadLeadMinutes: number) {
 const markerToken = postNow ? undefined : env.BLOB_READ_WRITE_TOKEN
 
 async function main() {
+  if (!plannedSlot) {
+    summary('No post is due around now — nothing to do.')
+    return
+  }
   if (markerToken && (await isSlotPosted(slot, markerToken))) {
     summary(`Already posted for ${slot.toISOString()} — this backup run has nothing to do.`)
     return
