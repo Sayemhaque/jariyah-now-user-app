@@ -2,20 +2,18 @@ name: Daily Quran reel
 
 on:
   schedule:
-    # Posts go live at Bangladesh time 07:00, 10:00, 13:30, 16:30, 19:30
-    # (two reels and three image posts, shuffled daily) and a reel every night
-    # at 22:00 (Asia/Dhaka is UTC+6, no DST). GitHub sometimes drops scheduled
-    # runs, so each slot has three triggers 33, 23 and 13 minutes early, off the
-    # busy :00/:30 marks. The first one renders, waits and publishes just before
-    # the slot; the others see the posted marker and stop.
+    # Bangladesh time 07:00, 10:00, 13:30, 16:30, 19:30 (two reels and three
+    # image posts, shuffled daily) and a reel every night at 22:00 (Asia/Dhaka
+    # is UTC+6, no DST). Claude Routines start each run on time with slot=auto;
+    # these GitHub schedules are only a backup. A run posts straight away, a
+    # late one posts the slot it missed, and the posted marker stops repeats.
     # Keep in sync with postTimes in src/lib/daily/dailyConfig.ts.
-    - cron: '27,37,47 0,3,15 * * *'
-    - cron: '57 6,9,12 * * *'
-    - cron: '7,17 7,10,13 * * *'
+    - cron: '5,20 1,4,16 * * *'
+    - cron: '35,50 7,10,13 * * *'
   workflow_dispatch:
     inputs:
       slot:
-        description: 'now = post immediately; auto = act like the schedule (used by the outside timer)'
+        description: 'now = post immediately; auto = post today's planned post for this time (used by the Claude Routines)'
         required: false
         default: 'now'
       platforms:
@@ -35,7 +33,7 @@ concurrency:
 jobs:
   post:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

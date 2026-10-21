@@ -2,7 +2,7 @@ import { appendFileSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { buildDailyPost, type DailyImagePost, type DailyVideo } from '@/lib/daily/buildVideo'
 import { dailyConfig } from '@/lib/daily/dailyConfig'
-import { publishDelayMs, scheduledPostTime } from '@/lib/daily/plan'
+import { scheduledPostTime } from '@/lib/daily/plan'
 import { isSlotPosted, markSlotPosted } from '@/lib/daily/postedMarker'
 import { loadSocialConfig } from '@/lib/social/config'
 import { uploadToYouTube } from '@/lib/social/youtube'
@@ -23,13 +23,6 @@ function summary(line: string) {
 const postNow = env.POST_NOW === 'true'
 const plannedSlot = postNow ? new Date() : scheduledPostTime(new Date(), dailyConfig.postTimes)
 const slot = plannedSlot ?? new Date()
-
-async function waitForSlot(uploadLeadMinutes: number) {
-  const ms = postNow ? 0 : publishDelayMs(new Date(), slot, uploadLeadMinutes * 60_000)
-  if (!ms) return
-  console.log(`Ready early — waiting ${Math.round(ms / 1000)}s to publish for ${slot.toISOString()}`)
-  await new Promise((resolve) => setTimeout(resolve, ms))
-}
 
 const markerToken = postNow ? undefined : env.BLOB_READ_WRITE_TOKEN
 
@@ -88,7 +81,6 @@ async function postVideo(video: DailyVideo) {
   })
   const cover = extractCover(outPath, dailyConfig.coverAtMs, join(outDir, `cover-${video.dateKey}.jpg`))
   const input: UploadInput = { video: buf, meta: video.meta, coverAtMs: dailyConfig.coverAtMs, cover }
-  await waitForSlot(dailyConfig.reelUploadLeadMinutes)
   const uploaders: Record<Platform, (() => Promise<UploadResult>) | null> = {
     youtube: cfg.youtube && (() => uploadToYouTube(cfg.youtube!, input)),
     facebook: cfg.facebook && (() => uploadToFacebookReels(cfg.facebook!, input)),
@@ -111,7 +103,6 @@ async function postImages(post: DailyImagePost) {
   if (!token) throw new Error('Image posts need the BLOB_READ_WRITE_TOKEN secret so Instagram and Facebook can fetch the images')
   const cfg = loadSocialConfig({ ...env })
   const files = images.map((data) => ({ data, contentType: 'image/jpeg', extension: 'jpg' }))
-  await waitForSlot(dailyConfig.imageUploadLeadMinutes)
   await withTemporaryUrls(files, token, async (imageUrls) => {
     const input: ImagePostInput = { imageUrls, meta: post.meta }
     await runUploads({

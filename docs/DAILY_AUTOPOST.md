@@ -60,17 +60,9 @@ Facebook Reels must be 3–90 s long. Videos have no length limit, so a long exc
 
 Masnoon Surahs, Quranic Duas, Hadith and Azkar are posted as premium image cards (1080×1350 JPEG), not videos. A masnoon surah or dua longer than one card becomes an Instagram carousel and a Facebook multi-photo post of up to 10 slides. Hadith posts pick a short Sahih or Hasan hadith from the open Hadith API (Bukhari, Muslim, the Sunan, Muwatta, an-Nawawi), rotating collections and chapters. Card designs live in `src/cards/` and `src/lib/cards/` and rotate through 8 themes, one per post. Instagram can only fetch images from a URL, so image posts need the `BLOB_READ_WRITE_TOKEN` secret; the images are deleted right after publishing. YouTube and TikTok skip image posts.
 
-## On-time posting with an outside timer (recommended)
+## Timing
 
-GitHub's own schedule is best-effort: runs can start an hour or more late, or not at all. A free timer such as [cron-job.org](https://cron-job.org) can start the workflow on time instead; the GitHub schedule stays as a backup and the posted marker stops double posts.
-
-1. Create a fine-grained GitHub token (Settings → Developer settings → Fine-grained tokens) for this repository only, with **Actions: Read and write**.
-2. In cron-job.org, create six jobs at Bangladesh time 06:40, 09:40, 13:10, 16:10, 19:10 and 21:40 (time zone Asia/Dhaka), each sending:
-   - `POST https://api.github.com/repos/Sayemhaque/jariyah-now-user-app/actions/workflows/daily-reel.yml/dispatches`
-   - Headers: `Authorization: Bearer <token>`, `Accept: application/vnd.github+json`
-   - Body: `{"ref":"main","inputs":{"slot":"auto"}}`
-
-`slot: auto` makes the run behave like a scheduled one: it renders, waits and publishes at the next post time. A run that starts late posts the slot it missed (up to three hours late) instead of waiting for the next one.
+Claude Routines start the workflow at each post time with `slot: auto`. The run renders and publishes straight away (about 3–5 minutes for a reel, under a minute for images); it never waits. GitHub's own schedule fires 5 and 20 minutes after each post time as a backup, because GitHub often starts scheduled runs late or skips them. A run that starts late posts the slot it missed (up to three hours late), and the posted marker in Blob storage stops a slot from posting twice.
 
 ## Settings (`src/lib/daily/dailyConfig.ts`)
 
