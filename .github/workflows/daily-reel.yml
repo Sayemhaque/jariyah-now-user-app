@@ -14,6 +14,10 @@ on:
     - cron: '7,17 7,10,13 * * *'
   workflow_dispatch:
     inputs:
+      slot:
+        description: 'now = post immediately; auto = act like the schedule (used by the outside timer)'
+        required: false
+        default: 'now'
       platforms:
         description: 'Only post to these (comma separated, e.g. youtube). Empty = all'
         required: false
@@ -47,7 +51,7 @@ jobs:
       - name: Render and post
         env:
           # Manual runs post straight away instead of waiting for a slot.
-          POST_NOW: ${{ github.event_name == 'workflow_dispatch' }}
+          POST_NOW: ${{ github.event_name == 'workflow_dispatch' && inputs.slot != 'auto' }}
           PLATFORMS: ${{ inputs.platforms }}
           SURAH: ${{ inputs.surah }}
           NEXT_PUBLIC_UMMAHAPI_KEY: ${{ secrets.UMMAHAPI_KEY }}

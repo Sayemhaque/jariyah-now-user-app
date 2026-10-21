@@ -15,8 +15,14 @@ describe('scheduled post time', () => {
     expect(scheduledPostTime(dhaka(21, '12:58'), times)).toEqual(dhaka(21, '13:30'))
   })
 
+  it('catches up a slot when GitHub starts the run very late instead of waiting for the next one', () => {
+    expect(scheduledPostTime(dhaka(21, '14:46'), times)).toEqual(dhaka(21, '13:30'))
+    expect(scheduledPostTime(dhaka(21, '00:40'), times)).toEqual(dhaka(20, '22:00'))
+    expect(scheduledPostTime(dhaka(21, '04:00'), times)).toBeNull()
+  })
+
   it('picks the same slot as the post plan', () => {
-    for (const t of times) expect(postSlot(scheduledPostTime(dhaka(22, t), times), times)).toBe(times.indexOf(t))
+    for (const t of times) expect(postSlot(scheduledPostTime(dhaka(22, t), times)!, times)).toBe(times.indexOf(t))
   })
 
   it('waits until a few minutes before the slot, or posts at once when late', () => {
@@ -34,7 +40,7 @@ describe('daily workflow triggers', () => {
   it('gives every post slot three early triggers that all target it', () => {
     for (const time of dailyConfig.postTimes) {
       const slot = dhaka(22, time)
-      const early = triggers.filter((t) => scheduledPostTime(t, dailyConfig.postTimes).getTime() === slot.getTime())
+      const early = triggers.filter((t) => scheduledPostTime(t, dailyConfig.postTimes)?.getTime() === slot.getTime())
       expect(early).toHaveLength(3)
       for (const t of early) expect((slot.getTime() - t.getTime()) / 60_000).toBeGreaterThanOrEqual(10)
     }
