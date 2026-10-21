@@ -12,6 +12,7 @@ import { withTemporaryUrls } from '@/lib/social/temporaryVideoUrl'
 import { extractCover, makeReelSafe, renderCards, renderVideo } from '@/lib/render/remotionRender'
 import { uploadToTikTok } from '@/lib/social/tiktok'
 import type { Platform, UploadInput, UploadResult } from '@/lib/social/types'
+import type { ContentMode } from '@/lib/collections/types'
 
 const env = process.env
 
@@ -23,7 +24,7 @@ function summary(line: string) {
 const postNow = env.POST_NOW === 'true'
 const plannedSlot = scheduledPostTime(new Date(), dailyConfig.postTimes)
 const slot = postNow ? new Date() : (plannedSlot ?? new Date())
-const isTestRun = Boolean(env.SURAH || env.PLATFORMS)
+const isTestRun = Boolean(env.SURAH || env.PLATFORMS || env.MODE)
 
 const markerToken = env.BLOB_READ_WRITE_TOKEN
 
@@ -47,6 +48,7 @@ async function main() {
     extraHashtags: dailyConfig.extraHashtags,
     ffmpegBin: env.FFMPEG_BIN || 'ffmpeg',
     maxDurationSec: dailyConfig.maxDurationSec,
+    contentRotation: env.MODE ? [env.MODE as ContentMode] : undefined,
     textLanguage: dailyConfig.textLanguage,
   })
 

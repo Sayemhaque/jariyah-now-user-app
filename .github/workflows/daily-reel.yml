@@ -20,6 +20,10 @@ on:
         description: 'Only post to these (comma separated, e.g. youtube). Empty = all'
         required: false
         default: ''
+      mode:
+        description: 'Post this type now: azkar, hadith, duas, masnoon or quran (empty = today''s plan)'
+        required: false
+        default: ''
       surah:
         description: 'Post a reel of this surah number now (empty = today''s plan)'
         required: false
@@ -52,6 +56,7 @@ jobs:
           POST_NOW: ${{ github.event_name == 'workflow_dispatch' && inputs.slot != 'auto' }}
           PLATFORMS: ${{ inputs.platforms }}
           SURAH: ${{ inputs.surah }}
+          MODE: ${{ inputs.mode }}
           NEXT_PUBLIC_UMMAHAPI_KEY: ${{ secrets.UMMAHAPI_KEY }}
           # YouTube Shorts
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
