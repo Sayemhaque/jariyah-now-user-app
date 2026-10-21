@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
+import { load } from 'js-yaml'
 import { join } from 'node:path'
 import { dailyConfig } from './dailyConfig'
 import { postSlot, scheduledPostTime } from './plan'
@@ -41,5 +42,20 @@ describe('daily workflow triggers', () => {
       for (const t of backups) expect(t.getTime()).toBeGreaterThan(slot.getTime())
     }
     expect(triggers).toHaveLength(dailyConfig.postTimes.length * 2)
+  })
+})
+
+describe('workflow files', () => {
+  const dir = join(process.cwd(), '.github/workflows')
+
+  it('are all valid YAML so GitHub can run them', () => {
+    for (const file of readdirSync(dir).filter((f) => f.endsWith('.yml'))) {
+      expect(() => load(readFileSync(join(dir, file), 'utf8')), file).not.toThrow()
+    }
+  })
+
+  it('keep the manual trigger and its inputs on the daily workflow', () => {
+    const workflow = load(readFileSync(join(dir, 'daily-reel.yml'), 'utf8')) as { on: { workflow_dispatch: { inputs: Record<string, unknown> } } }
+    expect(Object.keys(workflow.on.workflow_dispatch.inputs)).toEqual(expect.arrayContaining(['slot', 'platforms', 'mode', 'surah']))
   })
 })
