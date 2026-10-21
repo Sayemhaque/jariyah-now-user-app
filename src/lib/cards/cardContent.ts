@@ -22,7 +22,7 @@ export interface QuranCardInput {
   ayat: CardAyah[]
 }
 
-const slideBudgets: Record<CardFormat, number> = { portrait: 470, square: 330, story: 760 }
+const slideBudgets: Record<CardFormat, number> = { portrait: 190, square: 125, story: 340 }
 
 function splitNote(source: string): { note?: string; reference: string } {
   const parts = source.split(' · ')
@@ -61,12 +61,13 @@ export function azkarCard(item: TextItem, language: TextLanguage): CardContent {
 
 const ayahWeight = (a: CardAyah) => a.arabic.length + a.translation.length * 0.8
 
-export function splitAyatIntoSlides(ayat: CardAyah[], format: CardFormat): CardAyah[][] {
+export function splitAyatIntoSlides(ayat: CardAyah[], format: CardFormat, firstSlideShare = 1): CardAyah[][] {
   const slides: CardAyah[][] = []
   let current: CardAyah[] = []
   let weight = 0
   for (const ayah of ayat) {
-    if (current.length && weight + ayahWeight(ayah) > slideBudgets[format]) {
+    const budget = slideBudgets[format] * (slides.length ? 1 : firstSlideShare)
+    if (current.length && weight + ayahWeight(ayah) > budget) {
       slides.push(current)
       current = []
       weight = 0
@@ -81,7 +82,7 @@ export function splitAyatIntoSlides(ayat: CardAyah[], format: CardFormat): CardA
 const ayahRange = (ayat: CardAyah[]) => (ayat.length === 1 ? `${ayat[0]!.number}` : `${ayat[0]!.number}–${ayat[ayat.length - 1]!.number}`)
 
 export function quranCards(input: QuranCardInput, format: CardFormat): CardContent[] {
-  const slides = splitAyatIntoSlides(input.ayat, format)
+  const slides = splitAyatIntoSlides(input.ayat, format, input.benefit ? 0.6 : input.kind === 'masnoon' ? 0.8 : 1)
   return slides.map((ayat, index) => ({
     kind: input.kind,
     eyebrow: input.bangla ? banglaEyebrows[input.kind] : input.kind === 'dua' ? 'Quranic Dua' : 'Masnoon Surah',

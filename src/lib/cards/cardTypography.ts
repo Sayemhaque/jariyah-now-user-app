@@ -26,6 +26,14 @@ const sectionGap = 36
 const lineGap = 44
 
 export const isBengaliText = (text: string) => bengaliPattern.test(text)
+export const isParagraphCard = (content: CardContent) => (content.kind === 'dua' || content.kind === 'masnoon') && content.lines.length > 1
+
+export function paragraphLine(content: CardContent): CardContent['lines'][number] {
+  return {
+    arabic: content.lines.map((l) => `${l.arabic ?? ''} ﴿${l.ayah ?? ''}﴾`).join(' '),
+    translation: content.lines.map((l) => `(${l.ayah ?? ''}) ${l.translation}`).join(' '),
+  }
+}
 export const cardTitleSize = (title: string) => (title.length > 30 ? 48 : 58)
 
 function linesFor(text: string, size: number, width: number, charWidth: number): number {
@@ -62,12 +70,14 @@ type BaseSizes = Omit<CardTypeSizes, 'scale'>
 
 function baseSizes(content: CardContent): BaseSizes {
   const translationOnly = content.lines.every((l) => !l.arabic)
+  if (isParagraphCard(content)) return { arabic: 72, translation: 44, title: 60 }
   return { arabic: 66, translation: translationOnly ? 60 : 38, title: 60 }
 }
 
 export function contentHeight(content: CardContent, sizes: BaseSizes, width: number, gap: number): number {
   const quote = content.kind === 'hadith' ? sizes.translation * 1.3 + gap : 0
-  return content.lines.reduce((total, line, index) => {
+  const lines = isParagraphCard(content) ? [paragraphLine(content)] : content.lines
+  return lines.reduce((total, line, index) => {
     const charWidth = isBengaliText(line.translation) ? bengaliCharWidth : latinCharWidth
     const arabic = line.arabic ? linesFor(line.arabic, sizes.arabic, width, arabicCharWidth) * sizes.arabic * arabicLineHeight + sizes.translation * 0.7 : 0
     const translation = linesFor(line.translation, sizes.translation, width, charWidth) * sizes.translation * translationLineHeight
