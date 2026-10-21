@@ -4,11 +4,11 @@ import { cardThemes } from './themes'
 import { resolveDecor, variantSpecs } from './variants'
 
 describe('card templates', () => {
-  it('offers 738 layouts: 82 structures in 9 decoration styles', () => {
-    expect(cardLayouts).toHaveLength(82)
-    expect(cardDesigns).toHaveLength(738)
-    expect(new Set(cardDesigns.map((d) => `${d.layout}.${d.variant}`)).size).toBe(738)
-    expect(templateCount).toBe(738 * cardThemes.length)
+  it('offers 756 layouts: 84 structures in 9 decoration styles', () => {
+    expect(cardLayouts).toHaveLength(84)
+    expect(cardDesigns).toHaveLength(756)
+    expect(new Set(cardDesigns.map((d) => `${d.layout}.${d.variant}`)).size).toBe(756)
+    expect(templateCount).toBe(756 * cardThemes.length)
   })
 
   it('names every structure with a lowercase key that survives a template id', () => {
@@ -21,7 +21,7 @@ describe('card templates', () => {
     const first = Array.from({ length: 12 }, (_, i) => templateAt(i))
     expect(new Set(first.map((t) => t.layout)).size).toBe(12)
     expect(new Set(first.map((t) => t.theme.key)).size).toBe(12)
-    const decorations = new Set(Array.from({ length: 738 }, (_, i) => templateAt(i).variant))
+    const decorations = new Set(Array.from({ length: 756 }, (_, i) => templateAt(i).variant))
     expect(decorations.size).toBe(9)
   })
 

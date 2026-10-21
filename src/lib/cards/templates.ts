@@ -20,6 +20,8 @@ export const cardLayouts: CardLayoutInfo[] = [
   { key: 'botanical', label: 'লতাপাতা', description: 'জলপাই লতা ও গোল ফ্রেম' },
   { key: 'glass', label: 'কাচের প্যানেল', description: 'নরম আলোর উপর কাচের প্যানেল' },
   { key: 'manuscript', label: 'পাণ্ডুলিপি', description: 'শিরোনাম-ফলকসহ পাণ্ডুলিপির পাতা' },
+  { key: 'sunlit', label: 'রোদের ছায়া', description: 'জানালার রোদ ও পাতার ছায়ায় ম্যাগাজিন ধাঁচ' },
+  { key: 'texture', label: 'কাগজের টেক্সচার', description: 'হাতে বানানো কাগজের মতো জমিন' },
   { key: 'minimal', label: 'মিনিমাল', description: 'শান্ত, খোলামেলা ও সরল' },
   { key: 'medallion', label: 'মেডেলিয়ন', description: 'গোল সোনালি মেডেলের ভেতরে লেখা' },
   { key: 'dome', label: 'গম্বুজ', description: 'মসজিদের গম্বুজের আকৃতির ফ্রেম' },

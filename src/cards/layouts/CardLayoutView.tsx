@@ -29,6 +29,8 @@ import { PillarsLayout } from './PillarsLayout'
 import { QuoteLayout } from './QuoteLayout'
 import { ScrollLayout } from './ScrollLayout'
 import { SplitLayout } from './SplitLayout'
+import { SunlitLayout } from './SunlitLayout'
+import { TextureLayout } from './TextureLayout'
 import { StampLayout } from './StampLayout'
 import { TileLayout } from './TileLayout'
 import { ZelligeLayout } from './ZelligeLayout'
@@ -68,6 +70,8 @@ const layoutViews: Record<CardLayout, React.FC<LayoutProps>> = {
   lattice: LatticeLayout,
   folio: FolioLayout,
   crescent: CrescentLayout,
+  sunlit: SunlitLayout,
+  texture: TextureLayout,
   ...premiumLayoutViews,
 }
 
