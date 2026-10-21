@@ -8,5 +8,9 @@ export async function isSlotPosted(slot: Date, token: string): Promise<boolean> 
 }
 
 export async function markSlotPosted(slot: Date, token: string, note: string): Promise<void> {
-  await put(markerPath(slot), note, { access: 'private', contentType: 'text/plain', token, addRandomSuffix: false })
+  try {
+    await put(markerPath(slot), note, { access: 'private', contentType: 'text/plain', token, addRandomSuffix: false })
+  } catch (error) {
+    console.warn('[posted marker] not saved:', error instanceof Error ? error.message : error)
+  }
 }

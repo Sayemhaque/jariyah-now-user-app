@@ -21,17 +21,18 @@ function summary(line: string) {
 }
 
 const postNow = env.POST_NOW === 'true'
-const plannedSlot = postNow ? new Date() : scheduledPostTime(new Date(), dailyConfig.postTimes)
-const slot = plannedSlot ?? new Date()
+const plannedSlot = scheduledPostTime(new Date(), dailyConfig.postTimes)
+const slot = postNow ? new Date() : (plannedSlot ?? new Date())
+const isTestRun = Boolean(env.SURAH || env.PLATFORMS)
 
-const markerToken = postNow ? undefined : env.BLOB_READ_WRITE_TOKEN
+const markerToken = env.BLOB_READ_WRITE_TOKEN
 
 async function main() {
-  if (!plannedSlot) {
+  if (!postNow && !plannedSlot) {
     summary('No post is due around now — nothing to do.')
     return
   }
-  if (markerToken && (await isSlotPosted(slot, markerToken))) {
+  if (!postNow && plannedSlot && markerToken && (await isSlotPosted(plannedSlot, markerToken))) {
     summary(`Already posted for ${slot.toISOString()} — this backup run has nothing to do.`)
     return
   }
@@ -137,7 +138,7 @@ async function runUploads(uploaders: Record<Platform, (() => Promise<UploadResul
     }
   }
 
-  if (markerToken && posted.length) await markSlotPosted(slot, markerToken, posted.join('\n'))
+  if (markerToken && plannedSlot && posted.length && !isTestRun) await markSlotPosted(plannedSlot, markerToken, posted.join('\n'))
   if (failures.length) {
     throw new Error(`Upload failed on: ${failures.join(', ')}`)
   }
