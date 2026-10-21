@@ -2,17 +2,17 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { dailyConfig } from './dailyConfig'
-import { postSlot, publishDelayMs, scheduledPostTime } from './plan'
+import { postSlot, scheduledPostTime } from './plan'
 
 const times = ['07:00', '10:00', '13:30', '16:30', '19:30', '22:00']
 const dhaka = (day: number, hhmm: string) => new Date(Date.UTC(2026, 9, day, Number(hhmm.slice(0, 2)) - 6, Number(hhmm.slice(3))))
 
 describe('scheduled post time', () => {
   it('targets the slot a run started for, early or late', () => {
-    expect(scheduledPostTime(dhaka(21, '21:30'), times)).toEqual(dhaka(21, '22:00'))
+    expect(scheduledPostTime(dhaka(21, '22:00'), times)).toEqual(dhaka(21, '22:00'))
+    expect(scheduledPostTime(dhaka(21, '21:55'), times)).toEqual(dhaka(21, '22:00'))
     expect(scheduledPostTime(dhaka(21, '22:25'), times)).toEqual(dhaka(21, '22:00'))
-    expect(scheduledPostTime(dhaka(21, '06:30'), times)).toEqual(dhaka(21, '07:00'))
-    expect(scheduledPostTime(dhaka(21, '12:58'), times)).toEqual(dhaka(21, '13:30'))
+    expect(scheduledPostTime(dhaka(21, '13:25'), times)).toEqual(dhaka(21, '13:30'))
   })
 
   it('catches up a slot when GitHub starts the run very late instead of waiting for the next one', () => {
@@ -25,10 +25,6 @@ describe('scheduled post time', () => {
     for (const t of times) expect(postSlot(scheduledPostTime(dhaka(22, t), times)!, times)).toBe(times.indexOf(t))
   })
 
-  it('waits until a few minutes before the slot, or posts at once when late', () => {
-    expect(publishDelayMs(dhaka(21, '21:45'), dhaka(21, '22:00'), 3 * 60_000)).toBe(12 * 60_000)
-    expect(publishDelayMs(dhaka(21, '22:05'), dhaka(21, '22:00'), 3 * 60_000)).toBe(0)
-  })
 })
 
 describe('daily workflow triggers', () => {
@@ -37,13 +33,13 @@ describe('daily workflow triggers', () => {
     hours!.split(',').flatMap((h) => minutes!.split(',').map((m) => new Date(Date.UTC(2026, 9, 22, Number(h), Number(m))))),
   )
 
-  it('gives every post slot three early triggers that all target it', () => {
+  it('gives every post slot two backup triggers shortly after it that target it', () => {
     for (const time of dailyConfig.postTimes) {
       const slot = dhaka(22, time)
-      const early = triggers.filter((t) => scheduledPostTime(t, dailyConfig.postTimes)?.getTime() === slot.getTime())
-      expect(early).toHaveLength(3)
-      for (const t of early) expect((slot.getTime() - t.getTime()) / 60_000).toBeGreaterThanOrEqual(10)
+      const backups = triggers.filter((t) => scheduledPostTime(t, dailyConfig.postTimes)?.getTime() === slot.getTime())
+      expect(backups).toHaveLength(2)
+      for (const t of backups) expect(t.getTime()).toBeGreaterThan(slot.getTime())
     }
-    expect(triggers).toHaveLength(dailyConfig.postTimes.length * 3)
+    expect(triggers).toHaveLength(dailyConfig.postTimes.length * 2)
   })
 })

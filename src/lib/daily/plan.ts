@@ -176,15 +176,11 @@ export function buildPostMetadata(input: PostMetadataInput): PostMetadata {
   }
 }
 
-export function scheduledPostTime(now: Date, postTimes: readonly string[], maxLeadMs = 45 * 60_000, catchUpMs = 3 * 60 * 60_000): Date | null {
+export function scheduledPostTime(now: Date, postTimes: readonly string[], maxLeadMs = 10 * 60_000, catchUpMs = 3 * 60 * 60_000): Date | null {
   const dayStart = Math.floor((now.getTime() + dhakaOffsetMs) / dayMs) * dayMs - dhakaOffsetMs
   const slots = [-1, 0, 1].flatMap((d) => postTimes.map((t) => dayStart + d * dayMs + toMinutes(t) * 60_000)).sort((a, b) => a - b)
   const next = slots.find((t) => t >= now.getTime())
   if (next !== undefined && next - now.getTime() <= maxLeadMs) return new Date(next)
   const previous = slots.filter((t) => t < now.getTime()).at(-1)
   return previous !== undefined && now.getTime() - previous <= catchUpMs ? new Date(previous) : null
-}
-
-export function publishDelayMs(now: Date, slot: Date, uploadLeadMs: number): number {
-  return Math.max(0, slot.getTime() - uploadLeadMs - now.getTime())
 }
