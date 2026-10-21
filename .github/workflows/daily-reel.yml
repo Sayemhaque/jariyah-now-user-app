@@ -4,16 +4,24 @@ on:
   schedule:
     # Posts go live at Bangladesh time 07:00, 10:00, 13:30, 16:30, 19:30
     # (two reels and three image posts, shuffled daily) and a reel every night
-    # at 22:00 (Asia/Dhaka is UTC+6, no DST). Each run starts 30 minutes early,
-    # renders, then waits and publishes just before its slot.
+    # at 22:00 (Asia/Dhaka is UTC+6, no DST). GitHub sometimes drops scheduled
+    # runs, so each slot has three triggers 33, 23 and 13 minutes early, off the
+    # busy :00/:30 marks. The first one renders, waits and publishes just before
+    # the slot; the others see the posted marker and stop.
     # Keep in sync with postTimes in src/lib/daily/dailyConfig.ts.
-    - cron: '30 0 * * *'
-    - cron: '30 3 * * *'
-    - cron: '0 7 * * *'
-    - cron: '0 10 * * *'
-    - cron: '0 13 * * *'
-    - cron: '30 15 * * *'
+    - cron: '27,37,47 0,3,15 * * *'
+    - cron: '57 6,9,12 * * *'
+    - cron: '7,17 7,10,13 * * *'
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: 'Only post to these (comma separated, e.g. youtube). Empty = all'
+        required: false
+        default: ''
+      surah:
+        description: 'Post a reel of this surah number now (empty = today''s plan)'
+        required: false
+        default: ''
 
 # Never run two posting jobs at once (avoids double posts).
 concurrency:
@@ -40,6 +48,8 @@ jobs:
         env:
           # Manual runs post straight away instead of waiting for a slot.
           POST_NOW: ${{ github.event_name == 'workflow_dispatch' }}
+          PLATFORMS: ${{ inputs.platforms }}
+          SURAH: ${{ inputs.surah }}
           NEXT_PUBLIC_UMMAHAPI_KEY: ${{ secrets.UMMAHAPI_KEY }}
           # YouTube Shorts
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}

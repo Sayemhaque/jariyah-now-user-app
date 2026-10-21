@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { buildDailyPost, type DailyImagePost, type DailyVideo } from '@/lib/daily/buildVideo'
 import { dailyConfig } from '@/lib/daily/dailyConfig'
 import { publishDelayMs, scheduledPostTime } from '@/lib/daily/plan'
+import { isSlotPosted, markSlotPosted } from '@/lib/daily/postedMarker'
 import { loadSocialConfig } from '@/lib/social/config'
 import { uploadToYouTube } from '@/lib/social/youtube'
 import { uploadToFacebookReels, uploadToInstagramReels } from '@/lib/social/meta'
@@ -29,7 +30,13 @@ async function waitForSlot(uploadLeadMinutes: number) {
   await new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+const markerToken = postNow ? undefined : env.BLOB_READ_WRITE_TOKEN
+
 async function main() {
+  if (markerToken && (await isSlotPosted(slot, markerToken))) {
+    summary(`Already posted for ${slot.toISOString()} — this backup run has nothing to do.`)
+    return
+  }
   const post = await buildDailyPost({
     now: slot,
     surahOverride: env.SURAH ? Number(env.SURAH) : undefined,
@@ -112,8 +119,10 @@ async function postImages(post: DailyImagePost) {
 
 async function runUploads(uploaders: Record<Platform, (() => Promise<UploadResult>) | null>) {
   const failures: string[] = []
+  const posted: string[] = []
   summary('| Platform | Result |\n|---|---|')
-  for (const platform of dailyConfig.platforms) {
+  const only = env.PLATFORMS?.split(',').map((p) => p.trim()).filter(Boolean)
+  for (const platform of only?.length ? dailyConfig.platforms.filter((p) => only.includes(p)) : dailyConfig.platforms) {
     const upload = uploaders[platform]
     if (!upload) {
       summary(`| ${platform} | skipped (no credentials) |`)
@@ -121,6 +130,7 @@ async function runUploads(uploaders: Record<Platform, (() => Promise<UploadResul
     }
     try {
       const r = await upload()
+      posted.push(`${platform} ${r.url ?? r.id}`)
       summary(`| ${platform} | ✅ ${r.url ?? r.id}${r.note ? ` — ${r.note}` : ''} |`)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
@@ -130,6 +140,7 @@ async function runUploads(uploaders: Record<Platform, (() => Promise<UploadResul
     }
   }
 
+  if (markerToken && posted.length) await markSlotPosted(slot, markerToken, posted.join('\n'))
   if (failures.length) {
     throw new Error(`Upload failed on: ${failures.join(', ')}`)
   }
