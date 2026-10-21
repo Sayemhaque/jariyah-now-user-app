@@ -120,6 +120,7 @@ async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number): Pro
         toAyat,
         reciterName: reciter.name,
         translationCredit: translationCredit(translationKey),
+        audioUrl: slides[0]?.audioUrl,
         extraHashtags: opts.extraHashtags,
       }),
     }
