@@ -2,7 +2,9 @@ import React from 'react'
 import type { CardAlign, CardContent, CardTheme } from '@/lib/cards/types'
 import type { CardTypeSizes } from '@/lib/cards/cardTypography'
 import { cardDisplayStack } from '@/remotion/fontStacks'
+import { isParagraphCard } from '@/lib/cards/cardTypography'
 import { CardLineText } from './CardLineText'
+import { CardParagraph } from './CardParagraph'
 import { fitted, useShrinkToFit } from './useShrinkToFit'
 
 interface CardBodyProps {
@@ -28,7 +30,7 @@ export const CardBody: React.FC<CardBodyProps> = ({ content, theme, sizes, fitKe
     <div ref={boxRef} data-card-body style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', alignItems: items, justifyContent: 'center', width: '100%' }}>
       <div ref={contentRef} style={{ display: 'flex', flexDirection: 'column', alignItems: items, gap: fitted(44 * sizes.scale), width: '100%' }}>
       {quote && <QuoteMark color={theme.accent} size={sizes.translation * 3} />}
-      {content.lines.map((line, index) => (
+      {isParagraphCard(content) ? <CardParagraph lines={content.lines} theme={theme} sizes={sizes} align={align} /> : content.lines.map((line, index) => (
         <React.Fragment key={index}>
           {index > 0 && <div style={{ width: 6, height: 6, borderRadius: 3, background: theme.accent, opacity: 0.7 }} />}
           <CardLineText line={line} theme={theme} sizes={sizes} quranic={quranic} align={align} />

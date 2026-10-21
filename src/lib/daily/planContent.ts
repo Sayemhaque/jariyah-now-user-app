@@ -36,7 +36,7 @@ export function modeTurn(sequence: number, rotation: ContentMode[], mode: Conten
 }
 
 export function dailyModes(dayIndex: number): ContentMode[] {
-  const shuffled = seededShuffle<ContentMode>(['quran', 'quran', 'hadith', 'azkar', dayIndex % 2 ? 'masnoon' : 'duas'], 0x5ced + dayIndex)
+  const shuffled = seededShuffle<ContentMode>(['quran', 'quran', 'hadith', 'azkar', 'duas'], 0x5ced + dayIndex)
   return [...shuffled, 'quran']
 }
 
@@ -46,7 +46,7 @@ export function scheduledPost(date: Date, postTimes: readonly string[]): { mode:
   const slot = Math.min(postSlot(date, postTimes), modes.length - 1)
   const mode = modes[slot]!
   const earlier = modes.slice(0, slot).filter((m) => m === mode).length
-  const turn = mode === 'quran' ? day * 3 + earlier : mode === 'duas' || mode === 'masnoon' ? Math.floor(day / 2) : day
+  const turn = mode === 'quran' ? day * 3 + earlier : day
   return { mode, turn }
 }
 

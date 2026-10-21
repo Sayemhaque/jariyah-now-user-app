@@ -38,12 +38,17 @@ describe('card content', () => {
   })
 
   it('groups ayat into slides that each fit, never leaving an ayah out', () => {
-    const ayat = Array.from({ length: 10 }, (_, i) => ayah(i + 1, 140))
+    const ayat = Array.from({ length: 10 }, (_, i) => ayah(i + 1, 60))
     formats.forEach((format) => {
       const slides = splitAyatIntoSlides(ayat, format)
       expect(slides.flat().map((a) => a.number)).toEqual(ayat.map((a) => a.number))
     })
     expect(splitAyatIntoSlides(ayat, 'square').length).toBeGreaterThan(splitAyatIntoSlides(ayat, 'story').length)
+  })
+
+  it('keeps the first slide lighter when it carries the benefit ribbon', () => {
+    const ayat = Array.from({ length: 8 }, (_, i) => ayah(i + 1, 40))
+    expect(splitAyatIntoSlides(ayat, 'portrait', 0.45)[0]!.length).toBeLessThan(splitAyatIntoSlides(ayat, 'portrait')[0]!.length)
   })
 
   it('numbers carousel slides and gives each its own ayah range', () => {
