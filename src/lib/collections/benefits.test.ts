@@ -37,11 +37,16 @@ describe('benefits', () => {
     expect(item.english).not.toMatch(/treasure/)
   })
 
-  it('puts a surah benefit on the first carousel slide only and in the caption', () => {
+  it('shows a surah benefit on a light first slide only', () => {
+    const ayat = Array.from({ length: 4 }, (_, i) => ({ number: i + 1, arabic: 'ب'.repeat(30), translation: 'w'.repeat(30) }))
+    const [card] = quranCards({ kind: 'masnoon', title: 'Al-Ikhlas', surahName: 'Al-Ikhlas', surahNameArabic: 'الإخلاص', surahNumber: 112, ayat, benefit: presetBenefits.mulk }, 'portrait')
+    expect(card!.benefit?.text).toMatch(/intercede/)
+  })
+
+  it('moves the benefit to the caption when the text needs the whole card', () => {
     const ayat = Array.from({ length: 6 }, (_, i) => ({ number: i + 1, arabic: 'ب'.repeat(200), translation: 'w'.repeat(200) }))
     const cards = quranCards({ kind: 'masnoon', title: 'Al-Mulk', surahName: 'Al-Mulk', surahNameArabic: 'الملك', surahNumber: 67, ayat, benefit: presetBenefits.mulk }, 'portrait')
-    expect(cards[0]!.benefit?.text).toMatch(/intercede/)
-    cards.slice(1).forEach((c) => expect(c.benefit).toBeUndefined())
+    cards.forEach((c) => expect(c.benefit).toBeUndefined())
     expect(cardPostMetadata(cards).description).toContain(`✦ ${presetBenefits.mulk!.en} (${presetBenefits.mulk!.source})`)
   })
 
