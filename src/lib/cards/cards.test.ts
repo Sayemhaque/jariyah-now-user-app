@@ -56,7 +56,8 @@ describe('card content', () => {
     expect(cards.length).toBeGreaterThan(1)
     expect(cards[0]!.slide).toEqual({ index: 1, count: cards.length })
     expect(cards[0]!.reference).toMatch(/^Surah Al-Mulk · 67:1/)
-    expect(cards[0]!.arabicTitle).toBe('الملك')
+    expect(cards[0]!.arabicTitle).toBeUndefined()
+    expect(quranCards({ ...mulk, ayat: [ayah(1, 40)] }, 'portrait')[0]!.arabicTitle).toBe('الملك')
   })
 
   it('keeps a single-slide dua free of a slide counter', () => {

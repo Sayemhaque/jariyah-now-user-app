@@ -29,6 +29,7 @@ export interface CardContent {
   reference: string
   note?: string
   benefit?: { text: string; source: string }
+  captionBenefit?: { text: string; source: string }
   slide?: { index: number; count: number }
 }
 

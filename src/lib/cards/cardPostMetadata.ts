@@ -27,9 +27,10 @@ export function cardPostMetadata(cards: CardContent[], extraHashtags: string[] =
   const hashtags = Array.from(new Set([...kindTags[first.kind], ...base, ...extras].filter(Boolean)))
   const title = `${first.eyebrow}: ${first.title}`.slice(0, 100)
   const reference = isQuran ? quranReference(cards) : first.reference
+  const benefit = first.benefit ?? first.captionBenefit
   const lines = [
     title,
-    ...(first.benefit ? ['', `✦ ${first.benefit.text} (${first.benefit.source})`] : []),
+    ...(benefit ? ['', `✦ ${benefit.text} (${benefit.source})`] : []),
     '',
     ...cards.flatMap(lineText),
     '',

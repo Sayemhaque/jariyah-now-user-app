@@ -22,7 +22,7 @@ export interface QuranCardInput {
   ayat: CardAyah[]
 }
 
-const slideBudgets: Record<CardFormat, number> = { portrait: 190, square: 125, story: 340 }
+const slideBudgets: Record<CardFormat, number> = { portrait: 720, square: 520, story: 1100 }
 
 function splitNote(source: string): { note?: string; reference: string } {
   const parts = source.split(' · ')
@@ -59,6 +59,8 @@ export function azkarCard(item: TextItem, language: TextLanguage): CardContent {
   }
 }
 
+const roomyWeight = 320
+
 const ayahWeight = (a: CardAyah) => a.arabic.length + a.translation.length * 0.8
 
 export function splitAyatIntoSlides(ayat: CardAyah[], format: CardFormat, firstSlideShare = 1): CardAyah[][] {
@@ -82,15 +84,18 @@ export function splitAyatIntoSlides(ayat: CardAyah[], format: CardFormat, firstS
 const ayahRange = (ayat: CardAyah[]) => (ayat.length === 1 ? `${ayat[0]!.number}` : `${ayat[0]!.number}–${ayat[ayat.length - 1]!.number}`)
 
 export function quranCards(input: QuranCardInput, format: CardFormat): CardContent[] {
-  const slides = splitAyatIntoSlides(input.ayat, format, input.benefit ? 0.6 : input.kind === 'masnoon' ? 0.8 : 1)
-  return slides.map((ayat, index) => ({
+  const slides = splitAyatIntoSlides(input.ayat, format, 1)
+  return slides.map((ayat, index) => {
+    const roomy = ayat.reduce((sum, a) => sum + ayahWeight(a), 0) < roomyWeight
+    return {
     kind: input.kind,
     eyebrow: input.bangla ? banglaEyebrows[input.kind] : input.kind === 'dua' ? 'Quranic Dua' : 'Masnoon Surah',
     title: input.title,
-    arabicTitle: input.kind === 'masnoon' ? input.surahNameArabic : undefined,
+    arabicTitle: input.kind === 'masnoon' && roomy ? input.surahNameArabic : undefined,
     lines: ayat.map((a): CardLine => ({ arabic: a.arabic, translation: a.translation, ayah: a.number })),
     reference: `Surah ${input.surahName} · ${input.surahNumber}:${ayahRange(ayat)}`,
-    ...(index === 0 && input.benefit ? { benefit: cardBenefit(input.benefit, Boolean(input.bangla)) } : {}),
+    ...(index === 0 && input.benefit ? { [roomy ? 'benefit' : 'captionBenefit']: cardBenefit(input.benefit, Boolean(input.bangla)) } : {}),
     ...(slides.length > 1 ? { slide: { index: index + 1, count: slides.length } } : {}),
-  }))
+    }
+  })
 }
