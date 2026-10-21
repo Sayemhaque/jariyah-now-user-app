@@ -9,7 +9,7 @@ import { uploadToYouTube } from '@/lib/social/youtube'
 import { uploadToFacebookReels, uploadToInstagramReels } from '@/lib/social/meta'
 import { postImagesToFacebook, postImagesToInstagram, type ImagePostInput } from '@/lib/social/metaImages'
 import { withTemporaryUrls } from '@/lib/social/temporaryVideoUrl'
-import { makeReelSafe, renderCards, renderVideo } from '@/lib/render/remotionRender'
+import { extractCover, makeReelSafe, renderCards, renderVideo } from '@/lib/render/remotionRender'
 import { uploadToTikTok } from '@/lib/social/tiktok'
 import type { Platform, UploadInput, UploadResult } from '@/lib/social/types'
 
@@ -81,7 +81,8 @@ async function postVideo(video: DailyVideo) {
     YOUTUBE_PRIVACY_STATUS: dailyConfig.youtubePrivacy,
     TIKTOK_PRIVACY_LEVEL: dailyConfig.tiktokPrivacy,
   })
-  const input: UploadInput = { video: buf, meta: video.meta, coverAtMs: dailyConfig.coverAtMs }
+  const cover = extractCover(outPath, dailyConfig.coverAtMs, join(outDir, `cover-${video.dateKey}.jpg`))
+  const input: UploadInput = { video: buf, meta: video.meta, coverAtMs: dailyConfig.coverAtMs, cover }
   await waitForSlot(dailyConfig.reelUploadLeadMinutes)
   const uploaders: Record<Platform, (() => Promise<UploadResult>) | null> = {
     youtube: cfg.youtube && (() => uploadToYouTube(cfg.youtube!, input)),

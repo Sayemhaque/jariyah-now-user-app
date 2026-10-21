@@ -32,6 +32,18 @@ async function ruploadBytes(uploadUrl: string, token: string, video: Buffer, lab
   )
 }
 
+export async function setReelThumbnail(version: string, videoId: string, token: string, cover: Buffer): Promise<void> {
+  const form = new FormData()
+  form.append('access_token', token)
+  form.append('is_preferred', 'true')
+  form.append('source', new Blob([new Uint8Array(cover)], { type: 'image/jpeg' }), 'cover.jpg')
+  try {
+    await expectOk(await fetch(`${graphUrl}/${version}/${videoId}/thumbnails`, { method: 'POST', body: form }), 'Facebook reel thumbnail')
+  } catch (error) {
+    console.warn('[facebook] keeping the automatic thumbnail:', error instanceof Error ? error.message : error)
+  }
+}
+
 export async function uploadToFacebookReels(cfg: FacebookConfig, input: UploadInput): Promise<UploadResult> {
   const { pageId, pageAccessToken: token, graphVersion: v } = cfg
 
@@ -44,6 +56,7 @@ export async function uploadToFacebookReels(cfg: FacebookConfig, input: UploadIn
   const uploadUrl = start.upload_url ?? `https://rupload.facebook.com/video-upload/${v}/${start.video_id}`
 
   await ruploadBytes(uploadUrl, token, input.video, 'Facebook reel upload')
+  if (input.cover) await setReelThumbnail(v, start.video_id, token, input.cover)
 
   await graphPost(
     `${v}/${pageId}/video_reels`,
