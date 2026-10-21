@@ -4,11 +4,11 @@ import { cardThemes } from './themes'
 import { resolveDecor, variantSpecs } from './variants'
 
 describe('card templates', () => {
-  it('offers 756 layouts: 84 structures in 9 decoration styles', () => {
-    expect(cardLayouts).toHaveLength(84)
-    expect(cardDesigns).toHaveLength(756)
-    expect(new Set(cardDesigns.map((d) => `${d.layout}.${d.variant}`)).size).toBe(756)
-    expect(templateCount).toBe(756 * cardThemes.length)
+  it('offers 810 layouts: 90 structures in 9 decoration styles', () => {
+    expect(cardLayouts).toHaveLength(90)
+    expect(cardDesigns).toHaveLength(810)
+    expect(new Set(cardDesigns.map((d) => `${d.layout}.${d.variant}`)).size).toBe(810)
+    expect(templateCount).toBe(810 * cardThemes.length)
   })
 
   it('names every structure with a lowercase key that survives a template id', () => {
@@ -17,11 +17,15 @@ describe('card templates', () => {
     expect(findCardTemplate('ribbonframe.seal--sage-mist')).toMatchObject({ layout: 'ribbonframe', variant: 'seal' })
   })
 
+  it('gives every layout its own name', () => {
+    expect(new Set(cardLayouts.map((l) => l.label)).size).toBe(cardLayouts.length)
+  })
+
   it('varies structure, decoration and colour from one card to the next', () => {
     const first = Array.from({ length: 12 }, (_, i) => templateAt(i))
     expect(new Set(first.map((t) => t.layout)).size).toBe(12)
     expect(new Set(first.map((t) => t.theme.key)).size).toBe(12)
-    const decorations = new Set(Array.from({ length: 756 }, (_, i) => templateAt(i).variant))
+    const decorations = new Set(Array.from({ length: 810 }, (_, i) => templateAt(i).variant))
     expect(decorations.size).toBe(9)
   })
 
