@@ -88,7 +88,29 @@ export interface PostMetadataInput {
   toAyat: number
   reciterName: string
   translationCredit?: string
+  audioUrl?: string
   extraHashtags?: string[]
+}
+
+export function audioSourceName(audioUrl?: string): string | undefined {
+  const host = audioUrl ? new URL(audioUrl).hostname : ''
+  if (host.endsWith('everyayah.com')) return 'EveryAyah.com'
+  if (host.endsWith('quran.com') || host.endsWith('qurancdn.com')) return 'Quran.com'
+  if (host.endsWith('quranicaudio.com')) return 'QuranicAudio.com'
+  return undefined
+}
+
+function creditLines(input: PostMetadataInput): string[] {
+  const source = audioSourceName(input.audioUrl)
+  return [
+    '— Credits & sources —',
+    `🎙 Recitation: ${input.reciterName}${source ? ` (audio from ${source})` : ''}`,
+    ...(input.translationCredit ? [`📖 Translation: ${input.translationCredit}`] : []),
+    '🎬 Video design and editing: Jariyah Now (original work)',
+    '',
+    'The Holy Quran is the word of Allah. This video is shared for non-commercial, educational and dawah purposes only, and is not monetised.',
+    'All rights to the recitation belong to the reciter and their respective owners. If you own the rights and would like this video removed, please contact us and we will take it down right away.',
+  ]
 }
 
 export interface PostMetadata {
@@ -139,10 +161,9 @@ export function buildPostMetadata(input: PostMetadataInput): PostMetadata {
     `Surah ${surah.name} — ${surah.englishName}`,
     `Surah ${surah.number}, ${range === 'Full Surah' ? `all ${surah.numberOfAyahs} ayats` : range}`,
     '',
-    `Reciter: ${reciterName}`,
-    ...(input.translationCredit ? [`Translation: ${input.translationCredit}`] : []),
-    '',
     'Share this reminder — it could be sadaqah jariyah for you.',
+    '',
+    ...creditLines(input),
     '',
     hashtags.join(' '),
   ]

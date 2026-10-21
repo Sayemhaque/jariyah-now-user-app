@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
+  audioSourceName,
   buildPostMetadata,
   countAyatsWithinBudget,
   dhakaDateKey,
@@ -99,13 +100,28 @@ describe('buildPostMetadata', () => {
     expect(meta.title).toBe('Surah Al-Ikhlas (الإخلاص) | Full Surah #Shorts')
     expect(meta.hashtags).toContain('#SurahAlIkhlas')
     expect(meta.hashtags).toContain('#MisharyAlafasy')
-    expect(meta.description).toContain('Reciter: Mishary Alafasy')
+    expect(meta.description).toContain('Recitation: Mishary Alafasy')
     expect(meta.description).not.toContain('Translation:')
   })
 
   it('credits the translation in the description', () => {
     const meta = buildPostMetadata({ surah: ikhlas, fromAyat: 1, toAyat: 4, reciterName: 'Mishary Alafasy', translationCredit: 'Saheeh International' })
-    expect(meta.description).toContain('Translation: Saheeh International')
+    expect(meta.description).toContain('📖 Translation: Saheeh International')
+  })
+
+  it('adds credits, the audio source and a rights notice to the description', () => {
+    const meta = buildPostMetadata({ surah: ikhlas, fromAyat: 1, toAyat: 4, reciterName: 'Mishary Alafasy', translationCredit: 'Saheeh International', audioUrl: 'https://everyayah.com/data/Alafasy_128kbps/112001.mp3' })
+    expect(meta.description).toContain('🎙 Recitation: Mishary Alafasy (audio from EveryAyah.com)')
+    expect(meta.description).toContain('📖 Translation: Saheeh International')
+    expect(meta.description).toContain('non-commercial, educational and dawah purposes')
+    expect(meta.description).toMatch(/rights.*removed/)
+    expect(meta.description.length).toBeLessThan(5000)
+    expect(meta.description).not.toMatch(/[<>]/)
+  })
+
+  it('names Quran.com audio', () => {
+    expect(audioSourceName('https://verses.quran.com/Alafasy/mp3/112001.mp3')).toBe('Quran.com')
+    expect(audioSourceName(undefined)).toBeUndefined()
   })
 
   it('labels a partial range', () => {
