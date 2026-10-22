@@ -24,6 +24,10 @@ on:
         description: 'Post this type now: quran, duaReel, kahf, hadith, azkar, duas, jumuahVirtue, durood or duaHour (empty = today''s plan)'
         required: false
         default: ''
+      dua:
+        description: 'Post the reel of this Quranic dua id now, e.g. zakariya-offspring (see src/lib/collections/quranicDuas.ts)'
+        required: false
+        default: ''
       surah:
         description: 'Post a reel of this surah number now (empty = today''s plan)'
         required: false
@@ -59,6 +63,7 @@ jobs:
           PLATFORMS: ${{ inputs.platforms }}
           SURAH: ${{ inputs.surah }}
           MODE: ${{ inputs.mode }}
+          DUA: ${{ inputs.dua }}
           NEXT_PUBLIC_UMMAHAPI_KEY: ${{ secrets.UMMAHAPI_KEY }}
           # YouTube Shorts
           YOUTUBE_CLIENT_ID: ${{ secrets.YOUTUBE_CLIENT_ID }}
