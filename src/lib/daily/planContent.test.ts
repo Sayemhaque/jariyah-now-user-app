@@ -78,8 +78,9 @@ describe('daily schedule', () => {
       expect(modes.filter(isReelMode)).toHaveLength(3)
       expect(modes.filter((m) => m === 'duaReel')).toHaveLength(1)
       expect(modes.filter((m) => !isReelMode(m))).toHaveLength(3)
-      expect(modes.at(-1)).toBe('quran')
+      expect(modes.slice(-2)).toEqual(['duaReel', 'quran'])
     }
+    expect(new Set(days.map((m) => m.indexOf('quran'))).size).toBeGreaterThan(2)
     expect(new Set(days.map((m) => m.join()))).not.toHaveProperty('size', 1)
     expect(dailyConfig.maxDurationSec).toBe(60)
   })
