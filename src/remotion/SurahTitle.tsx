@@ -1,7 +1,8 @@
 import React from 'react'
 import { useCurrentFrame, useVideoConfig, spring } from 'remotion'
 import { withAlpha } from '@/lib/color'
-import { headerArabicStack, uiFontStack } from './fontStacks'
+import { isBengaliText } from '@/lib/cards/cardTypography'
+import { bengaliFontStacks, headerArabicStack, uiFontStack } from './fontStacks'
 import { useReelLayout } from './reelLayout'
 
 interface SurahTitleProps {
@@ -19,7 +20,8 @@ export const SurahTitle: React.FC<SurahTitleProps> = ({ arabicName, englishName,
   const unit = Math.min(width, height) / 100
   const enter = spring({ frame, fps, config: { damping: 200 }, durationInFrames: Math.round(fps * 0.9) })
   const line = { flex: 1, height: 1, maxWidth: unit * 12 }
-  const subtitle = [englishName, meaning].filter(Boolean).join(' · ')
+  const banglaMeaning = meaning && isBengaliText(meaning) ? meaning : undefined
+  const subtitle = [englishName, banglaMeaning ? undefined : meaning].filter(Boolean).join(' · ')
   const sides = layout.headerAlign === 'sides'
   const placement = sides ? { left: width * layout.sideInset, alignItems: 'flex-start' as const } : { left: 0, right: 0, alignItems: 'center' as const }
 
@@ -64,6 +66,11 @@ export const SurahTitle: React.FC<SurahTitleProps> = ({ arabicName, englishName,
         </span>
         <div style={{ ...line, background: `linear-gradient(90deg, ${accent}, transparent)` }} />
       </div>
+      {banglaMeaning && (
+        <div style={{ marginTop: unit * 1.2, fontFamily: bengaliFontStacks.sans, fontSize: unit * 3.6, fontWeight: 600, lineHeight: 1.35, color: text, textAlign: sides ? 'left' : 'center', maxWidth: width * 0.84, textShadow: '0 2px 14px rgba(0,0,0,0.55)' }}>
+          {banglaMeaning}
+        </div>
+      )}
     </div>
   )
 }
