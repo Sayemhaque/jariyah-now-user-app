@@ -2,6 +2,7 @@ import { textTranslation } from '@/lib/collections/textTranslation'
 import type { TextItem, TextLanguage } from '@/lib/collections/types'
 import type { Hadith } from '@/lib/hadith/types'
 import type { CardContent, CardFormat, CardLine } from './types'
+import { fridayEyebrow, type FridayItem } from '@/lib/collections/friday'
 import { banglaBookNames, banglaEyebrows, banglaGrade, banglaNote, banglaSource, bnDigits } from './bangla'
 import { azkarBenefits, type Benefit } from '@/lib/collections/benefits'
 
@@ -43,6 +44,17 @@ export function hadithCard(hadith: Hadith): CardContent {
   if (hadith.language === 'bangla') return banglaHadithCard(hadith)
   const reference = `${hadith.bookName} ${hadith.number}${showsGrade(hadith) ? ` · ${hadith.grade}` : ''}`
   return { kind: 'hadith', eyebrow: 'Hadith', title: hadith.chapter || hadith.bookName, lines: [{ translation: hadith.text }], reference }
+}
+
+export function fridayCard(item: FridayItem): CardContent {
+  return {
+    kind: item.arabic ? 'azkar' : 'hadith',
+    eyebrow: fridayEyebrow,
+    title: item.title,
+    lines: [{ ...(item.arabic ? { arabic: item.arabic } : {}), translation: item.text }],
+    reference: item.source,
+    ...(item.benefit ? { benefit: item.benefit } : {}),
+  }
 }
 
 export function azkarCard(item: TextItem, language: TextLanguage): CardContent {

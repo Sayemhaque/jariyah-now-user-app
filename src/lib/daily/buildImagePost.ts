@@ -1,6 +1,7 @@
 import { textCollections } from '@/lib/collections'
 import { isPresetMode, type ContentMode } from '@/lib/collections/types'
-import { azkarCard, hadithCard, quranCards } from '@/lib/cards/cardContent'
+import { azkarCard, fridayCard, hadithCard, quranCards } from '@/lib/cards/cardContent'
+import { fridayItems, type FridayPostKey } from '@/lib/collections/friday'
 import { cardPostMetadata } from '@/lib/cards/cardPostMetadata'
 import { fetchCardAyat } from '@/lib/cards/fetchCardAyat'
 import { isBanglaTranslation, presetCardTitle } from '@/lib/cards/presetTitle'
@@ -48,10 +49,20 @@ function azkarCards(ctx: DailyContext, turn: number): CardContent[] {
   return [azkarCard(pickTextItem(textCollections.azkar, turn), ctx.opts.textLanguage ?? 'english')]
 }
 
+export const isFridayKey = (mode: string): mode is FridayPostKey => mode in fridayItems
+
+export function buildFridayPost(ctx: DailyContext, key: FridayPostKey): DailyImagePost {
+  return imagePost(ctx, key, [fridayCard(fridayItems[key])])
+}
+
 export async function buildImagePost(ctx: DailyContext, mode: Exclude<ContentMode, 'quran'>, turn: number): Promise<DailyImagePost> {
   const contents = isPresetMode(mode) ? await presetCards(ctx, mode, turn) : mode === 'hadith' ? await hadithCards(ctx, turn) : azkarCards(ctx, turn)
-  const template = pickTemplate(ctx.sequence)
   const credit = isPresetMode(mode) ? translationCredit(ctx.opts.translationKey ?? 'sahiih_international') : undefined
+  return imagePost(ctx, mode, contents, credit)
+}
+
+function imagePost(ctx: DailyContext, mode: DailyImagePost['mode'], contents: CardContent[], credit?: string): DailyImagePost {
+  const template = pickTemplate(ctx.sequence)
   return {
     kind: 'images',
     dateKey: dhakaDateKey(ctx.now),

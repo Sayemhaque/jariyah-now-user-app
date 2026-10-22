@@ -10,9 +10,10 @@ import { maxAyatsPerVideo } from '@/lib/constants'
 import { defaultVideoSettings } from '@/lib/defaultSettings'
 import type { AyatSlide, Reciter, VideoSettings } from '@/lib/types'
 import type { ContentMode } from '@/lib/collections/types'
-import { buildImagePost } from './buildImagePost'
+import { kahfReminder } from '@/lib/collections/friday'
+import { buildFridayPost, buildImagePost, isFridayKey } from './buildImagePost'
 import { videoProps, type DailyContext, type DailyPost, type DailyVideo, type DailyVideoOptions } from './dailyContext'
-import { modeTurn, pickContentMode, scheduledPost } from './planContent'
+import { modeTurn, pickContentMode, pickDua, scheduledPost } from './planContent'
 import {
   buildPostMetadata,
   countAyatsWithinBudget,
@@ -50,14 +51,27 @@ export async function buildDailyPost(opts: DailyVideoOptions = {}): Promise<Dail
     ? { mode: pickContentMode(sequence, rotation), turn: modeTurn(sequence, rotation, pickContentMode(sequence, rotation)) }
     : scheduledPost(now, opts.postTimes ?? ['22:00'])
   if (mode === 'quran') return buildQuranDailyVideo(ctx, pickSurahNumber(turn))
+  if (mode === 'duaReel') {
+    const dua = pickDua(turn)
+    return buildQuranDailyVideo(ctx, dua.surah, { range: { fromAyat: dua.fromAyat, toAyat: dua.toAyat }, heading: dua.titleBn ?? dua.title, wholeRange: true })
+  }
+  if (mode === 'kahf') return buildQuranDailyVideo(ctx, 18, { range: { fromAyat: 1, toAyat: 10 }, heading: 'জুমার দিনের সূরা কাহফ', reminder: kahfReminder })
+  if (isFridayKey(mode)) return buildFridayPost(ctx, mode)
   return buildImagePost(ctx, mode, turn)
 }
 
-async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number): Promise<DailyVideo> {
-  const range = ctx.opts.range
+interface ReelExtras {
+  range?: { fromAyat: number; toAyat: number }
+  heading?: string
+  reminder?: { text: string; source: string }
+  wholeRange?: boolean
+}
+
+async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number, extras: ReelExtras = {}): Promise<DailyVideo> {
+  const range = extras.range ?? ctx.opts.range
   const { opts, rand, audioTools, now } = ctx
-  const maxMs = opts.maxDurationSec ? opts.maxDurationSec * 1000 : Infinity
-  const maxAyats = opts.maxAyats ?? maxAyatsPerVideo
+  const maxMs = opts.maxDurationSec && !extras.wholeRange ? opts.maxDurationSec * 1000 : Infinity
+  const maxAyats = extras.wholeRange && range ? range.toAyat - range.fromAyat + 1 : (opts.maxAyats ?? maxAyatsPerVideo)
   const translationKey = opts.translationKey ?? 'bengali'
 
   const reciterPool = dailyReciterIds.map(getReciterById).filter((r): r is Reciter => Boolean(r))
@@ -113,7 +127,7 @@ async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number): Pro
       mode: 'quran',
       label: `Surah ${surah.number} ${surah.name}, ayat ${fromAyat}-${toAyat} · ${reciter.name} · ${(durationMs / 1000).toFixed(1)}s`,
       durationMs,
-      props: videoProps(ctx, { slides, reciterName: reciter.name, surahName: surah.name, surahNameArabic: surah.arabicName, surahMeaning: surah.englishName }),
+      props: videoProps(ctx, { slides, reciterName: reciter.name, surahName: surah.name, surahNameArabic: surah.arabicName, surahMeaning: extras.heading ?? surah.englishName }),
       meta: buildPostMetadata({
         surah,
         fromAyat,
@@ -122,6 +136,8 @@ async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number): Pro
         translationCredit: translationCredit(translationKey),
         audioUrl: slides[0]?.audioUrl,
         extraHashtags: opts.extraHashtags,
+        heading: extras.heading,
+        reminder: extras.reminder,
       }),
     }
   }

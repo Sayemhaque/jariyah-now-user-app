@@ -90,6 +90,8 @@ export interface PostMetadataInput {
   translationCredit?: string
   audioUrl?: string
   extraHashtags?: string[]
+  heading?: string
+  reminder?: { text: string; source: string }
 }
 
 export function audioSourceName(audioUrl?: string): string | undefined {
@@ -154,10 +156,12 @@ export function buildPostMetadata(input: PostMetadataInput): PostMetadata {
   ].filter(Boolean)
   const hashtags = Array.from(new Set(tags))
 
-  const base = `Surah ${surah.name} (${surah.arabicName}) | ${range}`
+  const base = input.heading ? `${input.heading} | Surah ${surah.name} ${surah.number}:${fromAyat}${toAyat > fromAyat ? `-${toAyat}` : ''}` : `Surah ${surah.name} (${surah.arabicName}) | ${range}`
   const title = `${base} #Shorts`.length <= 100 ? `${base} #Shorts` : base.slice(0, 100)
 
   const lines = [
+    ...(input.heading ? [input.heading, ''] : []),
+    ...(input.reminder ? [`✦ ${input.reminder.text} (${input.reminder.source})`, ''] : []),
     `Surah ${surah.name} — ${surah.englishName}`,
     `Surah ${surah.number}, ${range === 'Full Surah' ? `all ${surah.numberOfAyahs} ayats` : range}`,
     '',

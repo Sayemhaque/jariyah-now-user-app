@@ -17,6 +17,10 @@ describe('preset collections', () => {
     })
   })
 
+  it('give every Quranic dua a Bangla title for its reel heading', () => {
+    presetCollections.duas.forEach((d) => expect(d.titleBn, d.id).toBeTruthy())
+  })
+
   it('have unique ids', () => {
     Object.values(presetCollections).forEach((list) => expect(new Set(list.map((p) => p.id)).size).toBe(list.length))
   })
