@@ -120,6 +120,7 @@ export interface PostMetadata {
   description: string
   hashtags: string[]
   shortCaption: string
+  facebookCaption?: string
 }
 
 export const defaultHashtags = [
@@ -177,7 +178,24 @@ export function buildPostMetadata(input: PostMetadataInput): PostMetadata {
     description: lines.join('\n'),
     hashtags,
     shortCaption: `${base} — ${reciterName}\n${hashtags.join(' ')}`,
+    facebookCaption: facebookCaption(input),
   }
+}
+
+const facebookTags = ['#Quran', '#কুরআন', '#JariyahNow']
+
+function facebookCaption(input: PostMetadataInput): string {
+  const { surah, fromAyat, toAyat, reciterName } = input
+  const source = audioSourceName(input.audioUrl)
+  return [
+    `${input.heading ?? `সূরা ${surah.name}`} 🤍`,
+    `Surah ${surah.name} ${surah.number}:${fromAyat}${toAyat > fromAyat ? `-${toAyat}` : ''} · ${reciterName}`,
+    '',
+    'শেয়ার করুন — হতে পারে আপনার সদকায়ে জারিয়া 🤲',
+    '',
+    facebookTags.join(' '),
+    `🎙 ${reciterName}${source ? ` · audio: ${source}` : ''} · অলাভজনক দাওয়াহ`,
+  ].join('\n')
 }
 
 export function scheduledPostTime(now: Date, postTimes: readonly string[], maxLeadMs = 10 * 60_000, catchUpMs = 3 * 60 * 60_000): Date | null {

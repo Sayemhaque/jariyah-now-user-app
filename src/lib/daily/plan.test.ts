@@ -119,6 +119,15 @@ describe('buildPostMetadata', () => {
     expect(meta.description).not.toMatch(/[<>]/)
   })
 
+  it('gives Facebook a short Bangla caption with three hashtags', () => {
+    const meta = buildPostMetadata({ surah: ikhlas, fromAyat: 1, toAyat: 4, reciterName: 'Mishary Alafasy', audioUrl: 'https://everyayah.com/x.mp3' })
+    const caption = meta.facebookCaption!
+    expect(caption.match(/#/g)).toHaveLength(3)
+    expect(caption).toContain('সদকায়ে জারিয়া')
+    expect(caption).toContain('112:1-4 · Mishary Alafasy')
+    expect(caption.length).toBeLessThan(meta.description.length / 2)
+  })
+
   it('names Quran.com audio', () => {
     expect(audioSourceName('https://verses.quran.com/Alafasy/mp3/112001.mp3')).toBe('Quran.com')
     expect(audioSourceName(undefined)).toBeUndefined()

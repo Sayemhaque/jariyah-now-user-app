@@ -64,7 +64,7 @@ export async function uploadToFacebookReels(cfg: FacebookConfig, input: UploadIn
       upload_phase: 'finish',
       video_id: start.video_id,
       video_state: 'PUBLISHED',
-      description: input.meta.description,
+      description: input.meta.facebookCaption ?? input.meta.description,
       title: input.meta.title,
       access_token: token,
     },
