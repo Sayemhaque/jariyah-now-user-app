@@ -1,5 +1,6 @@
 import { presetCollections } from '@/lib/collections'
 import { presetParts, type PresetPart } from '@/lib/collections/presetParts'
+import type { FridayPostKey } from '@/lib/collections/friday'
 import { type ContentMode, type PresetMode, type QuranPreset, type TextItem } from '@/lib/collections/types'
 import { hadithBooks } from '@/lib/hadith/hadithBooks'
 import type { HadithSelection } from '@/lib/hadith/types'
@@ -35,12 +36,25 @@ export function modeTurn(sequence: number, rotation: ContentMode[], mode: Conten
   return Math.floor(sequence / Math.max(1, rotation.length)) * perCycle + rotation.slice(0, ((sequence % rotation.length) + rotation.length) % rotation.length).filter((m) => m === mode).length
 }
 
-export function dailyModes(dayIndex: number): ContentMode[] {
-  const shuffled = seededShuffle<ContentMode>(['quran', 'quran', 'hadith', 'azkar', 'duas'], 0x5ced + dayIndex)
+export type DailyMode = ContentMode | 'duaReel' | 'kahf' | FridayPostKey
+
+export const isReelMode = (mode: DailyMode) => mode === 'quran' || mode === 'duaReel' || mode === 'kahf'
+
+export const isFriday = (dayIndex: number) => (dayIndex + 4) % 7 === 5
+
+const fridayModes: DailyMode[] = ['kahf', 'jumuahVirtue', 'durood', 'duaHour', 'duaReel', 'quran']
+
+export function dailyModes(dayIndex: number): DailyMode[] {
+  if (isFriday(dayIndex)) return fridayModes
+  const shuffled = seededShuffle<DailyMode>(['quran', 'duaReel', 'hadith', 'azkar', 'duas'], 0x5ced + dayIndex)
   return [...shuffled, 'quran']
 }
 
-export function scheduledPost(date: Date, postTimes: readonly string[]): { mode: ContentMode; turn: number } {
+export function pickDua(turn: number): QuranPreset {
+  return cyclePick(presetCollections.duas, turn, 0xd0a5)
+}
+
+export function scheduledPost(date: Date, postTimes: readonly string[]): { mode: DailyMode; turn: number } {
   const day = dhakaDayIndex(date)
   const modes = dailyModes(day)
   const slot = Math.min(postSlot(date, postTimes), modes.length - 1)

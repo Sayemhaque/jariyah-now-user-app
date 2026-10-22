@@ -6,7 +6,7 @@ describe('videoTemplates', () => {
   const list = videoTemplates()
 
   it('has one video per Quranic dua and per masnoon surah part', () => {
-    expect(list.filter((t) => t.kind === 'duas')).toHaveLength(28)
+    expect(list.filter((t) => t.kind === 'duas')).toHaveLength(47)
     const mulk = list.filter((t) => t.presetId === 'mulk')
     expect(mulk.map((t) => t.key)).toEqual(['masnoon/mulk-part-1', 'masnoon/mulk-part-2', 'masnoon/mulk-part-3'])
     expect(mulk[0]!.partLabel).toBe('Part 1 · Ayat 1–10')

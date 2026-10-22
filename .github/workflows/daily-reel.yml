@@ -21,7 +21,7 @@ on:
         required: false
         default: ''
       mode:
-        description: 'Post this type now: azkar, hadith, duas, masnoon or quran (empty = today''s plan)'
+        description: 'Post this type now: quran, duaReel, kahf, hadith, azkar, duas, jumuahVirtue, durood or duaHour (empty = today''s plan)'
         required: false
         default: ''
       surah:

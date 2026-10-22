@@ -4,7 +4,7 @@ import { findHadithBook } from '@/lib/hadith/hadithApi'
 import { presetCollections } from '@/lib/collections'
 import { presetParts } from '@/lib/collections/presetParts'
 import type { ContentMode } from '@/lib/collections/types'
-import { modeTurn, pickContentMode, pickFrom, scheduledPost, pickHadithSource, pickPreset, pickTextItem } from './planContent'
+import { isReelMode, modeTurn, pickContentMode, pickDua, pickFrom, scheduledPost, pickHadithSource, pickPreset, pickTextItem } from './planContent'
 import { dailyConfig } from './dailyConfig'
 
 const rotation: ContentMode[] = ['quran', 'masnoon', 'hadith', 'duas', 'azkar']
@@ -72,15 +72,28 @@ describe('daily schedule', () => {
   const slotAt = (day: number, time: string) => new Date(Date.UTC(2026, 9, 21 + day, Number(time.slice(0, 2)) - 6, Number(time.slice(3)) + 5))
   const plan = (day: number) => dailyConfig.postTimes.map((t) => scheduledPost(slotAt(day, t), dailyConfig.postTimes))
 
-  it('posts three one-minute reels and three image posts a day, with a reel every night', () => {
+  it('posts three reels, one of them a Quranic dua, and three image posts a day, with a reel every night', () => {
     const days = Array.from({ length: 14 }, (_, day) => plan(day).map((p) => p.mode))
     for (const modes of days) {
-      expect(modes.filter((m) => m === 'quran')).toHaveLength(3)
-      expect(modes.filter((m) => m !== 'quran')).toHaveLength(3)
+      expect(modes.filter(isReelMode)).toHaveLength(3)
+      expect(modes.filter((m) => m === 'duaReel')).toHaveLength(1)
+      expect(modes.filter((m) => !isReelMode(m))).toHaveLength(3)
       expect(modes.at(-1)).toBe('quran')
     }
     expect(new Set(days.map((m) => m.join()))).not.toHaveProperty('size', 1)
     expect(dailyConfig.maxDurationSec).toBe(60)
+  })
+
+  it('turns Friday into Jumuah posts in Bangla: Al-Kahf, its virtue, durood and the hour of acceptance', () => {
+    const friday = plan(2).map((p) => p.mode)
+    expect(new Date(Date.UTC(2026, 9, 23)).getUTCDay()).toBe(5)
+    expect(friday).toEqual(['kahf', 'jumuahVirtue', 'durood', 'duaHour', 'duaReel', 'quran'])
+    expect(plan(1).map((p) => p.mode)).not.toContain('durood')
+  })
+
+  it('cycles through every Quranic dua before repeating one', () => {
+    const ids = Array.from({ length: presetCollections.duas.length }, (_, t) => pickDua(t).id)
+    expect(new Set(ids).size).toBe(presetCollections.duas.length)
   })
 
   it('never repeats a surah within a day', () => {

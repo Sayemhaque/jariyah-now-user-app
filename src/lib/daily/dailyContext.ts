@@ -1,3 +1,4 @@
+import type { FridayPostKey } from '@/lib/collections/friday'
 import type { ContentMode, TextLanguage } from '@/lib/collections/types'
 import type { VideoSettings } from '@/lib/types'
 import type { CardProps } from '@/lib/cards/types'
@@ -36,7 +37,7 @@ export interface DailyVideo {
 export interface DailyImagePost {
   kind: 'images'
   dateKey: string
-  mode: ContentMode
+  mode: ContentMode | FridayPostKey
   label: string
   cards: CardProps[]
   meta: PostMetadata
