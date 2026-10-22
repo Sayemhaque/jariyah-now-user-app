@@ -130,7 +130,7 @@ async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number, extr
       mode: 'quran',
       label: `Surah ${surah.number} ${surah.name}, ayat ${fromAyat}-${toAyat} · ${reciter.name} · ${(durationMs / 1000).toFixed(1)}s`,
       durationMs,
-      props: videoProps(ctx, { slides, reciterName: reciter.name, surahName: surah.name, surahNameArabic: surah.arabicName, surahMeaning: extras.heading ?? surah.englishName }),
+      props: videoProps(ctx, { slides, reciterName: reciter.name, surahName: surah.name, surahNameArabic: surah.arabicName, surahMeaning: surah.englishName }),
       meta: buildPostMetadata({
         surah,
         fromAyat,
