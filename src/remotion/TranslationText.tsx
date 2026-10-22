@@ -22,6 +22,7 @@ export const TranslationText: React.FC<TranslationTextProps> = ({ text, fontSize
         color,
         lineHeight: 1.45,
         letterSpacing: '0.01em',
+        textShadow: '0 2px 12px rgba(0, 0, 0, 0.55), 0 0 2px rgba(0, 0, 0, 0.4)',
         marginTop: `${spacing * 100}%`,
         fontFamily: fontFamily ?? uiFontStack,
       }}

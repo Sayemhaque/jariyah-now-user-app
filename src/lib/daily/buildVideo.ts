@@ -27,6 +27,8 @@ import {
 
 export type { DailyImagePost, DailyPost, DailyVideo, DailyVideoOptions } from './dailyContext'
 
+const dailySceneBlocklist = ['desert-train']
+
 export const dailyReciterIds = ['alafasy', 'sudais', 'abdulbasit', 'muaiqly', 'shatri', 'dosari', 'shuraim']
 
 function baseSettings(scene: BackgroundScene): VideoSettings {
@@ -36,7 +38,8 @@ function baseSettings(scene: BackgroundScene): VideoSettings {
 export async function buildDailyPost(opts: DailyVideoOptions = {}): Promise<DailyPost> {
   const now = opts.now ?? new Date()
   const sequence = postIndex(now, opts.postTimes ?? ['22:00'])
-  const scene = backgroundScenes.find((s) => s.key === opts.sceneKey) ?? backgroundScenes[pickSceneIndex(sequence, backgroundScenes.length)] ?? backgroundScenes[0]!
+  const scenes = backgroundScenes.filter((s) => !dailySceneBlocklist.includes(s.key))
+  const scene = backgroundScenes.find((s) => s.key === opts.sceneKey) ?? scenes[pickSceneIndex(sequence, scenes.length)] ?? scenes[0]!
   const ctx: DailyContext = {
     opts,
     now,
