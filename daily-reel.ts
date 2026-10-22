@@ -7,7 +7,7 @@ import { isSlotPosted, markSlotPosted } from '@/lib/daily/postedMarker'
 import { loadSocialConfig } from '@/lib/social/config'
 import { uploadToYouTube } from '@/lib/social/youtube'
 import { uploadToFacebookReels, uploadToInstagramReels } from '@/lib/social/meta'
-import { postImagesToFacebook, postImagesToInstagram, type ImagePostInput } from '@/lib/social/metaImages'
+import { postImagesToInstagram, type ImagePostInput } from '@/lib/social/metaImages'
 import { withTemporaryUrls } from '@/lib/social/temporaryVideoUrl'
 import { extractCover, makeReelSafe, renderCards, renderVideo } from '@/lib/render/remotionRender'
 import { uploadToTikTok } from '@/lib/social/tiktok'
@@ -111,7 +111,7 @@ async function postImages(post: DailyImagePost) {
     await runUploads({
       youtube: null,
       tiktok: null,
-      facebook: cfg.facebook && (() => postImagesToFacebook(cfg.facebook!, input)),
+      facebook: null,
       instagram: cfg.instagram && (() => postImagesToInstagram(cfg.instagram!, input)),
     })
   })
