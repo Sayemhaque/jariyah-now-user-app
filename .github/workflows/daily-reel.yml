@@ -47,8 +47,10 @@ jobs:
 
       - run: npm ci
 
-      - name: Install ffmpeg
-        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
+      # A cached static ffmpeg build (with ffprobe) instead of apt-get, which took up to three minutes.
+      - uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          ffmpeg-version: release
 
       - name: Render and post
         env:
