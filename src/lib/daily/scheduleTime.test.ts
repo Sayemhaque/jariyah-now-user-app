@@ -56,6 +56,6 @@ describe('workflow files', () => {
 
   it('keep the manual trigger and its inputs on the daily workflow', () => {
     const workflow = load(readFileSync(join(dir, 'daily-reel.yml'), 'utf8')) as { on: { workflow_dispatch: { inputs: Record<string, unknown> } } }
-    expect(Object.keys(workflow.on.workflow_dispatch.inputs)).toEqual(expect.arrayContaining(['slot', 'platforms', 'mode', 'surah']))
+    expect(Object.keys(workflow.on.workflow_dispatch.inputs)).toEqual(expect.arrayContaining(['slot', 'platforms', 'mode', 'dua', 'surah']))
   })
 })

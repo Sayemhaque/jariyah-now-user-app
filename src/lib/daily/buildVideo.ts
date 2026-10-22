@@ -10,7 +10,9 @@ import { maxAyatsPerVideo } from '@/lib/constants'
 import { defaultVideoSettings } from '@/lib/defaultSettings'
 import type { AyatSlide, Reciter, VideoSettings } from '@/lib/types'
 import type { ContentMode } from '@/lib/collections/types'
+import { presetCollections } from '@/lib/collections'
 import { kahfReminder } from '@/lib/collections/friday'
+import type { QuranPreset } from '@/lib/collections/types'
 import { buildFridayPost, buildImagePost, isFridayKey } from './buildImagePost'
 import { videoProps, type DailyContext, type DailyPost, type DailyVideo, type DailyVideoOptions } from './dailyContext'
 import { modeTurn, pickContentMode, pickDua, scheduledPost } from './planContent'
@@ -49,18 +51,26 @@ export async function buildDailyPost(opts: DailyVideoOptions = {}): Promise<Dail
     audioTools: { ffprobeBin: opts.ffprobeBin, ffmpegBin: opts.ffmpegBin },
   }
   if (opts.surahOverride) return buildQuranDailyVideo(ctx, opts.surahOverride)
+  if (opts.duaId) return buildDuaReel(ctx, findDua(opts.duaId))
   const rotation = opts.contentRotation
   const { mode, turn } = rotation?.length
     ? { mode: pickContentMode(sequence, rotation), turn: modeTurn(sequence, rotation, pickContentMode(sequence, rotation)) }
     : scheduledPost(now, opts.postTimes ?? ['22:00'])
   if (mode === 'quran') return buildQuranDailyVideo(ctx, pickSurahNumber(turn))
-  if (mode === 'duaReel') {
-    const dua = pickDua(turn)
-    return buildQuranDailyVideo(ctx, dua.surah, { range: { fromAyat: dua.fromAyat, toAyat: dua.toAyat }, heading: dua.titleBn ?? dua.title, wholeRange: true })
-  }
+  if (mode === 'duaReel') return buildDuaReel(ctx, pickDua(turn))
   if (mode === 'kahf') return buildQuranDailyVideo(ctx, 18, { range: { fromAyat: 1, toAyat: 10 }, heading: 'জুমার দিনের সূরা কাহফ', reminder: kahfReminder })
   if (isFridayKey(mode)) return buildFridayPost(ctx, mode)
   return buildImagePost(ctx, mode, turn)
+}
+
+function findDua(id: string): QuranPreset {
+  const dua = presetCollections.duas.find((d) => d.id === id)
+  if (!dua) throw new Error(`Unknown dua "${id}". Valid: ${presetCollections.duas.map((d) => d.id).join(', ')}`)
+  return dua
+}
+
+function buildDuaReel(ctx: DailyContext, dua: QuranPreset): Promise<DailyVideo> {
+  return buildQuranDailyVideo(ctx, dua.surah, { range: { fromAyat: dua.fromAyat, toAyat: dua.toAyat }, heading: dua.titleBn ?? dua.title, wholeRange: true })
 }
 
 interface ReelExtras {

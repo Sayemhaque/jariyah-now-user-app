@@ -24,7 +24,7 @@ function summary(line: string) {
 const postNow = env.POST_NOW === 'true'
 const plannedSlot = scheduledPostTime(new Date(), dailyConfig.postTimes)
 const slot = postNow ? new Date() : (plannedSlot ?? new Date())
-const isTestRun = Boolean(env.SURAH || env.PLATFORMS || env.MODE)
+const isTestRun = Boolean(env.SURAH || env.PLATFORMS || env.MODE || env.DUA)
 
 const markerToken = env.BLOB_READ_WRITE_TOKEN
 
@@ -40,6 +40,7 @@ async function main() {
   const post = await buildDailyPost({
     now: slot,
     surahOverride: env.SURAH ? Number(env.SURAH) : undefined,
+    duaId: env.DUA || undefined,
     reciterId: dailyConfig.reciterId,
     translationKey: dailyConfig.translationKey,
     maxAyats: dailyConfig.maxAyats,
