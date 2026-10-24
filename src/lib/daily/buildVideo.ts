@@ -15,11 +15,12 @@ import { kahfReminder } from '@/lib/collections/friday'
 import type { QuranPreset } from '@/lib/collections/types'
 import { buildFridayPost, buildImagePost, isFridayKey } from './buildImagePost'
 import { videoProps, type DailyContext, type DailyPost, type DailyVideo, type DailyVideoOptions } from './dailyContext'
-import { modeTurn, pickContentMode, pickDua, scheduledPost } from './planContent'
+import { isReelMode, modeTurn, pickContentMode, pickDua, pickSpecial, reelTurn, scheduledPost } from './planContent'
 import {
   buildPostMetadata,
   countAyatsWithinBudget,
   dhakaDateKey,
+  dhakaDayIndex,
   postIndex,
   mulberry32,
   pickSceneIndex,
@@ -56,6 +57,11 @@ export async function buildDailyPost(opts: DailyVideoOptions = {}): Promise<Dail
   const { mode, turn } = rotation?.length
     ? { mode: pickContentMode(sequence, rotation), turn: modeTurn(sequence, rotation, pickContentMode(sequence, rotation)) }
     : scheduledPost(now, opts.postTimes ?? ['22:00'])
+  if (!rotation?.length && isReelMode(mode) && opts.specialReelsUntil && dhakaDateKey(now) < opts.specialReelsUntil) {
+    const fromDay = opts.specialReelsFrom ? dhakaDayIndex(new Date(`${opts.specialReelsFrom}T00:00:00+06:00`)) : 0
+    const passage = pickSpecial(reelTurn(now, opts.postTimes ?? ['22:00'], fromDay))
+    return buildQuranDailyVideo(ctx, passage.surah, { range: { fromAyat: passage.fromAyat, toAyat: passage.toAyat }, heading: passage.title, reminder: passage.virtue, wholeRange: true })
+  }
   if (mode === 'quran') return buildQuranDailyVideo(ctx, pickSurahNumber(turn))
   if (mode === 'duaReel') return buildDuaReel(ctx, pickDua(turn))
   if (mode === 'kahf') return buildQuranDailyVideo(ctx, 18, { range: { fromAyat: 1, toAyat: 10 }, heading: 'জুমার দিনের সূরা কাহফ', reminder: kahfReminder })

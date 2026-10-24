@@ -4,8 +4,11 @@ import { findHadithBook } from '@/lib/hadith/hadithApi'
 import { presetCollections } from '@/lib/collections'
 import { presetParts } from '@/lib/collections/presetParts'
 import type { ContentMode } from '@/lib/collections/types'
-import { isReelMode, modeTurn, pickContentMode, pickDua, pickFrom, scheduledPost, pickHadithSource, pickPreset, pickTextItem } from './planContent'
+import { isReelMode, modeTurn, pickContentMode, pickDua, pickFrom, pickSpecial, reelTurn, scheduledPost, pickHadithSource, pickPreset, pickTextItem } from './planContent'
 import { dailyConfig } from './dailyConfig'
+import { dhakaDayIndex } from './plan'
+import { specialPassages } from '@/lib/collections/specialPassages'
+import { surahsFallback } from '@/lib/surahs-fallback'
 
 const rotation: ContentMode[] = ['quran', 'masnoon', 'hadith', 'duas', 'azkar']
 
@@ -90,6 +93,23 @@ describe('daily schedule', () => {
     expect(new Date(Date.UTC(2026, 9, 23)).getUTCDay()).toBe(5)
     expect(friday).toEqual(['kahf', 'jumuahVirtue', 'durood', 'duaHour', 'duaReel', 'quran'])
     expect(plan(1).map((p) => p.mode)).not.toContain('durood')
+  })
+
+  it('runs every reel from the special list until it ends, each passage once before any repeats', () => {
+    const turns = Array.from({ length: 4 }, (_, day) => dailyConfig.postTimes.filter((_, i) => isReelMode(plan(day)[i]!.mode)).map((t) => reelTurn(slotAt(day, t), dailyConfig.postTimes, dhakaDayIndex(slotAt(0, '07:00'))))).flat()
+    expect(new Set(turns).size).toBe(turns.length)
+    const ids = turns.map((t) => pickSpecial(t).id)
+    expect(new Set(ids.slice(0, specialPassages.length)).size).toBe(specialPassages.length)
+    expect(dailyConfig.specialReelsUntil).toBe('2026-11-03')
+  })
+
+  it('keeps every special passage inside its surah with a sourced Bangla virtue', () => {
+    for (const p of specialPassages) {
+      const surah = surahsFallback.find((s) => s.number === p.surah)!
+      expect(p.toAyat, p.id).toBeLessThanOrEqual(surah.numberOfAyahs)
+      expect(p.fromAyat, p.id).toBeLessThanOrEqual(p.toAyat)
+      expect(p.virtue.source, p.id).toMatch(/[০-৯]/)
+    }
   })
 
   it('cycles through every Quranic dua before repeating one', () => {
