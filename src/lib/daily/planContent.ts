@@ -43,12 +43,8 @@ export const isReelMode = (mode: DailyMode) => mode === 'quran' || mode === 'dua
 
 export const isFriday = (dayIndex: number) => (dayIndex + 4) % 7 === 5
 
-const fridayModes: DailyMode[] = ['kahf', 'jumuahVirtue', 'durood', 'duaHour', 'duaReel', 'quran']
-
 export function dailyModes(dayIndex: number): DailyMode[] {
-  if (isFriday(dayIndex)) return fridayModes
-  const shuffled = seededShuffle<DailyMode>(['quran', 'hadith', 'azkar', 'duas'], Math.imul(dayIndex + 1, 0x9e3779b1) ^ 0x5ced)
-  return [...shuffled, 'duaReel', 'quran']
+  return isFriday(dayIndex) ? ['kahf', 'durood', 'duaReel', 'quran'] : ['quran', 'duas', 'duaReel', 'quran']
 }
 
 export function pickDua(turn: number): QuranPreset {

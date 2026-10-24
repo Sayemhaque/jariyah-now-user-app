@@ -4,10 +4,10 @@ import type { Platform } from '@/lib/social/types'
 export const dailyConfig = {
   reciterId: 'random',
   translationKey: 'sahiih_international',
-  postTimes: ['07:00', '10:00', '13:30', '16:30', '19:30', '22:00'],
+  postTimes: ['07:00', '13:30', '19:30', '22:00'],
   maxDurationSec: 60,
-  specialReelsFrom: '2026-10-24',
-  specialReelsUntil: '2026-11-03',
+  duaReelsFrom: '2026-10-24',
+  duaReelsUntil: '2026-11-03',
   maxAyats: 10,
   textLanguage: 'english' as TextLanguage,
   coverAtMs: 2500,
