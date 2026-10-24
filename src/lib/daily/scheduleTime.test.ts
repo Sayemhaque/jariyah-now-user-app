@@ -30,18 +30,16 @@ describe('scheduled post time', () => {
 
 describe('daily workflow triggers', () => {
   const workflow = readFileSync(join(process.cwd(), '.github/workflows/daily-reel.yml'), 'utf8')
-  const triggers = [...workflow.matchAll(/cron: '([\d,]+) ([\d,]+) \* \* \*'/g)].flatMap(([, minutes, hours]) =>
-    hours!.split(',').flatMap((h) => minutes!.split(',').map((m) => new Date(Date.UTC(2026, 9, 22, Number(h), Number(m))))),
+  const triggers = [...workflow.matchAll(/cron: '([\d,]+) ([\d,*]+) \* \* \*'/g)].flatMap(([, minutes, hours]) =>
+    (hours === '*' ? Array.from({ length: 24 }, (_, h) => String(h)) : hours!.split(',')).flatMap((h) => minutes!.split(',').map((m) => new Date(Date.UTC(2026, 9, 22, Number(h), Number(m))))),
   )
 
-  it('gives every post slot two backup triggers shortly after it that target it', () => {
+  it('checks twice an hour, so every slot gets several backup chances within its catch-up window', () => {
     for (const time of dailyConfig.postTimes) {
       const slot = dhaka(22, time)
       const backups = triggers.filter((t) => scheduledPostTime(t, dailyConfig.postTimes)?.getTime() === slot.getTime())
-      expect(backups).toHaveLength(2)
-      for (const t of backups) expect(t.getTime()).toBeGreaterThan(slot.getTime())
+      expect(backups.length, time).toBeGreaterThanOrEqual(4)
     }
-    expect(triggers).toHaveLength(dailyConfig.postTimes.length * 2)
   })
 })
 

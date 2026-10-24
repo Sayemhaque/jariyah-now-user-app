@@ -4,11 +4,10 @@ on:
   schedule:
     # Bangladesh time 07:00 reel, 13:30 dua image, 19:30 dua reel and 22:00
     # reel (Asia/Dhaka is UTC+6, no DST). Claude Routines start each run on
-    # time with slot=auto; these GitHub schedules are only a backup. A run
-    # posts straight away, a late one posts the slot it missed, and the posted
-    # marker stops repeats. Keep in sync with postTimes in dailyConfig.ts.
-    - cron: '5,20 1,16 * * *'
-    - cron: '35,50 7,13 * * *'
+    # time with slot=auto. As a backup GitHub checks twice an hour: a run
+    # posts any slot missed in the last three hours, and the posted marker
+    # makes every other run stop at once. Keep in sync with dailyConfig.ts.
+    - cron: '17,47 * * * *'
   workflow_dispatch:
     inputs:
       slot:
