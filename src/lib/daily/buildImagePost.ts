@@ -22,6 +22,14 @@ function pickTemplate(sequence: number) {
   return templateAt(Math.floor(mulberry32(0xca7d + sequence)() * templateCount))
 }
 
+async function singleImageDuaCards(ctx: DailyContext, turn: number): Promise<CardContent[]> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const cards = await presetCards(ctx, 'duas', turn + attempt * 7)
+    if (cards.length === 1) return cards
+  }
+  return (await presetCards(ctx, 'duas', turn)).slice(0, 1)
+}
+
 async function presetCards(ctx: DailyContext, mode: 'masnoon' | 'duas', turn: number): Promise<CardContent[]> {
   const { preset, part } = pickPreset(mode, turn)
   const translationKey = ctx.opts.translationKey ?? 'sahiih_international'
@@ -56,7 +64,7 @@ export function buildFridayPost(ctx: DailyContext, key: FridayPostKey): DailyIma
 }
 
 export async function buildImagePost(ctx: DailyContext, mode: Exclude<ContentMode, 'quran'>, turn: number): Promise<DailyImagePost> {
-  const contents = isPresetMode(mode) ? await presetCards(ctx, mode, turn) : mode === 'hadith' ? await hadithCards(ctx, turn) : azkarCards(ctx, turn)
+  const contents = mode === 'duas' ? await singleImageDuaCards(ctx, turn) : isPresetMode(mode) ? await presetCards(ctx, mode, turn) : mode === 'hadith' ? await hadithCards(ctx, turn) : azkarCards(ctx, turn)
   const credit = isPresetMode(mode) ? translationCredit(ctx.opts.translationKey ?? 'sahiih_international') : undefined
   return imagePost(ctx, mode, contents, credit)
 }
