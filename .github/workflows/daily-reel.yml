@@ -53,8 +53,14 @@ jobs:
 
       # A cached static ffmpeg build (with ffprobe) instead of apt-get, which took up to three minutes.
       - uses: FedericoCarboni/setup-ffmpeg@v3
+        id: ffmpeg
+        continue-on-error: true
         with:
           ffmpeg-version: release
+
+      # Fall back to apt when the static build cannot be downloaded.
+      - if: steps.ffmpeg.outcome == 'failure'
+        run: sudo apt-get update -q && sudo apt-get install -y -q ffmpeg
 
       - name: Render and post
         env:
