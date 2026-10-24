@@ -1,6 +1,7 @@
 import { presetCollections } from '@/lib/collections'
 import { presetParts, type PresetPart } from '@/lib/collections/presetParts'
 import type { FridayPostKey } from '@/lib/collections/friday'
+import { specialPassages, type SpecialPassage } from '@/lib/collections/specialPassages'
 import { type ContentMode, type PresetMode, type QuranPreset, type TextItem } from '@/lib/collections/types'
 import { hadithBooks } from '@/lib/hadith/hadithBooks'
 import type { HadithSelection } from '@/lib/hadith/types'
@@ -52,6 +53,17 @@ export function dailyModes(dayIndex: number): DailyMode[] {
 
 export function pickDua(turn: number): QuranPreset {
   return cyclePick(presetCollections.duas, turn, 0xd0a5)
+}
+
+export function pickSpecial(turn: number): SpecialPassage {
+  return cyclePick(specialPassages, turn, 0x5e7a)
+}
+
+export function reelTurn(date: Date, postTimes: readonly string[], fromDay = 0): number {
+  const day = dhakaDayIndex(date)
+  const modes = dailyModes(day)
+  const slot = Math.min(postSlot(date, postTimes), modes.length - 1)
+  return (day - fromDay) * 3 + modes.slice(0, slot).filter(isReelMode).length
 }
 
 export function scheduledPost(date: Date, postTimes: readonly string[]): { mode: DailyMode; turn: number } {

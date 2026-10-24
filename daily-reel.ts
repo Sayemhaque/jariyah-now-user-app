@@ -41,6 +41,8 @@ async function main() {
     now: slot,
     surahOverride: env.SURAH ? Number(env.SURAH) : undefined,
     duaId: env.DUA || undefined,
+    specialReelsFrom: dailyConfig.specialReelsFrom,
+    specialReelsUntil: dailyConfig.specialReelsUntil,
     reciterId: dailyConfig.reciterId,
     translationKey: dailyConfig.translationKey,
     maxAyats: dailyConfig.maxAyats,
@@ -59,6 +61,8 @@ async function main() {
   if (post.kind === 'images') return postImages(post)
   return postVideo(post)
 }
+
+const facebookReelMaxMs = 89_000
 
 const isDryRun = () => env.DRY_RUN === '1' || env.DRY_RUN === 'true'
 
@@ -85,9 +89,10 @@ async function postVideo(video: DailyVideo) {
   })
   const cover = extractCover(outPath, dailyConfig.coverAtMs, join(outDir, `cover-${video.dateKey}.jpg`))
   const input: UploadInput = { video: buf, meta: video.meta, coverAtMs: dailyConfig.coverAtMs, cover }
+  if (video.durationMs > facebookReelMaxMs) summary('Facebook skipped: Facebook reels must be 90 seconds or shorter.')
   const uploaders: Record<Platform, (() => Promise<UploadResult>) | null> = {
     youtube: cfg.youtube && (() => uploadToYouTube(cfg.youtube!, input)),
-    facebook: cfg.facebook && (() => uploadToFacebookReels(cfg.facebook!, input)),
+    facebook: cfg.facebook && video.durationMs <= facebookReelMaxMs ? () => uploadToFacebookReels(cfg.facebook!, input) : null,
     instagram: cfg.instagram && (() => uploadToInstagramReels(cfg.instagram!, input)),
     tiktok: cfg.tiktok && (() => uploadToTikTok(cfg.tiktok!, input)),
   }
