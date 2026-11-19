@@ -2,12 +2,11 @@ name: Daily Quran reel
 
 on:
   schedule:
-    # Bangladesh time 07:00 reel, 13:30 dua image, 19:30 dua reel and 22:00
-    # reel (Asia/Dhaka is UTC+6, no DST). Claude Routines start each run on
-    # time with slot=auto. As a backup GitHub checks twice an hour: a run
-    # posts any slot missed in the last three hours, and the posted marker
-    # makes every other run stop at once. Keep in sync with dailyConfig.ts.
-    - cron: '17,47 * * * *'
+    # One reel a day at 10:00 Bangladesh time (04:00 UTC, Asia/Dhaka is UTC+6,
+    # no DST). GitHub checks twice an hour for the next three hours: a run
+    # posts the slot if it was missed, and the posted marker makes every
+    # other run stop at once. Keep in sync with dailyConfig.ts.
+    - cron: '0,17,47 4,5,6 * * *'
   workflow_dispatch:
     inputs:
       slot:

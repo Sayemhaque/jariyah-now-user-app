@@ -4,7 +4,8 @@ import type { Platform } from '@/lib/social/types'
 export const dailyConfig = {
   reciterId: 'random',
   translationKey: 'sahiih_international',
-  postTimes: ['07:00', '13:30', '19:30', '22:00'],
+  facebookTranslationKey: 'bengali',
+  postTimes: ['10:00'],
   maxDurationSec: 60,
   duaReelsFrom: '2026-10-24',
   duaReelsUntil: '2026-11-03',

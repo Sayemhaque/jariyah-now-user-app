@@ -1,8 +1,8 @@
 # Daily Quran reel auto-post
 
-Three times a day, at **09:00, 15:00 and 22:00 Bangladesh time** (03:00, 09:00 and 16:00 UTC), `.github/workflows/daily-reel.yml`:
+Once a day, at **10:00 Bangladesh time** (04:00 UTC), `.github/workflows/daily-reel.yml` posts one reel to Facebook, Instagram and YouTube. On Fridays the reel is Surah Al-Kahf 1–10. Instagram and YouTube get the reel with English translation; Facebook gets the same reel rendered with **Bengali translation**. The job:
 
-1. Picks a surah. It works through a shuffled order of all 114 surahs, so no surah repeats until every surah has been posted (one cycle takes 114 posts, 38 days at three posts a day).
+1. Picks a surah. It works through a shuffled order of all 114 surahs, so no surah repeats until every surah has been posted (one cycle takes 114 days).
 2. Fetches the ayats and audio, and keeps up to **10 ayats**. Short surahs go out whole. Long surahs get an excerpt that starts at a random ayat.
 3. Renders a 1080×1920 MP4 with Remotion. It uses the same `AyatVideo` composition as the app, with a rotating reciter and background. Backgrounds go through all 27 scenes in a shuffled order, so one comes back only after every other scene has been used.
 4. Posts it with a title, description and hashtags to every platform that has credentials set.
@@ -62,15 +62,16 @@ Masnoon Surahs, Quranic Duas, Hadith and Azkar are posted as premium image cards
 
 ## Timing
 
-Claude Routines start the workflow at each post time with `slot: auto`. The run renders and publishes straight away (about 3–5 minutes for a reel, under a minute for images); it never waits. GitHub's own schedule fires 5 and 20 minutes after each post time as a backup, because GitHub often starts scheduled runs late or skips them. A run that starts late posts the slot it missed (up to three hours late), and the posted marker in Blob storage stops a slot from posting twice.
+Claude Routines start the workflow at each post time with `slot: auto`. The run renders and publishes straight away (about 3–5 minutes for a reel, under a minute for images); it never waits. GitHub's own schedule fires at 04:00, 04:17 and 04:47 UTC and again in the next two hours as a backup, because GitHub often starts scheduled runs late or skips them. A run that starts late posts the slot it missed (up to three hours late), and the posted marker in Blob storage stops a slot from posting twice.
 
 ## Settings (`src/lib/daily/dailyConfig.ts`)
 
 | Field | Default | Purpose |
 |---|---|---|
 | `reciterId` | `random` | A reciter id from `src/lib/reciters.ts`, or `random` to rotate through 7 reciters |
-| `translationKey` | `sahiih_international` (English) | Translation shown under the Arabic |
-| `postTimes` | `09:00`, `15:00`, `22:00` | Bangladesh times of the daily posts. Each run works out its slot from the time it starts, so every post gets its own surah, reciter and background. Keep the `cron` lines in the workflow in sync |
+| `translationKey` | `sahiih_international` (English) | Translation shown under the Arabic on Instagram and YouTube |
+| `facebookTranslationKey` | `bengali` | Translation of the separate Facebook render. Remove it to post the same video everywhere |
+| `postTimes` | `10:00` | Bangladesh times of the daily posts. Each run works out its slot from the time it starts, so every post gets its own surah, reciter and background. Keep the `cron` lines in the workflow in sync |
 | `coverAtMs` | `2500` | Moment of the video Instagram uses as the cover (`thumb_offset`), after the title and first ayah have appeared |
 | `contentRotation` | `quran`, `masnoon`, `hadith`, `duas`, `azkar` | Content types to rotate through, one per post. `quran` is a reel; the others are image posts built from `src/lib/collections/` |
 | `textLanguage` | `english` | Language of hadith and azkar cards: `english` or `bangla` |
