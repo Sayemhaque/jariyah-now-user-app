@@ -4,7 +4,7 @@ Once a day, at **10:00 Bangladesh time** (04:00 UTC), `.github/workflows/daily-r
 
 1. Picks a surah. It works through a shuffled order of all 114 surahs, so no surah repeats until every surah has been posted (one cycle takes 114 days).
 2. Fetches the ayats and audio, and keeps up to **10 ayats**. Short surahs go out whole. Long surahs get an excerpt that starts at a random ayat.
-3. Renders a 1080×1920 MP4 with Remotion. It uses the same `AyatVideo` composition as the app, with a rotating reciter and background. Backgrounds go through all 27 scenes in a shuffled order, so one comes back only after every other scene has been used.
+3. Renders a 1080×1920 MP4 with Remotion. It uses the same `AyatVideo` composition as the app, with Yasser Ad-Dosari reciting and a rotating background. Backgrounds go through all 27 scenes in a shuffled order, so one comes back only after every other scene has been used.
 4. Posts it with a title, description and hashtags to every platform that has credentials set.
 
 The reciter, background and starting ayat all come from the date and post slot. Re-running a slot's job builds the same video, and the job stores no state between runs.
@@ -68,7 +68,7 @@ Claude Routines start the workflow at each post time with `slot: auto`. The run 
 
 | Field | Default | Purpose |
 |---|---|---|
-| `reciterId` | `random` | A reciter id from `src/lib/reciters.ts`, or `random` to rotate through 7 reciters |
+| `reciterId` | `dosari` (Yasser Ad-Dosari) | A reciter id from `src/lib/reciters.ts`, or `random` to rotate through 7 reciters |
 | `translationKey` | `sahiih_international` (English) | Translation shown under the Arabic on Instagram and YouTube |
 | `facebookTranslationKey` | `bengali` | Translation of the separate Facebook render. Remove it to post the same video everywhere |
 | `postTimes` | `10:00` | Bangladesh times of the daily posts. Each run works out its slot from the time it starts, so every post gets its own surah, reciter and background. Keep the `cron` lines in the workflow in sync |

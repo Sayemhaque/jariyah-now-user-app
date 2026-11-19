@@ -2,7 +2,7 @@ import type { TextLanguage } from '@/lib/collections/types'
 import type { Platform } from '@/lib/social/types'
 
 export const dailyConfig = {
-  reciterId: 'random',
+  reciterId: 'dosari',
   translationKey: 'sahiih_international',
   facebookTranslationKey: 'bengali',
   postTimes: ['10:00'],
