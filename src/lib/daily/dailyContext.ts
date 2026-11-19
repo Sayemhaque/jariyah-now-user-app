@@ -10,8 +10,7 @@ export interface DailyVideoOptions {
   now?: Date
   surahOverride?: number
   duaId?: string
-  duaReelsFrom?: string
-  duaReelsUntil?: string
+  duaScheduleFrom?: string
   range?: { fromAyat: number; toAyat: number }
   sceneKey?: string
   reciterId?: string

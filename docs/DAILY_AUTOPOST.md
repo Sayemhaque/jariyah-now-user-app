@@ -41,7 +41,7 @@ Each platform is optional. A platform with missing secrets is skipped.
 | `BLOB_READ_WRITE_TOKEN` | The Vercel Blob token the app already uses (Vercel → Project → Settings → Environment Variables). When set, the job uploads the video to Blob, gives Instagram a one-hour signed link, and deletes the file after publishing. Instagram's direct upload often fails with `ProcessingFailedError`, so this is recommended. |
 | `INSTAGRAM_USER_ID` | The Instagram professional account must be linked to the Page. Get the ID from `GET /{page-id}?fields=instagram_business_account`. Instagram reuses the Page token. |
 
-Facebook Reels must be 3–90 s long. Videos have no length limit, so a long excerpt can be rejected by Facebook while Instagram still posts it.
+Facebook Reels must be 3–90 s long. A longer video is posted to the Page as a normal video instead of a reel.
 
 ### TikTok
 | Secret | How to get it |
@@ -55,6 +55,10 @@ Facebook Reels must be 3–90 s long. Videos have no length limit, so a long exc
 | Secret | Purpose |
 |---|---|
 | `UMMAHAPI_KEY` | UmmahAPI key, if you use one |
+
+## Dua list (20 Nov 2026 – 13 Jan 2027)
+
+From `duaScheduleFrom` in `dailyConfig.ts`, the 10:00 post is one Quranic dua reel a day from the ordered list in `src/lib/collections/duaReelSchedule.ts` (55 duas, Fridays included). After the last one the normal plan resumes: a Quran reel, and Surah Al-Kahf on Fridays.
 
 ## Image posts
 

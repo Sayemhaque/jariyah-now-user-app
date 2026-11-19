@@ -1,4 +1,5 @@
 import { presetCollections } from '@/lib/collections'
+import { duaReelSchedule } from '@/lib/collections/duaReelSchedule'
 import { presetParts, type PresetPart } from '@/lib/collections/presetParts'
 import type { FridayPostKey } from '@/lib/collections/friday'
 import { specialPassages, type SpecialPassage } from '@/lib/collections/specialPassages'
@@ -55,11 +56,10 @@ export function pickSpecial(turn: number): SpecialPassage {
   return cyclePick(specialPassages, turn, 0x5e7a)
 }
 
-export function reelTurn(date: Date, postTimes: readonly string[], fromDay = 0): number {
-  const day = dhakaDayIndex(date)
-  const modes = dailyModes(day)
-  const slot = Math.min(postSlot(date, postTimes), modes.length - 1)
-  return (day - fromDay) * 3 + modes.slice(0, slot).filter(isReelMode).length
+export function scheduledDuaFor(date: Date, scheduleFrom?: string): QuranPreset | undefined {
+  if (!scheduleFrom) return undefined
+  const index = dhakaDayIndex(date) - dhakaDayIndex(new Date(`${scheduleFrom}T00:00:00+06:00`))
+  return index >= 0 ? duaReelSchedule[index] : undefined
 }
 
 export function scheduledPost(date: Date, postTimes: readonly string[]): { mode: DailyMode; turn: number } {
