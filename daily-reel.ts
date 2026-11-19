@@ -6,7 +6,7 @@ import { scheduledPostTime } from '@/lib/daily/plan'
 import { isSlotPosted, markSlotPosted } from '@/lib/daily/postedMarker'
 import { loadSocialConfig } from '@/lib/social/config'
 import { uploadToYouTube } from '@/lib/social/youtube'
-import { uploadToFacebookReels, uploadToInstagramReels } from '@/lib/social/meta'
+import { uploadToFacebookReels, uploadToFacebookVideo, uploadToInstagramReels } from '@/lib/social/meta'
 import { postImagesToInstagram, type ImagePostInput } from '@/lib/social/metaImages'
 import { withTemporaryUrls } from '@/lib/social/temporaryVideoUrl'
 import { extractCover, makeReelSafe, renderCards, renderVideo } from '@/lib/render/remotionRender'
@@ -41,8 +41,7 @@ async function main() {
     now: slot,
     surahOverride: env.SURAH ? Number(env.SURAH) : undefined,
     duaId: env.DUA || undefined,
-    duaReelsFrom: dailyConfig.duaReelsFrom,
-    duaReelsUntil: dailyConfig.duaReelsUntil,
+    duaScheduleFrom: dailyConfig.duaScheduleFrom,
     reciterId: dailyConfig.reciterId,
     translationKey: dailyConfig.translationKey,
     facebookTranslationKey: dailyConfig.facebookTranslationKey,
@@ -86,10 +85,11 @@ async function postVideo(video: DailyVideo) {
   })
   const cover = extractCover(outPath, dailyConfig.coverAtMs, join(outDir, `cover-${video.dateKey}.jpg`))
   const input: UploadInput = { video: buf, meta: video.meta, coverAtMs: dailyConfig.coverAtMs, cover }
-  if (video.durationMs > facebookReelMaxMs) summary('Facebook skipped: Facebook reels must be 90 seconds or shorter.')
+  const facebookInput = { ...input, video: facebookBuf }
+  const uploadToFacebook = video.durationMs > facebookReelMaxMs ? uploadToFacebookVideo : uploadToFacebookReels
   const uploaders: Record<Platform, (() => Promise<UploadResult>) | null> = {
     youtube: cfg.youtube && (() => uploadToYouTube(cfg.youtube!, input)),
-    facebook: cfg.facebook && video.durationMs <= facebookReelMaxMs ? () => uploadToFacebookReels(cfg.facebook!, { ...input, video: facebookBuf }) : null,
+    facebook: cfg.facebook && (() => uploadToFacebook(cfg.facebook!, facebookInput)),
     instagram: cfg.instagram && (() => uploadToInstagramReels(cfg.instagram!, input)),
     tiktok: cfg.tiktok && (() => uploadToTikTok(cfg.tiktok!, input)),
   }

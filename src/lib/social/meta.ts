@@ -79,6 +79,18 @@ export async function uploadToFacebookReels(cfg: FacebookConfig, input: UploadIn
   }
 }
 
+export async function uploadToFacebookVideo(cfg: FacebookConfig, input: UploadInput): Promise<UploadResult> {
+  const form = new FormData()
+  form.append('access_token', cfg.pageAccessToken)
+  form.append('title', input.meta.title)
+  form.append('description', input.meta.facebookCaption ?? input.meta.description)
+  form.append('source', new Blob([new Uint8Array(input.video)], { type: 'video/mp4' }), 'video.mp4')
+  const res = await expectOk(await fetch(`https://graph-video.facebook.com/${cfg.graphVersion}/${cfg.pageId}/videos`, { method: 'POST', body: form }), 'Facebook video upload')
+  const { id } = (await res.json()) as { id?: string }
+  if (!id) throw new Error('Facebook video upload returned no id')
+  return { platform: 'facebook', id, url: `https://www.facebook.com/${cfg.pageId}/videos/${id}`, note: 'Posted as a Page video because reels must be 90 seconds or shorter.' }
+}
+
 async function waitForContainer(cfg: InstagramConfig, containerId: string): Promise<void> {
   for (let i = 0; i < 60; i++) {
     await sleep(10_000)

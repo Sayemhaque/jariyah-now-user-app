@@ -2,13 +2,12 @@ import type { TextLanguage } from '@/lib/collections/types'
 import type { Platform } from '@/lib/social/types'
 
 export const dailyConfig = {
-  reciterId: 'random',
+  reciterId: 'dosari',
   translationKey: 'sahiih_international',
   facebookTranslationKey: 'bengali',
   postTimes: ['10:00'],
   maxDurationSec: 60,
-  duaReelsFrom: '2026-10-24',
-  duaReelsUntil: '2026-11-03',
+  duaScheduleFrom: '2026-11-20',
   maxAyats: 10,
   textLanguage: 'english' as TextLanguage,
   coverAtMs: 2500,

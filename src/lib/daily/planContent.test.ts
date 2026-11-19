@@ -4,10 +4,11 @@ import { findHadithBook } from '@/lib/hadith/hadithApi'
 import { presetCollections } from '@/lib/collections'
 import { presetParts } from '@/lib/collections/presetParts'
 import type { ContentMode } from '@/lib/collections/types'
-import { isReelMode, modeTurn, pickContentMode, pickDua, pickFrom, scheduledPost, pickHadithSource, pickPreset, pickTextItem } from './planContent'
+import { isReelMode, modeTurn, pickContentMode, pickDua, pickFrom, scheduledDuaFor, scheduledPost, pickHadithSource, pickPreset, pickTextItem } from './planContent'
 import { dailyConfig } from './dailyConfig'
 import { specialPassages } from '@/lib/collections/specialPassages'
 import { surahsFallback } from '@/lib/surahs-fallback'
+import { duaReelSchedule } from '@/lib/collections/duaReelSchedule'
 
 const rotation: ContentMode[] = ['quran', 'masnoon', 'hadith', 'duas', 'azkar']
 
@@ -105,5 +106,24 @@ describe('daily schedule', () => {
   it('never repeats a surah on consecutive days', () => {
     const turns = Array.from({ length: 6 }, (_, day) => plan(day).filter((p) => p.mode === 'quran').map((p) => p.turn)).flat()
     expect(new Set(turns).size).toBe(turns.length)
+  })
+
+  it('posts the dua list in order, one a day from 20 November, then returns to the normal plan', () => {
+    const at10 = (month: number, day: number) => new Date(Date.UTC(2026, month, day, 4, 5))
+    expect(duaReelSchedule).toHaveLength(55)
+    expect(scheduledDuaFor(at10(10, 19), dailyConfig.duaScheduleFrom)).toBeUndefined()
+    expect(scheduledDuaFor(at10(10, 20), dailyConfig.duaScheduleFrom)).toMatchObject({ surah: 2, fromAyat: 127, toAyat: 129 })
+    expect(scheduledDuaFor(at10(10, 21), dailyConfig.duaScheduleFrom)).toMatchObject({ surah: 2, fromAyat: 201, toAyat: 201 })
+    expect(scheduledDuaFor(at10(12, 13), dailyConfig.duaScheduleFrom)).toMatchObject({ surah: 114, fromAyat: 1, toAyat: 6 })
+    expect(scheduledDuaFor(at10(12, 14), dailyConfig.duaScheduleFrom)).toBeUndefined()
+  })
+
+  it('keeps every scheduled dua inside its surah with a Bangla heading', () => {
+    for (const dua of duaReelSchedule) {
+      const surah = surahsFallback.find((s) => s.number === dua.surah)!
+      expect(dua.toAyat, dua.id).toBeLessThanOrEqual(surah.numberOfAyahs)
+      expect(dua.fromAyat, dua.id).toBeLessThanOrEqual(dua.toAyat)
+      expect(dua.titleBn, dua.id).toMatch(/[\u0980-\u09FF]/)
+    }
   })
 })

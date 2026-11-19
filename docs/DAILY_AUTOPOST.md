@@ -4,7 +4,7 @@ Once a day, at **10:00 Bangladesh time** (04:00 UTC), `.github/workflows/daily-r
 
 1. Picks a surah. It works through a shuffled order of all 114 surahs, so no surah repeats until every surah has been posted (one cycle takes 114 days).
 2. Fetches the ayats and audio, and keeps up to **10 ayats**. Short surahs go out whole. Long surahs get an excerpt that starts at a random ayat.
-3. Renders a 1080×1920 MP4 with Remotion. It uses the same `AyatVideo` composition as the app, with a rotating reciter and background. Backgrounds go through all 27 scenes in a shuffled order, so one comes back only after every other scene has been used.
+3. Renders a 1080×1920 MP4 with Remotion. It uses the same `AyatVideo` composition as the app, with Yasser Ad-Dosari reciting and a rotating background. Backgrounds go through all 27 scenes in a shuffled order, so one comes back only after every other scene has been used.
 4. Posts it with a title, description and hashtags to every platform that has credentials set.
 
 The reciter, background and starting ayat all come from the date and post slot. Re-running a slot's job builds the same video, and the job stores no state between runs.
@@ -41,7 +41,7 @@ Each platform is optional. A platform with missing secrets is skipped.
 | `BLOB_READ_WRITE_TOKEN` | The Vercel Blob token the app already uses (Vercel → Project → Settings → Environment Variables). When set, the job uploads the video to Blob, gives Instagram a one-hour signed link, and deletes the file after publishing. Instagram's direct upload often fails with `ProcessingFailedError`, so this is recommended. |
 | `INSTAGRAM_USER_ID` | The Instagram professional account must be linked to the Page. Get the ID from `GET /{page-id}?fields=instagram_business_account`. Instagram reuses the Page token. |
 
-Facebook Reels must be 3–90 s long. Videos have no length limit, so a long excerpt can be rejected by Facebook while Instagram still posts it.
+Facebook Reels must be 3–90 s long. A longer video is posted to the Page as a normal video instead of a reel.
 
 ### TikTok
 | Secret | How to get it |
@@ -56,6 +56,10 @@ Facebook Reels must be 3–90 s long. Videos have no length limit, so a long exc
 |---|---|
 | `UMMAHAPI_KEY` | UmmahAPI key, if you use one |
 
+## Dua list (20 Nov 2026 – 13 Jan 2027)
+
+From `duaScheduleFrom` in `dailyConfig.ts`, the 10:00 post is one Quranic dua reel a day from the ordered list in `src/lib/collections/duaReelSchedule.ts` (55 duas, Fridays included). After the last one the normal plan resumes: a Quran reel, and Surah Al-Kahf on Fridays.
+
 ## Image posts
 
 Masnoon Surahs, Quranic Duas, Hadith and Azkar are posted as premium image cards (1080×1350 JPEG), not videos. A masnoon surah or dua longer than one card becomes an Instagram carousel and a Facebook multi-photo post of up to 10 slides. Hadith posts pick a short Sahih or Hasan hadith from the open Hadith API (Bukhari, Muslim, the Sunan, Muwatta, an-Nawawi), rotating collections and chapters. Card designs live in `src/cards/` and `src/lib/cards/` and rotate through 8 themes, one per post. Instagram can only fetch images from a URL, so image posts need the `BLOB_READ_WRITE_TOKEN` secret; the images are deleted right after publishing. YouTube and TikTok skip image posts.
@@ -68,7 +72,7 @@ Claude Routines start the workflow at each post time with `slot: auto`. The run 
 
 | Field | Default | Purpose |
 |---|---|---|
-| `reciterId` | `random` | A reciter id from `src/lib/reciters.ts`, or `random` to rotate through 7 reciters |
+| `reciterId` | `dosari` (Yasser Ad-Dosari) | A reciter id from `src/lib/reciters.ts`, or `random` to rotate through 7 reciters |
 | `translationKey` | `sahiih_international` (English) | Translation shown under the Arabic on Instagram and YouTube |
 | `facebookTranslationKey` | `bengali` | Translation of the separate Facebook render. Remove it to post the same video everywhere |
 | `postTimes` | `10:00` | Bangladesh times of the daily posts. Each run works out its slot from the time it starts, so every post gets its own surah, reciter and background. Keep the `cron` lines in the workflow in sync |
