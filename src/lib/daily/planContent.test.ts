@@ -4,9 +4,8 @@ import { findHadithBook } from '@/lib/hadith/hadithApi'
 import { presetCollections } from '@/lib/collections'
 import { presetParts } from '@/lib/collections/presetParts'
 import type { ContentMode } from '@/lib/collections/types'
-import { isReelMode, modeTurn, pickContentMode, pickDua, pickFrom, reelTurn, scheduledPost, pickHadithSource, pickPreset, pickTextItem } from './planContent'
+import { isReelMode, modeTurn, pickContentMode, pickDua, pickFrom, scheduledPost, pickHadithSource, pickPreset, pickTextItem } from './planContent'
 import { dailyConfig } from './dailyConfig'
-import { dhakaDayIndex } from './plan'
 import { specialPassages } from '@/lib/collections/specialPassages'
 import { surahsFallback } from '@/lib/surahs-fallback'
 
@@ -75,27 +74,18 @@ describe('daily schedule', () => {
   const slotAt = (day: number, time: string) => new Date(Date.UTC(2026, 9, 21 + day, Number(time.slice(0, 2)) - 6, Number(time.slice(3)) + 5))
   const plan = (day: number) => dailyConfig.postTimes.map((t) => scheduledPost(slotAt(day, t), dailyConfig.postTimes))
 
-  it('posts three reels and one dua image a day, with the dua reel at 19:30 and a reel every night', () => {
-    for (let day = 0; day < 7; day++) {
-      const modes = plan(day).map((p) => p.mode)
-      expect(modes.filter(isReelMode)).toHaveLength(3)
-      expect(modes.filter((m) => !isReelMode(m))).toHaveLength(1)
-      expect(modes.slice(-2)).toEqual(['duaReel', 'quran'])
-    }
-    expect(plan(0).map((p) => p.mode)[1]).toBe('duas')
+  it('posts one Quran reel a day at 10:00', () => {
+    expect(dailyConfig.postTimes).toEqual(['10:00'])
+    expect(plan(0).map((p) => p.mode)).toEqual(['quran'])
   })
 
-  it('opens Friday with Al-Kahf and posts Durood Ibrahim as its image', () => {
+  it('posts Surah Al-Kahf on Friday', () => {
     expect(new Date(Date.UTC(2026, 9, 23)).getUTCDay()).toBe(5)
-    expect(plan(2).map((p) => p.mode)).toEqual(['kahf', 'durood', 'duaReel', 'quran'])
+    expect(plan(2).map((p) => p.mode)).toEqual(['kahf'])
   })
 
-  it('makes all three reels Quranic duas for ten days, with no dua repeated', () => {
-    const from = dhakaDayIndex(slotAt(0, '07:00'))
-    const turns = Array.from({ length: 10 }, (_, day) => dailyConfig.postTimes.filter((_, i) => isReelMode(plan(day)[i]!.mode)).map((t) => reelTurn(slotAt(day, t), dailyConfig.postTimes, from))).flat()
-    expect(turns).toHaveLength(30)
-    expect(new Set(turns.map((t) => pickDua(t).id)).size).toBe(30)
-    expect([dailyConfig.duaReelsFrom, dailyConfig.duaReelsUntil]).toEqual(['2026-10-24', '2026-11-03'])
+  it('posts the Facebook reel with Bengali translation', () => {
+    expect(dailyConfig.facebookTranslationKey).toBe('bengali')
   })
 
   it('keeps every special passage inside its surah with a sourced Bangla virtue', () => {
@@ -112,7 +102,7 @@ describe('daily schedule', () => {
     expect(new Set(ids).size).toBe(presetCollections.duas.length)
   })
 
-  it('never repeats a surah within a day', () => {
+  it('never repeats a surah on consecutive days', () => {
     const turns = Array.from({ length: 6 }, (_, day) => plan(day).filter((p) => p.mode === 'quran').map((p) => p.turn)).flat()
     expect(new Set(turns).size).toBe(turns.length)
   })

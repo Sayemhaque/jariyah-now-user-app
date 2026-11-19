@@ -139,13 +139,17 @@ async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number, extr
 
     const toAyat = slides[slides.length - 1]!.ayatNumber
     const durationMs = slides.reduce((sum, x) => sum + x.audioDurationMs, 0)
+    const reelProps = { reciterName: reciter.name, surahName: surah.name, surahNameArabic: surah.arabicName, surahMeaning: surah.englishName }
+    const facebookKey = opts.facebookTranslationKey
+    const facebookSlides = facebookKey && facebookKey !== translationKey ? await translateSlides(slides, reciter, facebookKey) : null
     return {
       kind: 'video',
       dateKey: dhakaDateKey(now),
       mode: 'quran',
       label: `Surah ${surah.number} ${surah.name}, ayat ${fromAyat}-${toAyat} · ${reciter.name} · ${(durationMs / 1000).toFixed(1)}s`,
       durationMs,
-      props: videoProps(ctx, { slides, reciterName: reciter.name, surahName: surah.name, surahNameArabic: surah.arabicName, surahMeaning: surah.englishName }),
+      props: videoProps(ctx, { slides, ...reelProps }),
+      ...(facebookSlides ? { facebookProps: videoProps(ctx, { slides: facebookSlides, ...reelProps }) } : {}),
       meta: buildPostMetadata({
         surah,
         fromAyat,
@@ -161,4 +165,14 @@ async function buildQuranDailyVideo(ctx: DailyContext, surahNumber: number, extr
   }
 
   throw new Error(`Could not find an excerpt of surah ${surah.number} that fits in ${maxMs / 1000}s`)
+}
+
+async function translateSlides(slides: AyatSlide[], reciter: Reciter, translationKey: string): Promise<AyatSlide[]> {
+  return Promise.all(
+    slides.map(async (slide) => {
+      const data = await fetchAyatData(slide.surahNumber, slide.ayatNumber, reciter.recitationId, reciter.audioKey, slide.surahName, slide.surahNameArabic, translationKey)
+      if (!data?.translation) throw new Error(`Failed to fetch ${translationKey} translation for ${slide.surahNumber}:${slide.ayatNumber}`)
+      return { ...slide, translation: data.translation }
+    }),
+  )
 }

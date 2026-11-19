@@ -44,7 +44,7 @@ export const isReelMode = (mode: DailyMode) => mode === 'quran' || mode === 'dua
 export const isFriday = (dayIndex: number) => (dayIndex + 4) % 7 === 5
 
 export function dailyModes(dayIndex: number): DailyMode[] {
-  return isFriday(dayIndex) ? ['kahf', 'durood', 'duaReel', 'quran'] : ['quran', 'duas', 'duaReel', 'quran']
+  return isFriday(dayIndex) ? ['kahf'] : ['quran']
 }
 
 export function pickDua(turn: number): QuranPreset {
@@ -67,9 +67,7 @@ export function scheduledPost(date: Date, postTimes: readonly string[]): { mode:
   const modes = dailyModes(day)
   const slot = Math.min(postSlot(date, postTimes), modes.length - 1)
   const mode = modes[slot]!
-  const earlier = modes.slice(0, slot).filter((m) => m === mode).length
-  const turn = mode === 'quran' ? day * 3 + earlier : day
-  return { mode, turn }
+  return { mode, turn: day }
 }
 
 const dailyHadithBooks = ['bukhari', 'muslim', 'tirmidhi', 'abudawud', 'bukhari', 'nawawi', 'muslim', 'ibnmajah', 'nasai', 'malik']

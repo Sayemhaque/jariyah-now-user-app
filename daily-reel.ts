@@ -45,6 +45,7 @@ async function main() {
     duaReelsUntil: dailyConfig.duaReelsUntil,
     reciterId: dailyConfig.reciterId,
     translationKey: dailyConfig.translationKey,
+    facebookTranslationKey: dailyConfig.facebookTranslationKey,
     maxAyats: dailyConfig.maxAyats,
     postTimes: dailyConfig.postTimes,
     quality: dailyConfig.quality,
@@ -70,12 +71,8 @@ async function postVideo(video: DailyVideo) {
   const outDir = join(process.cwd(), 'out')
   mkdirSync(outDir, { recursive: true })
   const outPath = join(outDir, `daily-${video.dateKey}.mp4`)
-
-  const rawPath = join(outDir, `raw-${video.dateKey}.mp4`)
-  await renderVideo(video.props, rawPath)
-  makeReelSafe(rawPath, outPath)
-  const buf = readFileSync(outPath)
-  console.log(`Rendered ${outPath} (${(buf.length / 1024 / 1024).toFixed(1)} MB)`)
+  const buf = await renderReel(video.props, outDir, `daily-${video.dateKey}`)
+  const facebookBuf = video.facebookProps ? await renderReel(video.facebookProps, outDir, `daily-${video.dateKey}-facebook`) : buf
 
   if (isDryRun()) {
     summary('Dry run — not posting.')
@@ -92,12 +89,22 @@ async function postVideo(video: DailyVideo) {
   if (video.durationMs > facebookReelMaxMs) summary('Facebook skipped: Facebook reels must be 90 seconds or shorter.')
   const uploaders: Record<Platform, (() => Promise<UploadResult>) | null> = {
     youtube: cfg.youtube && (() => uploadToYouTube(cfg.youtube!, input)),
-    facebook: cfg.facebook && video.durationMs <= facebookReelMaxMs ? () => uploadToFacebookReels(cfg.facebook!, input) : null,
+    facebook: cfg.facebook && video.durationMs <= facebookReelMaxMs ? () => uploadToFacebookReels(cfg.facebook!, { ...input, video: facebookBuf }) : null,
     instagram: cfg.instagram && (() => uploadToInstagramReels(cfg.instagram!, input)),
     tiktok: cfg.tiktok && (() => uploadToTikTok(cfg.tiktok!, input)),
   }
 
   await runUploads(uploaders)
+}
+
+async function renderReel(props: DailyVideo['props'], outDir: string, name: string) {
+  const outPath = join(outDir, `${name}.mp4`)
+  const rawPath = join(outDir, `raw-${name}.mp4`)
+  await renderVideo(props, rawPath)
+  makeReelSafe(rawPath, outPath)
+  const buf = readFileSync(outPath)
+  console.log(`Rendered ${outPath} (${(buf.length / 1024 / 1024).toFixed(1)} MB)`)
+  return buf
 }
 
 async function postImages(post: DailyImagePost) {

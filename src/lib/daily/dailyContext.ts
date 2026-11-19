@@ -16,6 +16,7 @@ export interface DailyVideoOptions {
   sceneKey?: string
   reciterId?: string
   translationKey?: string
+  facebookTranslationKey?: string
   maxDurationSec?: number
   maxAyats?: number
   quality?: '480p' | '720p' | '1080p'
@@ -34,6 +35,7 @@ export interface DailyVideo {
   label: string
   durationMs: number
   props: AyatVideoProps
+  facebookProps?: AyatVideoProps
   meta: PostMetadata
 }
 
